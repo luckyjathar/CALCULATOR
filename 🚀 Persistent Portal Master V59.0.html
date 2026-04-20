@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Persistent Portal V59.0 - Final Bug Fix</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        :root { --primary: #0984e3; --success: #27ae60; --danger: #d63031; --warning: #f39c12; --dark: #2d3436; --bg: #f4f7f6; --indigo: #341f97; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0 auto; max-width: 1200px; padding: 5px; background: var(--bg); font-size: 11px; display: flex; flex-direction: column; min-height: 98vh; }
+        header { text-align: center; border-bottom: 2px solid var(--primary); margin-bottom: 8px; padding: 5px; background: #fff; }
+        header h1 { margin: 0; font-size: 1.1rem; color: var(--primary); font-weight: 900; }
+        
+        main { flex: 1; } 
+
+        .card, .form-container, .action-box, .detail-card { background: #fff; padding: 10px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 6px; }
+        #unifiedHome, #catSelectionArea, #selectionDetailArea, #finalEligibleArea { display: none; flex-direction: column; }
+        #unifiedHome { display: flex; }
+        
+        input, select { width: 100%; padding: 4px; border: 1.5px solid #ccc; border-radius: 4px; font-weight: 600; font-size: 11px; height: 30px; box-sizing: border-box; transition: border 0.3s; }
+        .error-border { border: 2px solid var(--danger) !important; box-shadow: 0 0 5px rgba(214, 48, 49, 0.5); }
+        
+        label { font-weight: 900; font-size: 8px; color: #555; text-transform: uppercase; margin-bottom: 1px; display: block; }
+        button { padding: 8px; border-radius: 6px; font-weight: 900; cursor: pointer; border: none; text-transform: uppercase; }
+
+        .disclaimer-box { background: #fff9e6; border: 1px solid #ffeaa7; padding: 10px; border-radius: 6px; margin-bottom: 8px; color: #d35400; font-size: 10px; line-height: 1.4; font-weight: 600; }
+        .disclaimer-box b { color: #c0392b; text-transform: uppercase; }
+
+        .top-nav-box { display: flex; gap: 5px; margin-bottom: 8px; position: sticky; top: 0; z-index: 100; background: var(--bg); padding: 5px 0; }
+        
+        .modal { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); display:none; justify-content:center; align-items:center; z-index:2000; }
+        .modal-content { background:white; padding:20px; border-radius:12px; width:90%; max-width:400px; position: relative; }
+        
+        #imageViewerModal { display:none; flex-direction:column; background:rgba(0,0,0,0.9); padding:10px; }
+        #generatedImage { max-width:100%; max-height:85vh; object-fit:contain; border-radius:8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        .close-img-btn { position:absolute; top:15px; right:15px; background:var(--danger); color:white; border:none; border-radius:50%; width:35px; height:35px; font-size:16px; cursor:pointer; font-weight:bold; }
+        
+        .table-wrapper { overflow-x: auto; background: white; border-radius: 6px; border: 1px solid #eee; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.72rem; }
+        th, td { padding: 8px 4px; border-bottom: 1px solid #eee; text-align: center; transition: all 0.3s ease; }
+        th { background: #f8f9fa; font-weight: 900; font-size: 8px; cursor: pointer; user-select: none; }
+        
+        .fixed-row { background-color: #e8f5e9; }
+        .ltv-breach { background-color: #ffe6e6 !important; opacity: 0.85; }
+        .ltv-breach td { color: var(--danger) !important; }
+        .ltv-breach td:not(:nth-child(4)) { text-decoration: line-through; }
+        .bound-col { color: #d35400; font-weight: 800; font-size: 8.5px; }
+
+        .stepper { display: flex; align-items: center; justify-content: center; gap: 2px; }
+        .step-btn { width: 20px; height: 25px; background: var(--primary); color: white; border-radius: 3px; font-size: 14px; cursor: pointer; }
+        .step-inp { width: 95px; text-align: center; font-weight: 950; border: 1.5px solid var(--indigo); height: 25px; font-size: 11px; color: var(--indigo); }
+
+        #suggestionsDropdown, #matrixSearchDropdown { position: absolute; width: 100%; background: #fff; z-index: 1000; border: 1px solid #ddd; display: none; box-shadow: 0 10px 20px rgba(0,0,0,0.15); }
+        .model-panel { background: #f1f2f6; padding: 10px; border-radius: 8px; border: 2px solid var(--primary); margin-bottom: 15px; }
+        .control-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 10px 0; }
+        .cust-info-vertical { background: var(--dark); color: white; padding: 10px; border-radius: 8px; margin-bottom: 8px; border-left: 5px solid var(--warning); }
+        .info-row { display: flex; justify-content: space-between; margin-bottom: 2px; }
+        .info-val { color: var(--warning); font-weight: 950; }
+        
+        .admin-link-btn { display: block; width: 100%; background: var(--indigo); color: white; padding: 12px; border-radius: 8px; text-align: center; text-decoration: none; font-weight: 900; margin-bottom: 8px; font-size: 11px; box-sizing: border-box; border: none; cursor: pointer; text-transform: uppercase;}
+
+        /* ADVANCED FOOTER STYLE */
+        footer { text-align: center; margin-top: 15px; padding: 15px 10px; background: var(--dark); color: white; border-radius: 8px; font-size: 10px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); }
+        footer p { margin: 4px 0; }
+        footer span { color: var(--warning); font-weight: 900; letter-spacing: 0.5px; }
+        .footer-branding { margin-top: 10px; padding-top: 10px; border-top: 1px solid #555; }
+        .footer-branding .author { font-size: 12px; font-weight: bold; color: #fff; }
+        .footer-branding .author b { color: var(--warning); letter-spacing: 1px; }
+        .footer-support { font-size: 10px; color: #bdc3c7; margin-top: 6px; line-height: 1.5; }
+        .wa-link { display: inline-block; margin-top: 5px; color: #25D366; font-weight: 900; font-size: 12px; text-decoration: none; background: rgba(37, 211, 102, 0.1); padding: 5px 12px; border-radius: 15px; border: 1px solid #25D366; transition: 0.3s; }
+        .wa-link:hover { background: #25D366; color: #fff; }
+    </style>
+</head>
+<body>
+
+<header><h1>🚀 Persistent Portal Master V59.0</h1></header>
+
+<main>
+    <div id="unifiedHome">
+        <div class="form-container">
+            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+                <div><label>NBFC LIMIT</label><input type="number" id="limit" placeholder="Limit"></div>
+                <div><label>MAX LTV%</label><input type="number" id="ltv" value="100" max="100" oninput="if(this.value>100)this.value=100;"></div>
+                <div><label>CUST TYPE</label>
+                    <select id="custType">
+                        <option value="NEW">NEW</option>
+                        <option value="EMI CARD">EMI CARD</option>
+                        <option value="VIRTUAL">VIRTUAL</option>
+                        <option value="W/O CARD">W/O CARD</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="action-box" style="border: 2px solid var(--primary); background: #e3f2fd; position: relative;">
+            <label>PRODUCT ENTRY</label>
+            <input type="search" id="searchBar" oninput="doSearch('searchBar', 'suggestionsDropdown', 'MAIN')" placeholder="Search model name...">
+            <div id="suggestionsDropdown"></div>
+            <div style="display:flex; gap:5px; margin-top:10px;">
+                <button onclick="quickNonTieup()" style="flex:1; background:var(--warning); color:#000;">NON TIEUP ⚡</button>
+                <button onclick="openFullManualModal()" style="flex:1; background:var(--indigo); color:#fff;">MANUAL STACK ➕</button>
+            </div>
+        </div>
+
+        <div class="action-box">
+            <div class="disclaimer-box">
+                <b>Disclaimer:</b> Is sheet mein update kiye gaye models aur schemes use karne se pehle kripya system ki original scheme ke saath <b>verify zaroor karein</b>. Agar koi scheme isme nahi hai, toh use manually update karein.
+            </div>
+
+            <button onclick="downloadMasterSheet()" class="admin-link-btn">
+                📥 DOWNLOAD ADMIN MASTER SHEET
+            </button>
+            
+            <label for="fileInp" style="background:var(--success); color:white; padding:12px; border-radius:8px; display:block; text-align:center; font-weight:900; cursor:pointer;">
+                📂 IMPORT EXCEL (Local)
+            </label>
+            <input type="file" id="fileInp" accept=".xlsx,.xls" onchange="importExcel()" style="display:none;">
+            
+            <p id="dbStatus" style="text-align:center; color:var(--danger); font-weight:bold; margin-top:5px; font-size:11px;">❌ No Database Loaded</p>
+        </div>
+    </div>
+
+    <div id="imageViewerModal" class="modal">
+        <button class="close-img-btn" onclick="closeImageViewer()">X</button>
+        <div style="color:white; font-size:12px; margin-bottom:10px; font-weight:bold; text-align:center;">Long press image to Share/Save 👇</div>
+        <div style="display:flex; justify-content:center; align-items:center;"><img id="generatedImage" src="" alt="Quotation"></div>
+    </div>
+
+    <div id="manualModal" class="modal">
+        <div class="modal-content">
+            <h3 id="modalTitle">Manual Scheme</h3>
+            <div id="modelNameInputArea"><label>Model Name</label><input type="text" id="manName" value="MANUAL MODEL" style="width:100%; box-sizing:border-box;"></div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px;">
+                <div><label>TENURE (Max)</label><input type="number" id="manTen" value="12"></div>
+                <div><label>ADVANCE</label><input type="number" id="manAdv" value="4"></div>
+                <div><label>DBD %</label><input type="number" id="manDbd" value="0"></div>
+                <div><label>PF (₹)</label><input type="number" id="manPf" value="0"></div>
+                <div><label>ROI %</label><input type="number" id="manRoi" value="0"></div>
+                <div><label>FIXED EMI (₹)</label><input type="number" id="manFixed" value="0"></div>
+            </div>
+            <input type="hidden" id="targetPIdx" value="">
+            <button onclick="executeManualAction()" style="width:100%; background:var(--success); color:white; margin-top:15px;">ADD SCHEME</button>
+            <button onclick="closeManualModal()" style="width:100%; background:var(--danger); color:white; margin-top:5px;">CANCEL</button>
+        </div>
+    </div>
+
+    <div id="catSelectionArea"><div class="detail-card"><h2 style="text-align:center;">SELECT CATEGORY</h2><div id="categoryGrid"></div><button onclick="goHome()" style="width:100%; background:var(--dark); color:white; margin-top:10px;">BACK</button></div></div>
+
+    <div id="selectionDetailArea">
+        <div class="top-nav-box"><button onclick="goToFinalPage()" style="flex:2; background:var(--success); color:white;">PROCEED TO MATRIX &rarr;</button><button onclick="goHome()" style="flex:1; background:var(--dark); color:white;">HOME</button></div>
+        <div class="detail-card"><h3 id="page2Title"></h3><div class="table-wrapper"><table><thead id="page2Head"></thead><tbody id="page2SchemeList"></tbody></table></div></div>
+    </div>
+
+    <div id="finalEligibleArea">
+        <div class="top-nav-box"><button onclick="generateCustomerImage()" style="flex:2; background:var(--success); color:white;">IMAGE</button><button onclick="goHome()" style="flex:1; background:var(--indigo); color:white;">NEW SESSION</button></div>
+        <div class="cust-info-vertical">
+            <div class="info-row"><span>LIMIT:</span> <span class="info-val" id="infoLimit">₹0</span></div>
+            <div class="info-row"><span>MAX LTV:</span> <span class="info-val" id="infoLtv">0%</span></div>
+            <div class="info-row"><span>TYPE:</span> <span class="info-val" id="infoType">-</span></div>
+        </div>
+        
+        <div class="action-box" style="background:#fff9e6; border:1.5px solid var(--warning); position:relative; padding:8px; margin-bottom:10px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <label style="color:#d35400; white-space:nowrap; margin:0; font-size:11px;">+ ADD PRODUCT:</label>
+                <input type="search" id="matrixSearch" oninput="doSearch('matrixSearch', 'matrixSearchDropdown', 'EXTRA')" placeholder="Add to compare..." style="height:32px; font-size:11px; flex:1;">
+                <button onclick="openFullManualModal()" style="background:var(--indigo); color:white; height:32px; padding:0 12px; font-size:10px; font-weight:bold; border-radius:4px; border:none; cursor:pointer;">+ MANUAL STACK</button>
+            </div>
+            <div id="matrixSearchDropdown"></div>
+        </div>
+        
+        <div id="multiModelContainer"></div>
+    </div>
+</main>
+
+<footer>
+    <p><span>🚀 PERSISTENT PORTAL MASTER</span> | Version 59.0</p>
+    <p style="color: #bdc3c7;">Designed & Developed for Finance Retail Operations</p>
+    
+    <div class="footer-branding">
+        <p class="author">Crafted by <b>The_lakshya</b></p>
+        <p class="footer-support">
+            Kisi bhi help, support ya suggestions ke liye bejhijhak connect karein:<br>
+            <a href="https://wa.me/918087313624?text=Hi%20Lakshya!%20Mujhe%20Persistent%20Portal%20ke%20baare%20mein%20help/suggestion%20chahiye." target="_blank" class="wa-link">
+                💬 WhatsApp : 8087313624
+            </a>
+        </p>
+    </div>
+</footer>
+
+<script>
+    const CLOUD_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQbqqK70wY9J_xOq9l92N9Z4FGxh46HCwuC9pfvBjYvmfHapFUmi8oBRFP-2J--1Q/pub?output=xlsx";
+
+    let db_records = [];
+    let current_products = [];
+    let sortConfigs = [];
+    const SPECIAL_MODEL = "NON TIEUP";
+
+    // --- NEW: AUTO-LOAD DATABASE ON APP START ---
+    window.onload = function() {
+        let savedDB = localStorage.getItem("persistent_db");
+        if (savedDB) {
+            try {
+                db_records = JSON.parse(savedDB);
+                if (db_records.length > 0) {
+                    let statusEl = document.getElementById('dbStatus');
+                    statusEl.innerText = `✅ Database Active (${db_records.length} Schemes Loaded)`;
+                    statusEl.style.color = "var(--success)";
+                }
+            } catch(e) {
+                console.error("Failed to load saved DB");
+            }
+        }
+    };
+    // --------------------------------------------
+
+    function isLimitValid() {
+        let limitInput = document.getElementById('limit');
+        let limitValue = parseFloat(limitInput.value);
+        if (isNaN(limitValue) || limitValue <= 0) {
+            limitInput.classList.add('error-border');
+            alert("⚠️ WARNING: Kripya pehle NBFC LIMIT enter karein. Limit ke bina calculations process nahi hongi.");
+            setTimeout(() => { limitInput.classList.remove('error-border'); }, 3000);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            limitInput.focus();
+            return false;
+        }
+        limitInput.classList.remove('error-border');
+        return true;
+    }
+
+    function downloadMasterSheet() {
+        const userConfirm = confirm("⚠️ ATTENTION: Admin sheet download karne se pehle, kripya verify karein ki models aur schemes latest hain. Inhe use karne se pehle system schemes ke saath match karna aapki responsibility hai. Kya aap aage badhna chahte hain?");
+        if (userConfirm) {
+            let hiddenLink = document.createElement('a');
+            hiddenLink.href = CLOUD_URL;
+            hiddenLink.setAttribute('download', 'Admin_Master_Sheet.xlsx');
+            hiddenLink.setAttribute('target', '_top'); 
+            document.body.appendChild(hiddenLink);
+            hiddenLink.click();
+            document.body.removeChild(hiddenLink);
+        }
+    }
+
+    function importExcel() {
+        if (typeof XLSX === "undefined") { alert("❌ Error: XLSX library not loaded. Check internet connection."); return; }
+        let inputElement = document.getElementById('fileInp');
+        let f = inputElement.files[0]; if(!f) return; 
+        let r = new FileReader(); 
+        
+        document.getElementById('dbStatus').innerText = "⏳ Processing Excel...";
+        document.getElementById('dbStatus').style.color = "var(--warning)";
+
+        r.onload = e => { 
+            try {
+                let wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'}); 
+                const opts = { raw: false, defval: "" }; 
+                let s1 = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], opts) || []; 
+                let s2 = wb.SheetNames.length > 1 ? XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[1]], opts) : []; 
+                let mapped1 = s1.map(r => mapData(r, "REG")).filter(x => x && (x.tenure > 0 || x.fixedEmi > 0));
+                let mapped2 = s2.map(r => mapData(r, SPECIAL_MODEL)).filter(x => x && (x.tenure > 0 || x.fixedEmi > 0));
+                db_records = [...mapped1, ...mapped2]; 
+                
+                if(db_records.length > 0) {
+                    localStorage.setItem("persistent_db", JSON.stringify(db_records));
+                    document.getElementById('dbStatus').innerText = `✅ Database Active (${db_records.length} Schemes Loaded)`;
+                    document.getElementById('dbStatus').style.color = "var(--success)";
+                    alert(`✅ Success! Imported and saved ${db_records.length} schemes permanently.`);
+                } else {
+                    throw new Error("No valid data found in Excel.");
+                }
+            } catch(err) { 
+                document.getElementById('dbStatus').innerText = "❌ Import Failed";
+                document.getElementById('dbStatus').style.color = "var(--danger)";
+                alert("❌ Format Error: " + err.message); 
+            } finally { 
+                inputElement.value = ''; 
+            }
+        }; 
+        r.readAsArrayBuffer(f); 
+    }
+
+    function findVal(row, targets) { if(!row) return null; let key = Object.keys(row).find(k => targets.includes(k.toUpperCase().replace(/\s/g, ''))); return key ? row[key] : null; }
+    
+    function mapData(row, type) { 
+        if(!row) return null;
+        let minL = parseFloat(findVal(row, ['MINLOAN', 'MINL'])) || 0;
+        let maxL = parseFloat(findVal(row, ['MAXLOAN', 'MAXL'])) || 9999999;
+        let fixedAmt = parseFloat(findVal(row, ['FIXEDEMI', 'FIXED'])) || 0;
+        let ten = parseInt(findVal(row, ['TOTALTENURE', 'TENURE', 'TA'])) || 0;
+        let adv = parseInt(findVal(row, ['ADVANCEEMI', 'ADV'])) || 0;
+        return { model: type === SPECIAL_MODEL ? SPECIAL_MODEL : String(findVal(row,['MODEL','BRANDMODEL'])||"").toUpperCase(), tenure: ten, advEmi: adv, dbd: parseFloat(findVal(row,['DBD','DBD%'])||0), pf: parseInt(findVal(row,['PF','PROCESSINGFEE'])||0), roi: parseFloat(findVal(row,['ROI','ROI%'])||0), fixedEmi: fixedAmt, category: String(findVal(row,['CATEGORY','CAT'])||""), minLoan: minL, maxLoan: maxL }; 
+    }
+
+    function goHome() { current_products = []; sortConfigs = []; document.querySelectorAll('main > div').forEach(d => d.style.display='none'); document.getElementById('unifiedHome').style.display='flex'; }
+    function closeImageViewer() { document.getElementById('imageViewerModal').style.display='none'; }
+    
+    // --- COMPLETELY RESTORED MANUAL MODAL FUNCTIONS ---
+    function openFullManualModal() { 
+        if (!isLimitValid()) return; 
+        document.getElementById('modalTitle').innerText = "Add Manual Product"; 
+        document.getElementById('modelNameInputArea').style.display = 'block'; 
+        document.getElementById('targetPIdx').value = "NEW"; 
+        document.getElementById('manualModal').style.display='flex'; 
+    }
+    
+    function openSchemeOnlyModal(pIdx) { 
+        if (!isLimitValid()) return;
+        document.getElementById('modalTitle').innerText = "Add Custom Scheme"; 
+        document.getElementById('modelNameInputArea').style.display = 'none'; 
+        document.getElementById('targetPIdx').value = pIdx; 
+        document.getElementById('manualModal').style.display='flex'; 
+    }
+    
+    function closeManualModal() { 
+        document.getElementById('manualModal').style.display='none'; 
+    }
+    // -------------------------------------------------
+
+    function doSearch(id, ddId, mode) {
+        if(db_records.length === 0) {
+            alert("⚠️ Kripya pehle Excel file import karein!");
+            return;
+        }
+        let q = document.getElementById(id).value.toUpperCase(); let dd = document.getElementById(ddId);
+        if(!q) { dd.style.display='none'; return; }
+        let matches = [...new Set(db_records.filter(r => r.model !== SPECIAL_MODEL).map(r => r.model))].filter(m => m.includes(q)).slice(0,10);
+        dd.innerHTML = matches.map(m => `<div style="padding:10px; border-bottom:1px solid #eee; cursor:pointer; font-weight:800;" onclick="selectModel('${m}', '${mode}')">${m}</div>`).join('');
+        dd.style.display = matches.length ? 'block' : 'none';
+    }
+
+    function selectModel(name, mode) {
+        if (mode === 'MAIN' && !isLimitValid()) return;
+        let raw = db_records.filter(r => r.model === name);
+        let ltvLimit = parseFloat(document.getElementById('ltv').value) || 100;
+        let matrixEligible = raw.filter(s => s.fixedEmi > 0 || name.startsWith(SPECIAL_MODEL) || (s.tenure > 0 && ((s.tenure-s.advEmi)/s.tenure)*100 <= ltvLimit));
+        let newProd = { name, isNonTieup: name.startsWith(SPECIAL_MODEL), schemes: matrixEligible, allSchemes: raw, inputs: { mrp: "", cap: "", target: "", gtl: 0, rfc: 0, exw: "", niva: "", margin: "", dealer: "", surch: "" }, isManual: false };
+        if(mode === 'MAIN') { current_products = [newProd]; showPage2(); }
+        else { current_products.push(newProd); sortConfigs.push({ key: 'currentTenure', dir: 'asc' }); document.getElementById('matrixSearch').value = ''; document.getElementById('matrixSearchDropdown').style.display = 'none'; renderMatrix(); }
+    }
+
+    function selectCategory(catName) {
+        let raw = db_records.filter(r => r.model === SPECIAL_MODEL && r.category === catName);
+        let newProd = { name: SPECIAL_MODEL + " - " + catName, isNonTieup: true, schemes: raw, allSchemes: raw, inputs: { mrp: "", cap: "", target: "", gtl: 0, rfc: 0, exw: "", niva: "", margin: "", dealer: "", surch: "" }, isManual: false };
+        current_products = [newProd]; showPage2();
+    }
+
+    function showPage2() {
+        document.querySelectorAll('main > div').forEach(d => d.style.display='none'); document.getElementById('selectionDetailArea').style.display='flex';
+        document.getElementById('page2Title').innerText = current_products[0].name;
+        let isNT = current_products[0].isNonTieup; let ltvLimit = parseFloat(document.getElementById('ltv').value) || 100;
+        let headHtml = `<tr><th>Category</th><th>T/A</th><th>DBD%</th><th>PF</th><th>ROI%</th><th>Fixed</th>`;
+        if (isNT) headHtml += `<th>MIN L</th><th>MAX L</th>`;
+        headHtml += `<th>LTV%</th></tr>`;
+        document.getElementById('page2Head').innerHTML = headHtml;
+        document.getElementById('page2SchemeList').innerHTML = current_products[0].allSchemes.map(s => {
+            let ltv = s.tenure > 0 ? ((s.tenure - s.advEmi) / s.tenure) * 100 : 0; let breachClass = (s.fixedEmi == 0 && !isNT && ltv > ltvLimit) ? 'ltv-breach' : '';
+            let rowHtml = `<tr class="${breachClass}"><td>${s.category}</td><td>${s.tenure}/${s.advEmi}</td><td>${+parseFloat(s.dbd).toFixed(3)}%</td><td>₹${s.pf}</td><td>${+parseFloat(s.roi).toFixed(2)}%</td><td>${s.fixedEmi > 0 ? '₹'+s.fixedEmi : 'N/A'}</td>`;
+            if (isNT) rowHtml += `<td class="bound-col">${s.minLoan}</td><td class="bound-col">${s.maxLoan < 9999999 ? s.maxLoan : 'NO LMT'}</td>`;
+            rowHtml += `<td>${Math.round(ltv)}%</td></tr>`;
+            return rowHtml;
+        }).join('');
+    }
+
+    function goToFinalPage() {
+        document.getElementById('infoLimit').innerText = "₹" + (document.getElementById('limit').value || 0);
+        document.getElementById('infoLtv').innerText = (document.getElementById('ltv').value || 0) + "%";
+        document.getElementById('infoType').innerText = document.getElementById('custType').value;
+        document.querySelectorAll('main > div').forEach(d => d.style.display='none'); document.getElementById('finalEligibleArea').style.display='flex';
+        renderMatrix();
+    }
+
+    function renderMatrix() {
+        let container = document.getElementById('multiModelContainer'); container.innerHTML = "";
+        current_products.forEach((prod, pIdx) => {
+            let div = document.createElement('div'); div.className = 'model-panel';
+            let isNT = prod.isNonTieup;
+            div.innerHTML = `
+                <div style="font-weight:900; color:var(--indigo); border-bottom:1px solid #ccc; padding-bottom:5px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-size:14px; text-transform:uppercase;">${prod.name}</span>
+                    <div style="display:flex; gap:8px;">
+                        <button onclick="openSchemeOnlyModal(${pIdx})" style="background:var(--success); color:white; font-size:10px; font-weight:bold; padding:6px 10px; border-radius:4px; cursor:pointer; border:none;">+ MANUAL SCHEME</button>
+                        <button onclick="current_products.splice(${pIdx},1);renderMatrix();" style="background:var(--danger); color:white; font-size:10px; font-weight:bold; padding:6px 10px; border-radius:4px; cursor:pointer; border:none;">REMOVE</button>
+                    </div>
+                </div>
+                <div class="control-grid">
+                    <div><label>MRP</label><input type="number" id="mrp_${pIdx}" value="${prod.inputs.mrp}" placeholder="0" oninput="updateVal(${pIdx},'mrp',this.value)"></div>
+                    <div><label>EMI CAP</label><input type="number" value="${prod.inputs.cap}" placeholder="MAX" oninput="updateVal(${pIdx},'cap',this.value)"></div>
+                    <div><label>TARGET DP</label><input type="number" value="${prod.inputs.target}" placeholder="0" oninput="updateVal(${pIdx},'target',this.value)"></div>
+                    <div><label>GTL</label><select id="gtl_${pIdx}" onchange="updateVal(${pIdx},'gtl',this.value)"><option value="0">0</option><option value="699">699</option><option value="1099">1099</option><option value="1199">1199</option><option value="1499">1499</option><option value="1799">1799</option><option value="2398">2398</option></select></div>
+                    <div><label>RFC</label><select id="rfc_${pIdx}" onchange="updateVal(${pIdx},'rfc',this.value)"><option value="0">0</option><option id="rfc_opt_${pIdx}" value="0">0</option></select></div>
+                    <div><label>EXW</label><input type="number" value="${prod.inputs.exw}" placeholder="0" oninput="updateVal(${pIdx},'exw',this.value)"></div>
+                    <div><label>NIVA BUPA</label><input type="number" value="${prod.inputs.niva}" placeholder="0" oninput="updateVal(${pIdx},'niva',this.value)"></div>
+                    <div><label>MARGIN</label><input type="number" value="${prod.inputs.margin}" placeholder="0" oninput="updateVal(${pIdx},'margin',this.value)"></div>
+                    <div><label>DEALER CONTRI</label><input type="number" value="${prod.inputs.dealer}" placeholder="0" oninput="updateVal(${pIdx},'dealer',this.value)"></div>
+                    <div><label>SURCHARGE</label><input type="number" value="${prod.inputs.surch}" placeholder="0" oninput="updateVal(${pIdx},'surch',this.value)"></div>
+                </div>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th onclick="sortM(${pIdx},'currentTenure')">T/A ↕</th>
+                                ${isNT ? '<th onclick="sortM('+pIdx+',\'minLoan\')">MIN L ↕</th><th onclick="sortM('+pIdx+',\'maxLoan\')">MAX L ↕</th>' : '<th onclick="sortM('+pIdx+',\'nbfcMaxL\')">NBFC LMT ↕</th>'}
+                                <th onclick="sortM(${pIdx},'loan')">LOAN ↕</th><th onclick="sortM(${pIdx},'dp')">NET DP ↕</th><th onclick="sortM(${pIdx},'emi')">EMI ↕</th><th onclick="sortM(${pIdx},'inst')">INST ↕</th><th onclick="sortM(${pIdx},'daily')">DAILY ↕</th>
+                            </tr>
+                        </thead>
+                        <tbody id="body_${pIdx}"></tbody>
+                    </table>
+                </div>`;
+            container.appendChild(div);
+            if(prod.inputs.mrp > 0) syncInsurance(pIdx, prod.inputs.mrp, prod.inputs.mrp, 'NONE');
+            recalcModel(pIdx);
+        });
+    }
+
+    function syncInsurance(pIdx, mrpVal, baseLoanVal, triggerType = 'NONE') {
+        let gtl = baseLoanVal > 100000 ? 2398 : (baseLoanVal > 50000 ? 1799 : (baseLoanVal > 30000 ? 1499 : (baseLoanVal > 10000 ? 1199 : (baseLoanVal > 0 ? 699 : 0))));
+        let rfcSlab = 0;
+        if(mrpVal > 100000) rfcSlab = 11438; else if(mrpVal > 60000) rfcSlab = 8686; else if(mrpVal > 50000) rfcSlab = 5720; else if(mrpVal > 40000) rfcSlab = 4219; else if(mrpVal > 30000) rfcSlab = 3648; else if(mrpVal > 25000) rfcSlab = 3215; else if(mrpVal > 20000) rfcSlab = 2695; else if(mrpVal > 15000) rfcSlab = 2147; else if(mrpVal > 10000) rfcSlab = 1631; else if(mrpVal > 0) rfcSlab = 1109;
+
+        if(triggerType === 'MRP') { current_products[pIdx].inputs.gtl = gtl; current_products[pIdx].inputs.rfc = 0; } 
+        else if (triggerType === 'LOAN') { current_products[pIdx].inputs.gtl = gtl; }
+
+        let gSelect = document.getElementById(`gtl_${pIdx}`); let rOpt = document.getElementById(`rfc_opt_${pIdx}`); let rSelect = document.getElementById(`rfc_${pIdx}`);
+        if(gSelect) gSelect.value = current_products[pIdx].inputs.gtl;
+        if(rOpt) { rOpt.value = rfcSlab; rOpt.innerText = rfcSlab; }
+        if(rSelect) rSelect.value = current_products[pIdx].inputs.rfc;
+    }
+
+    function updateVal(pIdx, field, val) {
+        let v = val === "" ? "" : parseFloat(val) || 0; current_products[pIdx].inputs[field] = v;
+        if(field === 'mrp') syncInsurance(pIdx, parseFloat(v)||0, parseFloat(v)||0, 'MRP');
+        recalcModel(pIdx);
+    }
+
+    function recalcModel(pIdx) {
+        let prod = current_products[pIdx], limit = parseFloat(document.getElementById('limit').value)||0, type = document.getElementById('custType').value;
+        let fee = (type === 'EMI CARD') ? 270 : (type === 'W/O CARD' ? 320 : 850), inp = prod.inputs, totalFees = fee + (parseFloat(inp.niva)||0) + (parseFloat(inp.margin)||0) + (parseFloat(inp.dealer)||0) + (parseFloat(inp.surch)||0);
+
+        let currentLimit = limit > 0 ? limit : 9999999;
+        let inputMrp = parseFloat(inp.mrp) || 0;
+
+        prod.calculatedData = prod.schemes.map((s, dIdx) => {
+            let isFixed = s.fixedEmi > 0;
+            let loan = 0, nbfcMaxL = 0, dpExact = 0, dpRounded = 0, emi = 0, inst = 0, currentTenure = s.tenure;
+            nbfcMaxL = (currentLimit * s.tenure) / (s.tenure - s.advEmi || 1);
+            
+            let dbdRate = (s.dbd * 1.18 / 100);
+            let roiRate = s.roi / 1200;
+            let roiRateDP = roiRate * s.advEmi; 
+
+            if (isFixed) {
+                let maxRemainingEmis = Math.floor(currentLimit / s.fixedEmi);
+                let maxTotalTenure = maxRemainingEmis + s.advEmi;
+                nbfcMaxL = maxTotalTenure * s.fixedEmi; 
+
+                if (inputMrp > 0) {
+                    currentTenure = Math.floor(inputMrp / s.fixedEmi); 
+                    if (currentTenure > maxTotalTenure) currentTenure = maxTotalTenure;
+                    if (currentTenure < 1) currentTenure = 1;
+                    
+                    loan = currentTenure * s.fixedEmi;
+                    if (loan > inputMrp) loan = inputMrp; 
+                    
+                    if (parseFloat(inp.target) > 0) {
+                        let numerator = parseFloat(inp.target) - inputMrp - (s.fixedEmi * s.advEmi) - s.pf - totalFees;
+                        let denominator = dbdRate + roiRateDP - 1;
+                        let solvedLoan = numerator / denominator;
+                        
+                        let solvedTenure = Math.floor(solvedLoan / s.fixedEmi);
+                        if (solvedTenure > maxTotalTenure) solvedTenure = maxTotalTenure;
+                        loan = Math.max(0, solvedTenure * s.fixedEmi); 
+                        if (loan > inputMrp) loan = inputMrp; 
+                        currentTenure = Math.floor(loan / s.fixedEmi) || 1;
+                    }
+                    
+                    let roiInDp = loan * roiRateDP; 
+                    dpExact = inputMrp - loan + (s.fixedEmi * s.advEmi) + (loan * dbdRate) + s.pf + totalFees + roiInDp;
+                } else { 
+                    currentTenure = s.tenure || 1; 
+                    if (currentTenure > maxTotalTenure) currentTenure = maxTotalTenure;
+                    loan = currentTenure * s.fixedEmi;
+                }
+                
+                inst = currentTenure - s.advEmi; if(inst < 1) inst = 1;
+                let insTotal = (parseFloat(inp.gtl)||0) + (parseFloat(inp.rfc)||0) + (parseFloat(inp.exw)||0);
+                
+                let roiInEmi = loan * roiRate; 
+                emi = s.fixedEmi + (insTotal / inst) + roiInEmi;
+            } else {
+                let absoluteMax = Math.min(inputMrp > 0 ? inputMrp : 999999, nbfcMaxL);
+                if (prod.isNonTieup && s.maxLoan < 9999999) absoluteMax = Math.min(absoluteMax, s.maxLoan);
+                loan = absoluteMax;
+                
+                if(parseFloat(inp.target) > 0 && inputMrp > 0) {
+                    let advRate = s.advEmi / s.tenure;
+                    let numerator = parseFloat(inp.target) - inputMrp - s.pf - totalFees;
+                    let denominator = advRate + dbdRate + roiRateDP - 1;
+                    let solvedLoan = numerator / denominator;
+                    loan = Math.min(loan, Math.max(0, Math.floor(solvedLoan)));
+                }
+                
+                inst = s.tenure - s.advEmi; if(inst < 1) inst = 1;
+                let insTotal = (parseFloat(inp.gtl)||0)+(parseFloat(inp.rfc)||0)+(parseFloat(inp.exw)||0);
+                
+                let roiInEmi = loan * roiRate; 
+                emi = (loan / s.tenure) + (insTotal / inst) + roiInEmi;
+                
+                if(emi > parseFloat(inp.cap) && parseFloat(inp.cap) > 0) {
+                    loan = (parseFloat(inp.cap) - (insTotal/inst)) / ( (1/s.tenure) + roiRate );
+                    roiInEmi = loan * roiRate;
+                    emi = (loan / s.tenure) + (insTotal / inst) + roiInEmi;
+                }
+                
+                let roiInDp = loan * roiRateDP; 
+                dpExact = inputMrp - loan + ((loan/s.tenure) * s.advEmi) + (loan * dbdRate) + s.pf + totalFees + roiInDp;
+            }
+
+            if(dpExact > 0) dpRounded = Math.ceil(dpExact / 10) * 10; else dpRounded = dpExact;
+            return { ...s, currentTenure, nbfcMaxL, loan, dp: dpRounded, emi, inst, daily: emi/30, dIdx, isFixed };
+        });
+        renderRows(pIdx);
+    }
+
+    function renderRows(pIdx) {
+        let prod = current_products[pIdx]; if(!sortConfigs[pIdx]) sortConfigs[pIdx] = {key: 'currentTenure', dir: 'asc'};
+        let conf = sortConfigs[pIdx];
+        prod.calculatedData.sort((a,b) => conf.dir==='asc' ? a[conf.key]-b[conf.key] : b[conf.key]-a[conf.key]);
+        let ltvLimit = parseFloat(document.getElementById('ltv').value) || 100;
+        let isNT = prod.isNonTieup;
+        document.getElementById(`body_${pIdx}`).innerHTML = prod.calculatedData.map(d => {
+            let curLTV = d.currentTenure > 0 ? ((d.currentTenure - d.advEmi) / d.currentTenure) * 100 : 0;
+            let isLtvB = curLTV > ltvLimit; let isBoundB = false;
+            if (isNT && prod.inputs.mrp > 0) { if (d.loan < d.minLoan || d.loan > d.maxLoan) isBoundB = true; }
+            let rowClass = (d.isFixed ? "fixed-row" : "") + (isLtvB || isBoundB ? " ltv-breach" : "");
+            return `<tr id="row_${pIdx}_${d.dIdx}" class="${rowClass}"><td id="ta_${pIdx}_${d.dIdx}">${d.currentTenure}/${d.advEmi}</td>${isNT ? '<td class="bound-col">'+(d.minLoan>0?'₹'+d.minLoan:'0')+'</td><td class="bound-col">'+(d.maxLoan<9999999?'₹'+d.maxLoan:'NO LMT')+'</td>' : '<td style="color:#777; font-size:9px;">₹'+Math.floor(d.nbfcMaxL)+'</td>'}<td><div class="stepper"><button class="step-btn" onclick="step(${pIdx},${d.dIdx},-${d.isFixed ? d.fixedEmi : 1000})">-</button><input id="l_${pIdx}_${d.dIdx}" type="number" value="${Math.floor(d.loan)}" class="step-inp" oninput="manual(${pIdx},${d.dIdx})"><button class="step-btn" onclick="step(${pIdx},${d.dIdx},${d.isFixed ? d.fixedEmi : 1000})">+</button></div></td><td id="dp_${pIdx}_${d.dIdx}" style="color:var(--success); font-weight:950;">₹${Math.round(d.dp).toLocaleString()}</td><td id="emi_${pIdx}_${d.dIdx}" style="color:var(--primary); font-weight:950;">₹${Math.round(d.emi).toLocaleString()}</td><td id="inst_${pIdx}_${d.dIdx}" style="font-weight:900;">${d.inst}</td><td id="day_${pIdx}_${d.dIdx}">₹${Math.round(d.daily).toLocaleString()}</td></tr>`;
+        }).join('');
+    }
+
+    function step(pIdx, dIdx, amt) { let el = document.getElementById(`l_${pIdx}_${dIdx}`); el.value = Math.max(0, parseInt(el.value) + amt); manual(pIdx, dIdx); }
+
+    function manual(pIdx, dIdx) {
+        let el = document.getElementById(`l_${pIdx}_${dIdx}`), loan = parseFloat(el.value) || 0, prod = current_products[pIdx], d = prod.calculatedData.find(x => x.dIdx === dIdx), inp = prod.inputs, type = document.getElementById('custType').value;
+        let fee = (type === 'EMI CARD') ? 270 : (type === 'W/O CARD' ? 320 : 850), totalFees = fee + (parseFloat(inp.niva)||0) + (parseFloat(inp.margin)||0) + (parseFloat(inp.dealer)||0) + (parseFloat(inp.surch)||0);
+        let ltvLimit = parseFloat(document.getElementById('ltv').value) || 100;
+        let limit = parseFloat(document.getElementById('limit').value)||0;
+        let currentLimit = limit > 0 ? limit : 9999999;
+        let inputMrp = parseFloat(inp.mrp) || 0;
+        
+        syncInsurance(pIdx, inputMrp, loan, 'LOAN'); 
+        
+        let dbdRate = (d.dbd * 1.18 / 100);
+        let roiRate = d.roi / 1200;
+        let roiRateDP = roiRate * d.advEmi; 
+        
+        if (d.isFixed) {
+            let maxRemainingEmis = Math.floor(currentLimit / d.fixedEmi);
+            let maxTotalTenure = maxRemainingEmis + d.advEmi;
+            let maxGrossLoan = maxTotalTenure * d.fixedEmi;
+            d.nbfcMaxL = maxGrossLoan; 
+
+            let calcTenure = Math.floor(loan / d.fixedEmi) || 1;
+            let maxBoundary = Math.min(maxGrossLoan, prod.isNonTieup ? d.maxLoan : 9999999, inputMrp > 0 ? inputMrp : 9999999);
+            
+            if (loan > maxBoundary) { 
+                loan = Math.floor(maxBoundary / d.fixedEmi) * d.fixedEmi; 
+                calcTenure = Math.floor(loan / d.fixedEmi) || 1; 
+            }
+            el.value = loan;
+            
+            let roiInEmi = loan * roiRate; 
+            let roiInDp = loan * roiRateDP;  
+
+            let dpE = inputMrp - loan + (d.fixedEmi * d.advEmi) + (loan * dbdRate) + d.pf + totalFees + roiInDp;
+            let dpR = Math.ceil(dpE / 10) * 10; let inst = calcTenure - d.advEmi; if(inst < 1) inst = 1;
+            let emi = d.fixedEmi + (((parseFloat(inp.gtl)||0) + (parseFloat(inp.rfc)||0) + (parseFloat(inp.exw)||0)) / inst) + roiInEmi;
+            
+            document.getElementById(`ta_${pIdx}_${dIdx}`).innerText = `${calcTenure}/${d.advEmi}`;
+            document.getElementById(`inst_${pIdx}_${dIdx}`).innerText = inst;
+            d.loan = loan; d.currentTenure = calcTenure; d.dp = dpR; d.inst = inst; d.emi = emi;
+        } else {
+            let nbfcMaxL = (currentLimit * d.tenure) / (d.tenure - d.advEmi || 1);
+            let maxBoundary = Math.min(inputMrp > 0 ? inputMrp : 999999, nbfcMaxL, prod.isNonTieup ? d.maxLoan : 9999999);
+            if(loan > maxBoundary) { loan = maxBoundary; el.value = Math.floor(loan); }
+            
+            let roiInEmi = loan * roiRate; 
+            let roiInDp = loan * roiRateDP;  
+
+            let dpE = inputMrp - loan + ((loan/d.tenure) * d.advEmi) + (loan * dbdRate) + d.pf + totalFees + roiInDp;
+            let dpR = Math.ceil(dpE / 10) * 10;
+            let inst = d.tenure - d.advEmi; if(inst < 1) inst = 1;
+            let insTotal = (parseFloat(inp.gtl)||0)+(parseFloat(inp.rfc)||0)+(parseFloat(inp.exw)||0);
+            let emi = (loan / d.tenure) + (insTotal / inst) + roiInEmi;
+            
+            d.loan = loan; d.dp = dpR; d.emi = emi;
+        }
+        document.getElementById(`dp_${pIdx}_${dIdx}`).innerText = "₹" + Math.round(d.dp).toLocaleString();
+        document.getElementById(`emi_${pIdx}_${dIdx}`).innerText = "₹" + Math.round(d.emi).toLocaleString();
+        let curLTV = d.currentTenure > 0 ? ((d.currentTenure - d.advEmi) / d.currentTenure) * 100 : 0;
+        let isB = (d.isFixed==false && !prod.isNonTieup && curLTV > ltvLimit) || (prod.isNonTieup && loan > 0 && (loan < d.minLoan || loan > d.maxLoan));
+        let rowEl = document.getElementById(`row_${pIdx}_${dIdx}`); if(rowEl) isB ? rowEl.classList.add('ltv-breach') : rowEl.classList.remove('ltv-breach');
+    }
+
+    function sortM(pIdx, key) { let conf = sortConfigs[pIdx]; conf.dir = (conf.key === key && conf.dir === 'asc') ? 'desc' : 'asc'; conf.key = key; renderRows(pIdx); }
+    
+    function executeManualAction() {
+        let mode = document.getElementById('targetPIdx').value;
+        let scheme = { tenure: parseInt(document.getElementById('manTen').value), advEmi: parseInt(document.getElementById('manAdv').value), dbd: parseFloat(document.getElementById('manDbd').value)||0, pf: parseInt(document.getElementById('manPf').value)||0, roi: parseFloat(document.getElementById('manRoi').value)||0, fixedEmi: parseInt(document.getElementById('manFixed').value)||0, minLoan: 0, maxLoan: 9999999, category: "MANUAL" };
+        if(mode === "NEW") {
+            let name = document.getElementById('manName').value.toUpperCase() || "MANUAL MODEL";
+            current_products.push({ name: name, schemes: [scheme], allSchemes: [], inputs: { mrp: "", cap: "", target: "", gtl: 0, rfc: 0, exw: "", niva: "", margin: "", dealer: "", surch: "" }, isManual: true });
+            sortConfigs.push({ key: 'currentTenure', dir: 'asc' }); 
+            if(document.getElementById('finalEligibleArea').style.display !== 'flex') goToFinalPage();
+            else renderMatrix();
+        } else { current_products[mode].schemes.push(scheme); recalcModel(parseInt(mode)); }
+        closeManualModal();
+    }
+    
+    function quickNonTieup() { 
+        if (!isLimitValid()) return; 
+        if(db_records.length === 0) return alert("⚠️ Kripya pehle Excel file import karein!");
+
+        let tieup = db_records.filter(r => r.model === SPECIAL_MODEL); let cats = [...new Set(tieup.map(r => r.category))].sort(); document.getElementById('categoryGrid').innerHTML = cats.map(c => `<div class="cat-btn" style="background:var(--indigo);color:white;padding:15px;margin:5px;border-radius:8px;cursor:pointer;font-weight:900;text-align:center;" onclick="selectCategory('${c}')">${c}</div>`).join(''); document.querySelectorAll('main > div').forEach(d => d.style.display='none'); document.getElementById('catSelectionArea').style.display='flex'; 
+    }
+
+    function generateCustomerImage() {
+        let quoteDiv = document.createElement('div'); quoteDiv.style.width = "650px"; quoteDiv.style.padding = "30px"; quoteDiv.style.background = "#fff"; quoteDiv.style.position = "absolute"; quoteDiv.style.top = "-9999px"; quoteDiv.style.zIndex = "-1"; quoteDiv.style.fontFamily = "'Segoe UI', sans-serif";
+        let html = `<div style="text-align:center; border-bottom:3px solid #0984e3; padding-bottom:15px; margin-bottom:25px;"><h2 style="margin:0; color:#0984e3; font-size:26px;">FINANCE QUOTATION</h2></div>`;
+        let ltvLimit = parseFloat(document.getElementById('ltv').value) || 100;
+        let hasV = false;
+        current_products.forEach((prod) => {
+            let validS = prod.calculatedData.filter(d => { let cL = d.currentTenure > 0 ? ((d.currentTenure-d.advEmi)/d.currentTenure)*100 : 0; let b = (prod.isNonTieup && (d.loan < d.minLoan || d.loan > d.maxLoan)); return cL <= ltvLimit && !b; });
+            if(validS.length === 0) return; hasV = true;
+            html += `<div style="margin-bottom:30px;"><div style="background:#f1f2f6; padding:12px; border-left:5px solid #0984e3; margin-bottom:10px; display:flex; justify-content:space-between;"><h3>${prod.name}</h3><span>MRP: ₹${prod.inputs.mrp}</span></div>
+            <table style="width:100%; border-collapse:collapse; text-align:center;"><thead><tr style="background:#0984e3; color:white;"><th style="padding:10px; border:1px solid #ccc;">SCHEME</th><th style="padding:10px; border:1px solid #ccc;">DOWN PAYMENT</th><th style="padding:10px; border:1px solid #ccc;">EMI</th><th style="padding:10px; border:1px solid #ccc;">MONTHS</th><th style="padding:10px; border:1px solid #ccc;">DAILY SAVE</th></tr></thead><tbody>`;
+            validS.forEach((d, i) => { html += `<tr style="background:${i%2==0?'#fff':'#f9f9f9'};"><td style="padding:10px; border:1px solid #eee; font-weight:800;">${d.currentTenure}/${d.advEmi}</td><td style="padding:10px; border:1px solid #eee; color:#27ae60; font-weight:900;">₹${Math.round(d.dp)}</td><td style="padding:10px; border:1px solid #eee; color:#0984e3; font-weight:900;">₹${Math.round(d.emi)}</td><td style="padding:10px; border:1px solid #eee; font-weight:800;">${d.inst}</td><td style="padding:10px; border:1px solid #eee; color:#27ae60; font-weight:800;">₹${Math.round(d.daily)}</td></tr>`; });
+            html += `</tbody></table></div>`;
+        });
+        if(!hasV) { alert("No eligible schemes!"); return; }
+        quoteDiv.innerHTML = html; document.body.appendChild(quoteDiv);
+        html2canvas(quoteDiv, {scale: 2}).then(canvas => { document.getElementById('generatedImage').src = canvas.toDataURL("image/png"); document.getElementById('imageViewerModal').style.display = 'flex'; document.body.removeChild(quoteDiv); });
+    }
+</script>
+</body>
+</html>
