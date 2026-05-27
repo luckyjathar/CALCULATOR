@@ -1,0 +1,1470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Persistent Portal V75.0 - Master Edition</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        :root { --primary: #0984e3; --success: #27ae60; --danger: #d63031; --warning: #f39c12; --dark: #2d3436; --bg: #f4f7f6; --indigo: #341f97; --bajaj-blue: #0059A3; --bajaj-green: #00A34F; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0 auto; max-width: 1200px; padding: 4px; background: var(--bg); font-size: 10.5px; display: flex; flex-direction: column; min-height: 98vh; scroll-behavior: smooth; }
+        header { text-align: center; border-bottom: 2px solid var(--primary); margin-bottom: 6px; padding: 4px; background: #fff; }
+        header h1 { margin: 0; font-size: 1.1rem; color: var(--primary); font-weight: 900; }
+        
+        main { flex: 1; } 
+
+        .card, .form-container, .action-box, .detail-card { background: #fff; padding: 8px; border-radius: 6px; border: 1px solid #ddd; margin-bottom: 6px; }
+        #unifiedHome { display: flex; flex-direction: column; }
+        #finalEligibleArea { display: none; flex-direction: column; }
+        
+        input, select { width: 100%; padding: 3px; border: 1.5px solid #ccc; border-radius: 4px; font-weight: 600; font-size: 10px; height: 26px; box-sizing: border-box; transition: border 0.3s; }
+        
+        label { font-weight: 900; font-size: 8px; color: #555; text-transform: uppercase; margin-bottom: 1px; display: block; }
+        button { padding: 6px; border-radius: 4px; font-weight: 900; cursor: pointer; border: none; text-transform: uppercase; transition: background 0.3s; }
+
+        .disclaimer-box { background: #fff9e6; border: 1px solid #ffeaa7; padding: 8px; border-radius: 6px; margin-bottom: 6px; color: #d35400; font-size: 9.5px; line-height: 1.3; font-weight: 600; }
+        .disclaimer-box b { color: #c0392b; text-transform: uppercase; }
+
+        .top-nav-box { display: flex; gap: 5px; margin-bottom: 6px; position: sticky; top: 0; z-index: 100; background: var(--bg); padding: 4px 0; align-items: center; }
+        
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: flex-start; padding-top: 10px; z-index: 2000; overflow-y: auto; box-sizing: border-box; }
+        .modal-content { background: white; padding: 15px; border-radius: 8px; width: 90%; max-width: 400px; position: relative; margin-bottom: 20px; }
+        
+        #multiStackModal .modal-content, #globalSchemeViewerModal .modal-content { max-width: 900px; width: 95%; padding: 15px; }
+        .stack-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px; margin-top: 8px; }
+        .stack-card { border: 1px solid #ddd; padding: 10px; border-radius: 6px; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .stack-card .inner-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px; }
+
+        #imageViewerModal { align-items: center; justify-content: center; padding: 20px; flex-direction: column; }
+        #generatedImage { max-width: 100%; max-height: 80vh; width: auto; height: auto; object-fit: contain; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: block; margin: 10px auto; }
+        .close-img-btn { position: fixed; top: 10px; right: 15px; background: var(--danger); color: white; border: none; border-radius: 50%; width: 35px; height: 35px; font-size: 16px; cursor: pointer; font-weight: bold; z-index: 2100; }
+        
+        #loadingOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 9999; flex-direction: column; color: white; }
+        .spinner { border: 4px solid rgba(255,255,255,0.3); border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 15px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .table-wrapper { overflow-x: auto; background: white; border-radius: 4px; border: 1px solid #eee; transition: max-height 0.3s ease; }
+        table { width: 100%; border-collapse: collapse; font-size: 9px; white-space: nowrap; }
+        th, td { padding: 3px 2px; border-bottom: 1px solid #eee; text-align: center; width: 1%; }
+        th { background: #f8f9fa; font-weight: 900; font-size: 8px; cursor: pointer; user-select: none; }
+        
+        .fixed-row { background-color: #e8f5e9; }
+        .ltv-breach { background-color: #ffe6e6 !important; opacity: 0.85; }
+        .ltv-breach td { color: var(--danger) !important; }
+        .ltv-breach td:not(:nth-child(4)) { text-decoration: line-through; }
+        
+        .inactive-row { opacity: 0.5; background-color: #f8f9fa !important; }
+        .inactive-row td { text-decoration: line-through; color: #888 !important; }
+        .inactive-row button { text-decoration: none !important; opacity: 1 !important; }
+
+        .bound-col { color: #d35400; font-weight: 800; font-size: 8px; }
+
+        .stepper { display: flex; align-items: center; justify-content: center; gap: 2px; }
+        .step-btn { width: 18px; height: 22px; background: var(--primary); color: white; border-radius: 3px; font-size: 12px; cursor: pointer; padding:0; }
+        .step-inp { width: 65px; text-align: center; font-weight: 950; border: 1px solid var(--indigo); height: 22px; font-size: 10px; color: var(--indigo); }
+
+        .model-panel { background: #f1f2f6; padding: 6px; border-radius: 6px; border: 1.5px solid var(--primary); margin-bottom: 10px; }
+        
+        .control-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin: 6px 0; }
+        
+        .bajaj-cust-card { background: linear-gradient(135deg, var(--bajaj-blue) 0%, #003a6b 100%); color: white; padding: 8px; border-radius: 6px; margin-bottom: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.15); font-size: 11px; border-left: 6px solid var(--bajaj-green); display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px; text-transform: uppercase; font-weight: bold; }
+        .bajaj-cust-card .highlight { color: var(--bajaj-green); background: #fff; padding: 1px 6px; border-radius: 4px; font-size: 12px; display: inline-block; }
+
+        .custom-scroll::-webkit-scrollbar { width: 5px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+
+        footer { text-align: center; margin-top: 10px; padding: 10px; background: var(--dark); color: white; border-radius: 6px; font-size: 9px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); }
+        .footer-branding { padding-top: 4px; }
+        .footer-branding .author { font-size: 11px; font-weight: bold; color: #fff; margin: 0; }
+        .footer-branding .author b { color: var(--warning); letter-spacing: 1px; }
+        .footer-support { font-size: 9px; color: #bdc3c7; margin-top: 4px; line-height: 1.4; }
+        .wa-link { display: inline-block; margin-top: 4px; color: #25D366; font-weight: 900; font-size: 10px; text-decoration: none; background: rgba(37, 211, 102, 0.1); padding: 4px 10px; border-radius: 12px; border: 1px solid #25D366; transition: 0.3s; }
+        .wa-link:hover { background: #25D366; color: #fff; }
+
+        .hidden-col { display: none; }
+        .show-details-mode .hidden-col { display: table-cell !important; background-color: #fcf3cf; border-left: 1px dashed #f39c12; border-right: 1px dashed #f39c12; }
+        .show-details-mode th.hidden-col { background-color: #f39c12; color: #fff; border: 1px solid #d68910; }
+        
+        .action-btn { padding: 3px; font-size: 8px; border-radius: 3px; border: none; cursor: pointer; color: white; font-weight: 900; width: 100%; text-transform: uppercase; transition: background 0.3s;}
+        .btn-copy { background: var(--primary); }
+
+        .forms-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; align-items: stretch; }
+    </style>
+</head>
+<body>
+
+<div id="loadingOverlay">
+    <div class="spinner"></div>
+    <h3 style="margin:0; font-weight:900; letter-spacing:1px;" id="loadingText">IMPORTING DATA...</h3>
+    <p style="font-size:10px; color:#aaa; margin-top:5px;">Please wait while we process the Excel file</p>
+</div>
+
+<header><h1>🚀 Persistent Portal Master</h1></header>
+
+<main>
+    <div id="unifiedHome">
+        <div class="forms-row">
+            
+            <div class="form-container" style="flex: 1; min-width: 250px; background: #e8f4f8; border: 2px solid var(--primary); margin-bottom:0; display: flex; flex-direction: column;">
+                <label style="color:var(--primary); font-size:11px; border-bottom:2px solid var(--primary); padding-bottom:4px; margin-bottom:8px; display:block;">📝 ADD NEW CUSTOMER</label>
+                
+                <div style="flex: 1;">
+                    <div style="margin-bottom:6px;"><label>CUSTOMER NAME</label><input type="text" id="cqName" placeholder="Enter Name"></div>
+                    <div style="margin-bottom:6px;"><label>MOBILE NO.</label><input type="text" id="cqMobile" placeholder="10 Digits" maxlength="10"></div>
+                    <div style="margin-bottom:6px;"><label>NBFC LIMIT</label><input type="number" id="cqLimit" placeholder="₹ Amount"></div>
+                    <div style="margin-bottom:6px;"><label>CUST TYPE</label>
+                        <select id="cqType">
+                            <option value="NEW">NEW</option>
+                            <option value="EMI CARD">EMI CARD</option>
+                            <option value="VIRTUAL">VIRTUAL</option>
+                            <option value="W/O CARD">W/O CARD</option>
+                        </select>
+                    </div>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-bottom:10px;">
+                        <div><label>MAX LTV %</label><input type="number" id="cqLtv" value="100" max="100" oninput="if(this.value>100)this.value=100;"></div>
+                        <div><label>EMI CAP</label><input type="number" id="cqCap" placeholder="₹ Cap"></div>
+                    </div>
+                </div>
+                
+                <button onclick="addCustomerToQueue()" style="width:100%; background:var(--success); color:white; font-size:11px; padding:10px; border-radius:4px; box-shadow: 0 2px 4px rgba(39, 174, 96, 0.3); margin-top: 8px;">➕ ADD TO QUEUE</button>
+            </div>
+
+            <div class="form-container" style="flex: 1.5; min-width: 280px; margin-bottom:0; border: 2px solid var(--bajaj-blue); box-sizing: border-box; display: flex; flex-direction: column;">
+                <label style="color:var(--bajaj-blue); font-size:11px; border-bottom:2px solid #ccc; padding-bottom:4px; margin-bottom:6px; display:block; text-align:center;">👥 SAVED CUSTOMERS QUEUE (<span id="queueCount">0</span>)</label>
+                
+                <input type="text" id="queueSearch" placeholder="🔍 Search saved customer by name, number, limit..." oninput="renderCustomerQueue()" style="margin-bottom: 6px; border-color:var(--bajaj-blue);">
+                
+                <div id="customerQueueList" class="custom-scroll" style="display:flex; flex-direction:column; gap:6px; overflow-y:auto; flex:1; min-height: 150px; padding-right:4px;">
+                </div>
+                
+                <div style="display:flex; gap:6px; margin-top:8px; border-top:1px solid #ccc; padding-top:8px;">
+                    <button id="uniCopyBtn" onclick="uniCopy()" style="flex:1; background:var(--warning); color:#000; font-size:10px; opacity:0.5; pointer-events:none;">📋 COPY</button>
+                    <button id="uniSelectBtn" onclick="uniSelect()" style="flex:1.5; background:var(--primary); color:white; font-size:10px; opacity:0.5; pointer-events:none;">▶ SELECT</button>
+                    <button id="uniDeleteBtn" onclick="uniDelete()" style="flex:1; background:var(--danger); color:white; font-size:10px; opacity:0.5; pointer-events:none;">✖ DELETE</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="action-box">
+            <div class="disclaimer-box">
+                <b>Disclaimer:</b> Is sheet mein update kiye gaye models aur schemes use karne se pehle kripya system ki original scheme ke saath <b>verify zaroor karein</b>.
+            </div>
+
+            <div style="display: flex; gap: 6px;">
+                <button onclick="fetchDataFromCloud(true)" style="flex: 1; background: var(--indigo); color: white; padding: 10px; border-radius: 6px; font-weight: 900; box-shadow: 0 4px 6px rgba(52, 31, 151, 0.3);">
+                    🔄 REFRESH CLOUD RATES
+                </button>
+                <label for="fileInp" style="flex: 1; background:var(--success); color:white; padding:10px; border-radius:6px; display:block; text-align:center; font-weight:900; cursor:pointer; box-shadow: 0 4px 6px rgba(39, 174, 96, 0.3); margin-bottom: 0;">
+                    📂 MANUAL EXCEL BACKUP
+                </label>
+            </div>
+            <input type="file" id="fileInp" accept=".xlsx,.xls" onchange="handleFileUpload()" style="display:none;">
+            
+            <div id="globalSchemeSearchBox" style="display:none; margin-top:10px; position:relative; background:#fdfdfd; padding:8px; border:1px solid #ccc; border-radius:6px;">
+                <label style="color:var(--indigo); font-size:11px; margin-bottom:4px;">🔍 SEARCH SCHEMES DICTIONARY</label>
+                <input type="search" id="globalModelSearch" oninput="doGlobalSearch()" placeholder="Type Model Name to view all its schemes..." style="height:32px; font-size:11px; width:100%; border:1.5px solid var(--indigo);">
+                <div id="globalModelDropdown" style="position: absolute; width: calc(100% - 16px); background: #fff; z-index: 1000; border: 1px solid #ddd; display: none; box-shadow: 0 10px 20px rgba(0,0,0,0.15); border-radius: 4px; max-height: 200px; overflow-y: auto;"></div>
+            </div>
+
+            <div id="importedDataSummary" style="display:none; margin-top:8px; padding:10px; background:#fff; border:2px solid var(--success); border-radius:6px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); max-height: 350px; overflow-y: auto;">
+            </div>
+        </div>
+    </div>
+
+    <div id="addProductModal" class="modal">
+        <div class="modal-content" style="max-width: 350px;">
+            <h3 style="margin-top:0; color:var(--bajaj-blue); font-size:15px; border-bottom: 2px solid #ddd; padding-bottom: 6px;">🔍 ADD NEW PRODUCT</h3>
+            <div style="position:relative; margin-bottom: 12px;">
+                <label style="color:var(--indigo); margin-bottom:4px; display:block;">SEARCH MODEL</label>
+                <input type="search" id="modalMatrixSearch" oninput="doSearch('modalMatrixSearch', 'modalMatrixSearchDropdown')" placeholder="Type model name..." style="height:32px; font-size:11px; width:100%;">
+                <div id="modalMatrixSearchDropdown" style="position: absolute; width: 100%; background: #fff; z-index: 1000; border: 1px solid #ddd; display: none; box-shadow: 0 10px 20px rgba(0,0,0,0.15); border-radius: 4px; max-height: 200px; overflow-y: auto;"></div>
+            </div>
+            <div style="display:flex; gap:8px;">
+                <button onclick="quickNonTieup();" style="flex:1; background:var(--warning); color:#000; padding:10px; font-size:10px; font-weight:900;">⚡ NON TIEUP</button>
+                <button onclick="openFullManualModal();" style="flex:1; background:var(--indigo); color:white; padding:10px; font-size:10px; font-weight:900;">+ MANUAL</button>
+            </div>
+            <button onclick="document.getElementById('addProductModal').style.display='none'" style="width:100%; background:var(--danger); color:white; padding:8px; margin-top:12px; font-weight:900;">CANCEL</button>
+        </div>
+    </div>
+
+    <div id="globalSchemeViewerModal" class="modal">
+        <div class="modal-content" style="max-width:600px; width:95%; max-height:85vh; display:flex; flex-direction:column;">
+            <h3 id="globalViewerTitle" style="margin-top:0; color:var(--bajaj-blue); font-size:16px; border-bottom:2px solid #ccc; padding-bottom:6px;">Model Schemes</h3>
+            <div class="table-wrapper" style="flex:1; overflow-y:auto; margin-bottom:10px;">
+                <table style="width:100%;">
+                    <thead>
+                        <tr>
+                            <th style="background:#e3f2fd;">T/A</th>
+                            <th style="background:#e3f2fd;">FIXED EMI</th>
+                            <th style="background:#e3f2fd;">DBD%</th>
+                            <th style="background:#e3f2fd;">ROI%</th>
+                            <th style="background:#e3f2fd;">PF</th>
+                            <th style="background:#e3f2fd;">MIN L</th>
+                            <th style="background:#e3f2fd;">MAX L</th>
+                        </tr>
+                    </thead>
+                    <tbody id="globalViewerBody"></tbody>
+                </table>
+            </div>
+            <button onclick="document.getElementById('globalSchemeViewerModal').style.display='none'" style="width:100%; background:var(--danger); color:white; padding:10px;">CLOSE DICTIONARY</button>
+        </div>
+    </div>
+
+    <div id="quoteSelectionModal" class="modal">
+        <div class="modal-content" style="max-width:350px;">
+            <h3 style="margin-top:0; color:var(--bajaj-blue); font-size:16px;">🖼️ Select Models for Quotation</h3>
+            <div id="quoteModelCheckboxes" style="display:flex; flex-direction:column; gap:6px; max-height:220px; overflow-y:auto; margin-bottom:15px; padding-right:5px;" class="custom-scroll"></div>
+            <div style="display:flex; gap:10px;">
+                <button onclick="promptForSelectedImageGeneration()" style="flex:2; background:var(--bajaj-blue); color:white; padding:10px;">PROCEED</button>
+                <button onclick="document.getElementById('quoteSelectionModal').style.display='none'" style="flex:1; background:var(--danger); color:white; padding:10px;">CANCEL</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="componentsModal" class="modal">
+        <div class="modal-content" style="max-width: 350px;">
+            <h3 style="margin-top:0; color:var(--indigo); font-size:15px; border-bottom: 2px solid #ddd; padding-bottom: 6px;">⚙️ Fill Components</h3>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:12px;">
+                <div><label>MRP (₹)</label><input type="number" id="compMrp" placeholder="0" oninput="compMrpChanged()"></div>
+                <div><label>INV (₹)</label><input type="number" id="compInv" placeholder="0"></div>
+                <div><label>EMI CAP (₹)</label><input type="number" id="compCap" placeholder="MAX"></div>
+                <div><label>TARGET DP (₹)</label><input type="number" id="compTarget" placeholder="0"></div>
+                <div><label>GTL (₹)</label>
+                    <select id="compGtl">
+                        <option value="0">0</option>
+                        <option value="699">699</option>
+                        <option value="1099">1099</option>
+                        <option value="1199">1199</option>
+                        <option value="1499">1499</option>
+                        <option value="1799">1799</option>
+                        <option value="2398">2398</option>
+                    </select>
+                </div>
+                <div><label>RFC (₹)</label><input type="number" id="compRfc" placeholder="0"></div>
+                <div><label>EXW (₹)</label><input type="number" id="compExw" placeholder="0"></div>
+                <div><label>NIVA BUPA (₹)</label><input type="number" id="compNiva" placeholder="0"></div>
+                <div><label>MARGIN (₹)</label><input type="number" id="compMargin" placeholder="0"></div>
+                <div><label>DEALER CONTRI (₹)</label><input type="number" id="compDealer" placeholder="0"></div>
+            </div>
+            <div style="display:flex; gap:8px;">
+                <button onclick="proceedToMatrixFromComponents()" style="flex:2; background:var(--success); color:white; padding:8px;">CONTINUE</button>
+                <button onclick="document.getElementById('componentsModal').style.display='none'" style="flex:1; background:var(--danger); color:white; padding:8px;">CANCEL</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="custInfoPromptModal" class="modal">
+        <div class="modal-content" style="max-width:320px;">
+            <h3 style="margin-top:0; color:var(--bajaj-blue); font-size: 15px; text-align: center;">👤 Verify Details Before Export</h3>
+            <div style="margin-bottom:8px;">
+                <label style="color:var(--indigo);">CUSTOMER NAME</label>
+                <input type="text" id="promptCustName" readonly style="background:#f0f0f0; cursor:not-allowed;">
+            </div>
+            <div style="margin-bottom:12px;">
+                <label style="color:var(--indigo);">MOBILE NUMBER</label>
+                <input type="text" id="promptCustMobile" readonly style="background:#f0f0f0; cursor:not-allowed;">
+            </div>
+            <div style="display:flex; flex-direction:column; gap:6px;">
+                <button onclick="proceedGenerateImage()" style="width:100%; background:var(--bajaj-blue); color:white; padding:8px;">🖼️ GENERATE IMAGE ONLY</button>
+                <button onclick="proceedGenerateImageAndWhatsAppCopy()" style="width:100%; background:#25D366; color:white; padding:8px; display:flex; align-items:center; justify-content:center; gap:6px;">📋 COPY IMAGE & OPEN WHATSAPP</button>
+                <button onclick="document.getElementById('custInfoPromptModal').style.display='none'" style="width:100%; background:var(--danger); color:white; padding:6px; margin-top:4px;">CANCEL</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="smartImportModal" class="modal">
+        <div class="modal-content" style="max-width: 320px;">
+            <h3 style="margin-top:0; color:var(--success); text-align:center; font-size: 15px;">📂 Select Category</h3>
+            <div style="margin-bottom: 12px;">
+                <select id="importCategorySelect" style="height: 32px; font-size: 11px; border: 2px solid var(--primary); font-weight: bold;"></select>
+            </div>
+            <div style="display:flex; gap:8px;">
+                <button onclick="finalizeSmartImport()" style="flex:2; background:var(--success); color:white; padding:8px; border-radius: 4px;">CONFIRM</button>
+                <button onclick="cancelSmartImport()" style="flex:1; background:var(--danger); color:white; padding:8px; border-radius: 4px;">CANCEL</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="catSelectionModal" class="modal">
+        <div class="modal-content" style="max-width: 350px; max-height: 80vh; overflow-y: auto;">
+            <h3 style="margin-top:0; color:var(--indigo); font-size:15px;">⚡ SELECT NON-TIEUP CATEGORY</h3>
+            <div id="categoryGrid" style="display:grid; grid-template-columns:1fr 1fr; gap:6px;"></div>
+            <button onclick="document.getElementById('catSelectionModal').style.display='none'" style="width:100%; margin-top:12px; background:var(--danger); color:white; padding:8px; border-radius:4px;">CANCEL</button>
+        </div>
+    </div>
+
+    <div id="multiStackModal" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-top:0; color:var(--dark); font-size:15px;">Add Manual Product</h3>
+            <div style="margin-bottom: 12px; background: #f8f9fa; padding: 8px; border-radius: 6px; border: 1.5px solid #ccc;">
+                <label style="font-size: 10px; color: var(--indigo);">MODEL NAME</label>
+                <input type="text" id="multiStackModelName" placeholder="Enter Product Model Name" value="MANUAL MODEL" style="height: 32px; font-size: 12px;">
+            </div>
+            <div class="stack-grid" id="stackInputsContainer"></div>
+            <div style="margin-top:12px; display:flex; flex-direction:column; gap:8px; position:sticky; bottom:-15px; background:white; padding-top:8px;">
+                <button onclick="processMultiStack()" style="width:100%; background:var(--success); color:white; padding:10px; font-size:12px;">PROCEED</button>
+                <button onclick="closeMultiStackModal()" style="width:100%; background:var(--danger); color:white; padding:10px; font-size:12px;">CANCEL</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="editSchemeModal" class="modal">
+        <div class="modal-content" style="max-width: 280px;">
+            <h3 style="margin-top:0; color:var(--indigo); font-size:15px;">Modify Scheme</h3>
+            <input type="hidden" id="editPIdx">
+            <input type="hidden" id="editDIdx">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:12px;">
+                <div><label>DBD %</label><input type="number" id="editDbd" step="0.01"></div>
+                <div><label>PF (₹)</label><input type="number" id="editPf"></div>
+                <div><label>ROI %</label><input type="number" id="editRoi" step="0.01"></div>
+                <div><label>FIXED EMI (₹)</label><input type="number" id="editFixed"></div>
+            </div>
+            <div style="display:flex; gap:8px;">
+                <button onclick="saveSchemeEdit()" style="flex:2; background:var(--success); color:white; padding:8px;">SAVE</button>
+                <button onclick="closeEditSchemeModal()" style="flex:1; background:var(--danger); color:white; padding:8px;">CANCEL</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="imageViewerModal" class="modal">
+        <button class="close-img-btn" onclick="closeImageViewer()">X</button>
+        <div id="clipboardStatusAlert" style="color:#25D366; font-size:12px; font-weight:bold; text-align:center; width:100%; display:none;">✅ COPIED TO CLIPBOARD!</div>
+        <div style="color:#f39c12; font-size:12px; font-weight:bold; text-align:center; margin-top:5px; width:100%;">⚠️ Long press or Right-click image to Save directly 👇</div>
+        <img id="generatedImage" src="" alt="Quotation">
+    </div>
+
+    <div id="manualModal" class="modal">
+        <div class="modal-content" style="max-width:300px;">
+            <h3 id="modalTitle" style="font-size:15px; margin-top:0;">Manual Scheme</h3>
+            <div id="modelNameInputArea"><label>Model Name</label><input type="text" id="manName" value="MANUAL MODEL"></div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-top:8px;">
+                <div><label>TENURE (Max)</label><input type="number" id="manTen" placeholder="12"></div>
+                <div><label>ADVANCE</label><input type="number" id="manAdv" placeholder="4"></div>
+                <div><label>DBD %</label><input type="number" id="manDbd" placeholder="0"></div>
+                <div><label>PF (₹)</label><input type="number" id="manPf" placeholder="0"></div>
+                <div><label>ROI %</label><input type="number" id="manRoi" placeholder="0"></div>
+                <div><label>FIXED EMI (₹)</label><input type="number" id="manFixed" placeholder="0"></div>
+            </div>
+            <input type="hidden" id="targetPIdx" value="">
+            <button onclick="executeManualAction()" style="width:100%; background:var(--success); color:white; margin-top:12px; padding:8px;">ADD SCHEME</button>
+            <button onclick="closeManualModal()" style="width:100%; background:var(--danger); color:white; margin-top:6px; padding:8px;">CANCEL</button>
+        </div>
+    </div>
+
+    <div id="finalEligibleArea">
+        <div class="top-nav-box" style="margin-top: 4px; border-top: 2px dashed #ccc; padding-top: 8px;">
+            <button onclick="openQuoteSelectionModal()" style="flex:1; background:var(--bajaj-blue); color:white;">GEN QUOTE</button>
+            <select id="finalCustomerSwitcher" onchange="switchCustomerFinal(this.value)" style="flex:1.5; font-size:10px; font-weight:bold; color:var(--indigo); padding:2px; height: 26px;">
+            </select>
+            <button onclick="goHome()" style="flex:0.8; background:var(--danger); color:white;">✖ BACK</button>
+        </div>
+        
+        <div class="bajaj-cust-card">
+            <span style="color: #87c3f7;">NAME:</span> <span id="infoName" style="color: #fff;">-</span> |
+            <span style="color: #87c3f7;">MOBILE:</span> <span id="infoMobile" style="color: #fff;">-</span> |
+            <span style="color: #87c3f7;">LIMIT:</span> <span id="infoLimit" class="highlight">₹0</span> |
+            <span style="color: #87c3f7;">TYPE:</span> <span id="infoType" style="color: #fff;">-</span> |
+            <span style="color: #87c3f7;">LTV:</span> <span id="infoLtv" style="color: #fff;">0%</span> |
+            <span style="color: #87c3f7;">EMI LINE:</span> <span id="infoCap" style="color: #fff;">-</span>
+        </div>
+        
+        <button onclick="openAddProductModal()" style="width: 100%; background:var(--warning); color:#000; padding:10px; border-radius:6px; font-size:11px; font-weight:900; margin-bottom:8px; border: 1.5px solid #d35400; box-shadow: 0 2px 5px rgba(0,0,0,0.1); cursor:pointer;">➕ ADD NEW PRODUCT (SEARCH / NON-TIEUP / MANUAL)</button>
+        
+        <div id="multiModelContainer"></div>
+    </div>
+</main>
+
+<footer>
+    <div class="footer-branding">
+        <p class="author">Crafted by <b>The_lakshya</b></p>
+        <p class="footer-support">
+            Kisi bhi help, support ya suggestions ke liye bejhijhak connect karein:<br>
+            <a href="https://wa.me/918087313624?text=Hi%20Lakshya!%20Mujhe%20Persistent%20Portal%20ke%20baare%20mein%20help/suggestion%20chahiye." target="_blank" class="wa-link">💬 WhatsApp : 8087313624</a>
+        </p>
+    </div>
+</footer>
+
+<script>
+    // 📢 GOOGLE SHEETS LIVE AUTO-SYNC CONFIGURATION
+    const CLOUD_EXCEL_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQbqqK70wY9J_xOq9l92N9Z4FGxh46HCwuC9pfvBjYvmfHapFUmi8oBRFP-2J--1Q/pub?output=xlsx";
+
+    // --- INDEXED DB WRAPPER ---
+    const DB_NAME = "PersistentPortalDB";
+    const DB_VERSION = 2; 
+    const STORE_NAME = "dataStore";
+    let dbInstance;
+
+    function initDB() {
+        return new Promise((resolve, reject) => {
+            let request = indexedDB.open(DB_NAME, DB_VERSION);
+            request.onupgradeneeded = function(e) {
+                let db = e.target.result;
+                if (!db.objectStoreNames.contains(STORE_NAME)) {
+                    db.createObjectStore(STORE_NAME);
+                }
+            };
+            request.onsuccess = function(e) {
+                dbInstance = e.target.result;
+                resolve(dbInstance);
+            };
+            request.onerror = function(e) {
+                console.error("IndexedDB error:", e);
+                reject(e);
+            };
+        });
+    }
+
+    function saveToDB(key, data) {
+        return new Promise((resolve, reject) => {
+            if (!dbInstance) return reject("DB not initialized");
+            try {
+                let tx = dbInstance.transaction(STORE_NAME, 'readwrite');
+                let store = tx.objectStore(STORE_NAME);
+                let req = store.put(JSON.stringify(data), key);
+                req.onsuccess = () => resolve();
+                req.onerror = (e) => reject(e.target.error);
+            } catch(e) {
+                reject(e);
+            }
+        });
+    }
+
+    function getFromDB(key) {
+        return new Promise((resolve, reject) => {
+            if (!dbInstance) return resolve(null);
+            try {
+                let tx = dbInstance.transaction(STORE_NAME, 'readonly');
+                let store = tx.objectStore(STORE_NAME);
+                let req = store.get(key);
+                req.onsuccess = (e) => {
+                    let res = e.target.result;
+                    if (res) {
+                        if (typeof res === 'string') resolve(JSON.parse(res));
+                        else resolve(res); 
+                    } else {
+                        resolve(null);
+                    }
+                };
+                req.onerror = (e) => reject(e.target.error);
+            } catch(e) {
+                reject(e);
+            }
+        });
+    }
+
+    let db_records = [];
+    let current_products = [];
+    let sortConfigs = [];
+    const SPECIAL_MODEL = "NON TIEUP";
+    let tempSheet1Data = [];
+    let parsedSheet2Data = [];
+
+    let customerQueue = [];
+    let activeCustomerIndex = -1;
+    let selectedQueueIndex = -1; 
+    let tempPendingProduct = null; 
+
+    async function saveQueueToLocal() {
+        try {
+            let compactQueue = customerQueue.map(c => {
+                let cp = (c.products || []).map(p => {
+                    let { calculatedData, allSchemes, ...keepProduct } = p;
+                    return keepProduct;
+                });
+                return { ...c, products: cp };
+            });
+            await saveToDB('persistent_queue', compactQueue);
+            await saveToDB('persistent_active_idx', activeCustomerIndex);
+        } catch(e) {
+            console.error("IndexedDB save failed:", e);
+        }
+    }
+
+    // --- AUTOMATIC BACKGROUND CLOUD SYNC ENGINE ---
+    async function fetchDataFromCloud(isManualRefresh = false) {
+        if (!CLOUD_EXCEL_URL || CLOUD_EXCEL_URL === "YAHAN_APNA_LINK_PASTE_KAREIN") {
+            if (isManualRefresh) alert("⚠️ Kripya pehle code mein apna Cloud Link set karein!");
+            return;
+        }
+        
+        if (isManualRefresh) {
+            document.getElementById('loadingText').innerText = "FETCHING CLOUD RATES...";
+            document.getElementById('loadingOverlay').style.display = 'flex';
+        }
+        
+        try {
+            console.log("Fetching latest rates from Google Sheets Cloud...");
+            let response = await fetch(CLOUD_EXCEL_URL);
+            if (!response.ok) throw new Error("Cloud Sheets link down or unavailable.");
+            
+            let dataBuffer = await response.arrayBuffer();
+            let wb = XLSX.read(new Uint8Array(dataBuffer), { type: 'array' }); 
+            
+            tempSheet1Data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { raw: false, defval: "" });
+            parsedSheet2Data = wb.SheetNames.length > 1 ? XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[1]], { raw: false, defval: "" }).map(r => mapData(r, SPECIAL_MODEL)).filter(x => x && (x.tenure > 0 || x.fixedEmi > 0)) : [];
+            
+            let filteredSheet1 = tempSheet1Data.map(r => mapData(r, "REG")).filter(m => m && (m.tenure > 0 || m.fixedEmi > 0));
+            let rawCombined = [...filteredSheet1, ...parsedSheet2Data];
+            let uniqueDB = []; let seenDB = new Set();
+            
+            rawCombined.forEach(r => { 
+                let key = `${r.model}_${r.category}_${r.tenure}_${r.advEmi}_${r.fixedEmi}_${r.minLoan}_${r.maxLoan}`; 
+                if (!seenDB.has(key)) { seenDB.add(key); uniqueDB.push(r); }
+            });
+            
+            if (uniqueDB.length > 0) {
+                db_records = uniqueDB; 
+                await saveToDB("persistent_db", db_records); 
+                renderImportSummary();
+                document.getElementById('globalSchemeSearchBox').style.display = 'block';
+                console.log(`✅ ${db_records.length} schemes updated via cloud live stream.`);
+                
+                if (activeCustomerIndex !== -1) {
+                    loadCurrentProducts();
+                    current_products.forEach((_, idx) => recalcModel(idx));
+                    renderMatrix();
+                }
+                if (isManualRefresh) alert("✅ Cloud Database successfully refreshed!");
+            }
+        } catch(err) {
+            console.error("❌ Cloud Auto-Fetch Engine Blocked: ", err);
+            if (isManualRefresh) alert("❌ Sync Failed: Google sheets public parsing framework error.");
+        } finally {
+            if (isManualRefresh) document.getElementById('loadingOverlay').style.display = 'none';
+        }
+    }
+
+    window.onload = async function() {
+        generateStackCards(); 
+        
+        try {
+            await initDB(); 
+
+            let savedDB = await getFromDB("persistent_db");
+            if (savedDB) {
+                db_records = savedDB; 
+                if (db_records.length > 0) {
+                    renderImportSummary();
+                    document.getElementById('globalSchemeSearchBox').style.display = 'block';
+                }
+            }
+            
+            // Core trigger: Initialize background cloud extraction sequence
+            fetchDataFromCloud(false);
+            
+            let savedQ = await getFromDB('persistent_queue');
+            if (savedQ) {
+                customerQueue = savedQ.map(c => ({
+                    ...c,
+                    components: c.components || {},
+                    products: c.products || [],
+                    sortConfigs: c.sortConfigs || []
+                }));
+            }
+            
+            let savedIdx = await getFromDB('persistent_active_idx');
+            if (savedIdx !== null && savedIdx !== undefined) activeCustomerIndex = parseInt(savedIdx);
+            
+            if(activeCustomerIndex >= customerQueue.length) activeCustomerIndex = -1;
+
+        } catch(e) { 
+            console.error("IndexedDB Load failed", e); 
+        }
+        
+        renderCustomerQueue();
+        updateUniversalActionButtons();
+    };
+
+    async function addCustomerToQueue() {
+        let name = document.getElementById('cqName').value || `Cust ${customerQueue.length + 1}`;
+        let mobile = document.getElementById('cqMobile').value || "";
+        let limit = parseFloat(document.getElementById('cqLimit').value);
+        let ltv = parseFloat(document.getElementById('cqLtv').value) || 100;
+        let type = document.getElementById('cqType').value;
+        let cap = parseFloat(document.getElementById('cqCap').value) || "";
+
+        if(!limit || limit <= 0) { alert("⚠️ Please enter a valid NBFC LIMIT to add customer!"); return; }
+
+        let now = new Date();
+        let ts = now.toLocaleDateString('en-GB', {day:'2-digit', month:'short'}) + ' ' + now.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
+
+        customerQueue.unshift({ 
+            name, mobile, limit, ltv, type, cap, timestamp: ts,
+            components: {}, 
+            products: [],
+            sortConfigs: []
+        });
+        
+        if (activeCustomerIndex !== -1) activeCustomerIndex++;
+        if (selectedQueueIndex !== -1) selectedQueueIndex++;
+        
+        await saveQueueToLocal();
+        
+        document.getElementById('cqName').value = '';
+        document.getElementById('cqMobile').value = '';
+        document.getElementById('cqLimit').value = '';
+        document.getElementById('cqCap').value = '';
+        
+        renderCustomerQueue();
+        updateUniversalActionButtons();
+    }
+
+    function copyCustomerDetails(idx, btnElement) {
+        let c = customerQueue[idx];
+        let cappingLine = (c.cap && c.cap !== "") ? `\nEMI CAPPING- ${c.cap}` : "";
+        let textToCopy = `CUSTOMER NAME- ${c.name}\nNUMBER- ${c.mobile || ''}\nLIMIT- ${c.limit}\nLTV- ${c.ltv}${cappingLine}`;
+        
+        function showSuccess() { 
+            let originalText = btnElement.innerText; 
+            btnElement.innerText = "COPIED!"; 
+            btnElement.style.background = "var(--success)"; 
+            btnElement.style.color = "white";
+            setTimeout(() => { 
+                btnElement.innerText = originalText; 
+                btnElement.style.background = "var(--warning)"; 
+                btnElement.style.color = "#000";
+            }, 2000); 
+        }
+        
+        if (navigator.clipboard && window.isSecureContext) { 
+            navigator.clipboard.writeText(textToCopy).then(showSuccess).catch(() => fallbackCopy(textToCopy, showSuccess)); 
+        } else { 
+            fallbackCopy(textToCopy, showSuccess); 
+        }
+    }
+
+    function maskName(str) {
+        if (!str || str === "-") return str;
+        return str.split(' ').map(word => {
+            if (word.length <= 2) return word;
+            return word[0] + '*'.repeat(word.length - 2) + word[word.length - 1];
+        }).join(' ');
+    }
+
+    function selectQueueItem(idx) {
+        selectedQueueIndex = idx;
+        renderCustomerQueue();
+        updateUniversalActionButtons();
+    }
+
+    function updateUniversalActionButtons() {
+        let copyB = document.getElementById('uniCopyBtn');
+        let selB = document.getElementById('uniSelectBtn');
+        let delB = document.getElementById('uniDeleteBtn');
+        
+        if (selectedQueueIndex !== -1 && customerQueue[selectedQueueIndex]) {
+            copyB.style.opacity = '1'; copyB.style.pointerEvents = 'auto';
+            selB.style.opacity = '1'; selB.style.pointerEvents = 'auto';
+            delB.style.opacity = '1'; delB.style.pointerEvents = 'auto';
+        } else {
+            copyB.style.opacity = '0.5'; copyB.style.pointerEvents = 'none';
+            selB.style.opacity = '0.5'; selB.style.pointerEvents = 'none';
+            delB.style.opacity = '0.5'; delB.style.pointerEvents = 'none';
+        }
+    }
+
+    function uniCopy() { if(selectedQueueIndex !== -1) copyCustomerDetails(selectedQueueIndex, document.getElementById('uniCopyBtn')); }
+    function uniSelect() { if(selectedQueueIndex !== -1) setActiveCustomer(selectedQueueIndex); }
+    async function uniDelete() { if(selectedQueueIndex !== -1) await removeCustomer(selectedQueueIndex); }
+
+    function renderCustomerQueue() {
+        document.getElementById('queueCount').innerText = customerQueue.length;
+        let list = document.getElementById('customerQueueList');
+        let qSearch = document.getElementById('queueSearch').value.toLowerCase().trim();
+        let isSearching = qSearch !== "";
+        
+        let filtered = customerQueue.map((c, idx) => ({...c, originalIdx: idx})).filter(c => {
+            if(!isSearching) return true; 
+            return c.name.toLowerCase().includes(qSearch) || 
+                   c.mobile.includes(qSearch) || 
+                   c.limit.toString().includes(qSearch) ||
+                   (c.cap && c.cap.toString().includes(qSearch)) ||
+                   c.type.toLowerCase().includes(qSearch);
+        });
+
+        if(filtered.length === 0) {
+            list.innerHTML = `<div style="text-align:center; color:#888; font-size:11px; margin-top:10px;">No customers found.</div>`;
+            return;
+        }
+        
+        list.innerHTML = filtered.map((c) => {
+            let idx = c.originalIdx;
+            let isSelected = (selectedQueueIndex === idx);
+            let isActive = (activeCustomerIndex === idx);
+            let displayName = (isSearching || isSelected) ? c.name : maskName(c.name);
+            let bgStyle = isSelected ? '#e0f7fa' : (isActive ? '#f0f8ff' : '#fff');
+            let borderStyle = isSelected ? 'var(--primary)' : (isActive ? '#0088cc' : '#ddd');
+            let shadowStyle = isSelected ? '0 0 5px rgba(9, 132, 227, 0.5)' : (isActive ? '0 0 5px rgba(0, 136, 204, 0.3)' : 'none');
+
+            return `
+            <div onclick="selectQueueItem(${idx})" style="cursor:pointer; display:flex; flex-direction:column; background:${bgStyle}; padding:6px; border-radius:4px; border:1px solid ${borderStyle}; box-shadow:${shadowStyle}; transition:0.2s;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                    <strong style="color:var(--indigo); font-size:11px;">👤 ${displayName} ${c.mobile ? `<span style="color:#d35400;">(📞 ${c.mobile})</span>` : ''}</strong>
+                    <span style="font-size:8px; color:#888; font-weight:bold;">${c.timestamp || ''}</span>
+                </div>
+                <div style="font-size:9px; color:#555; font-weight:bold;">
+                    LMT: <span style="color:var(--success)">₹${c.limit}</span> | LTV: ${c.ltv}% | CAP: ${c.cap ? '₹'+c.cap : 'NO'} | ${c.type}
+                    ${isActive ? '<span style="float:right; color:var(--primary); font-size:8px;">[ACTIVE ✓]</span>' : ''}
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    async function setActiveCustomer(idx) { 
+        if(db_records.length === 0) { alert('⚠️ Database empty. Kripya network connection verify karein ya manual excel upload karein.'); return; }
+        activeCustomerIndex = idx; 
+        await saveQueueToLocal(); 
+        document.getElementById('queueSearch').value = '';
+        goToFinalPage();
+    }
+    
+    async function removeCustomer(idx) {
+        if(activeCustomerIndex === idx) activeCustomerIndex = -1;
+        else if (activeCustomerIndex > idx) activeCustomerIndex--;
+        customerQueue.splice(idx, 1);
+        
+        if (selectedQueueIndex === idx) selectedQueueIndex = -1;
+        else if (selectedQueueIndex > idx) selectedQueueIndex--;
+
+        if(customerQueue.length > 0 && activeCustomerIndex === -1) activeCustomerIndex = 0;
+        
+        await saveQueueToLocal();
+        renderCustomerQueue();
+        updateUniversalActionButtons();
+    }
+
+    function getActiveName() { return customerQueue[activeCustomerIndex]?.name || "-"; }
+    function getActiveMobile() { return customerQueue[activeCustomerIndex]?.mobile || ""; }
+    function getActiveLimit() { return customerQueue[activeCustomerIndex]?.limit || 0; }
+    function getActiveLtv() { return customerQueue[activeCustomerIndex]?.ltv || 100; }
+    function getActiveType() { return customerQueue[activeCustomerIndex]?.type || 'NEW'; }
+    function getActiveCap() { return customerQueue[activeCustomerIndex]?.cap || ""; }
+
+    function isLimitValid() {
+        if (activeCustomerIndex === -1 || !customerQueue[activeCustomerIndex]) { alert("⚠️ Kripya pehle queue mein ek customer add karein aur use 'ACTIVE' rakhein."); return false; }
+        return true;
+    }
+
+    function doGlobalSearch() {
+        let q = document.getElementById('globalModelSearch').value.toUpperCase(); 
+        let dd = document.getElementById('globalModelDropdown'); 
+        if(!q) { dd.style.display='none'; return; }
+        let matches = [...new Set(db_records.filter(r => r.model !== SPECIAL_MODEL).map(r => r.model))].filter(m => m.includes(q)).slice(0,15);
+        dd.innerHTML = matches.map(m => `<div style="padding:8px; border-bottom:1px solid #eee; cursor:pointer; font-weight:800; font-size:11px;" onclick="viewGlobalModel('${m}')">${m}</div>`).join('');
+        dd.style.display = matches.length ? 'block' : 'none';
+    }
+
+    function viewGlobalModel(name) {
+        document.getElementById('globalModelSearch').value = '';
+        document.getElementById('globalModelDropdown').style.display = 'none';
+        let schemes = db_records.filter(r => r.model === name);
+        if(schemes.length === 0) return;
+        
+        document.getElementById('globalViewerTitle').innerText = '📱 Model: ' + name;
+        let tbody = document.getElementById('globalViewerBody');
+        tbody.innerHTML = schemes.map(s => `
+            <tr>
+                <td style="font-weight:900; color:var(--indigo); border:1px solid #ddd;">${s.tenure}/${s.advEmi}</td>
+                <td style="font-weight:900; color:var(--primary); border:1px solid #ddd;">${s.fixedEmi > 0 ? '₹'+s.fixedEmi : 'N/A'}</td>
+                <td style="border:1px solid #ddd;">${+parseFloat(s.dbd).toFixed(3)}%</td>
+                <td style="border:1px solid #ddd;">${+parseFloat(s.roi).toFixed(2)}%</td>
+                <td style="border:1px solid #ddd;">₹${s.pf}</td>
+                <td style="border:1px solid #ddd;">${s.minLoan > 0 ? '₹'+s.minLoan : '0'}</td>
+                <td style="border:1px solid #ddd;">${s.maxLoan < 9999999 ? '₹'+s.maxLoan : 'NO LMT'}</td>
+            </tr>
+        `).join('');
+        
+        document.getElementById('globalSchemeViewerModal').style.display = 'flex';
+    }
+
+    function renderImportSummary() {
+        let summaryDiv = document.getElementById('importedDataSummary');
+        if (!summaryDiv) return;
+        if (!db_records || db_records.length === 0) { summaryDiv.style.display = 'none'; return; }
+        let stats = {}; let totalSchemes = db_records.length;
+        db_records.forEach(r => {
+            let cat = (r.category || 'OTHER').toString().trim().toUpperCase(); let mod = (r.model || 'UNKNOWN').toString().trim().toUpperCase();
+            if (!stats[cat]) stats[cat] = { total: 0, brands: {} }; stats[cat].total++;
+            if (!stats[cat].brands[mod]) stats[cat].brands[mod] = 0; stats[cat].brands[mod]++;
+        });
+        let html = `<div style="color:var(--success); font-weight:900; margin-bottom:8px; text-align:center; font-size:14px; border-bottom: 2px solid var(--success); padding-bottom: 6px;">✅ ${totalSchemes} SCHEMES LOADED</div>`;
+        let sortedCats = Object.keys(stats).sort();
+        sortedCats.forEach(cat => {
+            let catData = stats[cat]; let brandHtml = ''; let sortedBrands = Object.keys(catData.brands).sort();
+            sortedBrands.forEach(b => { brandHtml += `<div style="display:flex; justify-content:space-between; padding: 4px 10px; border-bottom: 1px solid #eee; font-size: 10px;"><span style="color:#555; font-weight:700;">🏷️ ${b}</span> <span style="color:var(--primary); font-weight:900; background:#e3f2fd; padding:1px 4px; border-radius:3px;">${catData.brands[b]}</span></div>`; });
+            html += `<details style="margin-bottom:6px; background:#f8f9fa; border:1px solid #ddd; border-radius:4px; overflow:hidden;"><summary style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; font-weight:900; color:var(--indigo); padding:8px; list-style:none; outline:none; background:#e3f2fd;"><span style="font-size:11px;">📁 ${cat}</span><span style="background:var(--primary); color:#fff; padding:2px 8px; border-radius:10px; font-size:9px;">${catData.total} Schemes ▼</span></summary><div style="background:#fff; color:#333; padding:4px 0;">${brandHtml}</div></details>`;
+        });
+        summaryDiv.innerHTML = html; summaryDiv.style.display = 'block';
+    }
+
+    function generateStackCards() {
+        let container = document.getElementById('stackInputsContainer'); container.innerHTML = "";
+        for(let i=1; i<=10; i++) {
+            container.innerHTML += `
+            <div class="stack-card"><div style="font-weight:900; color:var(--primary); margin-bottom:4px; font-size:9px; border-bottom:1px solid #eee; padding-bottom:2px;">SCHEME #${i}</div>
+                <div class="inner-grid">
+                    <div><label>TENURE (MAX)</label><input type="number" id="msTen_${i}" placeholder="0"></div>
+                    <div><label>ADVANCE</label><input type="number" id="msAdv_${i}" placeholder="0"></div>
+                    <div><label>DBD %</label><input type="number" id="msDbd_${i}" placeholder="0"></div>
+                    <div><label>PF (₹)</label><input type="number" id="msPf_${i}" placeholder="0"></div>
+                    <div><label>ROI %</label><input type="number" id="msRoi_${i}" placeholder="0"></div>
+                    <div><label>FIXED EMI (₹)</label><input type="number" id="msFix_${i}" placeholder="0"></div>
+                </div>
+            </div>`;
+        }
+    }
+
+    function openMultiStackModal() { if (!isLimitValid()) return; document.getElementById('multiStackModal').style.display='flex'; }
+    function closeMultiStackModal() { document.getElementById('multiStackModal').style.display='none'; }
+
+    async function processMultiStack() {
+        let modelName = document.getElementById('multiStackModelName').value.trim().toUpperCase();
+        if (!modelName) return alert("⚠️ Kripya Model Name enter karein!");
+        let validSchemes = [];
+        for(let i=1; i<=10; i++) {
+            let ten = parseInt(document.getElementById(`msTen_${i}`).value) || 0;
+            let fix = parseInt(document.getElementById(`msFix_${i}`).value) || 0;
+            if(ten > 0 || fix > 0) {
+                validSchemes.push({ tenure: ten, advEmi: parseInt(document.getElementById(`msAdv_${i}`).value) || 0, dbd: parseFloat(document.getElementById(`msDbd_${i}`).value) || 0, pf: parseInt(document.getElementById(`msPf_${i}`).value) || 0, roi: parseFloat(document.getElementById(`msRoi_${i}`).value) || 0, fixedEmi: fix, minLoan: 0, maxLoan: 9999999, category: "MANUAL", inactive: false });
+            }
+        }
+        if(validSchemes.length > 0) {
+            let comp = customerQueue[activeCustomerIndex].components || {};
+            current_products.push({ 
+                name: modelName, schemes: validSchemes, 
+                inputs: { mrp: comp.mrp||"", inv: comp.inv||"", cap: comp.cap||getActiveCap(), target: comp.target||"", gtl: comp.gtl||0, rfc: comp.rfc||0, exw: comp.exw||"", niva: comp.niva||"", margin: comp.margin||"", dealer: comp.dealer||"", surch: 0 }, 
+                isManual: true, isNonTieup: false 
+            });
+            sortConfigs.push({ key: 'dp', dir: 'asc' }); 
+            customerQueue[activeCustomerIndex].products = current_products;
+            customerQueue[activeCustomerIndex].sortConfigs = sortConfigs;
+            await saveQueueToLocal();
+            closeMultiStackModal(); 
+            renderMatrix(); 
+        } else { alert("⚠️ At least ek Scheme ki details (Tenure ya Fixed EMI) fill karein!"); }
+    }
+
+    function findValLocal(row, targets) { let key = Object.keys(row).find(k => targets.includes(k.toUpperCase().replace(/\s/g, ''))); return key ? row[key] : null; }
+
+    function handleFileUpload() {
+        let inputElement = document.getElementById('fileInp'); let f = inputElement.files[0]; if(!f) return;
+        document.getElementById('loadingText').innerText = "IMPORTING DATA...";
+        document.getElementById('loadingOverlay').style.display = 'flex';
+        setTimeout(() => {
+            let r = new FileReader(); 
+            r.onload = e => { 
+                setTimeout(() => {
+                    try {
+                        let wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' }); 
+                        tempSheet1Data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { raw: false, defval: "" });
+                        let uniqueCategories = new Set();
+                        tempSheet1Data.forEach(row => { let cat = String(findValLocal(row, ['CATEGORY', 'CAT']) || "").toUpperCase().trim(); if(cat) uniqueCategories.add(cat); });
+                        parsedSheet2Data = wb.SheetNames.length > 1 ? XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[1]], { raw: false, defval: "" }).map(r => mapData(r, SPECIAL_MODEL)).filter(x => x && (x.tenure > 0 || x.fixedEmi > 0)) : [];
+                        
+                        let catSelect = document.getElementById('importCategorySelect');
+                        catSelect.innerHTML = '<option value="ALL">ALL CATEGORIES (Import Everything)</option>';
+                        Array.from(uniqueCategories).sort().forEach(c => { catSelect.innerHTML += `<option value="${c}">${c}</option>`; });
+                        document.getElementById('loadingOverlay').style.display = 'none';
+                        document.getElementById('smartImportModal').style.display = 'flex';
+                    } catch(err) { 
+                        document.getElementById('loadingOverlay').style.display = 'none';
+                        alert("❌ EXCEL IMPORT FAIL: " + err.message); document.getElementById('fileInp').value = ""; 
+                    }
+                }, 50);
+            }; 
+            r.readAsArrayBuffer(f); 
+        }, 50);
+    }
+
+    async function finalizeSmartImport() {
+        let selectedCat = document.getElementById('importCategorySelect').value; document.getElementById('smartImportModal').style.display = 'none';
+        let filteredSheet1 = tempSheet1Data.filter(row => { let cat = String(findValLocal(row, ['CATEGORY', 'CAT']) || "").toUpperCase().trim(); return (selectedCat === "ALL" || cat === selectedCat); }).map(r => mapData(r, "REG")).filter(m => m && (m.tenure > 0 || m.fixedEmi > 0));
+        let rawCombined = [...filteredSheet1, ...parsedSheet2Data];
+        let uniqueDB = []; let seenDB = new Set();
+        rawCombined.forEach(r => { let key = `${r.model}_${r.category}_${r.tenure}_${r.advEmi}_${r.fixedEmi}_${r.minLoan}_${r.maxLoan}`; if (!seenDB.has(key)) { seenDB.add(key); uniqueDB.push(r); }});
+        
+        db_records = uniqueDB; 
+        try {
+            await saveToDB("persistent_db", db_records); 
+            alert("✅ Backup Data successfully imported!");
+            document.getElementById('globalSchemeSearchBox').style.display = 'block';
+        } catch(e) {
+            alert(`⚠️ IndexedDB Save Error.`);
+            document.getElementById('globalSchemeSearchBox').style.display = 'block';
+        }
+        renderImportSummary(); 
+        document.getElementById('fileInp').value = ""; 
+        if(activeCustomerIndex !== -1) goToFinalPage();
+    }
+    
+    function cancelSmartImport() { document.getElementById('smartImportModal').style.display = 'none'; document.getElementById('fileInp').value = ""; }
+    
+    function mapData(row, type) { 
+        if(!row) return null;
+        return { model: type === SPECIAL_MODEL ? SPECIAL_MODEL : String(findValLocal(row,['MODEL','BRANDMODEL'])||"").toUpperCase(), mrp: parseFloat(findValLocal(row, ['MRP', 'PRICE', 'M.R.P'])) || 0, tenure: parseInt(findValLocal(row, ['TOTALTENURE', 'TENURE', 'TA'])) || 0, advEmi: parseInt(findValLocal(row, ['ADVANCEEMI', 'ADV'])) || 0, dbd: parseFloat(findValLocal(row,['DBD','DBD%'])||0), pf: parseInt(findValLocal(row,['PF','PROCESSINGFEE'])||0), roi: parseFloat(findValLocal(row,['ROI','ROI%'])||0), fixedEmi: parseFloat(findValLocal(row,['FIXEDEMI', 'FIXED'])||0), category: String(findValLocal(row,['CATEGORY','CAT'])||""), minLoan: parseFloat(findValLocal(row, ['MINLOAN', 'MINL'])) || 0, maxLoan: parseFloat(findValLocal(row, ['MAXLOAN', 'MAXL'])) || 9999999, inactive: false }; 
+    }
+
+    function goHome() { 
+        document.getElementById('finalEligibleArea').style.display='none'; 
+        document.getElementById('catSelectionModal').style.display='none';
+        document.getElementById('unifiedHome').style.display='flex'; 
+        activeCustomerIndex = -1; 
+        selectedQueueIndex = -1; 
+        renderCustomerQueue(); 
+        updateUniversalActionButtons();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    
+    function closeImageViewer() { document.getElementById('imageViewerModal').style.display='none'; }
+    function openAddProductModal() {
+        if (!isLimitValid()) return;
+        document.getElementById('modalMatrixSearch').value = '';
+        document.getElementById('modalMatrixSearchDropdown').style.display = 'none';
+        document.getElementById('addProductModal').style.display = 'flex';
+    }
+
+    function openFullManualModal() { 
+        if (!isLimitValid()) return; 
+        document.getElementById('addProductModal').style.display = 'none';
+        document.getElementById('modalTitle').innerText = "Add Manual Product"; 
+        document.getElementById('modelNameInputArea').style.display = 'block'; 
+        document.getElementById('targetPIdx').value = "NEW"; 
+        document.getElementById('manualModal').style.display='flex'; 
+    }
+    
+    function openSchemeOnlyModal(pIdx) { if (!isLimitValid()) return; document.getElementById('modalTitle').innerText = "Add Custom Scheme"; document.getElementById('modelNameInputArea').style.display = 'none'; document.getElementById('targetPIdx').value = pIdx; document.getElementById('manualModal').style.display='flex'; }
+    function closeManualModal() { document.getElementById('manualModal').style.display='none'; }
+
+    function openEditSchemeModal(pIdx, dIdx) {
+        let scheme = current_products[pIdx].schemes[dIdx];
+        document.getElementById('editPIdx').value = pIdx; document.getElementById('editDIdx').value = dIdx; document.getElementById('editDbd').value = scheme.dbd || 0; document.getElementById('editPf').value = scheme.pf || 0; document.getElementById('editRoi').value = scheme.roi || 0; document.getElementById('editFixed').value = scheme.fixedEmi || 0; document.getElementById('editSchemeModal').style.display = 'flex';
+    }
+    function closeEditSchemeModal() { document.getElementById('editSchemeModal').style.display = 'none'; }
+    function saveSchemeEdit() {
+        let pIdx = parseInt(document.getElementById('editPIdx').value); let dIdx = parseInt(document.getElementById('editDIdx').value); let scheme = current_products[pIdx].schemes[dIdx];
+        scheme.dbd = parseFloat(document.getElementById('editDbd').value) || 0; scheme.pf = parseInt(document.getElementById('editPf').value) || 0; scheme.roi = parseFloat(document.getElementById('editRoi').value) || 0; scheme.fixedEmi = parseFloat(document.getElementById('editFixed').value) || 0;
+        closeEditSchemeModal(); recalcModel(pIdx);
+    }
+
+    function doSearch(id, ddId) {
+        let q = document.getElementById(id).value.toUpperCase(); let dd = document.getElementById(ddId); if(!q) { dd.style.display='none'; return; }
+        let matches = [...new Set(db_records.filter(r => r.model !== SPECIAL_MODEL).map(r => r.model))].filter(m => m.includes(q)).slice(0,10);
+        dd.innerHTML = matches.map(m => `<div style="padding:8px; border-bottom:1px solid #eee; cursor:pointer; font-weight:800; font-size:10px;" onclick="selectModel('${m}')">${m}</div>`).join('');
+        dd.style.display = matches.length ? 'block' : 'none';
+    }
+
+    function selectModel(name) {
+        if (!isLimitValid()) return;
+        tempPendingProduct = { name: name, isNT: false };
+        document.getElementById('modalMatrixSearchDropdown').style.display = 'none';
+        document.getElementById('modalMatrixSearch').value = ''; 
+        document.getElementById('addProductModal').style.display = 'none'; 
+        let raw = db_records.filter(r => r.model === name);
+        let baseMrp = raw.find(s => s.mrp > 0)?.mrp || "";
+        showComponentsModal(baseMrp);
+    }
+
+    function quickNonTieup() { 
+        if (!isLimitValid()) return; if(db_records.length === 0) return alert("⚠️ Database Error!");
+        document.getElementById('addProductModal').style.display = 'none'; 
+        let tieup = db_records.filter(r => r.model === SPECIAL_MODEL); let cats = [...new Set(tieup.map(r => r.category))].sort(); 
+        document.getElementById('categoryGrid').innerHTML = cats.map(c => `<div style="background:var(--indigo);color:white;padding:10px;border-radius:4px;cursor:pointer;font-weight:900;text-align:center;font-size:11px;" onclick="selectCategory('${c}')">${c}</div>`).join(''); 
+        document.getElementById('catSelectionModal').style.display = 'flex';
+    }
+
+    function selectCategory(catName) {
+        document.getElementById('catSelectionModal').style.display = 'none';
+        tempPendingProduct = { name: SPECIAL_MODEL + " - " + catName, isNT: true, category: catName };
+        showComponentsModal("");
+    }
+
+    function compMrpChanged() {
+        let mrp = parseFloat(document.getElementById('compMrp').value) || 0;
+        document.getElementById('compInv').value = mrp; 
+        let gtl = mrp > 100000 ? 2398 : (mrp > 50000 ? 1799 : (mrp > 30000 ? 1499 : (mrp > 10000 ? 1199 : (mrp > 0 ? 699 : 0))));
+        document.getElementById('compGtl').value = gtl;
+    }
+
+    function showComponentsModal(baseMrp = "") {
+        let c = customerQueue[activeCustomerIndex];
+        document.getElementById('compMrp').value = baseMrp !== "" ? baseMrp : (c.components?.mrp || '');
+        if (baseMrp !== "") { compMrpChanged(); } else { document.getElementById('compInv').value = c.components?.inv || ''; document.getElementById('compGtl').value = c.components?.gtl || 0; }
+        document.getElementById('compCap').value = c.components?.cap || c.cap || '';
+        document.getElementById('compTarget').value = c.components?.target || '';
+        document.getElementById('compRfc').value = c.components?.rfc || 0;
+        document.getElementById('compExw').value = c.components?.exw || '';
+        document.getElementById('compNiva').value = c.components?.niva || '';
+        document.getElementById('compMargin').value = c.components?.margin || '';
+        document.getElementById('compDealer').value = c.components?.dealer || '';
+        document.getElementById('componentsModal').style.display = 'flex';
+    }
+
+    async function proceedToMatrixFromComponents() {
+        let idx = activeCustomerIndex; if(idx === -1) return;
+        if(!customerQueue[idx].components) customerQueue[idx].components = {};
+        customerQueue[idx].components.mrp = parseFloat(document.getElementById('compMrp').value) || 0;
+        customerQueue[idx].components.inv = parseFloat(document.getElementById('compInv').value) || 0;
+        customerQueue[idx].components.cap = parseFloat(document.getElementById('compCap').value) || 0;
+        customerQueue[idx].components.target = parseFloat(document.getElementById('compTarget').value) || 0;
+        customerQueue[idx].components.gtl = parseFloat(document.getElementById('compGtl').value) || 0;
+        customerQueue[idx].components.rfc = parseFloat(document.getElementById('compRfc').value) || 0;
+        customerQueue[idx].components.exw = parseFloat(document.getElementById('compExw').value) || 0;
+        customerQueue[idx].components.niva = parseFloat(document.getElementById('compNiva').value) || 0;
+        customerQueue[idx].components.margin = parseFloat(document.getElementById('compMargin').value) || 0;
+        customerQueue[idx].components.dealer = parseFloat(document.getElementById('compDealer').value) || 0;
+        
+        let cCap = customerQueue[idx].components.cap;
+        if (cCap > 0 || customerQueue[idx].cap > 0) {
+            customerQueue[idx].cap = cCap > 0 ? cCap : ""; renderCustomerQueue(); updateMatrixTopCard();
+        }
+        await saveQueueToLocal();
+        document.getElementById('componentsModal').style.display = 'none';
+        if (tempPendingProduct) finalizeProductAddition();
+    }
+
+    async function finalizeProductAddition() {
+        let raw = tempPendingProduct.isNT ? db_records.filter(r => r.model === SPECIAL_MODEL && r.category === tempPendingProduct.category) : db_records.filter(r => r.model === tempPendingProduct.name);
+        let ltvLimit = getActiveLtv();
+        let matrixEligible = raw.filter(s => s.fixedEmi > 0 || tempPendingProduct.isNT || (s.tenure > 0 && ((s.tenure-s.advEmi)/s.tenure)*100 <= ltvLimit));
+        matrixEligible.forEach(s => s.inactive = false); 
+        let comp = customerQueue[activeCustomerIndex].components || {};
+        let finalMrp = comp.mrp || ""; let finalInv = comp.inv || ""; let surch = (finalInv > finalMrp && finalMrp > 0) ? finalInv - finalMrp : 0;
+
+        current_products.push({ 
+            name: tempPendingProduct.name, isNonTieup: tempPendingProduct.isNT, schemes: matrixEligible, 
+            inputs: { mrp: finalMrp, inv: finalInv, cap: comp.cap || getActiveCap(), target: comp.target || "", gtl: comp.gtl || 0, rfc: comp.rfc || 0, exw: comp.exw || "", niva: comp.niva || "", margin: comp.margin || "", dealer: comp.dealer || "", surch: surch }, 
+            isManual: false 
+        });
+        sortConfigs.push({ key: 'dp', dir: 'asc' }); 
+        customerQueue[activeCustomerIndex].products = current_products;
+        customerQueue[activeCustomerIndex].sortConfigs = sortConfigs;
+        tempPendingProduct = null;
+        await saveQueueToLocal(); renderMatrix(); 
+    }
+
+    function updateFinalSwitcher() {
+        let sw = document.getElementById('finalCustomerSwitcher'); if(!sw) return;
+        sw.innerHTML = customerQueue.map((c, i) => `<option value="${i}" ${i === activeCustomerIndex ? 'selected' : ''}>👤 ${c.name} (₹${c.limit})</option>`).join('');
+    }
+
+    async function switchCustomerFinal(idx) {
+        activeCustomerIndex = parseInt(idx); await saveQueueToLocal(); goToFinalPage();
+    }
+
+    function updateMatrixTopCard() {
+        document.getElementById('infoName').innerText = getActiveName();
+        document.getElementById('infoMobile').innerText = getActiveMobile();
+        document.getElementById('infoLimit').innerText = "₹" + getActiveLimit();
+        document.getElementById('infoLtv').innerText = getActiveLtv() + "%";
+        document.getElementById('infoCap').innerText = getActiveCap() ? "₹" + getActiveCap() : "NONE";
+        document.getElementById('infoType').innerText = getActiveType();
+    }
+
+    function loadCurrentProducts() {
+        let c = customerQueue[activeCustomerIndex];
+        current_products = c.products || []; sortConfigs = c.sortConfigs || [];
+    }
+
+    function goToFinalPage() {
+        if(activeCustomerIndex === -1) return;
+        loadCurrentProducts(); updateMatrixTopCard(); updateFinalSwitcher();
+        document.getElementById('unifiedHome').style.display = 'none';
+        document.getElementById('finalEligibleArea').style.display = 'flex';
+        renderMatrix();
+        setTimeout(() => {
+            document.getElementById('finalEligibleArea').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            if(current_products.length === 0) openAddProductModal();
+        }, 150);
+    }
+
+    function toggleModelView(pIdx) {
+        let wrapper = document.getElementById(`tw_${pIdx}`); let grid = document.getElementById(`cg_${pIdx}`); let icon = document.getElementById(`togIcon_${pIdx}`);
+        if(wrapper.style.display === 'none') { wrapper.style.display = 'block'; if(grid) grid.style.display = 'grid'; icon.innerText = '▼'; } 
+        else { wrapper.style.display = 'none'; if(grid) grid.style.display = 'none'; icon.innerText = '▶'; }
+    }
+
+    function renderMatrix() {
+        let container = document.getElementById('multiModelContainer'); container.innerHTML = "";
+        current_products.forEach((prod, pIdx) => {
+            let div = document.createElement('div'); div.className = 'model-panel'; let isNT = prod.isNonTieup;
+            let isCollapsed = (current_products.length > 1 && pIdx < current_products.length - 1);
+            let displayStyle = isCollapsed ? 'none' : 'block'; let gridStyle = isCollapsed ? 'none' : 'grid'; let toggleIcon = isCollapsed ? '▶' : '▼';
+
+            div.innerHTML = `
+                <div style="font-weight:900; color:var(--indigo); border-bottom:1px solid #ccc; padding-bottom:4px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+                    <div style="display:flex; align-items:center; gap: 8px; flex-wrap:wrap;">
+                        <span style="font-size:13px; text-transform:uppercase; display:flex; align-items:center;"><span id="togIcon_${pIdx}" onclick="toggleModelView(${pIdx})" style="cursor:pointer; color:var(--primary); padding-right:6px; font-size:15px; user-select:none;">${toggleIcon}</span>${prod.name}</span>
+                        <div style="display:flex; gap:4px; align-items:center; background:#e3f2fd; padding:2px 6px; border-radius:4px; border:1px solid var(--primary);">
+                            <label style="margin:0; font-size:8px; color:var(--primary);">MRP:</label>
+                            <input type="number" id="mrp_${pIdx}" value="${prod.inputs.mrp}" style="width:60px; height:20px; font-size:10px; padding:2px;" oninput="updateVal(${pIdx},'mrp',this.value)">
+                            <label style="margin:0; font-size:8px; color:var(--primary);">INV:</label>
+                            <input type="number" id="inv_${pIdx}" value="${prod.inputs.inv}" style="width:60px; height:20px; font-size:10px; padding:2px;" oninput="updateVal(${pIdx},'inv',this.value)">
+                            <label style="margin:0; font-size:8px; color:var(--primary);">VAR:</label>
+                            <input type="number" id="surch_${pIdx}" value="${prod.inputs.surch}" style="width:60px; height:20px; font-size:10px; padding:2px; background:#e8e8e8; border:1px dashed #aaa; color:var(--danger); cursor:not-allowed;" readonly>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:6px;">
+                        <button onclick="document.getElementById('tw_${pIdx}').classList.toggle('show-details-mode')" style="background:var(--warning); color:#000; font-size:9px; padding:4px 8px; border-radius:3px;">👁️ DETAILS</button>
+                        <button onclick="openSchemeOnlyModal(${pIdx})" style="background:var(--success); color:white; font-size:9px; padding:4px 8px; border-radius:3px;">+ MANUAL</button>
+                        <button onclick="current_products.splice(${pIdx},1);saveQueueToLocal();renderMatrix();" style="background:var(--danger); color:white; font-size:9px; padding:4px 8px; border-radius:3px;">REMOVE</button>
+                    </div>
+                </div>
+                <div class="control-grid" id="cg_${pIdx}" style="display:${gridStyle};">
+                    <div><label>EMI CAP</label><input type="number" id="capInp_${pIdx}" value="${prod.inputs.cap}" placeholder="MAX" oninput="updateVal(${pIdx},'cap',this.value)"></div>
+                    <div><label>TARGET DP</label><input type="number" value="${prod.inputs.target}" placeholder="0" oninput="updateVal(${pIdx},'target',this.value)"></div>
+                    <div><label>GTL</label><select id="gtl_${pIdx}" onchange="updateVal(${pIdx},'gtl',this.value)">
+                        <option value="0" ${prod.inputs.gtl == 0 ? 'selected' : ''}>0</option>
+                        <option value="699" ${prod.inputs.gtl == 699 ? 'selected' : ''}>699</option>
+                        <option value="1099" ${prod.inputs.gtl == 1099 ? 'selected' : ''}>1099</option>
+                        <option value="1199" ${prod.inputs.gtl == 1199 ? 'selected' : ''}>1199</option>
+                        <option value="1499" ${prod.inputs.gtl == 1499 ? 'selected' : ''}>1499</option>
+                        <option value="1799" ${prod.inputs.gtl == 1799 ? 'selected' : ''}>1799</option>
+                        <option value="2398" ${prod.inputs.gtl == 2398 ? 'selected' : ''}>2398</option>
+                    </select></div>
+                    <div><label>RFC</label><select id="rfc_${pIdx}" onchange="updateVal(${pIdx},'rfc',this.value)">
+                        <option value="0">0</option>
+                        <option id="rfc_opt_${pIdx}" value="${prod.inputs.rfc}" ${prod.inputs.rfc > 0 ? 'selected' : ''}>${prod.inputs.rfc}</option>
+                    </select></div>
+                    <div><label>EXW</label><input type="number" value="${prod.inputs.exw}" placeholder="0" oninput="updateVal(${pIdx},'exw',this.value)"></div>
+                    <div><label>NIVA BUPA</label><input type="number" value="${prod.inputs.niva}" placeholder="0" oninput="updateVal(${pIdx},'niva',this.value)"></div>
+                    <div><label>MARGIN</label><input type="number" value="${prod.inputs.margin}" placeholder="0" oninput="updateVal(${pIdx},'margin',this.value)"></div>
+                    <div><label>DEALER</label><input type="number" value="${prod.inputs.dealer}" placeholder="0" oninput="updateVal(${pIdx},'dealer',this.value)"></div>
+                </div>
+                <div class="table-wrapper" id="tw_${pIdx}" style="display:${displayStyle};">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th class="hidden-col" onclick="sortM(${pIdx},'category')">CAT ↕</th>
+                                <th class="hidden-col" onclick="sortM(${pIdx},'dbd')">DBD% ↕</th>
+                                <th class="hidden-col" onclick="sortM(${pIdx},'pf')">PF ↕</th>
+                                <th class="hidden-col" onclick="sortM(${pIdx},'roi')">ROI% ↕</th>
+                                <th class="hidden-col" onclick="sortM(${pIdx},'fixedEmi')">FIXED ↕</th>
+                                <th class="hidden-col" onclick="sortM(${pIdx},'curLTV')">LTV% ↕</th>
+                                <th class="hidden-col" onclick="sortM(${pIdx},'extra')">EXTRA ↕</th>
+                                ${isNT ? '<th onclick="sortM('+pIdx+',\'minLoan\')">MIN ↕</th><th onclick="sortM('+pIdx+',\'maxLoan\')">MAX ↕</th>' : '<th onclick="sortM('+pIdx+',\'nbfcMaxL\')">NBFC LMT ↕</th>'}
+                                <th onclick="sortM(${pIdx},'loan')">LOAN ↕</th>
+                                <th onclick="sortM('+pIdx+',\'currentTenure\')">T/A ↕</th>
+                                <th onclick="sortM(${pIdx},'dp')">NET DP ↕</th><th onclick="sortM(${pIdx},'emi')">EMI ↕</th><th onclick="sortM(${pIdx},'inst')">M ↕</th><th onclick="sortM(${pIdx},'daily')">DAILY ↕</th>
+                                <th>ACT</th>
+                            </tr>
+                        </thead>
+                        <tbody id="body_${pIdx}"></tbody>
+                    </table>
+                </div>`;
+            container.appendChild(div); recalcModel(pIdx);
+        });
+    }
+
+    function syncInsurance(pIdx, mrpVal, baseLoanVal, triggerType = 'NONE') {
+        let gtl = baseLoanVal > 100000 ? 2398 : (baseLoanVal > 50000 ? 1799 : (baseLoanVal > 30000 ? 1499 : (baseLoanVal > 10000 ? 1199 : (baseLoanVal > 0 ? 699 : 0))));
+        let rfcSlab = 0; if(mrpVal > 100000) rfcSlab = 11438; else if(mrpVal > 60000) rfcSlab = 8686; else if(mrpVal > 50000) rfcSlab = 5720; else if(mrpVal > 40000) rfcSlab = 4219; else if(mrpVal > 30000) rfcSlab = 3648; else if(mrpVal > 25000) rfcSlab = 3215; else if(mrpVal > 20000) rfcSlab = 2695; else if(mrpVal > 15000) rfcSlab = 2147; else if(mrpVal > 10000) rfcSlab = 1631; else if(mrpVal > 0) rfcSlab = 1109;
+        
+        if(triggerType === 'MRP' || triggerType === 'INV') { inp = current_products[pIdx].inputs; inp.gtl = gtl; if(triggerType === 'MRP') inp.rfc = 0; } 
+        else if (triggerType === 'LOAN') { current_products[pIdx].inputs.gtl = gtl; }
+        
+        let gSelect = document.getElementById(`gtl_${pIdx}`); let rOpt = document.getElementById(`rfc_opt_${pIdx}`); let rSelect = document.getElementById(`rfc_${pIdx}`);
+        if(gSelect) gSelect.value = current_products[pIdx].inputs.gtl; if(rOpt) { rOpt.value = rfcSlab; rOpt.innerText = rfcSlab; } if(rSelect) rSelect.value = current_products[pIdx].inputs.rfc;
+    }
+
+    function updateVal(pIdx, field, val) {
+        let v = val === "" ? "" : parseFloat(val) || 0; current_products[pIdx].inputs[field] = v;
+        if(field === 'cap') {
+            if(activeCustomerIndex !== -1 && customerQueue[activeCustomerIndex]) {
+                customerQueue[activeCustomerIndex].cap = v === 0 ? "" : v;
+                let topCap = document.getElementById('infoCap'); if(topCap) topCap.innerText = v > 0 ? "₹" + v : "NONE";
+                current_products.forEach((cp, idx) => { cp.inputs.cap = v; let capInput = document.getElementById(`capInp_${idx}`); if (capInput && idx !== pIdx) capInput.value = val; });
+            }
+        }
+        if (field === 'mrp' || field === 'inv') {
+            let m = parseFloat(current_products[pIdx].inputs.mrp) || 0; let i = parseFloat(current_products[pIdx].inputs.inv) || 0;
+            current_products[pIdx].inputs.surch = (i > m && m > 0) ? i - m : 0;
+            let surchEl = document.getElementById(`surch_${pIdx}`); if(surchEl) surchEl.value = current_products[pIdx].inputs.surch;
+            if(field === 'mrp' && i === 0) syncInsurance(pIdx, m, m, 'MRP'); if(field === 'inv') syncInsurance(pIdx, m, i > 0 ? i : m, 'INV');
+        }
+        field === 'cap' ? current_products.forEach((_, idx) => recalcModel(idx)) : recalcModel(pIdx);
+        customerQueue[activeCustomerIndex].products = current_products; saveQueueToLocal();
+    }
+
+    function recalcModel(pIdx) {
+        if(!current_products[pIdx]) return;
+        let prod = current_products[pIdx], limit = getActiveLimit(), type = getActiveType();
+        let fee = (type === 'EMI CARD') ? 270 : (type === 'W/O CARD' ? 320 : 850), inp = prod.inputs, totalFees = fee + (parseFloat(inp.niva)||0) + (parseFloat(inp.margin)||0) + (parseFloat(inp.dealer)||0) + (parseFloat(inp.surch)||0);
+        let currentLimit = limit > 0 ? limit : 9999999;
+        let inputMrp = parseFloat(inp.mrp) || 0; let inputInv = parseFloat(inp.inv) || 0; 
+        let effectivePrice = inputInv > 0 ? inputInv : (inputMrp > 0 ? inputMrp : 0);
+        let loanCapPrice = (inputMrp > 0 && inputInv > 0) ? Math.min(inputMrp, inputInv) : effectivePrice;
+
+        prod.calculatedData = prod.schemes.map((s, dIdx) => {
+            let isFixed = s.fixedEmi > 0; let loan = 0, nbfcMaxL = 0, dpExact = 0, dpRounded = 0, emi = 0, inst = 0, currentTenure = s.tenure;
+            nbfcMaxL = (currentLimit * s.tenure) / (s.tenure - s.advEmi || 1);
+            let dbdRate = (s.dbd * 1.18 / 100); let roiRate = s.roi / 1200; let roiRateDP = roiRate * s.advEmi; 
+            
+            if (isFixed) {
+                let maxRemainingEmis = Math.floor(currentLimit / s.fixedEmi); let maxTotalTenure = maxRemainingEmis + s.advEmi; nbfcMaxL = maxTotalTenure * s.fixedEmi; 
+                if (effectivePrice > 0) {
+                    currentTenure = Math.floor(effectivePrice / s.fixedEmi); if (currentTenure > maxTotalTenure) currentTenure = maxTotalTenure; if (currentTenure < 1) currentTenure = 1;
+                    loan = currentTenure * s.fixedEmi; if (loan > loanCapPrice) loan = loanCapPrice; 
+                    if (parseFloat(inp.target) > 0) {
+                        let numerator = parseFloat(inp.target) - effectivePrice - (s.fixedEmi * s.advEmi) - s.pf - totalFees; let denominator = dbdRate + roiRateDP - 1; let solvedLoan = numerator / denominator;
+                        let solvedTenure = Math.floor(solvedLoan / s.fixedEmi); if (solvedTenure > maxTotalTenure) solvedTenure = maxTotalTenure;
+                        loan = Math.max(0, solvedTenure * s.fixedEmi); if (loan > loanCapPrice) loan = loanCapPrice; currentTenure = Math.floor(loan / s.fixedEmi) || 1;
+                    }
+                    let roiInDp = loan * roiRateDP; dpExact = effectivePrice - loan + (s.fixedEmi * s.advEmi) + (loan * dbdRate) + s.pf + totalFees + roiInDp;
+                } else { currentTenure = s.tenure || 1; if (currentTenure > maxTotalTenure) currentTenure = maxTotalTenure; loan = currentTenure * s.fixedEmi; }
+                inst = currentTenure - s.advEmi; if(inst < 1) inst = 1;
+                let insTotal = (parseFloat(inp.gtl)||0) + (parseFloat(inp.rfc)||0) + (parseFloat(inp.exw)||0); let roiInEmi = loan * roiRate; emi = s.fixedEmi + (insTotal / inst) + roiInEmi;
+            } else {
+                let absoluteMax = Math.min(loanCapPrice > 0 ? loanCapPrice : 999999, nbfcMaxL); if (prod.isNonTieup && s.maxLoan < 9999999) absoluteMax = Math.min(absoluteMax, s.maxLoan); loan = absoluteMax;
+                if(parseFloat(inp.target) > 0 && effectivePrice > 0) { let advRate = s.advEmi / s.tenure; let numerator = parseFloat(inp.target) - effectivePrice - s.pf - totalFees; let denominator = advRate + dbdRate + roiRateDP - 1; let solvedLoan = numerator / denominator; loan = Math.min(loan, Math.max(0, Math.floor(solvedLoan))); }
+                inst = s.tenure - s.advEmi; if(inst < 1) inst = 1; let insTotal = (parseFloat(inp.gtl)||0)+(parseFloat(inp.rfc)||0)+(parseFloat(inp.exw)||0); let roiInEmi = loan * roiRate; emi = (loan / s.tenure) + (insTotal / inst) + roiInEmi;
+                if(emi > parseFloat(inp.cap) && parseFloat(inp.cap) > 0) { loan = (parseFloat(inp.cap) - (insTotal/inst)) / ( (1/s.tenure) + roiRate ); roiInEmi = loan * roiRate; emi = (loan / s.tenure) + (insTotal / inst) + roiInEmi; }
+                let roiInDp = loan * roiRateDP; dpExact = effectivePrice - loan + ((loan/s.tenure) * s.advEmi) + (loan * dbdRate) + s.pf + totalFees + roiInDp;
+            }
+            if(dpExact > 0) dpRounded = Math.ceil(dpExact / 10) * 10; else dpRounded = dpExact;
+            let extraVal = ((emi * inst) + dpRounded) - effectivePrice; let dbdAmt = loan * dbdRate; let roiAmt = (loan * roiRateDP) + (loan * roiRate * inst);
+            let curLTV = currentTenure > 0 ? ((currentTenure - s.advEmi) / currentTenure) * 100 : 0;
+            return { ...s, currentTenure, nbfcMaxL, loan, dp: dpRounded, emi, inst, daily: emi/30, dIdx, isFixed, curLTV, extra: extraVal, dbdAmt, roiAmt, inactive: s.inactive || false };
+        });
+        renderRows(pIdx);
+    }
+
+    function renderRows(pIdx) {
+        let prod = current_products[pIdx]; if(!sortConfigs[pIdx]) sortConfigs[pIdx] = {key: 'dp', dir: 'asc'}; let conf = sortConfigs[pIdx];
+        prod.calculatedData.sort((a,b) => conf.dir==='asc' ? a[conf.key]-b[conf.key] : b[conf.key]-a[conf.key]);
+        let ltvLimit = getActiveLtv(); let isNT = prod.isNonTieup;
+
+        document.getElementById(`body_${pIdx}`).innerHTML = prod.calculatedData.map(d => {
+            let curLTV = d.curLTV; let isLtvB = curLTV > ltvLimit; let isBoundB = false; if (isNT && prod.inputs.mrp > 0) { if (d.loan < d.minLoan || d.loan > d.maxLoan) isBoundB = true; }
+            let isInactive = d.inactive; let rowClass = (d.isFixed ? "fixed-row " : "") + (isLtvB || isBoundB ? "ltv-breach " : "") + (isInactive ? "inactive-row " : "");
+            let toggleBtnHTML = isInactive ? `<button class="action-btn" style="background:var(--success);" onclick="toggleInactive(${pIdx}, ${d.dIdx})">ADD</button>` : `<button class="action-btn" style="background:var(--danger);" onclick="toggleInactive(${pIdx}, ${d.dIdx})">DISABLE</button>`;
+
+            return `<tr id="row_${pIdx}_${d.dIdx}" class="${rowClass}">
+                <td class="hidden-col">${d.category}</td>
+                <td class="hidden-col">${+parseFloat(d.dbd).toFixed(3)}%<br><span style="color:var(--danger); font-size:8px; font-weight:900;">₹${Math.round(d.dbdAmt||0).toLocaleString()}</span></td>
+                <td class="hidden-col">₹${d.pf}</td>
+                <td class="hidden-col">${+parseFloat(d.roi).toFixed(2)}%<br><span style="color:var(--danger); font-size:8px; font-weight:900;">₹${Math.round(d.roiAmt||0).toLocaleString()}</span></td>
+                <td class="hidden-col">${d.fixedEmi > 0 ? '₹'+d.fixedEmi : 'N/A'}</td>
+                <td class="hidden-col" id="ltv_${pIdx}_${d.dIdx}">${Math.round(d.curLTV)}%</td>
+                <td class="hidden-col" id="extra_${pIdx}_${d.dIdx}" style="font-weight:900; color:var(--danger);">₹${Math.round(d.extra).toLocaleString()}</td>
+                ${isNT ? '<td class="bound-col">'+(d.minLoan>0?'₹'+d.minLoan:'0')+'</td><td class="bound-col">'+(d.maxLoan<9999999?'₹'+d.maxLoan:'NO')+'</td>' : '<td style="color:#777; font-size:8px;">₹'+Math.floor(d.nbfcMaxL)+'</td>'}
+                <td><div class="stepper"><button class="step-btn" onclick="step(${pIdx},${d.dIdx},-${d.isFixed ? d.fixedEmi : 1000})">-</button><input id="l_${pIdx}_${d.dIdx}" type="number" value="${Math.floor(d.loan)}" class="step-inp" oninput="manual(${pIdx},${d.dIdx})"><button class="step-btn" onclick="step(${pIdx},${d.dIdx},${d.isFixed ? d.fixedEmi : 1000})">+</button></div></td>
+                <td id="ta_${pIdx}_${d.dIdx}" style="font-weight:900;">${d.currentTenure}/${d.advEmi}</td>
+                <td id="dp_${pIdx}_${d.dIdx}" style="color:var(--success); font-weight:950;">₹${Math.round(d.dp).toLocaleString()}</td>
+                <td id="emi_${pIdx}_${d.dIdx}" style="color:var(--primary); font-weight:950;">₹${Math.round(d.emi).toLocaleString()}</td>
+                <td id="inst_${pIdx}_${d.dIdx}" style="font-weight:900;">${d.inst}</td>
+                <td id="day_${pIdx}_${d.dIdx}" style="color:var(--success); font-weight:950;">₹${Math.round(d.daily).toLocaleString()}</td>
+                <td>
+                    <div style="display:flex; flex-direction:column; gap:2px; min-width: 40px;">
+                        <button class="action-btn btn-copy" onclick="copySchemeText(${pIdx}, ${d.dIdx}, this)">COPY</button>
+                        <button class="action-btn" style="background:var(--warning); color:#000;" onclick="openEditSchemeModal(${pIdx}, ${d.dIdx})">EDIT</button>
+                        ${toggleBtnHTML}
+                    </div>
+                </td>
+            </tr>`;
+        }).join('');
+    }
+
+    function step(pIdx, dIdx, amt) { let el = document.getElementById(`l_${pIdx}_${dIdx}`); el.value = Math.max(0, parseInt(el.value) + amt); manual(pIdx, dIdx); }
+
+    function manual(pIdx, dIdx) {
+        let el = document.getElementById(`l_${pIdx}_${dIdx}`), loan = parseFloat(el.value) || 0, prod = current_products[pIdx], d = prod.calculatedData.find(x => x.dIdx === dIdx), inp = prod.inputs, type = getActiveType();
+        let fee = (type === 'EMI CARD') ? 270 : (type === 'W/O CARD' ? 320 : 850), totalFees = fee + (parseFloat(inp.niva)||0) + (parseFloat(inp.margin)||0) + (parseFloat(inp.dealer)||0) + (parseFloat(inp.surch)||0);
+        let ltvLimit = getActiveLtv(); let limit = getActiveLimit(); let currentLimit = limit > 0 ? limit : 9999999;
+        let inputMrp = parseFloat(inp.mrp) || 0; let inputInv = parseFloat(inp.inv) || 0; 
+        let effectivePrice = inputInv > 0 ? inputInv : (inputMrp > 0 ? inputMrp : 0);
+        let loanCapPrice = (inputMrp > 0 && inputInv > 0) ? Math.min(inputMrp, inputInv) : effectivePrice;
+
+        syncInsurance(pIdx, inputMrp, loan, 'LOAN'); 
+        let dbdRate = (d.dbd * 1.18 / 100); let roiRate = d.roi / 1200; let roiRateDP = roiRate * d.advEmi; 
+        
+        if (d.isFixed) {
+            let maxRemainingEmis = Math.floor(currentLimit / d.fixedEmi); let maxTotalTenure = maxRemainingEmis + d.advEmi; d.nbfcMaxL = maxTotalTenure * d.fixedEmi; 
+            let calcTenure = Math.floor(loan / d.fixedEmi) || 1; let maxBoundary = Math.min(d.nbfcMaxL, prod.isNonTieup ? d.maxLoan : 9999999, loanCapPrice > 0 ? loanCapPrice : 9999999);
+            if (loan > maxBoundary) { loan = Math.floor(maxBoundary / d.fixedEmi) * d.fixedEmi; calcTenure = Math.floor(loan / d.fixedEmi) || 1; } el.value = loan;
+            let roiInEmi = loan * roiRate; let roiInDp = loan * roiRateDP;  
+            let dpE = effectivePrice - loan + (d.fixedEmi * d.advEmi) + (loan * dbdRate) + d.pf + totalFees + roiInDp; let dpR = Math.ceil(dpE / 10) * 10; let inst = calcTenure - d.advEmi; if(inst < 1) inst = 1;
+            let emi = d.fixedEmi + (((parseFloat(inp.gtl)||0) + (parseFloat(inp.rfc)||0) + (parseFloat(inp.exw)||0)) / inst) + roiInEmi;
+            document.getElementById(`ta_${pIdx}_${dIdx}`).innerText = `${calcTenure}/${d.advEmi}`; document.getElementById(`inst_${pIdx}_${dIdx}`).innerText = inst;
+            d.loan = loan; d.currentTenure = calcTenure; d.dp = dpR; d.inst = inst; d.emi = emi;
+        } else {
+            let nbfcMaxL = (currentLimit * d.tenure) / (d.tenure - d.advEmi || 1); let maxBoundary = Math.min(loanCapPrice > 0 ? loanCapPrice : 999999, nbfcMaxL, prod.isNonTieup ? d.maxLoan : 9999999);
+            if(loan > maxBoundary) { loan = maxBoundary; el.value = Math.floor(loan); } let roiInEmi = loan * roiRate; let roiInDp = loan * roiRateDP;  
+            let dpE = effectivePrice - loan + ((loan/d.tenure) * d.advEmi) + (loan * dbdRate) + d.pf + totalFees + roiInDp; let dpR = Math.ceil(dpE / 10) * 10;
+            let inst = d.tenure - d.advEmi; if(inst < 1) inst = 1; let insTotal = (parseFloat(inp.gtl)||0)+(parseFloat(inp.rfc)||0)+(parseFloat(inp.exw)||0); let emi = (loan / d.tenure) + (insTotal / inst) + roiInEmi;
+            d.loan = loan; d.dp = dpR; d.emi = emi;
+        }
+        d.extra = ((d.emi * d.inst) + d.dp) - effectivePrice; d.dbdAmt = loan * dbdRate; d.roiAmt = (loan * roiRateDP) + (loan * roiRate * d.inst);
+        document.getElementById(`dp_${pIdx}_${dIdx}`).innerText = "₹" + Math.round(d.dp).toLocaleString(); document.getElementById(`emi_${pIdx}_${dIdx}`).innerText = "₹" + Math.round(d.emi).toLocaleString();
+        
+        d.curLTV = d.currentTenure > 0 ? ((d.currentTenure - d.advEmi) / d.currentTenure) * 100 : 0; let ltvCell = document.getElementById(`ltv_${pIdx}_${dIdx}`); if(ltvCell) ltvCell.innerText = Math.round(d.curLTV) + "%";
+        let extraCell = document.getElementById(`extra_${pIdx}_${dIdx}`); if(extraCell) extraCell.innerText = "₹" + Math.round(d.extra).toLocaleString();
+        let isB = (d.isFixed==false && !prod.isNonTieup && d.curLTV > ltvLimit) || (prod.isNonTieup && loan > 0 && (loan < d.minLoan || loan > d.maxLoan));
+        let rowEl = document.getElementById(`row_${pIdx}_${dIdx}`); if(rowEl) isB ? rowEl.classList.add('ltv-breach') : rowEl.classList.remove('ltv-breach');
+        let dbdCell = document.querySelector(`#row_${pIdx}_${dIdx} td:nth-child(2)`); if(dbdCell) dbdCell.innerHTML = `${+parseFloat(d.dbd).toFixed(3)}%<br><span style="color:var(--danger); font-size:8px; font-weight:900;">₹${Math.round(d.dbdAmt||0).toLocaleString()}</span>`;
+        let roiCell = document.querySelector(`#row_${pIdx}_${dIdx} td:nth-child(4)`); if(roiCell) roiCell.innerHTML = `${+parseFloat(d.roi).toFixed(2)}%<br><span style="color:var(--danger); font-size:8px; font-weight:900;">₹${Math.round(d.roiAmt||0).toLocaleString()}</span>`;
+        
+        customerQueue[activeCustomerIndex].products = current_products; saveQueueToLocal(); 
+    }
+
+    function sortM(pIdx, key) { 
+        let conf = sortConfigs[pIdx]; conf.dir = (conf.key === key && conf.dir === 'asc') ? 'desc' : 'asc'; conf.key = key; renderRows(pIdx); 
+        customerQueue[activeCustomerIndex].sortConfigs = sortConfigs; saveQueueToLocal(); 
+    }
+    
+    function copySchemeText(pIdx, dIdx, btnElement) {
+        let prod = current_products[pIdx], d = prod.calculatedData.find(x => x.dIdx === dIdx); let invAmt = prod.inputs.inv > 0 ? prod.inputs.inv : prod.inputs.mrp;
+        let c = customerQueue[activeCustomerIndex];
+        let cappingLine = (c.cap && c.cap !== "") ? `\nEMI CAPPING- ${c.cap}` : "";
+        let custDetails = `CUSTOMER NAME- ${c.name}\nNUMBER- ${c.mobile || ''}\nLIMIT- ${c.limit}\nLTV- ${c.ltv}${cappingLine}\n\n`;
+
+        let textToCopy = `${custDetails}📱 *${prod.name}*\n${invAmt > 0 ? `*INVOICE AMOUNT:* ₹${invAmt}\n\n` : "" }✅ *Scheme:* ${d.currentTenure}/${d.advEmi}\n💰 *DP:* ₹${Math.round(d.dp).toLocaleString()}\n🗓️ *EMI:* ₹${Math.round(d.emi).toLocaleString()} x ${d.inst}\n✨ *Daily EMI:* ₹${Math.round(d.daily).toLocaleString()}`;
+        function showSuccess() { let originalText = btnElement.innerText; btnElement.innerText = "COPIED!"; btnElement.style.background = "var(--success)"; setTimeout(() => { btnElement.innerText = originalText; btnElement.style.background = "var(--primary)"; }, 2000); }
+        if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(textToCopy).then(showSuccess).catch(() => fallbackCopy(textToCopy, showSuccess)); } else { fallbackCopy(textToCopy, showSuccess); }
+    }
+
+    function fallbackCopy(text, successCb) {
+        let ta = document.createElement("textarea"); ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = "absolute"; ta.style.left = "-9999px"; document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, 99999); 
+        try { let success = document.execCommand('copy'); if (success) { successCb(); } else { prompt("⚠️ Auto-copy block ho gaya. Kripya manual copy karein:", text); } } catch (err) { prompt("⚠️ Auto-copy fail ho gaya. Kripya copy karein:", text); }
+        document.body.removeChild(ta);
+    }
+
+    async function toggleInactive(pIdx, dIdx) { 
+        let prod = current_products[pIdx]; let scheme = prod.schemes[dIdx]; scheme.inactive = !scheme.inactive; recalcModel(pIdx); 
+        customerQueue[activeCustomerIndex].products = current_products; await saveQueueToLocal(); 
+    }
+
+    async function executeManualAction() {
+        let mode = document.getElementById('targetPIdx').value; let scheme = { tenure: parseInt(document.getElementById('manTen').value), advEmi: parseInt(document.getElementById('manAdv').value), dbd: parseFloat(document.getElementById('manDbd').value)||0, pf: parseInt(document.getElementById('manPf').value)||0, roi: parseFloat(document.getElementById('manRoi').value)||0, fixedEmi: parseInt(document.getElementById('manFixed').value)||0, minLoan: 0, maxLoan: 9999999, category: "MANUAL", inactive: false };
+        if(mode === "NEW") {
+            let name = document.getElementById('manName').value.toUpperCase() || "MANUAL MODEL";
+            let comp = customerQueue[activeCustomerIndex].components || {};
+            current_products.push({ name: name, schemes: [scheme], inputs: { mrp: "", inv: "", cap: getActiveCap(), target: "", gtl: 0, rfc: 0, exw: comp.exw||"", niva: comp.niva||"", margin: comp.margin||"", dealer: comp.dealer||"", surch: 0 }, isManual: true });
+            sortConfigs.push({ key: 'dp', dir: 'asc' }); 
+            customerQueue[activeCustomerIndex].products = current_products; customerQueue[activeCustomerIndex].sortConfigs = sortConfigs;
+            await saveQueueToLocal(); renderMatrix();
+        } else { current_products[mode].schemes.push(scheme); recalcModel(parseInt(mode)); }
+        closeManualModal();
+    }
+    
+    function openQuoteSelectionModal() {
+        if(current_products.length === 0) return alert("⚠️ Kripya pehle matrix mein koi product add karein!");
+        let html = current_products.map((p, idx) => `
+            <div style="display:flex; align-items:center; gap:8px; padding:8px; background:#f8f9fa; border:1px solid #ddd; border-radius:4px;">
+                <input type="checkbox" id="qchk_${idx}" class="quote-model-chk" value="${idx}" checked style="width:16px; height:16px; cursor:pointer;">
+                <label for="qchk_${idx}" style="font-size:11px; font-weight:bold; cursor:pointer; flex:1; margin:0;">${p.name}</label>
+            </div>
+        `).join('');
+        document.getElementById('quoteModelCheckboxes').innerHTML = html;
+        document.getElementById('quoteSelectionModal').style.display = 'flex';
+    }
+
+    function promptForSelectedImageGeneration() {
+        let chks = document.querySelectorAll('.quote-model-chk:checked');
+        if(chks.length === 0) return alert("⚠️ Kripya image generate karne ke liye kam se kam ek model select karein!");
+        window.tempImageGenIndices = Array.from(chks).map(c => parseInt(c.value));
+        document.getElementById('quoteSelectionModal').style.display = 'none';
+        let custName = getActiveName(); let custMobile = getActiveMobile();
+        document.getElementById('promptCustName').value = custName === "-" ? "" : custName;
+        document.getElementById('promptCustMobile').value = custMobile;
+        document.getElementById('custInfoPromptModal').style.display = 'flex';
+    }
+    
+    let requestWhatsAppDispatch = false;
+    function proceedGenerateImage() { requestWhatsAppDispatch = false; document.getElementById('custInfoPromptModal').style.display = 'none'; doGenerateCustomerImage(); }
+    function proceedGenerateImageAndWhatsAppCopy() { requestWhatsAppDispatch = true; document.getElementById('custInfoPromptModal').style.display = 'none'; doGenerateCustomerImage(); }
+
+    function doGenerateCustomerImage() {
+        let quoteDiv = document.createElement('div'); quoteDiv.style.width = "540px"; quoteDiv.style.padding = "25px 20px"; quoteDiv.style.background = "#fff"; quoteDiv.style.position = "absolute"; quoteDiv.style.top = "-9999px"; quoteDiv.style.fontFamily = "'Segoe UI', sans-serif";
+        let activeCustName = getActiveName(); let activeCustMobile = getActiveMobile(); let cLmt = getActiveLimit(); let cLtv = getActiveLtv(); let cType = getActiveType(); let cCap = getActiveCap();
+        let headerText = activeCustName !== "-" ? activeCustName.toUpperCase() : "CUSTOMER QUOTATION";
+
+        let html = `
+        <div style="text-align:center; border-bottom:4px solid var(--bajaj-blue); padding-bottom:15px; margin-bottom:20px;">
+            <h2 style="margin:0; color:var(--bajaj-blue); font-size:28px; font-weight:900; letter-spacing: 1px;">${headerText}</h2>
+            ${activeCustMobile ? `<h3 style="margin:5px 0 0 0; color:#333; font-size:22px;">📞 ${activeCustMobile}</h3>` : ''}
+            <div style="margin-top:10px; font-size:14px; color:#555; display:flex; justify-content:center; gap:15px; font-weight:bold; flex-wrap:wrap;">
+                <span style="background:#f0f0f0; padding:4px 10px; border-radius:4px;">LIMIT: ₹${cLmt}</span>
+                <span style="background:#f0f0f0; padding:4px 10px; border-radius:4px;">LTV: ${cLtv}%</span>
+                <span style="background:#f0f0f0; padding:4px 10px; border-radius:4px;">TYPE: ${cType}</span>
+                ${cCap ? `<span style="background:#f0f0f0; padding:4px 10px; border-radius:4px;">CAP: ₹${cCap}</span>` : ''}
+            </div>
+        </div>`;
+        
+        let hasV = false; let ltvLimit = getActiveLtv();
+        let productsToRender = window.tempImageGenIndices.map(idx => current_products[idx]);
+
+        productsToRender.forEach((prod) => {
+            let validS = prod.calculatedData.filter(d => { let isLtvB = d.curLTV > ltvLimit; let isBoundB = false; if (prod.isNonTieup && prod.inputs.mrp > 0) { if (d.loan < d.minLoan || d.loan > d.maxLoan) isBoundB = true; } return !isLtvB && !isBoundB && !d.inactive; });
+            if(validS.length === 0) return; hasV = true;
+            let invAmt = prod.inputs.inv > 0 ? prod.inputs.inv : prod.inputs.mrp;
+            
+            html += `<div style="margin-bottom:30px; border-radius: 8px; overflow: hidden; border: 2px solid #ddd; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+            <div style="background:#f8f9fa; padding:15px; border-left:8px solid var(--bajaj-green); display:flex; flex-direction:column; gap:5px;">
+                <h3 style="margin:0; color:var(--bajaj-blue); font-size:22px; font-weight:900; line-height:1.3;">${prod.name}</h3>
+                <span style="color:#555; font-size:18px; font-weight:900;">INVOICE AMT: <span style="color:var(--bajaj-blue);">₹${invAmt}</span></span>
+            </div>
+            <table style="width:100%; border-collapse:collapse; text-align:center; font-weight:900; font-size:18px;">
+                <thead>
+                    <tr style="background:#eaeaea; color:#000000; font-size:16px;">
+                        <th style="padding:15px 8px; border:1px solid #ccc;">SCHEME</th>
+                        <th style="padding:15px 8px; border:1px solid #ccc;">DP</th>
+                        <th style="padding:15px 8px; border:1px solid #ccc;">EMI</th>
+                        <th style="padding:15px 8px; border:1px solid #ccc;">MON</th>
+                        <th style="padding:15px 8px; border:1px solid #ccc;">DAILY</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+            
+            validS.forEach((d, i) => { 
+                html += `<tr style="background:${i%2==0?'#ffffff':'#f9f9f9'}; color:#000000;">
+                    <td style="padding:15px 8px; border:1px solid #ccc; font-size:18px;">${d.currentTenure}/${d.advEmi}</td>
+                    <td style="padding:15px 8px; border:1px solid #ccc; color:var(--bajaj-green); font-size:20px;">₹${Math.round(d.dp)}</td>
+                    <td style="padding:15px 8px; border:1px solid #ccc; color:var(--bajaj-blue); font-size:20px;">₹${Math.round(d.emi)}</td>
+                    <td style="padding:15px 8px; border:1px solid #ccc; font-size:18px;">${d.inst}</td>
+                    <td style="padding:15px 8px; border:1px solid #ccc; color:var(--bajaj-green); font-size:20px;">₹${Math.round(d.daily)}</td>
+                </tr>`; 
+            });
+            html += `</tbody></table></div>`;
+        });
+        
+        if(!hasV) { alert("⚠️ Download ke liye koi active/eligible scheme nahi hai!"); return; }
+        html += `<div style="text-align:center; margin-top: 20px; color:#888; font-size: 14px; font-weight: bold;">Generated via Persistent Portal</div>`;
+        quoteDiv.innerHTML = html; document.body.appendChild(quoteDiv);
+        
+        html2canvas(quoteDiv, {scale: 2}).then(canvas => { 
+            let imgDataUrl = canvas.toDataURL("image/png");
+            document.getElementById('generatedImage').src = imgDataUrl; 
+            document.getElementById('imageViewerModal').style.display = 'flex'; document.body.removeChild(quoteDiv); 
+            
+            if(requestWhatsAppDispatch) {
+                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                if (isMobile) {
+                    let a = document.createElement("a"); a.href = imgDataUrl;
+                    let safeName = activeCustName !== "-" ? activeCustName.replace(/\s+/g, '_') : "Customer";
+                    a.download = `Quotation_${safeName}.png`; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                    alert("✅ Image download ho gayi hai! Ab WhatsApp khulega, waha image attach karke bhejein.");
+                    setTimeout(() => { let mobile = getActiveMobile(); if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank'); }, 500);
+                } else {
+                    document.getElementById('clipboardStatusAlert').style.display = 'none';
+                    canvas.toBlob(blob => {
+                        try {
+                            navigator.clipboard.write([ new ClipboardItem({ "image/png": blob }) ]).then(() => {
+                                document.getElementById('clipboardStatusAlert').style.display = 'block';
+                                setTimeout(() => { let mobile = getActiveMobile(); if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank'); }, 500);
+                            }).catch(err => {
+                                alert("📋 Click / Long Press karke Copy Image karein.");
+                                let mobile = getActiveMobile(); if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank');
+                            });
+                        } catch (e) { let mobile = getActiveMobile(); if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank'); }
+                    }, 'image/png');
+                }
+            } else { document.getElementById('clipboardStatusAlert').style.display = 'none'; }
+        });
+    }
+</script>
+</body>
+</html>
