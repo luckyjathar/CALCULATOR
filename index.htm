@@ -486,7 +486,7 @@
 
     // --- AUTOMATIC BACKGROUND CLOUD SYNC ENGINE ---
     async function fetchDataFromCloud(isManualRefresh = false) {
-        if (!CLOUD_EXCEL_URL || CLOUD_EXCEL_URL === "YAHAN_APNA_LINK_PASTE_KAREIN") {
+        if (!CLOUD_EXCEL_URL || CLOUD_EXCEL_URL === "https://docs.google.com/spreadsheets/d/e/2PACX-1vQbqqK70wY9J_xOq9l92N9Z4FGxh46HCwuC9pfvBjYvmfHapFUmi8oBRFP-2J--1Q/pub?output=xlsx") {
             if (isManualRefresh) alert("⚠️ Kripya pehle code mein apna Cloud Link set karein!");
             return;
         }
