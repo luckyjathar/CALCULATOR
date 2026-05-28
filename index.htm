@@ -557,7 +557,6 @@
                 
                 if (activeCustomerIndex !== -1) {
                     loadCurrentProducts();
-                    current_products.forEach((_, idx) => recalcModel(idx));
                     renderMatrix();
                 }
                 if (isManualRefresh) alert("✅ Cloud Database successfully refreshed!");
