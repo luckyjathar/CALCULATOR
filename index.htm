@@ -11,7 +11,6 @@
         :root { --primary: #0984e3; --success: #27ae60; --danger: #d63031; --warning: #f39c12; --dark: #2d3436; --bg: #f4f7f6; --indigo: #341f97; --bajaj-blue: #0059A3; --bajaj-green: #00A34F; }
         body { font-family: 'Segoe UI', sans-serif; margin: 0 auto; max-width: 1200px; padding: 4px; background: var(--bg); font-size: 10.5px; display: flex; flex-direction: column; min-height: 98vh; scroll-behavior: smooth; }
         
-        /* UPDATED HEADER CSS */
         header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; border-bottom: 2px solid var(--primary); margin-bottom: 6px; padding: 6px 10px; background: #fff; border-radius: 6px; }
         header h1 { margin: 0; font-size: 1.1rem; color: var(--primary); font-weight: 900; text-align: right; }
         .header-actions { display: flex; gap: 6px; align-items: center; }
@@ -44,7 +43,7 @@
         #generatedImage { max-width: 100%; max-height: 80vh; width: auto; height: auto; object-fit: contain; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: block; margin: 10px auto; }
         .close-img-btn { position: fixed; top: 10px; right: 15px; background: var(--danger); color: white; border: none; border-radius: 50%; width: 35px; height: 35px; font-size: 16px; cursor: pointer; font-weight: bold; z-index: 2100; }
         
-        #loadingOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 9999; flex-direction: column; color: white; }
+        #loadingOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 9999; flex-direction: column; color: white; text-align: center; }
         .spinner { border: 4px solid rgba(255,255,255,0.3); border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 15px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
@@ -103,7 +102,7 @@
 <div id="loadingOverlay">
     <div class="spinner"></div>
     <h3 style="margin:0; font-weight:900; letter-spacing:1px;" id="loadingText">IMPORTING DATA...</h3>
-    <p style="font-size:10px; color:#aaa; margin-top:5px;">Please wait while we process the Excel file</p>
+    <p style="font-size:10px; color:#aaa; margin-top:5px;" id="loadingSubText">Please wait while we bypass security and process the file</p>
 </div>
 
 <header>
@@ -393,7 +392,7 @@
 </footer>
 
 <script>
-    // 📢 GOOGLE SHEETS LIVE AUTO-SYNC CONFIGURATION (UPDATED LIVE SOURCE LINK)
+    // 📢 GOOGLE SHEETS LIVE AUTO-SYNC CONFIGURATION
     const CLOUD_EXCEL_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQbqqK70wY9J_xOq9l92N9Z4FGxh46HCwuC9pfvBjYvmfHapFUmi8oBRFP-2J--1Q/pub?output=xlsx";
 
     // --- INDEXED DB WRAPPER ---
@@ -488,23 +487,35 @@
         }
     }
 
-    // --- AUTOMATIC BACKGROUND CLOUD SYNC ENGINE WITH CACHE BUSTER ---
+    // --- AUTOMATIC BACKGROUND CLOUD SYNC ENGINE WITH PROXY BYPASS ---
     async function fetchDataFromCloud(isManualRefresh = false) {
         if (!CLOUD_EXCEL_URL || CLOUD_EXCEL_URL.includes("YAHAN_APNA_LINK")) return;
         
         if (isManualRefresh) {
-            document.getElementById('loadingText').innerText = "FETCHING CLOUD RATES...";
+            document.getElementById('loadingText').innerText = "BYPASSING SECURITY & FETCHING RATES...";
+            document.getElementById('loadingSubText').innerText = "Using Proxy to read Google Sheet securely";
             document.getElementById('loadingOverlay').style.display = 'flex';
         }
         
         try {
-            console.log("Fetching latest rates from Google Sheets Cloud Live stream...");
+            console.log("Fetching latest rates via Proxy stream...");
             
-            // Advanced Cache Buster URL Construction Strategy to completely bypass network caching
+            // 1. Force fresh file mapping via cache buster
             let cacheBusterUrl = CLOUD_EXCEL_URL + (CLOUD_EXCEL_URL.includes('?') ? '&' : '?') + 't=' + Date.now();
             
-            let response = await fetch(cacheBusterUrl);
-            if (!response.ok) throw new Error("Cloud Sheets link framework down or unavailable.");
+            // 2. Bypass Google CORS lock using raw proxy
+            let proxyUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(cacheBusterUrl);
+            
+            let response = await fetch(proxyUrl);
+            
+            // Fallback Proxy in case allorigins is down
+            if (!response.ok) {
+                console.log("Primary proxy failed, switching to fallback...");
+                let fallbackProxy = "https://corsproxy.io/?" + encodeURIComponent(cacheBusterUrl);
+                response = await fetch(fallbackProxy);
+            }
+            
+            if (!response.ok) throw new Error("Both proxies failed to fetch the file.");
             
             let dataBuffer = await response.arrayBuffer();
             let wb = XLSX.read(new Uint8Array(dataBuffer), { type: 'array' }); 
@@ -526,7 +537,7 @@
                 await saveToDB("persistent_db", db_records); 
                 renderImportSummary();
                 document.getElementById('globalSchemeSearchBox').style.display = 'block';
-                console.log(`✅ Cloud stream synchronized. Loaded ${db_records.length} matrix rows successfully.`);
+                console.log(`✅ Proxy stream synchronized. Loaded ${db_records.length} matrix rows successfully.`);
                 
                 if (activeCustomerIndex !== -1) {
                     loadCurrentProducts();
@@ -537,7 +548,7 @@
             }
         } catch(err) {
             console.error("❌ Cloud Auto-Fetch System Interrupted: ", err);
-            if (isManualRefresh) alert("❌ Sync Failed: Parsing live binary workbook error.");
+            if (isManualRefresh) alert("❌ Sync Failed: Google security blocked the connection. Kripya thodi der baad try karein ya manually file upload karein.");
         } finally {
             if (isManualRefresh) document.getElementById('loadingOverlay').style.display = 'none';
         }
@@ -878,6 +889,7 @@
     function handleFileUpload() {
         let inputElement = document.getElementById('fileInp'); let f = inputElement.files[0]; if(!f) return;
         document.getElementById('loadingText').innerText = "IMPORTING DATA...";
+        document.getElementById('loadingSubText').innerText = "Please wait while we process the Excel file";
         document.getElementById('loadingOverlay').style.display = 'flex';
         setTimeout(() => {
             let r = new FileReader(); 
