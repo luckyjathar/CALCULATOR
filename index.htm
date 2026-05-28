@@ -126,7 +126,7 @@
                     </div>
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-bottom:10px;">
                         <div><label>MAX LTV %</label><input type="number" id="cqLtv" value="100" max="100" oninput="if(this.value>100)this.value=100;"></div>
-                        <div><label>EMI CAP</label><input type="number" id="cqCap" placeholder="₹ Cap"></div>
+                        <div><label>DAILY EMI CAP</label><input type="number" id="cqCap" placeholder="₹ Cap"></div>
                     </div>
                 </div>
                 
@@ -231,7 +231,7 @@
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:12px;">
                 <div><label>MRP (₹)</label><input type="number" id="compMrp" placeholder="0" oninput="compMrpChanged()"></div>
                 <div><label>INV (₹)</label><input type="number" id="compInv" placeholder="0"></div>
-                <div><label>EMI CAP (₹)</label><input type="number" id="compCap" placeholder="MAX"></div>
+                <div><label>DAILY EMI CAP (₹)</label><input type="number" id="compCap" placeholder="MAX"></div>
                 <div><label>TARGET DP (₹)</label><input type="number" id="compTarget" placeholder="0"></div>
                 <div><label>GTL (₹)</label>
                     <select id="compGtl">
@@ -369,7 +369,7 @@
             <span style="color: #87c3f7;">LIMIT:</span> <span id="infoLimit" class="highlight">₹0</span> |
             <span style="color: #87c3f7;">TYPE:</span> <span id="infoType" style="color: #fff;">-</span> |
             <span style="color: #87c3f7;">LTV:</span> <span id="infoLtv" style="color: #fff;">0%</span> |
-            <span style="color: #87c3f7;">EMI LINE:</span> <span id="infoCap" style="color: #fff;">-</span>
+            <span style="color: #87c3f7;">DAILY EMI LINE:</span> <span id="infoCap" style="color: #fff;">-</span>
         </div>
         
         <button onclick="openAddProductModal()" style="width: 100%; background:var(--warning); color:#000; padding:10px; border-radius:6px; font-size:11px; font-weight:900; margin-bottom:8px; border: 1.5px solid #d35400; box-shadow: 0 2px 5px rgba(0,0,0,0.1); cursor:pointer;">➕ ADD NEW PRODUCT (SEARCH / NON-TIEUP / MANUAL)</button>
@@ -389,7 +389,7 @@
 </footer>
 
 <script>
-    // 📢 GOOGLE SHEETS LIVE AUTO-SYNC CONFIGURATION
+    // 📢 GOOGLE SHEETS LIVE AUTO-SYNC CONFIGURATION (UPDATED LIVE SOURCE LINK)
     const CLOUD_EXCEL_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQbqqK70wY9J_xOq9l92N9Z4FGxh46HCwuC9pfvBjYvmfHapFUmi8oBRFP-2J--1Q/pub?output=xlsx";
 
     // --- INDEXED DB WRAPPER ---
@@ -484,12 +484,9 @@
         }
     }
 
-    // --- AUTOMATIC BACKGROUND CLOUD SYNC ENGINE ---
+    // --- AUTOMATIC BACKGROUND CLOUD SYNC ENGINE WITH CACHE BUSTER ---
     async function fetchDataFromCloud(isManualRefresh = false) {
-        if (!CLOUD_EXCEL_URL || CLOUD_EXCEL_URL === "https://docs.google.com/spreadsheets/d/e/2PACX-1vQbqqK70wY9J_xOq9l92N9Z4FGxh46HCwuC9pfvBjYvmfHapFUmi8oBRFP-2J--1Q/pub?output=xlsx") {
-            if (isManualRefresh) alert("⚠️ Kripya pehle code mein apna Cloud Link set karein!");
-            return;
-        }
+        if (!CLOUD_EXCEL_URL || CLOUD_EXCEL_URL.includes("YAHAN_APNA_LINK")) return;
         
         if (isManualRefresh) {
             document.getElementById('loadingText').innerText = "FETCHING CLOUD RATES...";
@@ -497,9 +494,13 @@
         }
         
         try {
-            console.log("Fetching latest rates from Google Sheets Cloud...");
-            let response = await fetch(CLOUD_EXCEL_URL);
-            if (!response.ok) throw new Error("Cloud Sheets link down or unavailable.");
+            console.log("Fetching latest rates from Google Sheets Cloud Live stream...");
+            
+            // Advanced Cache Buster URL Construction Strategy to completely bypass network caching
+            let cacheBusterUrl = CLOUD_EXCEL_URL + (CLOUD_EXCEL_URL.includes('?') ? '&' : '?') + 't=' + Date.now();
+            
+            let response = await fetch(cacheBusterUrl);
+            if (!response.ok) throw new Error("Cloud Sheets link framework down or unavailable.");
             
             let dataBuffer = await response.arrayBuffer();
             let wb = XLSX.read(new Uint8Array(dataBuffer), { type: 'array' }); 
@@ -521,7 +522,7 @@
                 await saveToDB("persistent_db", db_records); 
                 renderImportSummary();
                 document.getElementById('globalSchemeSearchBox').style.display = 'block';
-                console.log(`✅ ${db_records.length} schemes updated via cloud live stream.`);
+                console.log(`✅ Cloud stream synchronized. Loaded ${db_records.length} matrix rows successfully.`);
                 
                 if (activeCustomerIndex !== -1) {
                     loadCurrentProducts();
@@ -531,8 +532,8 @@
                 if (isManualRefresh) alert("✅ Cloud Database successfully refreshed!");
             }
         } catch(err) {
-            console.error("❌ Cloud Auto-Fetch Engine Blocked: ", err);
-            if (isManualRefresh) alert("❌ Sync Failed: Google sheets public parsing framework error.");
+            console.error("❌ Cloud Auto-Fetch System Interrupted: ", err);
+            if (isManualRefresh) alert("❌ Sync Failed: Parsing live binary workbook error.");
         } finally {
             if (isManualRefresh) document.getElementById('loadingOverlay').style.display = 'none';
         }
@@ -553,7 +554,7 @@
                 }
             }
             
-            // Core trigger: Initialize background cloud extraction sequence
+            // Core trigger: Hot-swap stream deployment for automatic updates
             fetchDataFromCloud(false);
             
             let savedQ = await getFromDB('persistent_queue');
@@ -715,7 +716,7 @@
     }
 
     async function setActiveCustomer(idx) { 
-        if(db_records.length === 0) { alert('⚠️ Database empty. Kripya network connection verify karein ya manual excel upload karein.'); return; }
+        if(db_records.length === 0) { alert('⚠️ Database empty. Please check network connection.'); return; }
         activeCustomerIndex = idx; 
         await saveQueueToLocal(); 
         document.getElementById('queueSearch').value = '';
@@ -781,17 +782,29 @@
         document.getElementById('globalSchemeViewerModal').style.display = 'flex';
     }
 
+    // --- INTEGRATED CLOCK SUMMARY RENDERING MATRIX ---
     function renderImportSummary() {
         let summaryDiv = document.getElementById('importedDataSummary');
         if (!summaryDiv) return;
         if (!db_records || db_records.length === 0) { summaryDiv.style.display = 'none'; return; }
+        
+        // High-precision timing sync mechanism
+        let now = new Date();
+        let timeStr = now.toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'}) + ' ' + now.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+        
         let stats = {}; let totalSchemes = db_records.length;
         db_records.forEach(r => {
             let cat = (r.category || 'OTHER').toString().trim().toUpperCase(); let mod = (r.model || 'UNKNOWN').toString().trim().toUpperCase();
             if (!stats[cat]) stats[cat] = { total: 0, brands: {} }; stats[cat].total++;
             if (!stats[cat].brands[mod]) stats[cat].brands[mod] = 0; stats[cat].brands[mod]++;
         });
-        let html = `<div style="color:var(--success); font-weight:900; margin-bottom:8px; text-align:center; font-size:14px; border-bottom: 2px solid var(--success); padding-bottom: 6px;">✅ ${totalSchemes} SCHEMES LOADED</div>`;
+        
+        let html = `
+        <div style="color:var(--success); font-weight:900; margin-bottom:8px; text-align:center; font-size:13px; border-bottom: 2px solid var(--success); padding-bottom: 6px;">
+            ✅ ${totalSchemes} SCHEMES LOADED<br>
+            <span style="font-size:10px; color:#555; font-weight:normal;">🕒 Last Sync: ${timeStr}</span>
+        </div>`;
+        
         let sortedCats = Object.keys(stats).sort();
         sortedCats.forEach(cat => {
             let catData = stats[cat]; let brandHtml = ''; let sortedBrands = Object.keys(catData.brands).sort();
@@ -1114,7 +1127,7 @@
                     </div>
                 </div>
                 <div class="control-grid" id="cg_${pIdx}" style="display:${gridStyle};">
-                    <div><label>EMI CAP</label><input type="number" id="capInp_${pIdx}" value="${prod.inputs.cap}" placeholder="MAX" oninput="updateVal(${pIdx},'cap',this.value)"></div>
+                    <div><label>DAILY EMI CAP</label><input type="number" id="capInp_${pIdx}" value="${prod.inputs.cap}" placeholder="MAX" oninput="updateVal(${pIdx},'cap',this.value)"></div>
                     <div><label>TARGET DP</label><input type="number" value="${prod.inputs.target}" placeholder="0" oninput="updateVal(${pIdx},'target',this.value)"></div>
                     <div><label>GTL</label><select id="gtl_${pIdx}" onchange="updateVal(${pIdx},'gtl',this.value)">
                         <option value="0" ${prod.inputs.gtl == 0 ? 'selected' : ''}>0</option>
@@ -1318,7 +1331,7 @@
     function copySchemeText(pIdx, dIdx, btnElement) {
         let prod = current_products[pIdx], d = prod.calculatedData.find(x => x.dIdx === dIdx); let invAmt = prod.inputs.inv > 0 ? prod.inputs.inv : prod.inputs.mrp;
         let c = customerQueue[activeCustomerIndex];
-        let cappingLine = (c.cap && c.cap !== "") ? `\nEMI CAPPING- ${c.cap}` : "";
+        let cappingLine = (c.cap && c.cap !== "") ? `\nDAILY EMI CAPPING- ${c.cap}` : "";
         let custDetails = `CUSTOMER NAME- ${c.name}\nNUMBER- ${c.mobile || ''}\nLIMIT- ${c.limit}\nLTV- ${c.ltv}${cappingLine}\n\n`;
 
         let textToCopy = `${custDetails}📱 *${prod.name}*\n${invAmt > 0 ? `*INVOICE AMOUNT:* ₹${invAmt}\n\n` : "" }✅ *Scheme:* ${d.currentTenure}/${d.advEmi}\n💰 *DP:* ₹${Math.round(d.dp).toLocaleString()}\n🗓️ *EMI:* ₹${Math.round(d.emi).toLocaleString()} x ${d.inst}\n✨ *Daily EMI:* ₹${Math.round(d.daily).toLocaleString()}`;
@@ -1342,7 +1355,7 @@
         if(mode === "NEW") {
             let name = document.getElementById('manName').value.toUpperCase() || "MANUAL MODEL";
             let comp = customerQueue[activeCustomerIndex].components || {};
-            current_products.push({ name: name, schemes: [scheme], inputs: { mrp: "", inv: "", cap: getActiveCap(), target: "", gtl: 0, rfc: 0, exw: comp.exw||"", niva: comp.niva||"", margin: comp.margin||"", dealer: comp.dealer||"", surch: 0 }, isManual: true });
+            current_products.push({ name: name, schemes: [scheme], inputs: { mrp: "", inv: "", mtCap: getActiveCap(), target: "", gtl: 0, rfc: 0, exw: comp.exw||"", niva: comp.niva||"", margin: comp.margin||"", dealer: comp.dealer||"", surch: 0 }, isManual: true });
             sortConfigs.push({ key: 'dp', dir: 'asc' }); 
             customerQueue[activeCustomerIndex].products = current_products; customerQueue[activeCustomerIndex].sortConfigs = sortConfigs;
             await saveQueueToLocal(); renderMatrix();
@@ -1390,7 +1403,7 @@
                 <span style="background:#f0f0f0; padding:4px 10px; border-radius:4px;">LIMIT: ₹${cLmt}</span>
                 <span style="background:#f0f0f0; padding:4px 10px; border-radius:4px;">LTV: ${cLtv}%</span>
                 <span style="background:#f0f0f0; padding:4px 10px; border-radius:4px;">TYPE: ${cType}</span>
-                ${cCap ? `<span style="background:#f0f0f0; padding:4px 10px; border-radius:4px;">CAP: ₹${cCap}</span>` : ''}
+                ${cCap ? `<span style="background:#f0f0f0; padding:4px 10px; border-radius:4px;">DAILY EMI CAP: ₹${cCap}</span>` : ''}
             </div>
         </div>`;
         
