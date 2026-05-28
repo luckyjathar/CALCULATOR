@@ -129,7 +129,7 @@
                     <div style="margin-bottom:6px;"><label>CUSTOMER NAME</label><input type="text" id="cqName" placeholder="Enter Name"></div>
                     <div style="margin-bottom:6px;"><label>MOBILE NO.</label><input type="text" id="cqMobile" placeholder="10 Digits" maxlength="10"></div>
                     <div style="margin-bottom:6px;"><label>NBFC LIMIT</label><input type="number" id="cqLimit" placeholder="₹ Amount"></div>
-                    <div style="margin-bottom:6px;"><label>CUST TYPE</label>
+                    <div style="margin-bottom:6px;"><label>CUSTOMER TYPE</label>
                         <select id="cqType">
                             <option value="NEW">NEW</option>
                             <option value="EMI CARD">EMI CARD</option>
@@ -139,7 +139,7 @@
                     </div>
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-bottom:10px;">
                         <div><label>MAX LTV %</label><input type="number" id="cqLtv" value="100" max="100" oninput="if(this.value>100)this.value=100;"></div>
-                        <div><label>DAILY EMI CAP</label><input type="number" id="cqCap" placeholder="₹ Cap"></div>
+                        <div><label>EMI CAPPING</label><input type="number" id="cqCap" placeholder="₹ Cap"></div>
                     </div>
                 </div>
                 
@@ -234,7 +234,7 @@
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:12px;">
                 <div><label>MRP (₹)</label><input type="number" id="compMrp" placeholder="0" oninput="compMrpChanged()"></div>
                 <div><label>INV (₹)</label><input type="number" id="compInv" placeholder="0"></div>
-                <div><label>DAILY EMI CAP (₹)</label><input type="number" id="compCap" placeholder="MAX"></div>
+                <div><label>EMI CAPPING (₹)</label><input type="number" id="compCap" placeholder="MAX"></div>
                 <div><label>TARGET DP (₹)</label><input type="number" id="compTarget" placeholder="0"></div>
                 <div><label>GTL (₹)</label>
                     <select id="compGtl">
@@ -1164,7 +1164,7 @@
                     </div>
                 </div>
                 <div class="control-grid" id="cg_${pIdx}" style="display:${gridStyle};">
-                    <div><label>DAILY EMI CAP</label><input type="number" id="capInp_${pIdx}" value="${prod.inputs.cap}" placeholder="MAX" oninput="updateVal(${pIdx},'cap',this.value)"></div>
+                    <div><label>EMI CAPPING</label><input type="number" id="capInp_${pIdx}" value="${prod.inputs.cap}" placeholder="MAX" oninput="updateVal(${pIdx},'cap',this.value)"></div>
                     <div><label>TARGET DP</label><input type="number" value="${prod.inputs.target}" placeholder="0" oninput="updateVal(${pIdx},'target',this.value)"></div>
                     <div><label>GTL</label><select id="gtl_${pIdx}" onchange="updateVal(${pIdx},'gtl',this.value)">
                         <option value="0" ${prod.inputs.gtl == 0 ? 'selected' : ''}>0</option>
@@ -1368,7 +1368,7 @@
     function copySchemeText(pIdx, dIdx, btnElement) {
         let prod = current_products[pIdx], d = prod.calculatedData.find(x => x.dIdx === dIdx); let invAmt = prod.inputs.inv > 0 ? prod.inputs.inv : prod.inputs.mrp;
         let c = customerQueue[activeCustomerIndex];
-        let cappingLine = (c.cap && c.cap !== "") ? `\nDAILY EMI CAPPING- ${c.cap}` : "";
+        let cappingLine = (c.cap && c.cap !== "") ? `\nEMI CAPPPING- ${c.cap}` : "";
         let custDetails = `CUSTOMER NAME- ${c.name}\nNUMBER- ${c.mobile || ''}\nLIMIT- ${c.limit}\nLTV- ${c.ltv}${cappingLine}\n\n`;
 
         let textToCopy = `${custDetails}📱 *${prod.name}*\n${invAmt > 0 ? `*INVOICE AMOUNT:* ₹${invAmt}\n\n` : "" }✅ *Scheme:* ${d.currentTenure}/${d.advEmi}\n💰 *DP:* ₹${Math.round(d.dp).toLocaleString()}\n🗓️ *EMI:* ₹${Math.round(d.emi).toLocaleString()} x ${d.inst}\n✨ *Daily EMI:* ₹${Math.round(d.daily).toLocaleString()}`;
@@ -1440,7 +1440,7 @@
                 <span style="background:#f0f0f0; padding:4px 10px; border-radius:4px;">LIMIT: ₹${cLmt}</span>
                 <span style="background:#f0f0f0; padding:4px 10px; border-radius:4px;">LTV: ${cLtv}%</span>
                 <span style="background:#f0f0f0; padding:4px 10px; border-radius:4px;">TYPE: ${cType}</span>
-                ${cCap ? `<span style="background:#f0f0f0; padding:4px 10px; border-radius:4px;">DAILY EMI CAP: ₹${cCap}</span>` : ''}
+                ${cCap ? `<span style="background:#f0f0f0; padding:4px 10px; border-radius:4px;">EMI CAPPING: ₹${cCap}</span>` : ''}
             </div>
         </div>`;
         
