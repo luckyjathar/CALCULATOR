@@ -10,9 +10,12 @@
     <style>
         :root { --primary: #0984e3; --success: #27ae60; --danger: #d63031; --warning: #f39c12; --dark: #2d3436; --bg: #f4f7f6; --indigo: #341f97; --bajaj-blue: #0059A3; --bajaj-green: #00A34F; }
         body { font-family: 'Segoe UI', sans-serif; margin: 0 auto; max-width: 1200px; padding: 4px; background: var(--bg); font-size: 10.5px; display: flex; flex-direction: column; min-height: 98vh; scroll-behavior: smooth; }
-        header { text-align: center; border-bottom: 2px solid var(--primary); margin-bottom: 6px; padding: 4px; background: #fff; }
-        header h1 { margin: 0; font-size: 1.1rem; color: var(--primary); font-weight: 900; }
         
+        /* UPDATED HEADER CSS */
+        header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; border-bottom: 2px solid var(--primary); margin-bottom: 6px; padding: 6px 10px; background: #fff; border-radius: 6px; }
+        header h1 { margin: 0; font-size: 1.1rem; color: var(--primary); font-weight: 900; text-align: right; }
+        .header-actions { display: flex; gap: 6px; align-items: center; }
+
         main { flex: 1; } 
 
         .card, .form-container, .action-box, .detail-card { background: #fff; padding: 8px; border-radius: 6px; border: 1px solid #ddd; margin-bottom: 6px; }
@@ -103,7 +106,18 @@
     <p style="font-size:10px; color:#aaa; margin-top:5px;">Please wait while we process the Excel file</p>
 </div>
 
-<header><h1>🚀 Persistent Portal Master</h1></header>
+<header>
+    <div class="header-actions">
+        <button onclick="fetchDataFromCloud(true)" style="background: var(--indigo); color: white; padding: 6px 10px; border-radius: 4px; font-weight: 900; font-size: 9px; box-shadow: 0 2px 4px rgba(52,31,151,0.3); border:none; cursor:pointer;">
+            🔄 REFRESH
+        </button>
+        <label for="fileInp" style="background: var(--success); color: white; padding: 6px 10px; border-radius: 4px; font-weight: 900; font-size: 9px; cursor: pointer; box-shadow: 0 2px 4px rgba(39,174,96,0.3); margin: 0;">
+            📂 EXCEL
+        </label>
+        <input type="file" id="fileInp" accept=".xlsx,.xls" onchange="handleFileUpload()" style="display:none;">
+    </div>
+    <h1>🚀 Persistent Portal Master</h1>
+</header>
 
 <main>
     <div id="unifiedHome">
@@ -153,24 +167,14 @@
             <div class="disclaimer-box">
                 <b>Disclaimer:</b> Is sheet mein update kiye gaye models aur schemes use karne se pehle kripya system ki original scheme ke saath <b>verify zaroor karein</b>.
             </div>
-
-            <div style="display: flex; gap: 6px;">
-                <button onclick="fetchDataFromCloud(true)" style="flex: 1; background: var(--indigo); color: white; padding: 10px; border-radius: 6px; font-weight: 900; box-shadow: 0 4px 6px rgba(52, 31, 151, 0.3);">
-                    🔄 REFRESH CLOUD RATES
-                </button>
-                <label for="fileInp" style="flex: 1; background:var(--success); color:white; padding:10px; border-radius:6px; display:block; text-align:center; font-weight:900; cursor:pointer; box-shadow: 0 4px 6px rgba(39, 174, 96, 0.3); margin-bottom: 0;">
-                    📂 MANUAL EXCEL BACKUP
-                </label>
-            </div>
-            <input type="file" id="fileInp" accept=".xlsx,.xls" onchange="handleFileUpload()" style="display:none;">
             
-            <div id="globalSchemeSearchBox" style="display:none; margin-top:10px; position:relative; background:#fdfdfd; padding:8px; border:1px solid #ccc; border-radius:6px;">
+            <div id="globalSchemeSearchBox" style="display:none; position:relative; background:#fdfdfd; padding:8px; border:1px solid #ccc; border-radius:6px;">
                 <label style="color:var(--indigo); font-size:11px; margin-bottom:4px;">🔍 SEARCH SCHEMES DICTIONARY</label>
                 <input type="search" id="globalModelSearch" oninput="doGlobalSearch()" placeholder="Type Model Name to view all its schemes..." style="height:32px; font-size:11px; width:100%; border:1.5px solid var(--indigo);">
                 <div id="globalModelDropdown" style="position: absolute; width: calc(100% - 16px); background: #fff; z-index: 1000; border: 1px solid #ddd; display: none; box-shadow: 0 10px 20px rgba(0,0,0,0.15); border-radius: 4px; max-height: 200px; overflow-y: auto;"></div>
             </div>
 
-            <div id="importedDataSummary" style="display:none; margin-top:8px; padding:10px; background:#fff; border:2px solid var(--success); border-radius:6px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); max-height: 350px; overflow-y: auto;">
+            <div id="importedDataSummary" class="custom-scroll" style="display:none; margin-top:8px; background:#fff; border:2px solid var(--success); border-radius:6px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); max-height: 350px; overflow-y: auto; position: relative; padding: 0;">
             </div>
         </div>
     </div>
@@ -578,6 +582,12 @@
         
         renderCustomerQueue();
         updateUniversalActionButtons();
+
+        // 🔄 AUTOMATIC TIMER: Har 5 minute me khud data fetch karega
+        setInterval(function() {
+            console.log("Timer Triggered: Auto syncing cloud rates...");
+            fetchDataFromCloud(false);
+        }, 5 * 60 * 1000); 
     };
 
     async function addCustomerToQueue() {
@@ -782,7 +792,7 @@
         document.getElementById('globalSchemeViewerModal').style.display = 'flex';
     }
 
-    // --- INTEGRATED CLOCK SUMMARY RENDERING MATRIX ---
+    // --- INTEGRATED CLOCK SUMMARY RENDERING MATRIX (STICKY MODE) ---
     function renderImportSummary() {
         let summaryDiv = document.getElementById('importedDataSummary');
         if (!summaryDiv) return;
@@ -800,10 +810,11 @@
         });
         
         let html = `
-        <div style="color:var(--success); font-weight:900; margin-bottom:8px; text-align:center; font-size:13px; border-bottom: 2px solid var(--success); padding-bottom: 6px;">
+        <div style="position: sticky; top: 0; background: #fff; z-index: 10; color:var(--success); font-weight:900; text-align:center; font-size:13px; border-bottom: 2px solid var(--success); padding: 10px 5px 6px 5px; margin-bottom: 8px; border-radius: 6px 6px 0 0; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
             ✅ ${totalSchemes} SCHEMES LOADED<br>
             <span style="font-size:10px; color:#555; font-weight:normal;">🕒 Last Sync: ${timeStr}</span>
-        </div>`;
+        </div>
+        <div style="padding: 0 10px 10px 10px;">`;
         
         let sortedCats = Object.keys(stats).sort();
         sortedCats.forEach(cat => {
@@ -811,6 +822,7 @@
             sortedBrands.forEach(b => { brandHtml += `<div style="display:flex; justify-content:space-between; padding: 4px 10px; border-bottom: 1px solid #eee; font-size: 10px;"><span style="color:#555; font-weight:700;">🏷️ ${b}</span> <span style="color:var(--primary); font-weight:900; background:#e3f2fd; padding:1px 4px; border-radius:3px;">${catData.brands[b]}</span></div>`; });
             html += `<details style="margin-bottom:6px; background:#f8f9fa; border:1px solid #ddd; border-radius:4px; overflow:hidden;"><summary style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; font-weight:900; color:var(--indigo); padding:8px; list-style:none; outline:none; background:#e3f2fd;"><span style="font-size:11px;">📁 ${cat}</span><span style="background:var(--primary); color:#fff; padding:2px 8px; border-radius:10px; font-size:9px;">${catData.total} Schemes ▼</span></summary><div style="background:#fff; color:#333; padding:4px 0;">${brandHtml}</div></details>`;
         });
+        html += `</div>`;
         summaryDiv.innerHTML = html; summaryDiv.style.display = 'block';
     }
 
