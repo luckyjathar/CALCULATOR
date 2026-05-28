@@ -247,7 +247,12 @@
                         <option value="2398">2398</option>
                     </select>
                 </div>
-                <div><label>RFC (₹)</label><input type="number" id="compRfc" placeholder="0"></div>
+                <div><label>RFC (₹)</label>
+                    <select id="compRfc">
+                        <option value="0">0</option>
+                        <option id="compRfcOpt" value="0">0</option>
+                    </select>
+                </div>
                 <div><label>EXW (₹)</label><input type="number" id="compExw" placeholder="0"></div>
                 <div><label>NIVA BUPA (₹)</label><input type="number" id="compNiva" placeholder="0"></div>
                 <div><label>MARGIN (₹)</label><input type="number" id="compMargin" placeholder="0"></div>
@@ -372,7 +377,7 @@
             <span style="color: #87c3f7;">LIMIT:</span> <span id="infoLimit" class="highlight">₹0</span> |
             <span style="color: #87c3f7;">TYPE:</span> <span id="infoType" style="color: #fff;">-</span> |
             <span style="color: #87c3f7;">LTV:</span> <span id="infoLtv" style="color: #fff;">0%</span> |
-            <span style="color: #87c3f7;">EMI CAPPING:</span> <span id="infoCap" style="color: #fff;">-</span>
+            <span style="color: #87c3f7;">DAILY EMI LINE:</span> <span id="infoCap" style="color: #fff;">-</span>
         </div>
         
         <button onclick="openAddProductModal()" style="width: 100%; background:var(--warning); color:#000; padding:10px; border-radius:6px; font-size:11px; font-weight:900; margin-bottom:8px; border: 1.5px solid #d35400; box-shadow: 0 2px 5px rgba(0,0,0,0.1); cursor:pointer;">➕ ADD NEW PRODUCT (SEARCH / NON-TIEUP / MANUAL)</button>
@@ -492,7 +497,7 @@
         if (!CLOUD_EXCEL_URL || CLOUD_EXCEL_URL.includes("YAHAN_APNA_LINK")) return;
         
         if (isManualRefresh) {
-            document.getElementById('loadingText').innerText = "Syncing..";
+            document.getElementById('loadingText').innerText = "BYPASSING SECURITY & FETCHING RATES...";
             document.getElementById('loadingSubText').innerText = "Translating binary file to secure Base64 format...";
             document.getElementById('loadingOverlay').style.display = 'flex';
         }
@@ -1037,15 +1042,62 @@
         document.getElementById('compInv').value = mrp; 
         let gtl = mrp > 100000 ? 2398 : (mrp > 50000 ? 1799 : (mrp > 30000 ? 1499 : (mrp > 10000 ? 1199 : (mrp > 0 ? 699 : 0))));
         document.getElementById('compGtl').value = gtl;
+        
+        // RFC Calculation logic
+        let rfcSlab = 0;
+        if(mrp > 100000) rfcSlab = 11438;
+        else if(mrp > 60000) rfcSlab = 8686;
+        else if(mrp > 50000) rfcSlab = 5720;
+        else if(mrp > 40000) rfcSlab = 4219;
+        else if(mrp > 30000) rfcSlab = 3648;
+        else if(mrp > 25000) rfcSlab = 3215;
+        else if(mrp > 20000) rfcSlab = 2695;
+        else if(mrp > 15000) rfcSlab = 2147;
+        else if(mrp > 10000) rfcSlab = 1631;
+        else if(mrp > 0) rfcSlab = 1109;
+
+        let rfcOpt = document.getElementById('compRfcOpt');
+        if(rfcOpt) {
+            rfcOpt.value = rfcSlab;
+            rfcOpt.innerText = rfcSlab;
+        }
+        document.getElementById('compRfc').value = rfcSlab;
     }
 
     function showComponentsModal(baseMrp = "") {
         let c = customerQueue[activeCustomerIndex];
-        document.getElementById('compMrp').value = baseMrp !== "" ? baseMrp : (c.components?.mrp || '');
-        if (baseMrp !== "") { compMrpChanged(); } else { document.getElementById('compInv').value = c.components?.inv || ''; document.getElementById('compGtl').value = c.components?.gtl || 0; }
+        let currentMrp = baseMrp !== "" ? baseMrp : (c.components?.mrp || '');
+        document.getElementById('compMrp').value = currentMrp;
+        
+        let mrpForRfc = parseFloat(currentMrp) || 0;
+        let rfcSlab = 0;
+        if(mrpForRfc > 100000) rfcSlab = 11438;
+        else if(mrpForRfc > 60000) rfcSlab = 8686;
+        else if(mrpForRfc > 50000) rfcSlab = 5720;
+        else if(mrpForRfc > 40000) rfcSlab = 4219;
+        else if(mrpForRfc > 30000) rfcSlab = 3648;
+        else if(mrpForRfc > 25000) rfcSlab = 3215;
+        else if(mrpForRfc > 20000) rfcSlab = 2695;
+        else if(mrpForRfc > 15000) rfcSlab = 2147;
+        else if(mrpForRfc > 10000) rfcSlab = 1631;
+        else if(mrpForRfc > 0) rfcSlab = 1109;
+
+        let rfcOpt = document.getElementById('compRfcOpt');
+        if(rfcOpt) {
+            rfcOpt.value = rfcSlab;
+            rfcOpt.innerText = rfcSlab;
+        }
+
+        if (baseMrp !== "") { 
+            compMrpChanged(); 
+        } else { 
+            document.getElementById('compInv').value = c.components?.inv || ''; 
+            document.getElementById('compGtl').value = c.components?.gtl || 0; 
+            document.getElementById('compRfc').value = c.components?.rfc || 0; 
+        }
+        
         document.getElementById('compCap').value = c.components?.cap || c.cap || '';
         document.getElementById('compTarget').value = c.components?.target || '';
-        document.getElementById('compRfc').value = c.components?.rfc || 0;
         document.getElementById('compExw').value = c.components?.exw || '';
         document.getElementById('compNiva').value = c.components?.niva || '';
         document.getElementById('compMargin').value = c.components?.margin || '';
@@ -1144,6 +1196,9 @@
             let isCollapsed = (current_products.length > 1 && pIdx < current_products.length - 1);
             let displayStyle = isCollapsed ? 'none' : 'block'; let gridStyle = isCollapsed ? 'none' : 'grid'; let toggleIcon = isCollapsed ? '▶' : '▼';
 
+            let rfcSlab = 0; let mVal = parseFloat(prod.inputs.mrp) || 0;
+            if(mVal > 100000) rfcSlab = 11438; else if(mVal > 60000) rfcSlab = 8686; else if(mVal > 50000) rfcSlab = 5720; else if(mVal > 40000) rfcSlab = 4219; else if(mVal > 30000) rfcSlab = 3648; else if(mVal > 25000) rfcSlab = 3215; else if(mVal > 20000) rfcSlab = 2695; else if(mVal > 15000) rfcSlab = 2147; else if(mVal > 10000) rfcSlab = 1631; else if(mVal > 0) rfcSlab = 1109;
+
             div.innerHTML = `
                 <div style="font-weight:900; color:var(--indigo); border-bottom:1px solid #ccc; padding-bottom:4px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
                     <div style="display:flex; align-items:center; gap: 8px; flex-wrap:wrap;">
@@ -1177,7 +1232,7 @@
                     </select></div>
                     <div><label>RFC</label><select id="rfc_${pIdx}" onchange="updateVal(${pIdx},'rfc',this.value)">
                         <option value="0">0</option>
-                        <option id="rfc_opt_${pIdx}" value="${prod.inputs.rfc}" ${prod.inputs.rfc > 0 ? 'selected' : ''}>${prod.inputs.rfc}</option>
+                        <option id="rfc_opt_${pIdx}" value="${rfcSlab}" ${prod.inputs.rfc > 0 ? 'selected' : ''}>${rfcSlab}</option>
                     </select></div>
                     <div><label>EXW</label><input type="number" value="${prod.inputs.exw}" placeholder="0" oninput="updateVal(${pIdx},'exw',this.value)"></div>
                     <div><label>NIVA BUPA</label><input type="number" value="${prod.inputs.niva}" placeholder="0" oninput="updateVal(${pIdx},'niva',this.value)"></div>
@@ -1210,31 +1265,26 @@
     }
 
     function syncInsurance(pIdx, mrpVal, baseLoanVal, triggerType = 'NONE') {
-    let gtl = baseLoanVal > 100000 ? 2398 : (baseLoanVal > 50000 ? 1799 : (baseLoanVal > 30000 ? 1499 : (baseLoanVal > 10000 ? 1199 : (baseLoanVal > 0 ? 699 : 0))));
-    
-    // Updated RFC Premium Logic
-    let rfcSlab = 0;
-    if (mrpVal > 100000 && mrpVal <= 300000) rfcSlab = 11438;
-    else if (mrpVal > 60000 && mrpVal <= 100000) rfcSlab = 8686;
-    else if (mrpVal > 50000 && mrpVal <= 60000) rfcSlab = 5720;
-    else if (mrpVal > 40000 && mrpVal <= 50000) rfcSlab = 4219;
-    else if (mrpVal > 30000 && mrpVal <= 40000) rfcSlab = 3648;
-    else if (mrpVal > 25000 && mrpVal <= 30000) rfcSlab = 3215;
-    else if (mrpVal > 20000 && mrpVal <= 25000) rfcSlab = 2695;
-    else if (mrpVal > 15000 && mrpVal <= 20000) rfcSlab = 2147;
-    else if (mrpVal > 10000 && mrpVal <= 15000) rfcSlab = 1631;
-    else if (mrpVal >= 0 && mrpVal <= 10000) rfcSlab = 1109;
-    
-    if(triggerType === 'MRP' || triggerType === 'INV') { 
-        inp = current_products[pIdx].inputs; 
-        inp.gtl = gtl; 
-        if(triggerType === 'MRP') inp.rfc = rfcSlab; // Automatically update RFC based on slab
-    } else if (triggerType === 'LOAN') { 
-        current_products[pIdx].inputs.gtl = gtl; 
+        let gtl = baseLoanVal > 100000 ? 2398 : (baseLoanVal > 50000 ? 1799 : (baseLoanVal > 30000 ? 1499 : (baseLoanVal > 10000 ? 1199 : (baseLoanVal > 0 ? 699 : 0))));
+        let rfcSlab = 0; if(mrpVal > 100000) rfcSlab = 11438; else if(mrpVal > 60000) rfcSlab = 8686; else if(mrpVal > 50000) rfcSlab = 5720; else if(mrpVal > 40000) rfcSlab = 4219; else if(mrpVal > 30000) rfcSlab = 3648; else if(mrpVal > 25000) rfcSlab = 3215; else if(mrpVal > 20000) rfcSlab = 2695; else if(mrpVal > 15000) rfcSlab = 2147; else if(mrpVal > 10000) rfcSlab = 1631; else if(mrpVal > 0) rfcSlab = 1109;
+        
+        let inp = current_products[pIdx].inputs;
+        if(triggerType === 'MRP' || triggerType === 'INV') { 
+            inp.gtl = gtl; 
+            if(triggerType === 'MRP') inp.rfc = rfcSlab; 
+        } 
+        else if (triggerType === 'LOAN') { 
+            inp.gtl = gtl; 
+        }
+        
+        let gSelect = document.getElementById(`gtl_${pIdx}`); 
+        let rOpt = document.getElementById(`rfc_opt_${pIdx}`); 
+        let rSelect = document.getElementById(`rfc_${pIdx}`);
+        if(gSelect) gSelect.value = inp.gtl; 
+        if(rOpt) { rOpt.value = rfcSlab; rOpt.innerText = rfcSlab; } 
+        if(rSelect) rSelect.value = inp.rfc;
     }
-    
-    // ... rest of your existing function code
-}
+
     function updateVal(pIdx, field, val) {
         let v = val === "" ? "" : parseFloat(val) || 0; current_products[pIdx].inputs[field] = v;
         if(field === 'cap') {
@@ -1383,7 +1433,7 @@
     function copySchemeText(pIdx, dIdx, btnElement) {
         let prod = current_products[pIdx], d = prod.calculatedData.find(x => x.dIdx === dIdx); let invAmt = prod.inputs.inv > 0 ? prod.inputs.inv : prod.inputs.mrp;
         let c = customerQueue[activeCustomerIndex];
-        let cappingLine = (c.cap && c.cap !== "") ? `\nEMI CAPPPING- ${c.cap}` : "";
+        let cappingLine = (c.cap && c.cap !== "") ? `\nEMI CAPPING- ${c.cap}` : "";
         let custDetails = `CUSTOMER NAME- ${c.name}\nNUMBER- ${c.mobile || ''}\nLIMIT- ${c.limit}\nLTV- ${c.ltv}${cappingLine}\n\n`;
 
         let textToCopy = `${custDetails}📱 *${prod.name}*\n${invAmt > 0 ? `*INVOICE AMOUNT:* ₹${invAmt}\n\n` : "" }✅ *Scheme:* ${d.currentTenure}/${d.advEmi}\n💰 *DP:* ₹${Math.round(d.dp).toLocaleString()}\n🗓️ *EMI:* ₹${Math.round(d.emi).toLocaleString()} x ${d.inst}\n✨ *Daily EMI:* ₹${Math.round(d.daily).toLocaleString()}`;
