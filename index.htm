@@ -102,7 +102,7 @@
 <div id="loadingOverlay">
     <div class="spinner"></div>
     <h3 style="margin:0; font-weight:900; letter-spacing:1px;" id="loadingText">IMPORTING DATA...</h3>
-    <p style="font-size:10px; color:#aaa; margin-top:5px;" id="loadingSubText">Please wait while we bypass security and process the file</p>
+    <p style="font-size:10px; color:#aaa; margin-top:5px;" id="loadingSubText">Please wait while we process the Excel file</p>
 </div>
 
 <header>
@@ -487,39 +487,50 @@
         }
     }
 
-    // --- AUTOMATIC BACKGROUND CLOUD SYNC ENGINE WITH PROXY BYPASS ---
+    // --- AUTOMATIC BACKGROUND CLOUD SYNC ENGINE WITH BASE64 ENCODING (100% ANTI-CORRUPTION) ---
     async function fetchDataFromCloud(isManualRefresh = false) {
         if (!CLOUD_EXCEL_URL || CLOUD_EXCEL_URL.includes("YAHAN_APNA_LINK")) return;
         
         if (isManualRefresh) {
             document.getElementById('loadingText').innerText = "BYPASSING SECURITY & FETCHING RATES...";
-            document.getElementById('loadingSubText').innerText = "Using Proxy to read Google Sheet securely";
+            document.getElementById('loadingSubText').innerText = "Translating binary file to secure Base64 format...";
             document.getElementById('loadingOverlay').style.display = 'flex';
         }
         
         try {
-            console.log("Fetching latest rates via Proxy stream...");
+            console.log("Fetching latest rates via secure Base64 Stream...");
             
-            // 1. Force fresh file mapping via cache buster
             let cacheBusterUrl = CLOUD_EXCEL_URL + (CLOUD_EXCEL_URL.includes('?') ? '&' : '?') + 't=' + Date.now();
+            let wb;
             
-            // 2. Bypass Google CORS lock using raw proxy
-            let proxyUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(cacheBusterUrl);
-            
-            let response = await fetch(proxyUrl);
-            
-            // Fallback Proxy in case allorigins is down
-            if (!response.ok) {
-                console.log("Primary proxy failed, switching to fallback...");
-                let fallbackProxy = "https://corsproxy.io/?" + encodeURIComponent(cacheBusterUrl);
-                response = await fetch(fallbackProxy);
+            try {
+                // METHOD 1: Base64 JSON Proxy (Immune to network binary corruption)
+                let proxyUrl = "https://api.allorigins.win/get?url=" + encodeURIComponent(cacheBusterUrl);
+                let response = await fetch(proxyUrl);
+                if (!response.ok) throw new Error("Primary Proxy failed");
+                
+                let json = await response.json();
+                if (!json.contents) throw new Error("Empty file received");
+                if (json.contents.includes("data:text/html") || json.contents.substring(0, 20).toLowerCase().includes("<html")) {
+                    throw new Error("Google blocked the file. Ensure it is published as 'Anyone with the link'.");
+                }
+                
+                let base64String = json.contents.split(',')[1] || json.contents;
+                wb = XLSX.read(base64String, { type: 'base64' });
+                
+            } catch (err1) {
+                console.warn("Base64 Proxy failed, switching to Raw ArrayBuffer Proxy...", err1);
+                
+                // METHOD 2: Direct Binary Fallback
+                let fallbackUrl = "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(cacheBusterUrl);
+                let fallbackRes = await fetch(fallbackUrl);
+                if (!fallbackRes.ok) throw new Error("Google Server completely unreachable.");
+                
+                let dataBuffer = await fallbackRes.arrayBuffer();
+                wb = XLSX.read(new Uint8Array(dataBuffer), { type: 'array' });
             }
             
-            if (!response.ok) throw new Error("Both proxies failed to fetch the file.");
-            
-            let dataBuffer = await response.arrayBuffer();
-            let wb = XLSX.read(new Uint8Array(dataBuffer), { type: 'array' }); 
-            
+            // Parse Sheets
             tempSheet1Data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { raw: false, defval: "" });
             parsedSheet2Data = wb.SheetNames.length > 1 ? XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[1]], { raw: false, defval: "" }).map(r => mapData(r, SPECIAL_MODEL)).filter(x => x && (x.tenure > 0 || x.fixedEmi > 0)) : [];
             
@@ -537,7 +548,7 @@
                 await saveToDB("persistent_db", db_records); 
                 renderImportSummary();
                 document.getElementById('globalSchemeSearchBox').style.display = 'block';
-                console.log(`✅ Proxy stream synchronized. Loaded ${db_records.length} matrix rows successfully.`);
+                console.log(`✅ Cloud stream synchronized. Loaded ${db_records.length} matrix rows successfully.`);
                 
                 if (activeCustomerIndex !== -1) {
                     loadCurrentProducts();
@@ -548,7 +559,9 @@
             }
         } catch(err) {
             console.error("❌ Cloud Auto-Fetch System Interrupted: ", err);
-            if (isManualRefresh) alert("❌ Sync Failed: Google security blocked the connection. Kripya thodi der baad try karein ya manually file upload karein.");
+            if (isManualRefresh) {
+                alert("❌ Sync Failed: " + err.message + "\n\nKripya ek baar MANUAL EXCEL BACKUP se file upload kar lein, Google Server abhi busy hai.");
+            }
         } finally {
             if (isManualRefresh) document.getElementById('loadingOverlay').style.display = 'none';
         }
