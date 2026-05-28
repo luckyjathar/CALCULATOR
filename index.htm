@@ -1210,16 +1210,31 @@
     }
 
     function syncInsurance(pIdx, mrpVal, baseLoanVal, triggerType = 'NONE') {
-        let gtl = baseLoanVal > 100000 ? 2398 : (baseLoanVal > 50000 ? 1799 : (baseLoanVal > 30000 ? 1499 : (baseLoanVal > 10000 ? 1199 : (baseLoanVal > 0 ? 699 : 0))));
-        let rfcSlab = 0; if(mrpVal > 100000) rfcSlab = 11438; else if(mrpVal > 60000) rfcSlab = 8686; else if(mrpVal > 50000) rfcSlab = 5720; else if(mrpVal > 40000) rfcSlab = 4219; else if(mrpVal > 30000) rfcSlab = 3648; else if(mrpVal > 25000) rfcSlab = 3215; else if(mrpVal > 20000) rfcSlab = 2695; else if(mrpVal > 15000) rfcSlab = 2147; else if(mrpVal > 10000) rfcSlab = 1631; else if(mrpVal > 0) rfcSlab = 1109;
-        
-        if(triggerType === 'MRP' || triggerType === 'INV') { inp = current_products[pIdx].inputs; inp.gtl = gtl; if(triggerType === 'MRP') inp.rfc = 0; } 
-        else if (triggerType === 'LOAN') { current_products[pIdx].inputs.gtl = gtl; }
-        
-        let gSelect = document.getElementById(`gtl_${pIdx}`); let rOpt = document.getElementById(`rfc_opt_${pIdx}`); let rSelect = document.getElementById(`rfc_${pIdx}`);
-        if(gSelect) gSelect.value = current_products[pIdx].inputs.gtl; if(rOpt) { rOpt.value = rfcSlab; rOpt.innerText = rfcSlab; } if(rSelect) rSelect.value = current_products[pIdx].inputs.rfc;
+    let gtl = baseLoanVal > 100000 ? 2398 : (baseLoanVal > 50000 ? 1799 : (baseLoanVal > 30000 ? 1499 : (baseLoanVal > 10000 ? 1199 : (baseLoanVal > 0 ? 699 : 0))));
+    
+    // Updated RFC Premium Logic
+    let rfcSlab = 0;
+    if (mrpVal > 100000 && mrpVal <= 300000) rfcSlab = 11438;
+    else if (mrpVal > 60000 && mrpVal <= 100000) rfcSlab = 8686;
+    else if (mrpVal > 50000 && mrpVal <= 60000) rfcSlab = 5720;
+    else if (mrpVal > 40000 && mrpVal <= 50000) rfcSlab = 4219;
+    else if (mrpVal > 30000 && mrpVal <= 40000) rfcSlab = 3648;
+    else if (mrpVal > 25000 && mrpVal <= 30000) rfcSlab = 3215;
+    else if (mrpVal > 20000 && mrpVal <= 25000) rfcSlab = 2695;
+    else if (mrpVal > 15000 && mrpVal <= 20000) rfcSlab = 2147;
+    else if (mrpVal > 10000 && mrpVal <= 15000) rfcSlab = 1631;
+    else if (mrpVal >= 0 && mrpVal <= 10000) rfcSlab = 1109;
+    
+    if(triggerType === 'MRP' || triggerType === 'INV') { 
+        inp = current_products[pIdx].inputs; 
+        inp.gtl = gtl; 
+        if(triggerType === 'MRP') inp.rfc = rfcSlab; // Automatically update RFC based on slab
+    } else if (triggerType === 'LOAN') { 
+        current_products[pIdx].inputs.gtl = gtl; 
     }
-
+    
+    // ... rest of your existing function code
+}
     function updateVal(pIdx, field, val) {
         let v = val === "" ? "" : parseFloat(val) || 0; current_products[pIdx].inputs[field] = v;
         if(field === 'cap') {
