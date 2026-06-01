@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Persistent Portal V75.0 - Master Edition</title>
+    <title>Persistent Portal V75.1 - Master Edition</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
@@ -492,7 +492,7 @@
         }
     }
 
-    // --- AUTOMATIC BACKGROUND CLOUD SYNC ENGINE WITH BASE64 ENCODING (100% ANTI-CORRUPTION) ---
+    // --- UPGRADED AUTOMATIC CLOUD SYNC ENGINE WITH MULTI-LAYER PROXY FALLBACKS ---
     async function fetchDataFromCloud(isManualRefresh = false) {
         if (!CLOUD_EXCEL_URL || CLOUD_EXCEL_URL.includes("YAHAN_APNA_LINK")) return;
         
@@ -503,36 +503,59 @@
         }
         
         try {
-            console.log("Fetching latest rates via secure Base64 Stream...");
+            console.log("Fetching latest rates via Multi-Layer Proxy System...");
             
             let cacheBusterUrl = CLOUD_EXCEL_URL + (CLOUD_EXCEL_URL.includes('?') ? '&' : '?') + 't=' + Date.now();
-            let wb;
-            
-            try {
-                // METHOD 1: Base64 JSON Proxy (Immune to network binary corruption)
-                let proxyUrl = "https://api.allorigins.win/get?url=" + encodeURIComponent(cacheBusterUrl);
-                let response = await fetch(proxyUrl);
-                if (!response.ok) throw new Error("Primary Proxy failed");
-                
-                let json = await response.json();
-                if (!json.contents) throw new Error("Empty file received");
-                if (json.contents.includes("data:text/html") || json.contents.substring(0, 20).toLowerCase().includes("<html")) {
-                    throw new Error("Google blocked the file. Ensure it is published as 'Anyone with the link'.");
-                }
-                
-                let base64String = json.contents.split(',')[1] || json.contents;
-                wb = XLSX.read(base64String, { type: 'base64' });
-                
-            } catch (err1) {
-                console.warn("Base64 Proxy failed, switching to Raw ArrayBuffer Proxy...", err1);
-                
-                // METHOD 2: Direct Binary Fallback
-                let fallbackUrl = "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(cacheBusterUrl);
-                let fallbackRes = await fetch(fallbackUrl);
-                if (!fallbackRes.ok) throw new Error("Google Server completely unreachable.");
-                
-                let dataBuffer = await fallbackRes.arrayBuffer();
-                wb = XLSX.read(new Uint8Array(dataBuffer), { type: 'array' });
+            let wb = null;
+            let fetchSuccess = false;
+
+            // PROXY 1: CorsProxy.io (Fastest & most reliable for binary data)
+            if (!fetchSuccess) {
+                try {
+                    let url1 = "https://corsproxy.io/?" + encodeURIComponent(cacheBusterUrl);
+                    let res1 = await fetch(url1);
+                    if (res1.ok) {
+                        let dataBuffer = await res1.arrayBuffer();
+                        wb = XLSX.read(new Uint8Array(dataBuffer), { type: 'array' });
+                        fetchSuccess = true;
+                        console.log("✅ Success via Proxy 1 (CorsProxy.io)");
+                    }
+                } catch (e) { console.warn("Proxy 1 failed:", e); }
+            }
+
+            // PROXY 2: CodeTabs (Solid backup for binary streams)
+            if (!fetchSuccess) {
+                try {
+                    let url2 = "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(cacheBusterUrl);
+                    let res2 = await fetch(url2);
+                    if (res2.ok) {
+                        let dataBuffer = await res2.arrayBuffer();
+                        wb = XLSX.read(new Uint8Array(dataBuffer), { type: 'array' });
+                        fetchSuccess = true;
+                        console.log("✅ Success via Proxy 2 (CodeTabs)");
+                    }
+                } catch (e) { console.warn("Proxy 2 failed:", e); }
+            }
+
+            // PROXY 3: AllOrigins (Base64 JSON Fallback)
+            if (!fetchSuccess) {
+                try {
+                    let url3 = "https://api.allorigins.win/get?url=" + encodeURIComponent(cacheBusterUrl);
+                    let res3 = await fetch(url3);
+                    if (res3.ok) {
+                        let json = await res3.json();
+                        if (json.contents && !json.contents.includes("data:text/html") && !json.contents.substring(0, 20).toLowerCase().includes("<html")) {
+                            let base64String = json.contents.split(',')[1] || json.contents;
+                            wb = XLSX.read(base64String, { type: 'base64' });
+                            fetchSuccess = true;
+                            console.log("✅ Success via Proxy 3 (AllOrigins)");
+                        }
+                    }
+                } catch (e) { console.warn("Proxy 3 failed:", e); }
+            }
+
+            if (!fetchSuccess || !wb) {
+                throw new Error("Saare Backup Proxy Servers block ho gaye hain.");
             }
             
             // Parse Sheets
@@ -553,7 +576,6 @@
                 await saveToDB("persistent_db", db_records); 
                 renderImportSummary();
                 document.getElementById('globalSchemeSearchBox').style.display = 'block';
-                console.log(`✅ Cloud stream synchronized. Loaded ${db_records.length} matrix rows successfully.`);
                 
                 if (activeCustomerIndex !== -1) {
                     loadCurrentProducts();
