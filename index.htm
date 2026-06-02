@@ -584,9 +584,9 @@
                 if (isManualRefresh) alert("✅ Cloud Database successfully refreshed!");
             }
         } catch(err) {
-            console.error("❌ Cloud Auto-Fetch System Interrupted: ", err);
+            console.error("⌛ Cloud Auto-Fetch System Interrupted: ", err);
             if (isManualRefresh) {
-                alert("❌ Sync Failed: " + err.message + "\n\nKripya ek baar MANUAL EXCEL BACKUP se file upload kar lein, Google Server abhi busy hai.");
+                alert("⌛ " + err.message + "\n\nKripya ek baar  page  refresh kar lein, Google Server abhi busy hai.");
             }
         } finally {
             if (isManualRefresh) document.getElementById('loadingOverlay').style.display = 'none';
