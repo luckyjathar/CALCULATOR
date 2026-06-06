@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Persistent Portal V75.1 - Master Edition</title>
+    <title>Persistent Portal V75.2 - Auto Sync & Short-Code Edition</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
@@ -112,7 +112,7 @@
 <div id="loadingOverlay">
     <div class="spinner"></div>
     <h3 style="margin:0; font-weight:900; letter-spacing:1px;" id="loadingText">IMPORTING DATA...</h3>
-    <p style="font-size:10px; color:#aaa; margin-top:5px;" id="loadingSubText">Please wait while we process the Excel file</p>
+    <p style="font-size:10px; color:#aaa; margin-top:5px;" id="loadingSubText">Please wait while we process the file</p>
 </div>
 
 <header>
@@ -192,25 +192,25 @@
     </div>
 
     <div id="syncModal" class="modal">
-        <div class="modal-content" style="max-width:400px;">
-            <h3 style="margin-top:0; color:var(--bajaj-blue); font-size:16px; border-bottom:2px solid #ccc; padding-bottom:6px;">☁️ CROSS-DEVICE SYNC</h3>
+        <div class="modal-content" style="max-width:350px;">
+            <h3 style="margin-top:0; color:var(--bajaj-blue); font-size:16px; border-bottom:2px solid #ccc; padding-bottom:6px; text-align: center;">☁️ DEVICE SYNC</h3>
 
-            <div style="margin-bottom:15px; background:#f8f9fa; padding:10px; border-radius:6px; border:1px solid #ddd;">
-                <label style="color:var(--success); font-size:11px; margin-bottom:4px;">⬇️ IMPORT FROM OTHER DEVICE</label>
-                <p style="font-size:9px; color:#555; margin:0 0 6px 0;">Dusre device se generate kiya hua code yahan paste karein:</p>
-                <textarea id="importCodeInput" rows="3" placeholder="Paste Sync Code here..." style="width:100%; border:1.5px solid var(--primary); border-radius:4px; padding:4px; font-size:10px; resize:none;"></textarea>
-                <button onclick="processSyncImport()" style="width:100%; background:var(--success); color:white; padding:8px; margin-top:6px; font-size:11px;">📥 IMPORT DATA</button>
+            <div style="margin-bottom:15px; background:#e8f4f8; padding:12px; border-radius:6px; border:1px solid var(--bajaj-blue); text-align: center;">
+                <label style="color:var(--bajaj-blue); font-size:11px; margin-bottom:6px;">⬆️ EXPORT (Generate Code)</label>
+                <p style="font-size:9px; color:#555; margin:0 0 10px 0;">Apne current saved data ko dusre device par bhejne ke liye Short Code banayein:</p>
+                <button onclick="generateSyncCode()" style="width:100%; background:var(--bajaj-blue); color:white; padding:10px; margin-bottom:10px; font-size:12px; font-weight:900; letter-spacing:1px; border-radius:4px;">GENERATE SHORT CODE</button>
+                <input type="text" id="exportCodeOutput" readonly placeholder="---" style="width:100%; border:2px dashed var(--bajaj-blue); border-radius:6px; padding:10px; font-size:22px; font-weight:900; text-align:center; color:var(--danger); letter-spacing:3px; background:#fff; cursor:copy;" onclick="copySyncCode()">
+                <p style="font-size:8px; color:var(--success); margin:6px 0 0 0; display:none;" id="copyHintText">Click the code to copy!</p>
             </div>
 
-            <div style="margin-bottom:15px; background:#e8f4f8; padding:10px; border-radius:6px; border:1px solid var(--bajaj-blue);">
-                <label style="color:var(--bajaj-blue); font-size:11px; margin-bottom:4px;">⬆️ EXPORT TO OTHER DEVICE</label>
-                <p style="font-size:9px; color:#555; margin:0 0 6px 0;">Is device ka data dusre device mein bhejne ke liye code banayein:</p>
-                <button onclick="generateSyncCode()" style="width:100%; background:var(--bajaj-blue); color:white; padding:8px; margin-bottom:6px; font-size:11px;">⚙️ GENERATE SYNC CODE</button>
-                <textarea id="exportCodeOutput" rows="3" readonly placeholder="Generated code will appear here..." style="width:100%; border:1px dashed var(--bajaj-blue); border-radius:4px; padding:4px; font-size:10px; resize:none; background:#fff;"></textarea>
-                <button onclick="copySyncCode()" style="width:100%; background:var(--warning); color:#000; padding:8px; margin-top:6px; font-size:11px;">📋 COPY CODE</button>
+            <div style="margin-bottom:10px; background:#f8f9fa; padding:12px; border-radius:6px; border:1px solid #ddd; text-align: center;">
+                <label style="color:var(--success); font-size:11px; margin-bottom:6px;">⬇️ IMPORT (Load Data)</label>
+                <p style="font-size:9px; color:#555; margin:0 0 10px 0;">Dusre device se mila hua Short Code yahan enter karein:</p>
+                <input type="text" id="importCodeInput" placeholder="Enter Code Here" style="width:100%; border:2px solid var(--primary); border-radius:6px; padding:10px; font-size:16px; text-align:center; font-weight:900; text-transform:uppercase; letter-spacing:2px; height: 40px;">
+                <button onclick="processSyncImport()" style="width:100%; background:var(--success); color:white; padding:10px; margin-top:10px; font-size:12px; font-weight:900; letter-spacing:1px; border-radius:4px;">📥 IMPORT DATA</button>
             </div>
 
-            <button onclick="document.getElementById('syncModal').style.display='none'" style="width:100%; background:var(--danger); color:white; padding:8px; font-size:11px;">✖ CANCEL</button>
+            <button onclick="document.getElementById('syncModal').style.display='none'" style="width:100%; background:var(--danger); color:white; padding:8px; font-size:11px; border-radius:4px; margin-top:5px;">✖ CANCEL</button>
         </div>
     </div>
 
@@ -533,31 +533,60 @@
     let selectedQueueIndex = -1; 
     let tempPendingProduct = null; 
 
-    // --- CROSS-DEVICE SYNC ENGINE ---
+    // --- NEW: SHORT-CODE CROSS-DEVICE SYNC ENGINE (Powered by Bytebin) ---
     function openSyncModal() {
         document.getElementById('importCodeInput').value = '';
         document.getElementById('exportCodeOutput').value = '';
+        document.getElementById('copyHintText').style.display = 'none';
         document.getElementById('syncModal').style.display = 'flex';
     }
 
-    function generateSyncCode() {
+    async function generateSyncCode() {
         if(customerQueue.length === 0) {
-            showToast("⚠️ Export karne ke liye queue mein data nahi hai!", "warning");
+            showToast("⚠️ Export karne ke liye koi data nahi hai!", "warning");
             return;
         }
+        
+        let outputBox = document.getElementById('exportCodeOutput');
+        let hintText = document.getElementById('copyHintText');
+        outputBox.value = "⏳ WAITING...";
+        hintText.style.display = 'none';
+
         try {
-            let jsonStr = JSON.stringify(customerQueue);
-            let encoded = btoa(encodeURIComponent(jsonStr));
-            document.getElementById('exportCodeOutput').value = encoded;
-            showToast("✅ Sync Code Generated!", "success");
-        } catch(e) {
-            showToast("❌ Error generating code.", "error");
+            // Hum sirf zaroori data bhejenge taaki upload fast ho
+            let compactQueue = customerQueue.map(c => {
+                let cp = (c.products || []).map(p => {
+                    let { calculatedData, allSchemes, ...keepProduct } = p;
+                    return keepProduct;
+                });
+                return { ...c, products: cp };
+            });
+
+            // Bytebin open-source JSON store
+            let response = await fetch("https://bytebin.lucko.me/post", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(compactQueue)
+            });
+
+            if (!response.ok) throw new Error("Server error");
+            let result = await response.json();
+            
+            // Ye server ek 7 character ka code deta hai
+            outputBox.value = result.key;
+            hintText.style.display = 'block';
+            showToast("✅ Short Code ban gaya! Dusre device me daalein.", "success");
+            
+        } catch (e) {
+            outputBox.value = "ERROR";
+            showToast("❌ Server se connect nahi ho paya. Internet check karein.", "error");
         }
     }
 
     function copySyncCode() {
         let code = document.getElementById('exportCodeOutput').value;
-        if(!code) return showToast("⚠️ Pehle code generate karein!", "warning");
+        if(!code || code === "⏳ WAITING..." || code === "ERROR") return;
+        
         if(navigator.clipboard && window.isSecureContext) {
             navigator.clipboard.writeText(code).then(() => showToast("📋 Code Copied! Send via WhatsApp.", "success"));
         } else {
@@ -566,35 +595,46 @@
     }
 
     async function processSyncImport() {
-        let code = document.getElementById('importCodeInput').value.trim();
-        if(!code) return showToast("⚠️ Kripya valid Sync Code paste karein!", "warning");
+        let codeInput = document.getElementById('importCodeInput');
+        let code = codeInput.value.trim();
+        
+        if(!code) return showToast("⚠️ Kripya Short Code type karein!", "warning");
 
-        if(confirm("⚠️ WARNING: Yeh aapke is device ke current saved data ko PURI TARAH REPLACE kar dega. Kya aap sure hain ki aap naya data import karna chahte hain?")) {
-            try {
-                let decoded = decodeURIComponent(atob(code));
-                let importedQueue = JSON.parse(decoded);
+        if(!confirm("⚠️ WARNING: Yeh aapke is device ke saare saved customers ko delete karke naya data load kar dega. Kya aap sure hain?")) {
+            return;
+        }
+
+        codeInput.value = "⏳ DOWNLOADING...";
+        
+        try {
+            let response = await fetch("https://bytebin.lucko.me/" + code);
+            if (!response.ok) throw new Error("Invalid Code");
+            
+            let importedQueue = await response.json();
+            
+            if(Array.isArray(importedQueue)) {
+                customerQueue = importedQueue;
+                activeCustomerIndex = customerQueue.length > 0 ? 0 : -1;
+                selectedQueueIndex = -1;
                 
-                if(Array.isArray(importedQueue)) {
-                    customerQueue = importedQueue;
-                    activeCustomerIndex = customerQueue.length > 0 ? 0 : -1;
-                    selectedQueueIndex = -1;
-                    
-                    await saveQueueToLocal();
-                    renderCustomerQueue();
-                    updateUniversalActionButtons();
-                    document.getElementById('syncModal').style.display = 'none';
-                    
-                    showToast("✅ Data successfully synced aur load ho gaya!", "success");
-                    
-                    if(activeCustomerIndex !== -1 && document.getElementById('finalEligibleArea').style.display === 'flex') {
-                        goToFinalPage();
-                    }
+                await saveQueueToLocal();
+                renderCustomerQueue();
+                updateUniversalActionButtons();
+                document.getElementById('syncModal').style.display = 'none';
+                
+                showToast("✅ Naya Data Successfully Load Ho Gaya!", "success");
+                
+                if(activeCustomerIndex !== -1 && document.getElementById('finalEligibleArea').style.display === 'flex') {
+                    goToFinalPage();
                 } else {
-                    showToast("❌ Invalid Sync Code format!", "error");
+                    goHome();
                 }
-            } catch(e) {
-                showToast("❌ Invalid Data! Lagta hai code theek se copy nahi hua hai.", "error");
+            } else {
+                throw new Error("Format mismatch");
             }
+        } catch(e) {
+            codeInput.value = "";
+            showToast("❌ Invalid Code! Ya toh code galat hai ya expire ho chuka hai.", "error");
         }
     }
 
@@ -614,13 +654,13 @@
         }
     }
 
-    // --- SILENT AUTOMATIC CLOUD SYNC ENGINE WITH MULTI-LAYER PROXY FALLBACKS ---
+    // --- UPGRADED CLOUD SYNC ENGINE (Fixed Google Sheet CORS blocks) ---
     async function fetchDataFromCloud(isManualRefresh = false) {
         if (!CLOUD_EXCEL_URL || CLOUD_EXCEL_URL.includes("YAHAN_APNA_LINK")) return;
         
         if (isManualRefresh) {
             document.getElementById('loadingText').innerText = "Syncing Master Sheet";
-            document.getElementById('loadingSubText').innerText = "Please wait...";
+            document.getElementById('loadingSubText').innerText = "Connecting to Google Servers...";
             document.getElementById('loadingOverlay').style.display = 'flex';
         }
         
@@ -629,10 +669,10 @@
             let wb = null;
             let fetchSuccess = false;
 
-            // PROXY 1: CorsProxy.io
+            // PROXY 1: AllOrigins RAW (Best for binary Google Sheets)
             if (!fetchSuccess) {
                 try {
-                    let url1 = "https://corsproxy.io/?" + encodeURIComponent(cacheBusterUrl);
+                    let url1 = "https://api.allorigins.win/raw?url=" + encodeURIComponent(cacheBusterUrl);
                     let res1 = await fetch(url1);
                     if (res1.ok) {
                         let dataBuffer = await res1.arrayBuffer();
@@ -642,10 +682,10 @@
                 } catch (e) { console.warn("Proxy 1 failed"); }
             }
 
-            // PROXY 2: CodeTabs
+            // PROXY 2: CorsProxy.io
             if (!fetchSuccess) {
                 try {
-                    let url2 = "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(cacheBusterUrl);
+                    let url2 = "https://corsproxy.io/?" + encodeURIComponent(cacheBusterUrl);
                     let res2 = await fetch(url2);
                     if (res2.ok) {
                         let dataBuffer = await res2.arrayBuffer();
@@ -655,10 +695,10 @@
                 } catch (e) { console.warn("Proxy 2 failed"); }
             }
 
-            // PROXY 3: AllOrigins Raw endpoint
+            // PROXY 3: CodeTabs Proxy
             if (!fetchSuccess) {
                 try {
-                    let url3 = "https://api.allorigins.win/raw?url=" + encodeURIComponent(cacheBusterUrl);
+                    let url3 = "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(cacheBusterUrl);
                     let res3 = await fetch(url3);
                     if (res3.ok) {
                         let dataBuffer = await res3.arrayBuffer();
@@ -666,22 +706,6 @@
                         fetchSuccess = true;
                     }
                 } catch (e) { console.warn("Proxy 3 failed"); }
-            }
-
-            // PROXY 4: AllOrigins Base64 endpoint (Last resort)
-            if (!fetchSuccess) {
-                try {
-                    let url4 = "https://api.allorigins.win/get?url=" + encodeURIComponent(cacheBusterUrl);
-                    let res4 = await fetch(url4);
-                    if (res4.ok) {
-                        let json = await res4.json();
-                        if (json.contents && !json.contents.includes("data:text/html") && !json.contents.substring(0, 20).toLowerCase().includes("<html")) {
-                            let base64String = json.contents.split(',')[1] || json.contents;
-                            wb = XLSX.read(base64String, { type: 'base64' });
-                            fetchSuccess = true;
-                        }
-                    }
-                } catch (e) { console.warn("Proxy 4 failed"); }
             }
 
             if (!fetchSuccess || !wb) {
@@ -716,7 +740,7 @@
         } catch(err) {
             console.warn("Cloud Sync Silent Fail: ", err.message);
             if (isManualRefresh) {
-                showToast("⚠️ Sync servers busy. Loaded from offline backup.", "warning");
+                showToast("⚠️ Sync servers busy. Purane offline data se load kiya gaya.", "warning");
             }
         } finally {
             if (isManualRefresh) document.getElementById('loadingOverlay').style.display = 'none';
