@@ -397,7 +397,7 @@
 </footer>
 
 <script>
-    // 📢 GOOGLE SHEETS LIVE AUTO-SYNC CONFIGURATION
+    // 📢 GOOGLE SHEETS LIVE AUTO-SYNC CONFIGURATION (FIXED URL)
     const CLOUD_EXCEL_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQbqqK70wY9J_xOq9l92N9Z4FGxh46HCwuC9pfvBjYvmfHapFUmi8oBRFP-2J--1Q/pub?output=xlsx";
 
     // --- INDEXED DB WRAPPER ---
@@ -584,9 +584,9 @@
                 if (isManualRefresh) alert("✅ Cloud Database successfully refreshed!");
             }
         } catch(err) {
-            console.error("⌛ Cloud Auto-Fetch System Interrupted: ", err);
+            console.error("❌ Cloud Auto-Fetch System Interrupted: ", err);
             if (isManualRefresh) {
-                alert("⌛ " + err.message + "\n\nKripya ek baar  page  refresh kar lein, Google Server abhi busy hai.");
+                alert("❌ Sync Failed: " + err.message + "\n\nKripya ek baar MANUAL EXCEL BACKUP se file upload kar lein, Google Server abhi busy hai.");
             }
         } finally {
             if (isManualRefresh) document.getElementById('loadingOverlay').style.display = 'none';
