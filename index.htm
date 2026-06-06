@@ -13,7 +13,7 @@
         
         header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; border-bottom: 2px solid var(--primary); margin-bottom: 6px; padding: 6px 10px; background: #fff; border-radius: 6px; }
         header h1 { margin: 0; font-size: 1.1rem; color: var(--primary); font-weight: 900; text-align: right; }
-        .header-actions { display: flex; gap: 6px; align-items: center; }
+        .header-actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 
         main { flex: 1; } 
 
@@ -21,7 +21,8 @@
         #unifiedHome { display: flex; flex-direction: column; }
         #finalEligibleArea { display: none; flex-direction: column; }
         
-        input, select { width: 100%; padding: 3px; border: 1.5px solid #ccc; border-radius: 4px; font-weight: 600; font-size: 10px; height: 26px; box-sizing: border-box; transition: border 0.3s; }
+        input, select, textarea { width: 100%; padding: 3px; border: 1.5px solid #ccc; border-radius: 4px; font-weight: 600; font-size: 10px; box-sizing: border-box; transition: border 0.3s; }
+        input, select { height: 26px; }
         
         label { font-weight: 900; font-size: 8px; color: #555; text-transform: uppercase; margin-bottom: 1px; display: block; }
         button { padding: 6px; border-radius: 4px; font-weight: 900; cursor: pointer; border: none; text-transform: uppercase; transition: background 0.3s; }
@@ -32,7 +33,7 @@
         .top-nav-box { display: flex; gap: 5px; margin-bottom: 6px; position: sticky; top: 0; z-index: 100; background: var(--bg); padding: 4px 0; align-items: center; }
         
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: flex-start; padding-top: 10px; z-index: 2000; overflow-y: auto; box-sizing: border-box; }
-        .modal-content { background: white; padding: 15px; border-radius: 8px; width: 90%; max-width: 400px; position: relative; margin-bottom: 20px; }
+        .modal-content { background: white; padding: 15px; border-radius: 8px; width: 90%; max-width: 400px; position: relative; margin-bottom: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
         
         #multiStackModal .modal-content, #globalSchemeViewerModal .modal-content { max-width: 900px; width: 95%; padding: 15px; }
         .stack-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px; margin-top: 8px; }
@@ -95,9 +96,18 @@
         .btn-copy { background: var(--primary); }
 
         .forms-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; align-items: stretch; }
+
+        /* Custom Toast CSS */
+        #toast-container { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; }
+        .toast-msg { background: #333; color: #fff; padding: 10px 20px; border-radius: 30px; font-size: 11px; font-weight: 900; box-shadow: 0 4px 10px rgba(0,0,0,0.3); opacity: 0; transform: translateY(20px); transition: all 0.3s ease; text-align: center; border: 1.5px solid transparent; letter-spacing: 0.5px; }
+        .toast-success { background: #e8f5e9; color: var(--success); border-color: var(--success); }
+        .toast-error { background: #ffebee; color: var(--danger); border-color: var(--danger); }
+        .toast-warning { background: #fff8e1; color: #d35400; border-color: #f39c12; }
     </style>
 </head>
 <body>
+
+<div id="toast-container"></div>
 
 <div id="loadingOverlay">
     <div class="spinner"></div>
@@ -109,6 +119,9 @@
     <div class="header-actions">
         <button onclick="fetchDataFromCloud(true)" style="background: var(--indigo); color: white; padding: 6px 10px; border-radius: 4px; font-weight: 900; font-size: 9px; box-shadow: 0 2px 4px rgba(52,31,151,0.3); border:none; cursor:pointer;">
             🔄 REFRESH
+        </button>
+        <button onclick="openSyncModal()" style="background: var(--dark); color: white; padding: 6px 10px; border-radius: 4px; font-weight: 900; font-size: 9px; box-shadow: 0 2px 4px rgba(0,0,0,0.3); border:none; cursor:pointer;">
+            ☁️ SYNC DATA
         </button>
         <label for="fileInp" style="background: var(--success); color: white; padding: 6px 10px; border-radius: 4px; font-weight: 900; font-size: 9px; cursor: pointer; box-shadow: 0 2px 4px rgba(39,174,96,0.3); margin: 0;">
             📂 EXCEL
@@ -175,6 +188,29 @@
 
             <div id="importedDataSummary" class="custom-scroll" style="display:none; margin-top:8px; background:#fff; border:2px solid var(--success); border-radius:6px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); max-height: 350px; overflow-y: auto; position: relative; padding: 0;">
             </div>
+        </div>
+    </div>
+
+    <div id="syncModal" class="modal">
+        <div class="modal-content" style="max-width:400px;">
+            <h3 style="margin-top:0; color:var(--bajaj-blue); font-size:16px; border-bottom:2px solid #ccc; padding-bottom:6px;">☁️ CROSS-DEVICE SYNC</h3>
+
+            <div style="margin-bottom:15px; background:#f8f9fa; padding:10px; border-radius:6px; border:1px solid #ddd;">
+                <label style="color:var(--success); font-size:11px; margin-bottom:4px;">⬇️ IMPORT FROM OTHER DEVICE</label>
+                <p style="font-size:9px; color:#555; margin:0 0 6px 0;">Dusre device se generate kiya hua code yahan paste karein:</p>
+                <textarea id="importCodeInput" rows="3" placeholder="Paste Sync Code here..." style="width:100%; border:1.5px solid var(--primary); border-radius:4px; padding:4px; font-size:10px; resize:none;"></textarea>
+                <button onclick="processSyncImport()" style="width:100%; background:var(--success); color:white; padding:8px; margin-top:6px; font-size:11px;">📥 IMPORT DATA</button>
+            </div>
+
+            <div style="margin-bottom:15px; background:#e8f4f8; padding:10px; border-radius:6px; border:1px solid var(--bajaj-blue);">
+                <label style="color:var(--bajaj-blue); font-size:11px; margin-bottom:4px;">⬆️ EXPORT TO OTHER DEVICE</label>
+                <p style="font-size:9px; color:#555; margin:0 0 6px 0;">Is device ka data dusre device mein bhejne ke liye code banayein:</p>
+                <button onclick="generateSyncCode()" style="width:100%; background:var(--bajaj-blue); color:white; padding:8px; margin-bottom:6px; font-size:11px;">⚙️ GENERATE SYNC CODE</button>
+                <textarea id="exportCodeOutput" rows="3" readonly placeholder="Generated code will appear here..." style="width:100%; border:1px dashed var(--bajaj-blue); border-radius:4px; padding:4px; font-size:10px; resize:none; background:#fff;"></textarea>
+                <button onclick="copySyncCode()" style="width:100%; background:var(--warning); color:#000; padding:8px; margin-top:6px; font-size:11px;">📋 COPY CODE</button>
+            </div>
+
+            <button onclick="document.getElementById('syncModal').style.display='none'" style="width:100%; background:var(--danger); color:white; padding:8px; font-size:11px;">✖ CANCEL</button>
         </div>
     </div>
 
@@ -397,8 +433,29 @@
 </footer>
 
 <script>
-    // 📢 GOOGLE SHEETS LIVE AUTO-SYNC CONFIGURATION (FIXED URL)
+    // 📢 GOOGLE SHEETS LIVE AUTO-SYNC CONFIGURATION
     const CLOUD_EXCEL_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQbqqK70wY9J_xOq9l92N9Z4FGxh46HCwuC9pfvBjYvmfHapFUmi8oBRFP-2J--1Q/pub?output=xlsx";
+
+    // --- SLEEK TOAST NOTIFICATION SYSTEM ---
+    function showToast(msg, type = 'info') {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = `toast-msg toast-${type}`;
+        toast.innerText = msg;
+        
+        container.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.style.opacity = '1';
+            toast.style.transform = 'translateY(0)';
+        }, 10);
+        
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(20px)';
+            setTimeout(() => { container.removeChild(toast); }, 300);
+        }, 3000);
+    }
 
     // --- INDEXED DB WRAPPER ---
     const DB_NAME = "PersistentPortalDB";
@@ -476,6 +533,71 @@
     let selectedQueueIndex = -1; 
     let tempPendingProduct = null; 
 
+    // --- CROSS-DEVICE SYNC ENGINE ---
+    function openSyncModal() {
+        document.getElementById('importCodeInput').value = '';
+        document.getElementById('exportCodeOutput').value = '';
+        document.getElementById('syncModal').style.display = 'flex';
+    }
+
+    function generateSyncCode() {
+        if(customerQueue.length === 0) {
+            showToast("⚠️ Export karne ke liye queue mein data nahi hai!", "warning");
+            return;
+        }
+        try {
+            let jsonStr = JSON.stringify(customerQueue);
+            let encoded = btoa(encodeURIComponent(jsonStr));
+            document.getElementById('exportCodeOutput').value = encoded;
+            showToast("✅ Sync Code Generated!", "success");
+        } catch(e) {
+            showToast("❌ Error generating code.", "error");
+        }
+    }
+
+    function copySyncCode() {
+        let code = document.getElementById('exportCodeOutput').value;
+        if(!code) return showToast("⚠️ Pehle code generate karein!", "warning");
+        if(navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(code).then(() => showToast("📋 Code Copied! Send via WhatsApp.", "success"));
+        } else {
+            fallbackCopy(code, () => showToast("📋 Code Copied!", "success"));
+        }
+    }
+
+    async function processSyncImport() {
+        let code = document.getElementById('importCodeInput').value.trim();
+        if(!code) return showToast("⚠️ Kripya valid Sync Code paste karein!", "warning");
+
+        if(confirm("⚠️ WARNING: Yeh aapke is device ke current saved data ko PURI TARAH REPLACE kar dega. Kya aap sure hain ki aap naya data import karna chahte hain?")) {
+            try {
+                let decoded = decodeURIComponent(atob(code));
+                let importedQueue = JSON.parse(decoded);
+                
+                if(Array.isArray(importedQueue)) {
+                    customerQueue = importedQueue;
+                    activeCustomerIndex = customerQueue.length > 0 ? 0 : -1;
+                    selectedQueueIndex = -1;
+                    
+                    await saveQueueToLocal();
+                    renderCustomerQueue();
+                    updateUniversalActionButtons();
+                    document.getElementById('syncModal').style.display = 'none';
+                    
+                    showToast("✅ Data successfully synced aur load ho gaya!", "success");
+                    
+                    if(activeCustomerIndex !== -1 && document.getElementById('finalEligibleArea').style.display === 'flex') {
+                        goToFinalPage();
+                    }
+                } else {
+                    showToast("❌ Invalid Sync Code format!", "error");
+                }
+            } catch(e) {
+                showToast("❌ Invalid Data! Lagta hai code theek se copy nahi hua hai.", "error");
+            }
+        }
+    }
+
     async function saveQueueToLocal() {
         try {
             let compactQueue = customerQueue.map(c => {
@@ -492,7 +614,7 @@
         }
     }
 
-    // --- UPGRADED AUTOMATIC CLOUD SYNC ENGINE WITH MULTI-LAYER PROXY FALLBACKS ---
+    // --- SILENT AUTOMATIC CLOUD SYNC ENGINE WITH MULTI-LAYER PROXY FALLBACKS ---
     async function fetchDataFromCloud(isManualRefresh = false) {
         if (!CLOUD_EXCEL_URL || CLOUD_EXCEL_URL.includes("YAHAN_APNA_LINK")) return;
         
@@ -503,13 +625,11 @@
         }
         
         try {
-            console.log("Fetching latest rates via Multi-Layer Proxy System...");
-            
             let cacheBusterUrl = CLOUD_EXCEL_URL + (CLOUD_EXCEL_URL.includes('?') ? '&' : '?') + 't=' + Date.now();
             let wb = null;
             let fetchSuccess = false;
 
-            // PROXY 1: CorsProxy.io (Fastest & most reliable for binary data)
+            // PROXY 1: CorsProxy.io
             if (!fetchSuccess) {
                 try {
                     let url1 = "https://corsproxy.io/?" + encodeURIComponent(cacheBusterUrl);
@@ -518,12 +638,11 @@
                         let dataBuffer = await res1.arrayBuffer();
                         wb = XLSX.read(new Uint8Array(dataBuffer), { type: 'array' });
                         fetchSuccess = true;
-                        console.log("✅ Success via Proxy 1 (CorsProxy.io)");
                     }
-                } catch (e) { console.warn("Proxy 1 failed:", e); }
+                } catch (e) { console.warn("Proxy 1 failed"); }
             }
 
-            // PROXY 2: CodeTabs (Solid backup for binary streams)
+            // PROXY 2: CodeTabs
             if (!fetchSuccess) {
                 try {
                     let url2 = "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(cacheBusterUrl);
@@ -532,30 +651,41 @@
                         let dataBuffer = await res2.arrayBuffer();
                         wb = XLSX.read(new Uint8Array(dataBuffer), { type: 'array' });
                         fetchSuccess = true;
-                        console.log("✅ Success via Proxy 2 (CodeTabs)");
                     }
-                } catch (e) { console.warn("Proxy 2 failed:", e); }
+                } catch (e) { console.warn("Proxy 2 failed"); }
             }
 
-            // PROXY 3: AllOrigins (Base64 JSON Fallback)
+            // PROXY 3: AllOrigins Raw endpoint
             if (!fetchSuccess) {
                 try {
-                    let url3 = "https://api.allorigins.win/get?url=" + encodeURIComponent(cacheBusterUrl);
+                    let url3 = "https://api.allorigins.win/raw?url=" + encodeURIComponent(cacheBusterUrl);
                     let res3 = await fetch(url3);
                     if (res3.ok) {
-                        let json = await res3.json();
+                        let dataBuffer = await res3.arrayBuffer();
+                        wb = XLSX.read(new Uint8Array(dataBuffer), { type: 'array' });
+                        fetchSuccess = true;
+                    }
+                } catch (e) { console.warn("Proxy 3 failed"); }
+            }
+
+            // PROXY 4: AllOrigins Base64 endpoint (Last resort)
+            if (!fetchSuccess) {
+                try {
+                    let url4 = "https://api.allorigins.win/get?url=" + encodeURIComponent(cacheBusterUrl);
+                    let res4 = await fetch(url4);
+                    if (res4.ok) {
+                        let json = await res4.json();
                         if (json.contents && !json.contents.includes("data:text/html") && !json.contents.substring(0, 20).toLowerCase().includes("<html")) {
                             let base64String = json.contents.split(',')[1] || json.contents;
                             wb = XLSX.read(base64String, { type: 'base64' });
                             fetchSuccess = true;
-                            console.log("✅ Success via Proxy 3 (AllOrigins)");
                         }
                     }
-                } catch (e) { console.warn("Proxy 3 failed:", e); }
+                } catch (e) { console.warn("Proxy 4 failed"); }
             }
 
             if (!fetchSuccess || !wb) {
-                throw new Error("Saare Backup Proxy Servers block ho gaye hain.");
+                throw new Error("Proxy exhausted.");
             }
             
             // Parse Sheets
@@ -581,12 +711,12 @@
                     loadCurrentProducts();
                     renderMatrix();
                 }
-                if (isManualRefresh) alert("✅ Cloud Database successfully refreshed!");
+                if (isManualRefresh) showToast("✅ Cloud Database successfully refreshed!", "success");
             }
         } catch(err) {
-            console.error("❌ Cloud Auto-Fetch System Interrupted: ", err);
+            console.warn("Cloud Sync Silent Fail: ", err.message);
             if (isManualRefresh) {
-                alert("❌ Sync Failed: " + err.message + "\n\nKripya ek baar MANUAL EXCEL BACKUP se file upload kar lein, Google Server abhi busy hai.");
+                showToast("⚠️ Sync servers busy. Loaded from offline backup.", "warning");
             }
         } finally {
             if (isManualRefresh) document.getElementById('loadingOverlay').style.display = 'none';
@@ -608,7 +738,6 @@
                 }
             }
             
-            // Core trigger: Hot-swap stream deployment for automatic updates
             fetchDataFromCloud(false);
             
             let savedQ = await getFromDB('persistent_queue');
@@ -635,7 +764,6 @@
 
         // 🔄 AUTOMATIC TIMER: Har 5 minute me khud data fetch karega
         setInterval(function() {
-            console.log("Timer Triggered: Auto syncing cloud rates...");
             fetchDataFromCloud(false);
         }, 5 * 60 * 1000); 
     };
@@ -648,7 +776,7 @@
         let type = document.getElementById('cqType').value;
         let cap = parseFloat(document.getElementById('cqCap').value) || "";
 
-        if(!limit || limit <= 0) { alert("⚠️ Please enter a valid NBFC LIMIT to add customer!"); return; }
+        if(!limit || limit <= 0) { showToast("⚠️ Please enter a valid NBFC LIMIT!", "warning"); return; }
 
         let now = new Date();
         let ts = now.toLocaleDateString('en-GB', {day:'2-digit', month:'short'}) + ' ' + now.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
@@ -672,6 +800,7 @@
         
         renderCustomerQueue();
         updateUniversalActionButtons();
+        showToast("✅ Customer added to queue!", "success");
     }
 
     function copyCustomerDetails(idx, btnElement) {
@@ -684,6 +813,7 @@
             btnElement.innerText = "COPIED!"; 
             btnElement.style.background = "var(--success)"; 
             btnElement.style.color = "white";
+            showToast("📋 Details Copied!", "success");
             setTimeout(() => { 
                 btnElement.innerText = originalText; 
                 btnElement.style.background = "var(--warning)"; 
@@ -776,7 +906,7 @@
     }
 
     async function setActiveCustomer(idx) { 
-        if(db_records.length === 0) { alert('⚠️ Database empty. Please check network connection.'); return; }
+        if(db_records.length === 0) { showToast("⚠️ Database empty. Verify sheet data.", "error"); return; }
         activeCustomerIndex = idx; 
         await saveQueueToLocal(); 
         document.getElementById('queueSearch').value = '';
@@ -806,7 +936,10 @@
     function getActiveCap() { return customerQueue[activeCustomerIndex]?.cap || ""; }
 
     function isLimitValid() {
-        if (activeCustomerIndex === -1 || !customerQueue[activeCustomerIndex]) { alert("⚠️ Kripya pehle queue mein ek customer add karein aur use 'ACTIVE' rakhein."); return false; }
+        if (activeCustomerIndex === -1 || !customerQueue[activeCustomerIndex]) { 
+            showToast("⚠️ Kripya queue mein ek customer add aur select karein.", "warning"); 
+            return false; 
+        }
         return true;
     }
 
@@ -842,13 +975,11 @@
         document.getElementById('globalSchemeViewerModal').style.display = 'flex';
     }
 
-    // --- INTEGRATED CLOCK SUMMARY RENDERING MATRIX (STICKY MODE) ---
     function renderImportSummary() {
         let summaryDiv = document.getElementById('importedDataSummary');
         if (!summaryDiv) return;
         if (!db_records || db_records.length === 0) { summaryDiv.style.display = 'none'; return; }
         
-        // High-precision timing sync mechanism
         let now = new Date();
         let timeStr = now.toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'}) + ' ' + now.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
         
@@ -898,7 +1029,7 @@
 
     async function processMultiStack() {
         let modelName = document.getElementById('multiStackModelName').value.trim().toUpperCase();
-        if (!modelName) return alert("⚠️ Kripya Model Name enter karein!");
+        if (!modelName) { showToast("⚠️ Kripya Model Name enter karein!", "warning"); return; }
         let validSchemes = [];
         for(let i=1; i<=10; i++) {
             let ten = parseInt(document.getElementById(`msTen_${i}`).value) || 0;
@@ -920,7 +1051,7 @@
             await saveQueueToLocal();
             closeMultiStackModal(); 
             renderMatrix(); 
-        } else { alert("⚠️ At least ek Scheme ki details (Tenure ya Fixed EMI) fill karein!"); }
+        } else { showToast("⚠️ At least ek Scheme details bharein!", "warning"); }
     }
 
     function findValLocal(row, targets) { let key = Object.keys(row).find(k => targets.includes(k.toUpperCase().replace(/\s/g, ''))); return key ? row[key] : null; }
@@ -948,7 +1079,7 @@
                         document.getElementById('smartImportModal').style.display = 'flex';
                     } catch(err) { 
                         document.getElementById('loadingOverlay').style.display = 'none';
-                        alert("❌ EXCEL IMPORT FAIL: " + err.message); document.getElementById('fileInp').value = ""; 
+                        showToast("❌ EXCEL IMPORT FAIL: " + err.message, "error"); document.getElementById('fileInp').value = ""; 
                     }
                 }, 50);
             }; 
@@ -966,10 +1097,10 @@
         db_records = uniqueDB; 
         try {
             await saveToDB("persistent_db", db_records); 
-            alert("✅ Backup Data successfully imported!");
+            showToast("✅ Backup Data successfully imported!", "success");
             document.getElementById('globalSchemeSearchBox').style.display = 'block';
         } catch(e) {
-            alert(`⚠️ IndexedDB Save Error.`);
+            showToast("⚠️ IndexedDB Save Error.", "error");
             document.getElementById('globalSchemeSearchBox').style.display = 'block';
         }
         renderImportSummary(); 
@@ -1045,7 +1176,7 @@
     }
 
     function quickNonTieup() { 
-        if (!isLimitValid()) return; if(db_records.length === 0) return alert("⚠️ Database Error!");
+        if (!isLimitValid()) return; if(db_records.length === 0) { showToast("⚠️ Database empty!", "error"); return; }
         document.getElementById('addProductModal').style.display = 'none'; 
         let tieup = db_records.filter(r => r.model === SPECIAL_MODEL); let cats = [...new Set(tieup.map(r => r.category))].sort(); 
         document.getElementById('categoryGrid').innerHTML = cats.map(c => `<div style="background:var(--indigo);color:white;padding:10px;border-radius:4px;cursor:pointer;font-weight:900;text-align:center;font-size:11px;" onclick="selectCategory('${c}')">${c}</div>`).join(''); 
@@ -1064,7 +1195,6 @@
         let gtl = mrp > 100000 ? 2398 : (mrp > 50000 ? 1799 : (mrp > 30000 ? 1499 : (mrp > 10000 ? 1199 : (mrp > 0 ? 699 : 0))));
         document.getElementById('compGtl').value = gtl;
         
-        // RFC Calculation logic
         let rfcSlab = 0;
         if(mrp > 100000) rfcSlab = 11438;
         else if(mrp > 60000) rfcSlab = 8686;
@@ -1458,13 +1588,19 @@
         let custDetails = `CUSTOMER NAME- ${c.name}\nNUMBER- ${c.mobile || ''}\nLIMIT- ${c.limit}\nLTV- ${c.ltv}${cappingLine}\n\n`;
 
         let textToCopy = `${custDetails}📱 *${prod.name}*\n${invAmt > 0 ? `*INVOICE AMOUNT:* ₹${invAmt}\n\n` : "" }✅ *Scheme:* ${d.currentTenure}/${d.advEmi}\n💰 *DP:* ₹${Math.round(d.dp).toLocaleString()}\n🗓️ *EMI:* ₹${Math.round(d.emi).toLocaleString()} x ${d.inst}\n✨ *Daily EMI:* ₹${Math.round(d.daily).toLocaleString()}`;
-        function showSuccess() { let originalText = btnElement.innerText; btnElement.innerText = "COPIED!"; btnElement.style.background = "var(--success)"; setTimeout(() => { btnElement.innerText = originalText; btnElement.style.background = "var(--primary)"; }, 2000); }
+        function showSuccess() { 
+            let originalText = btnElement.innerText; 
+            btnElement.innerText = "COPIED!"; 
+            btnElement.style.background = "var(--success)"; 
+            showToast("📋 Scheme Details Copied!", "success");
+            setTimeout(() => { btnElement.innerText = originalText; btnElement.style.background = "var(--primary)"; }, 2000); 
+        }
         if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(textToCopy).then(showSuccess).catch(() => fallbackCopy(textToCopy, showSuccess)); } else { fallbackCopy(textToCopy, showSuccess); }
     }
 
     function fallbackCopy(text, successCb) {
         let ta = document.createElement("textarea"); ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = "absolute"; ta.style.left = "-9999px"; document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, 99999); 
-        try { let success = document.execCommand('copy'); if (success) { successCb(); } else { prompt("⚠️ Auto-copy block ho gaya. Kripya manual copy karein:", text); } } catch (err) { prompt("⚠️ Auto-copy fail ho gaya. Kripya copy karein:", text); }
+        try { let success = document.execCommand('copy'); if (success) { successCb(); } else { showToast("⚠️ Auto-copy fail. Kripya manual copy karein.", "warning"); } } catch (err) { showToast("⚠️ Auto-copy fail. Kripya manual copy karein.", "warning"); }
         document.body.removeChild(ta);
     }
 
@@ -1487,7 +1623,7 @@
     }
     
     function openQuoteSelectionModal() {
-        if(current_products.length === 0) return alert("⚠️ Kripya pehle matrix mein koi product add karein!");
+        if(current_products.length === 0) { showToast("⚠️ Kripya pehle matrix mein koi product add karein!", "warning"); return; }
         let html = current_products.map((p, idx) => `
             <div style="display:flex; align-items:center; gap:8px; padding:8px; background:#f8f9fa; border:1px solid #ddd; border-radius:4px;">
                 <input type="checkbox" id="qchk_${idx}" class="quote-model-chk" value="${idx}" checked style="width:16px; height:16px; cursor:pointer;">
@@ -1500,7 +1636,7 @@
 
     function promptForSelectedImageGeneration() {
         let chks = document.querySelectorAll('.quote-model-chk:checked');
-        if(chks.length === 0) return alert("⚠️ Kripya image generate karne ke liye kam se kam ek model select karein!");
+        if(chks.length === 0) { showToast("⚠️ Kam se kam ek model select karein!", "warning"); return; }
         window.tempImageGenIndices = Array.from(chks).map(c => parseInt(c.value));
         document.getElementById('quoteSelectionModal').style.display = 'none';
         let custName = getActiveName(); let custMobile = getActiveMobile();
@@ -1567,7 +1703,7 @@
             html += `</tbody></table></div>`;
         });
         
-        if(!hasV) { alert("⚠️ Download ke liye koi active/eligible scheme nahi hai!"); return; }
+        if(!hasV) { showToast("⚠️ Download ke liye koi active/eligible scheme nahi hai!", "warning"); return; }
         html += `<div style="text-align:center; margin-top: 20px; color:#888; font-size: 14px; font-weight: bold;">Generated via Persistent Portal</div>`;
         quoteDiv.innerHTML = html; document.body.appendChild(quoteDiv);
         
@@ -1582,7 +1718,7 @@
                     let a = document.createElement("a"); a.href = imgDataUrl;
                     let safeName = activeCustName !== "-" ? activeCustName.replace(/\s+/g, '_') : "Customer";
                     a.download = `Quotation_${safeName}.png`; document.body.appendChild(a); a.click(); document.body.removeChild(a);
-                    alert("✅ Image download ho gayi hai! Ab WhatsApp khulega, waha image attach karke bhejein.");
+                    showToast("✅ Image downloaded! Opening WhatsApp...", "success");
                     setTimeout(() => { let mobile = getActiveMobile(); if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank'); }, 500);
                 } else {
                     document.getElementById('clipboardStatusAlert').style.display = 'none';
@@ -1592,7 +1728,7 @@
                                 document.getElementById('clipboardStatusAlert').style.display = 'block';
                                 setTimeout(() => { let mobile = getActiveMobile(); if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank'); }, 500);
                             }).catch(err => {
-                                alert("📋 Click / Long Press karke Copy Image karein.");
+                                showToast("📋 Click / Long Press karke Copy Image karein.", "warning");
                                 let mobile = getActiveMobile(); if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank');
                             });
                         } catch (e) { let mobile = getActiveMobile(); if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank'); }
