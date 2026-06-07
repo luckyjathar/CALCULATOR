@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Persistent Portal V75.2 - Auto Sync & Short-Code Edition</title>
+    <title>Persistent Portal V75.3 - Ultimate Sync Edition</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
@@ -103,6 +103,9 @@
         .toast-success { background: #e8f5e9; color: var(--success); border-color: var(--success); }
         .toast-error { background: #ffebee; color: var(--danger); border-color: var(--danger); }
         .toast-warning { background: #fff8e1; color: #d35400; border-color: #f39c12; }
+
+        /* Sync Code Input - Removed uppercase transform so typing is natural */
+        #importCodeInput { width:100%; border:2px solid var(--primary); border-radius:6px; padding:10px; font-size:16px; text-align:center; font-weight:900; letter-spacing:2px; height: 40px; }
     </style>
 </head>
 <body>
@@ -206,7 +209,7 @@
             <div style="margin-bottom:10px; background:#f8f9fa; padding:12px; border-radius:6px; border:1px solid #ddd; text-align: center;">
                 <label style="color:var(--success); font-size:11px; margin-bottom:6px;">⬇️ IMPORT (Load Data)</label>
                 <p style="font-size:9px; color:#555; margin:0 0 10px 0;">Dusre device se mila hua Short Code yahan enter karein:</p>
-                <input type="text" id="importCodeInput" placeholder="Enter Code Here" style="width:100%; border:2px solid var(--primary); border-radius:6px; padding:10px; font-size:16px; text-align:center; font-weight:900; text-transform:uppercase; letter-spacing:2px; height: 40px;">
+                <input type="text" id="importCodeInput" placeholder="Enter Code Here">
                 <button onclick="processSyncImport()" style="width:100%; background:var(--success); color:white; padding:10px; margin-top:10px; font-size:12px; font-weight:900; letter-spacing:1px; border-radius:4px;">📥 IMPORT DATA</button>
             </div>
 
@@ -594,11 +597,12 @@
         }
     }
 
+    // Input processing with .trim() ensuring spaces do not cause issues.
     async function processSyncImport() {
         let codeInput = document.getElementById('importCodeInput');
         let code = codeInput.value.trim();
         
-        if(!code) return showToast("⚠️ Kripya Short Code type karein!", "warning");
+        if(!code) return showToast("⚠️ Kripya valid Short Code type karein!", "warning");
 
         if(!confirm("⚠️ WARNING: Yeh aapke is device ke saare saved customers ko delete karke naya data load kar dega. Kya aap sure hain?")) {
             return;
@@ -633,7 +637,7 @@
                 throw new Error("Format mismatch");
             }
         } catch(e) {
-            codeInput.value = "";
+            codeInput.value = code; // Input reset to original so user can correct it
             showToast("❌ Invalid Code! Ya toh code galat hai ya expire ho chuka hai.", "error");
         }
     }
