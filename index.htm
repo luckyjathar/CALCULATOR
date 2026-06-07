@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Persistent Portal V75.4 - Ultimate Script Sync Edition</title>
+    <title>Persistent Portal V75.1 - Master Edition</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
         :root { --primary: #0984e3; --success: #27ae60; --danger: #d63031; --warning: #f39c12; --dark: #2d3436; --bg: #f4f7f6; --indigo: #341f97; --bajaj-blue: #0059A3; --bajaj-green: #00A34F; }
@@ -13,7 +14,7 @@
         
         header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; border-bottom: 2px solid var(--primary); margin-bottom: 6px; padding: 6px 10px; background: #fff; border-radius: 6px; }
         header h1 { margin: 0; font-size: 1.1rem; color: var(--primary); font-weight: 900; text-align: right; }
-        .header-actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+        .header-actions { display: flex; gap: 6px; align-items: center; }
 
         main { flex: 1; } 
 
@@ -21,8 +22,7 @@
         #unifiedHome { display: flex; flex-direction: column; }
         #finalEligibleArea { display: none; flex-direction: column; }
         
-        input, select, textarea { width: 100%; padding: 3px; border: 1.5px solid #ccc; border-radius: 4px; font-weight: 600; font-size: 10px; box-sizing: border-box; transition: border 0.3s; }
-        input, select { height: 26px; }
+        input, select { width: 100%; padding: 3px; border: 1.5px solid #ccc; border-radius: 4px; font-weight: 600; font-size: 10px; height: 26px; box-sizing: border-box; transition: border 0.3s; }
         
         label { font-weight: 900; font-size: 8px; color: #555; text-transform: uppercase; margin-bottom: 1px; display: block; }
         button { padding: 6px; border-radius: 4px; font-weight: 900; cursor: pointer; border: none; text-transform: uppercase; transition: background 0.3s; }
@@ -33,7 +33,7 @@
         .top-nav-box { display: flex; gap: 5px; margin-bottom: 6px; position: sticky; top: 0; z-index: 100; background: var(--bg); padding: 4px 0; align-items: center; }
         
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: flex-start; padding-top: 10px; z-index: 2000; overflow-y: auto; box-sizing: border-box; }
-        .modal-content { background: white; padding: 15px; border-radius: 8px; width: 90%; max-width: 400px; position: relative; margin-bottom: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        .modal-content { background: white; padding: 15px; border-radius: 8px; width: 90%; max-width: 400px; position: relative; margin-bottom: 20px; }
         
         #multiStackModal .modal-content, #globalSchemeViewerModal .modal-content { max-width: 900px; width: 95%; padding: 15px; }
         .stack-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px; margin-top: 8px; }
@@ -51,7 +51,7 @@
         .table-wrapper { overflow-x: auto; background: white; border-radius: 4px; border: 1px solid #eee; transition: max-height 0.3s ease; }
         table { width: 100%; border-collapse: collapse; font-size: 9px; white-space: nowrap; }
         th, td { padding: 3px 2px; border-bottom: 1px solid #eee; text-align: center; width: 1%; }
-        th { background: #f8f9fa; font-weight: 900; font-size: 11px; cursor: pointer; user-select: none; }
+        th { background: #f8f9fa; font-weight: 900; font-size: 8px; cursor: pointer; user-select: none; }
         
         .fixed-row { background-color: #e8f5e9; }
         .ltv-breach { background-color: #ffe6e6 !important; opacity: 0.85; }
@@ -96,26 +96,14 @@
         .btn-copy { background: var(--primary); }
 
         .forms-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; align-items: stretch; }
-
-        /* Custom Toast CSS */
-        #toast-container { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; }
-        .toast-msg { background: #333; color: #fff; padding: 10px 20px; border-radius: 30px; font-size: 11px; font-weight: 900; box-shadow: 0 4px 10px rgba(0,0,0,0.3); opacity: 0; transform: translateY(20px); transition: all 0.3s ease; text-align: center; border: 1.5px solid transparent; letter-spacing: 0.5px; }
-        .toast-success { background: #e8f5e9; color: var(--success); border-color: var(--success); }
-        .toast-error { background: #ffebee; color: var(--danger); border-color: var(--danger); }
-        .toast-warning { background: #fff8e1; color: #d35400; border-color: #f39c12; }
-
-        /* Sync Code Input */
-        #importCodeInput { width:100%; border:2px solid var(--primary); border-radius:6px; padding:10px; font-size:16px; text-align:center; font-weight:900; letter-spacing:2px; height: 40px; }
     </style>
 </head>
 <body>
 
-<div id="toast-container"></div>
-
 <div id="loadingOverlay">
     <div class="spinner"></div>
     <h3 style="margin:0; font-weight:900; letter-spacing:1px;" id="loadingText">IMPORTING DATA...</h3>
-    <p style="font-size:10px; color:#aaa; margin-top:5px;" id="loadingSubText">Please wait while we process the file</p>
+    <p style="font-size:10px; color:#aaa; margin-top:5px;" id="loadingSubText">Please wait while we process the Excel file</p>
 </div>
 
 <header>
@@ -123,9 +111,12 @@
         <button onclick="fetchDataFromCloud(true)" style="background: var(--indigo); color: white; padding: 6px 10px; border-radius: 4px; font-weight: 900; font-size: 9px; box-shadow: 0 2px 4px rgba(52,31,151,0.3); border:none; cursor:pointer;">
             🔄 REFRESH
         </button>
-        <button onclick="openSyncModal()" style="background: var(--dark); color: white; padding: 6px 10px; border-radius: 4px; font-weight: 900; font-size: 9px; box-shadow: 0 2px 4px rgba(0,0,0,0.3); border:none; cursor:pointer;">
-            ☁️ SYNC DATA
-        </button>
+
+        <div style="display: inline-flex; gap: 4px; align-items: center; background: #f1f2f6; padding: 3px 6px; border-radius: 4px; border: 1.5px solid var(--indigo);">
+            <input type="text" id="syncRoomCode" placeholder="ENTER CODE" style="width: 85px; height: 22px; text-transform: uppercase; font-size: 9px; text-align: center; font-weight: 900; border-color: var(--indigo);" onchange="connectToNewRoom(this.value)">
+            <button onclick="generateNewSyncCode()" style="background: var(--indigo); color: white; padding: 0 6px; font-size: 8px; height: 22px; font-weight: 900; border-radius: 3px;">GEN CODE</button>
+        </div>
+
         <label for="fileInp" style="background: var(--success); color: white; padding: 6px 10px; border-radius: 4px; font-weight: 900; font-size: 9px; cursor: pointer; box-shadow: 0 2px 4px rgba(39,174,96,0.3); margin: 0;">
             📂 EXCEL
         </label>
@@ -191,29 +182,6 @@
 
             <div id="importedDataSummary" class="custom-scroll" style="display:none; margin-top:8px; background:#fff; border:2px solid var(--success); border-radius:6px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); max-height: 350px; overflow-y: auto; position: relative; padding: 0;">
             </div>
-        </div>
-    </div>
-
-    <div id="syncModal" class="modal">
-        <div class="modal-content" style="max-width:350px;">
-            <h3 style="margin-top:0; color:var(--bajaj-blue); font-size:16px; border-bottom:2px solid #ccc; padding-bottom:6px; text-align: center;">☁️ DEVICE SYNC</h3>
-
-            <div style="margin-bottom:15px; background:#e8f4f8; padding:12px; border-radius:6px; border:1px solid var(--bajaj-blue); text-align: center;">
-                <label style="color:var(--bajaj-blue); font-size:11px; margin-bottom:6px;">⬆️ EXPORT (Generate Code)</label>
-                <p style="font-size:9px; color:#555; margin:0 0 10px 0;">Apne current saved data ko dusre device par bhejne ke liye Short Code banayein:</p>
-                <button onclick="generateSyncCode()" style="width:100%; background:var(--bajaj-blue); color:white; padding:10px; margin-bottom:10px; font-size:12px; font-weight:900; letter-spacing:1px; border-radius:4px;">GENERATE SHORT CODE</button>
-                <input type="text" id="exportCodeOutput" readonly placeholder="---" style="width:100%; border:2px dashed var(--bajaj-blue); border-radius:6px; padding:10px; font-size:22px; font-weight:900; text-align:center; color:var(--danger); letter-spacing:3px; background:#fff; cursor:copy;" onclick="copySyncCode()">
-                <p style="font-size:8px; color:var(--success); margin:6px 0 0 0; display:none;" id="copyHintText">Click the code to copy!</p>
-            </div>
-
-            <div style="margin-bottom:10px; background:#f8f9fa; padding:12px; border-radius:6px; border:1px solid #ddd; text-align: center;">
-                <label style="color:var(--success); font-size:11px; margin-bottom:6px;">⬇️ IMPORT (Load Data)</label>
-                <p style="font-size:9px; color:#555; margin:0 0 10px 0;">Dusre device se mila hua Short Code yahan enter karein:</p>
-                <input type="text" id="importCodeInput" placeholder="Enter Code Here">
-                <button onclick="processSyncImport()" style="width:100%; background:var(--success); color:white; padding:10px; margin-top:10px; font-size:12px; font-weight:900; letter-spacing:1px; border-radius:4px;">📥 IMPORT DATA</button>
-            </div>
-
-            <button onclick="document.getElementById('syncModal').style.display='none'" style="width:100%; background:var(--danger); color:white; padding:8px; font-size:11px; border-radius:4px; margin-top:5px;">✖ CANCEL</button>
         </div>
     </div>
 
@@ -347,7 +315,7 @@
     <div id="multiStackModal" class="modal">
         <div class="modal-content">
             <h3 style="margin-top:0; color:var(--dark); font-size:15px;">Add Manual Product</h3>
-            <div style="margin-bottom: 12px; background: #f8f9fa; padding: 10px; border-radius: 6px; border: 1.5px solid #ccc;">
+            <div style="margin-bottom: 12px; background: #f8f9fa; padding: 8px; border-radius: 6px; border: 1.5px solid #ccc;">
                 <label style="font-size: 10px; color: var(--indigo);">MODEL NAME</label>
                 <input type="text" id="multiStackModelName" placeholder="Enter Product Model Name" value="MANUAL MODEL" style="height: 32px; font-size: 12px;">
             </div>
@@ -436,29 +404,17 @@
 </footer>
 
 <script>
-    // 📢 GOOGLE APPS SCRIPT URL (Tuzi navin Web App URL)
-    const CLOUD_APP_URL = "https://script.google.com/macros/s/AKfycby8OiOWuloPMdl1eSZah2EFqTH6feWugXwJcQFRMaNneZkTfyN2n5-czuqCfqYrJ5lo7w/exec";
+    // 📢 GOOGLE SHEETS LIVE AUTO-SYNC CONFIGURATION
+    const CLOUD_EXCEL_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQbqqK70wY9J_xOq9l92N9Z4FGxh46HCwuC9pfvBjYvmfHapFUmi8oBRFP-2J--1Q/pub?output=xlsx";
 
-    // --- SLEEK TOAST NOTIFICATION SYSTEM ---
-    function showToast(msg, type = 'info') {
-        const container = document.getElementById('toast-container');
-        const toast = document.createElement('div');
-        toast.className = `toast-msg toast-${type}`;
-        toast.innerText = msg;
-        
-        container.appendChild(toast);
-        
-        setTimeout(() => {
-            toast.style.opacity = '1';
-            toast.style.transform = 'translateY(0)';
-        }, 10);
-        
-        setTimeout(() => {
-            toast.style.opacity = '0';
-            toast.style.transform = 'translateY(20px)';
-            setTimeout(() => { container.removeChild(toast); }, 300);
-        }, 3000);
-    }
+    // 🚀 SUPABASE REAL-TIME DATABASE SYNC CONFIGURATION
+    const SUPABASE_URL = "https://vsrxiqjtrjcimtcsyuoi.supabase.co/rest/v1/"; // ⚠️ इथे तुझा सुपाबेस प्रोजेक्ट URL टाक
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzcnhpcWp0cmpjaW10Y3N5dW9pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA4NDE0MDgsImV4cCI6MjA5NjQxNzQwOH0.3jQNuAl4PPVjHy1hn93uF1Lulk3KCWJ6uB6cyEaJWwY";       // ⚠️ इथे तुझी सुपाबेस एनेन की (Anon Key) टाक
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const DEVICE_ID = Math.random().toString(36).substring(7);
+    let CURRENT_SYNC_ROOM = "";
+    let activeSupabaseChannel = null;
 
     // --- INDEXED DB WRAPPER ---
     const DB_NAME = "PersistentPortalDB";
@@ -536,105 +492,90 @@
     let selectedQueueIndex = -1; 
     let tempPendingProduct = null; 
 
-    // --- SHORT-CODE CROSS-DEVICE SYNC ENGINE ---
-    function openSyncModal() {
-        document.getElementById('importCodeInput').value = '';
-        document.getElementById('exportCodeOutput').value = '';
-        document.getElementById('copyHintText').style.display = 'none';
-        document.getElementById('syncModal').style.display = 'flex';
+    // 🔑 १. नवीन सिंक कोड बनवणे
+    function generateNewSyncCode() {
+        let randCode = "RCD-" + Math.floor(100000 + Math.random() * 900000);
+        document.getElementById('syncRoomCode').value = randCode;
+        connectToNewRoom(randCode);
+        alert(`🔑 तुमचा सिक्रेट सिंक कोड: ${randCode}\n\nहाच कोड डेटा सिंक करण्यासाठी दुसऱ्या डिव्हाइसवर टाका!`);
     }
 
-    async function generateSyncCode() {
-        if(customerQueue.length === 0) {
-            showToast("⚠️ Export karne ke liye koi data nahi hai!", "warning");
+    // 🔒 २. क्लाऊड टेबल स्टोरेज आणि रिआल-टाईम लिसनर कनेक्शन
+    async function connectToNewRoom(roomCode) {
+        if (!roomCode) {
+            CURRENT_SYNC_ROOM = "";
+            if (activeSupabaseChannel) activeSupabaseChannel.unsubscribe();
+            localStorage.removeItem('persistent_sync_room_code');
             return;
         }
         
-        let outputBox = document.getElementById('exportCodeOutput');
-        let hintText = document.getElementById('copyHintText');
-        outputBox.value = "⏳ WAITING...";
-        hintText.style.display = 'none';
-
+        CURRENT_SYNC_ROOM = roomCode.trim().toUpperCase();
+        if (activeSupabaseChannel) activeSupabaseChannel.unsubscribe();
+        localStorage.setItem('persistent_sync_room_code', CURRENT_SYNC_ROOM);
+        
+        console.log(`📡 Database Room शी कनेक्ट होत आहे: ${CURRENT_SYNC_ROOM}`);
+        
+        // अ) पहिल्यांदा रिफ्रेश केल्यावर सर्व्हरवरील जुना परमनंट डेटा ओढणे
         try {
-            let compactQueue = customerQueue.map(c => {
-                let cp = (c.products || []).map(p => {
-                    let { calculatedData, allSchemes, ...keepProduct } = p;
-                    return keepProduct;
-                });
-                return { ...c, products: cp };
-            });
-
-            let response = await fetch("https://bytebin.lucko.me/post", {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(compactQueue)
-            });
-
-            if (!response.ok) throw new Error("Server error");
-            let result = await response.json();
-            
-            outputBox.value = result.key;
-            hintText.style.display = 'block';
-            showToast("✅ Short Code ban gaya! Dusre device me daalein.", "success");
-            
-        } catch (e) {
-            outputBox.value = "ERROR";
-            showToast("❌ Server se connect nahi ho paya. Internet check karein.", "error");
-        }
-    }
-
-    function copySyncCode() {
-        let code = document.getElementById('exportCodeOutput').value;
-        if(!code || code === "⏳ WAITING..." || code === "ERROR") return;
-        
-        if(navigator.clipboard && window.isSecureContext) {
-            navigator.clipboard.writeText(code).then(() => showToast("📋 Code Copied! Send via WhatsApp.", "success"));
-        } else {
-            fallbackCopy(code, () => showToast("📋 Code Copied!", "success"));
-        }
-    }
-
-    async function processSyncImport() {
-        let codeInput = document.getElementById('importCodeInput');
-        let code = codeInput.value.trim(); // Trimmed and Case-Insensitive (handled by server mostly, but text-transform removed from CSS)
-        
-        if(!code) return showToast("⚠️ Kripya valid Short Code type karein!", "warning");
-
-        if(!confirm("⚠️ WARNING: Yeh aapke is device ke saare saved customers ko delete karke naya data load kar dega. Kya aap sure hain?")) {
-            return;
-        }
-
-        codeInput.value = "⏳ DOWNLOADING...";
-        
-        try {
-            let response = await fetch("https://bytebin.lucko.me/" + code);
-            if (!response.ok) throw new Error("Invalid Code");
-            
-            let importedQueue = await response.json();
-            
-            if(Array.isArray(importedQueue)) {
-                customerQueue = importedQueue;
-                activeCustomerIndex = customerQueue.length > 0 ? 0 : -1;
-                selectedQueueIndex = -1;
+            let { data, error } = await supabase
+                .from('portal_sync')
+                .select('queue_data, active_index')
+                .eq('room_code', CURRENT_SYNC_ROOM)
+                .maybeSingle();
                 
-                await saveQueueToLocal();
-                renderCustomerQueue();
-                updateUniversalActionButtons();
-                document.getElementById('syncModal').style.display = 'none';
+            if (data && !error) {
+                console.log("📥 सर्व्हरवरील लेटेस्ट डेटा लोड झाला!");
+                customerQueue = data.queue_data || [];
+                activeCustomerIndex = data.active_index !== undefined ? parseInt(data.active_index) : -1;
                 
-                showToast("✅ Naya Data Successfully Load Ho Gaya!", "success");
-                
-                if(activeCustomerIndex !== -1 && document.getElementById('finalEligibleArea').style.display === 'flex') {
-                    goToFinalPage();
-                } else {
-                    goHome();
+                if (dbInstance) {
+                    let tx = dbInstance.transaction(STORE_NAME, 'readwrite');
+                    let store = tx.objectStore(STORE_NAME);
+                    store.put(JSON.stringify(customerQueue), 'persistent_queue');
+                    store.put(JSON.stringify(activeCustomerIndex), 'persistent_active_idx');
                 }
-            } else {
-                throw new Error("Format mismatch");
+                refreshSyncUI();
             }
-        } catch(e) {
-            codeInput.value = code;
-            showToast("❌ Invalid Code! Ya toh code galat hai ya expire ho chuka hai.", "error");
+        } catch (err) { 
+            console.error("Initial data fetch error:", err); 
+        }
+        
+        // ब) लाईव्ह डेटाबेस बदलांवर २४ तास लक्ष ठेवणे
+        activeSupabaseChannel = supabase
+          .channel(`db_track_${CURRENT_SYNC_ROOM}`)
+          .on('postgres_changes', { 
+              event: '*', 
+              schema: 'public', 
+              table: 'portal_sync', 
+              filter: `room_code=eq.${CURRENT_SYNC_ROOM}` 
+          }, async (payload) => {
+              if (payload.new) {
+                  console.log("⚡ रिअल-टाईम क्लाऊड डेटाबेस बदल प्राप्त झाला!");
+                  customerQueue = payload.new.queue_data || [];
+                  activeCustomerIndex = parseInt(payload.new.active_index);
+                  
+                  if (dbInstance) {
+                      let tx = dbInstance.transaction(STORE_NAME, 'readwrite');
+                      let store = tx.objectStore(STORE_NAME);
+                      store.put(JSON.stringify(customerQueue), 'persistent_queue');
+                      store.put(JSON.stringify(activeCustomerIndex), 'persistent_active_idx');
+                  }
+                  refreshSyncUI();
+              }
+          })
+          .subscribe();
+    }
+
+    function refreshSyncUI() {
+        renderCustomerQueue();
+        updateUniversalActionButtons();
+        if (activeCustomerIndex !== -1) {
+            loadCurrentProducts();
+            renderMatrix();
+            updateMatrixTopCard();
+        } else {
+            document.getElementById('finalEligibleArea').style.display = 'none';
+            document.getElementById('unifiedHome').style.display = 'flex';
         }
     }
 
@@ -647,36 +588,103 @@
                 });
                 return { ...c, products: cp };
             });
+            
+            // १. लोकल मेमरीमध्ये बॅकअप सेव्ह
             await saveToDB('persistent_queue', compactQueue);
             await saveToDB('persistent_active_idx', activeCustomerIndex);
+            
+            // 🚀 २. सुपाबेस क्लाऊड परमनंट टेबलमध्ये डेटा सेव्ह (UPSERT)
+            if (CURRENT_SYNC_ROOM) {
+                let { error } = await supabase
+                    .from('portal_sync')
+                    .upsert({ 
+                        room_code: CURRENT_SYNC_ROOM, 
+                        queue_data: customerQueue, 
+                        active_index: activeCustomerIndex
+                    }, { onConflict: 'room_code' });
+                    
+                if (error) console.error("❌ क्लाऊड डेटाबेस सिंक फेल:", error);
+                else console.log(`💾 डेटा रूम '${CURRENT_SYNC_ROOM}' मध्ये परमनंट सेव्ह झाला!`);
+            }
         } catch(e) {
             console.error("IndexedDB save failed:", e);
         }
     }
 
-    // --- 100% RELIABLE DIRECT GOOGLE APPS SCRIPT SYNC ---
+    // --- UPGRADED AUTOMATIC CLOUD SYNC ENGINE WITH MULTI-LAYER PROXY FALLBACKS ---
     async function fetchDataFromCloud(isManualRefresh = false) {
-        if (!CLOUD_APP_URL || CLOUD_APP_URL.includes("tumchi_navin_link_yethe")) return;
+        if (!CLOUD_EXCEL_URL || CLOUD_EXCEL_URL.includes("YAHAN_APNA_LINK")) return;
         
         if (isManualRefresh) {
             document.getElementById('loadingText').innerText = "Syncing Master Sheet";
-            document.getElementById('loadingSubText').innerText = "Connecting to Google Servers securely...";
+            document.getElementById('loadingSubText').innerText = "Please wait...";
             document.getElementById('loadingOverlay').style.display = 'flex';
         }
         
         try {
-            // Fetch JSON output from Google Web App
-            let response = await fetch(CLOUD_APP_URL);
-            if (!response.ok) throw new Error("Server Error");
+            console.log("Fetching latest rates via Multi-Layer Proxy System...");
             
-            let data = await response.json();
+            let cacheBusterUrl = CLOUD_EXCEL_URL + (CLOUD_EXCEL_URL.includes('?') ? '&' : '?') + 't=' + Date.now();
+            let wb = null;
+            let fetchSuccess = false;
+
+            // PROXY 1: CorsProxy.io
+            if (!fetchSuccess) {
+                try {
+                    let url1 = "https://corsproxy.io/?" + encodeURIComponent(cacheBusterUrl);
+                    let res1 = await fetch(url1);
+                    if (res1.ok) {
+                        let dataBuffer = await res1.arrayBuffer();
+                        wb = XLSX.read(new Uint8Array(dataBuffer), { type: 'array' });
+                        fetchSuccess = true;
+                        console.log("✅ Success via Proxy 1 (CorsProxy.io)");
+                    }
+                } catch (e) { console.warn("Proxy 1 failed:", e); }
+            }
+
+            // PROXY 2: CodeTabs
+            if (!fetchSuccess) {
+                try {
+                    let url2 = "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(cacheBusterUrl);
+                    let res2 = await fetch(url2);
+                    if (res2.ok) {
+                        let dataBuffer = await res2.arrayBuffer();
+                        wb = XLSX.read(new Uint8Array(dataBuffer), { type: 'array' });
+                        fetchSuccess = true;
+                        console.log("✅ Success via Proxy 2 (CodeTabs)");
+                    }
+                } catch (e) { console.warn("Proxy 2 failed:", e); }
+            }
+
+            // PROXY 3: AllOrigins (Base64 Override Fix)
+            if (!fetchSuccess) {
+                try {
+                    let url3 = "https://api.allorigins.win/get?url=" + encodeURIComponent(cacheBusterUrl);
+                    let res3 = await fetch(url3);
+                    if (res3.ok) {
+                        let json = await res3.json();
+                        if (json.contents) {
+                            let cleanContents = json.contents.trim();
+                            if (!cleanContents.startsWith("<html") && !cleanContents.startsWith("<!DOCTYPE")) {
+                                let base64String = cleanContents.includes(",") ? cleanContents.split(',')[1] : cleanContents;
+                                wb = XLSX.read(base64String, { type: 'base64', cellDates: true });
+                                fetchSuccess = true;
+                                console.log("✅ Success via Proxy 3 (AllOrigins JSON Override)");
+                            }
+                        }
+                    }
+                } catch (e) { console.warn("Proxy 3 failed:", e); }
+            }
+
+            if (!fetchSuccess || !wb) {
+                throw new Error("Saare Backup Proxy Servers block ho gaye hain.");
+            }
             
-            tempSheet1Data = data.sheet1 || [];
-            let rawSheet2Data = data.sheet2 || [];
+            // Parse Sheets
+            tempSheet1Data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { raw: false, defval: "" });
+            parsedSheet2Data = wb.SheetNames.length > 1 ? XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[1]], { raw: false, defval: "" }).map(r => mapData(r, SPECIAL_MODEL)).filter(x => x && (x.tenure > 0 || x.fixedEmi > 0)) : [];
             
-            parsedSheet2Data = rawSheet2Data.map(r => mapData(r, SPECIAL_MODEL)).filter(x => x && (x.tenure > 0 || x.fixedEmi > 0));
             let filteredSheet1 = tempSheet1Data.map(r => mapData(r, "REG")).filter(m => m && (m.tenure > 0 || m.fixedEmi > 0));
-            
             let rawCombined = [...filteredSheet1, ...parsedSheet2Data];
             let uniqueDB = []; let seenDB = new Set();
             
@@ -695,14 +703,12 @@
                     loadCurrentProducts();
                     renderMatrix();
                 }
-                if (isManualRefresh) showToast("✅ Cloud Database successfully refreshed!", "success");
-            } else {
-                throw new Error("No active schemes found");
+                if (isManualRefresh) alert("✅ Cloud Database successfully refreshed!");
             }
         } catch(err) {
-            console.warn("Cloud Sync Fail: ", err.message);
+            console.error("❌ Cloud Auto-Fetch System Interrupted: ", err);
             if (isManualRefresh) {
-                showToast("⚠️ Sync failed. Purane offline data varun load zale ahe.", "warning");
+                alert("❌ Sync Failed: " + err.message + "\n\nKripya ek baar MANUAL EXCEL BACKUP se file upload kar lein.");
             }
         } finally {
             if (isManualRefresh) document.getElementById('loadingOverlay').style.display = 'none';
@@ -738,7 +744,6 @@
             
             let savedIdx = await getFromDB('persistent_active_idx');
             if (savedIdx !== null && savedIdx !== undefined) activeCustomerIndex = parseInt(savedIdx);
-            
             if(activeCustomerIndex >= customerQueue.length) activeCustomerIndex = -1;
 
         } catch(e) { 
@@ -748,8 +753,16 @@
         renderCustomerQueue();
         updateUniversalActionButtons();
 
-        // 🔄 AUTOMATIC TIMER: Har 5 minute me khud data fetch karega
+        // 🔄 मेमरीमधून जुना सिंक कोड लोड करणे
+        let savedRoom = localStorage.getItem('persistent_sync_room_code');
+        if (savedRoom) {
+            document.getElementById('syncRoomCode').value = savedRoom;
+            connectToNewRoom(savedRoom);
+        }
+
+        // 🔄 AUTOMATIC TIMER (5 Minutes Cloud Sync)
         setInterval(function() {
+            console.log("Timer Triggered: Auto syncing cloud rates...");
             fetchDataFromCloud(false);
         }, 5 * 60 * 1000); 
     };
@@ -762,7 +775,7 @@
         let type = document.getElementById('cqType').value;
         let cap = parseFloat(document.getElementById('cqCap').value) || "";
 
-        if(!limit || limit <= 0) { showToast("⚠️ Please enter a valid NBFC LIMIT!", "warning"); return; }
+        if(!limit || limit <= 0) { alert("⚠️ Please enter a valid NBFC LIMIT to add customer!"); return; }
 
         let now = new Date();
         let ts = now.toLocaleDateString('en-GB', {day:'2-digit', month:'short'}) + ' ' + now.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
@@ -786,7 +799,6 @@
         
         renderCustomerQueue();
         updateUniversalActionButtons();
-        showToast("✅ Customer added to queue!", "success");
     }
 
     function copyCustomerDetails(idx, btnElement) {
@@ -799,7 +811,6 @@
             btnElement.innerText = "COPIED!"; 
             btnElement.style.background = "var(--success)"; 
             btnElement.style.color = "white";
-            showToast("📋 Details Copied!", "success");
             setTimeout(() => { 
                 btnElement.innerText = originalText; 
                 btnElement.style.background = "var(--warning)"; 
@@ -892,7 +903,7 @@
     }
 
     async function setActiveCustomer(idx) { 
-        if(db_records.length === 0) { showToast("⚠️ Database empty. Verify sheet data.", "error"); return; }
+        if(db_records.length === 0) { alert('⚠️ Database empty. Please check network connection.'); return; }
         activeCustomerIndex = idx; 
         await saveQueueToLocal(); 
         document.getElementById('queueSearch').value = '';
@@ -922,10 +933,7 @@
     function getActiveCap() { return customerQueue[activeCustomerIndex]?.cap || ""; }
 
     function isLimitValid() {
-        if (activeCustomerIndex === -1 || !customerQueue[activeCustomerIndex]) { 
-            showToast("⚠️ Kripya queue mein ek customer add aur select karein.", "warning"); 
-            return false; 
-        }
+        if (activeCustomerIndex === -1 || !customerQueue[activeCustomerIndex]) { alert("⚠️ Kripya pehle queue mein ek customer add karein aur use 'ACTIVE' rakhein."); return false; }
         return true;
     }
 
@@ -1015,7 +1023,7 @@
 
     async function processMultiStack() {
         let modelName = document.getElementById('multiStackModelName').value.trim().toUpperCase();
-        if (!modelName) { showToast("⚠️ Kripya Model Name enter karein!", "warning"); return; }
+        if (!modelName) return alert("⚠️ Kripya Model Name enter karein!");
         let validSchemes = [];
         for(let i=1; i<=10; i++) {
             let ten = parseInt(document.getElementById(`msTen_${i}`).value) || 0;
@@ -1037,7 +1045,7 @@
             await saveQueueToLocal();
             closeMultiStackModal(); 
             renderMatrix(); 
-        } else { showToast("⚠️ At least ek Scheme details bharein!", "warning"); }
+        } else { alert("⚠️ At least ek Scheme ki details (Tenure ya Fixed EMI) fill karein!"); }
     }
 
     function findValLocal(row, targets) { let key = Object.keys(row).find(k => targets.includes(k.toUpperCase().replace(/\s/g, ''))); return key ? row[key] : null; }
@@ -1065,7 +1073,7 @@
                         document.getElementById('smartImportModal').style.display = 'flex';
                     } catch(err) { 
                         document.getElementById('loadingOverlay').style.display = 'none';
-                        showToast("❌ EXCEL IMPORT FAIL: " + err.message, "error"); document.getElementById('fileInp').value = ""; 
+                        alert("❌ EXCEL IMPORT FAIL: " + err.message); document.getElementById('fileInp').value = ""; 
                     }
                 }, 50);
             }; 
@@ -1083,10 +1091,10 @@
         db_records = uniqueDB; 
         try {
             await saveToDB("persistent_db", db_records); 
-            showToast("✅ Backup Data successfully imported!", "success");
+            alert("✅ Backup Data successfully imported!");
             document.getElementById('globalSchemeSearchBox').style.display = 'block';
         } catch(e) {
-            showToast("⚠️ IndexedDB Save Error.", "error");
+            alert(`⚠️ IndexedDB Save Error.`);
             document.getElementById('globalSchemeSearchBox').style.display = 'block';
         }
         renderImportSummary(); 
@@ -1162,7 +1170,7 @@
     }
 
     function quickNonTieup() { 
-        if (!isLimitValid()) return; if(db_records.length === 0) { showToast("⚠️ Database empty!", "error"); return; }
+        if (!isLimitValid()) return; if(db_records.length === 0) return alert("⚠️ Database Error!");
         document.getElementById('addProductModal').style.display = 'none'; 
         let tieup = db_records.filter(r => r.model === SPECIAL_MODEL); let cats = [...new Set(tieup.map(r => r.category))].sort(); 
         document.getElementById('categoryGrid').innerHTML = cats.map(c => `<div style="background:var(--indigo);color:white;padding:10px;border-radius:4px;cursor:pointer;font-weight:900;text-align:center;font-size:11px;" onclick="selectCategory('${c}')">${c}</div>`).join(''); 
@@ -1181,6 +1189,7 @@
         let gtl = mrp > 100000 ? 2398 : (mrp > 50000 ? 1799 : (mrp > 30000 ? 1499 : (mrp > 10000 ? 1199 : (mrp > 0 ? 699 : 0))));
         document.getElementById('compGtl').value = gtl;
         
+        // RFC Calculation logic
         let rfcSlab = 0;
         if(mrp > 100000) rfcSlab = 11438;
         else if(mrp > 60000) rfcSlab = 8686;
@@ -1479,7 +1488,11 @@
             if(dpExact > 0) dpRounded = Math.ceil(dpExact / 10) * 10; else dpRounded = dpExact;
             let extraVal = ((emi * inst) + dpRounded) - effectivePrice; let dbdAmt = loan * dbdRate; let roiAmt = (loan * roiRateDP) + (loan * roiRate * inst);
             let curLTV = currentTenure > 0 ? ((currentTenure - s.advEmi) / currentTenure) * 100 : 0;
-            return { ...s, currentTenure, nbfcMaxL, loan, dp: dpRounded, emi, inst, daily: emi/30, dIdx, isFixed, curLTV, extra: extraVal, dbdAmt, roiAmt, inactive: s.inactive || false };
+            
+            // 🚀 Daily EMI zero validation safety fix
+            let dailyCalculated = emi > 0 ? (emi / 30) : 0;
+
+            return { ...s, currentTenure, nbfcMaxL, loan, dp: dpRounded, emi, inst, daily: dailyCalculated, dIdx, isFixed, curLTV, extra: extraVal, dbdAmt, roiAmt, inactive: s.inactive || false };
         });
         renderRows(pIdx);
     }
@@ -1504,11 +1517,11 @@
                 <td class="hidden-col" id="extra_${pIdx}_${d.dIdx}" style="font-weight:900; color:var(--danger);">₹${Math.round(d.extra).toLocaleString()}</td>
                 ${isNT ? '<td class="bound-col">'+(d.minLoan>0?'₹'+d.minLoan:'0')+'</td><td class="bound-col">'+(d.maxLoan<9999999?'₹'+d.maxLoan:'NO')+'</td>' : '<td style="color:#777; font-size:8px;">₹'+Math.floor(d.nbfcMaxL)+'</td>'}
                 <td><div class="stepper"><button class="step-btn" onclick="step(${pIdx},${d.dIdx},-${d.isFixed ? d.fixedEmi : 1000})">-</button><input id="l_${pIdx}_${d.dIdx}" type="number" value="${Math.floor(d.loan)}" class="step-inp" oninput="manual(${pIdx},${d.dIdx})"><button class="step-btn" onclick="step(${pIdx},${d.dIdx},${d.isFixed ? d.fixedEmi : 1000})">+</button></div></td>
-                <td id="ta_${pIdx}_${d.dIdx}" style="font-weight:900;">${d.currentTenure}/${d.advEmi}</td>
-                <td id="dp_${pIdx}_${d.dIdx}" style="color:var(--success); font-weight:950;">₹${Math.round(d.dp).toLocaleString()}</td>
-                <td id="emi_${pIdx}_${d.dIdx}" style="color:var(--primary); font-weight:950;">₹${Math.round(d.emi).toLocaleString()}</td>
-                <td id="inst_${pIdx}_${d.dIdx}" style="font-weight:900;">${d.inst}</td>
-                <td id="day_${pIdx}_${d.dIdx}" style="color:var(--success); font-weight:950;">₹${Math.round(d.daily).toLocaleString()}</td>
+                <td id="ta_${pIdx}_${dIdx}" style="font-weight:900;">${d.currentTenure}/${d.advEmi}</td>
+                <td id="dp_${pIdx}_${dIdx}" style="color:var(--success); font-weight:950;">₹${Math.round(d.dp).toLocaleString()}</td>
+                <td id="emi_${pIdx}_${dIdx}" style="color:var(--primary); font-weight:950;">₹${Math.round(d.emi).toLocaleString()}</td>
+                <td id="inst_${pIdx}_${dIdx}" style="font-weight:900;">${d.inst}</td>
+                <td id="day_${pIdx}_${dIdx}" style="color:var(--success); font-weight:950;">₹${Math.round(d.daily).toLocaleString()}</td>
                 <td>
                     <div style="display:flex; flex-direction:column; gap:2px; min-width: 40px;">
                         <button class="action-btn btn-copy" onclick="copySchemeText(${pIdx}, ${d.dIdx}, this)">COPY</button>
@@ -1549,7 +1562,7 @@
             let inst = d.tenure - d.advEmi; if(inst < 1) inst = 1; let insTotal = (parseFloat(inp.gtl)||0)+(parseFloat(inp.rfc)||0)+(parseFloat(inp.exw)||0); let emi = (loan / d.tenure) + (insTotal / inst) + roiInEmi;
             d.loan = loan; d.dp = dpR; d.emi = emi;
         }
-        d.extra = ((d.emi * d.inst) + d.dp) - effectivePrice; d.dbdAmt = loan * dbdRate; d.roiAmt = (loan * roiRateDP) + (loan * roiRate * d.inst);
+        d.extra = ((d.emi * d.inst) + d.dp) - effectivePrice; d.dbdAmt = loan * dbdRate; d.roiAmt = (loan * roiRateDP) + (loan * roiRate * d.emi > 0 ? d.inst : 1);
         document.getElementById(`dp_${pIdx}_${dIdx}`).innerText = "₹" + Math.round(d.dp).toLocaleString(); document.getElementById(`emi_${pIdx}_${dIdx}`).innerText = "₹" + Math.round(d.emi).toLocaleString();
         
         d.curLTV = d.currentTenure > 0 ? ((d.currentTenure - d.advEmi) / d.currentTenure) * 100 : 0; let ltvCell = document.getElementById(`ltv_${pIdx}_${dIdx}`); if(ltvCell) ltvCell.innerText = Math.round(d.curLTV) + "%";
@@ -1574,19 +1587,13 @@
         let custDetails = `CUSTOMER NAME- ${c.name}\nNUMBER- ${c.mobile || ''}\nLIMIT- ${c.limit}\nLTV- ${c.ltv}${cappingLine}\n\n`;
 
         let textToCopy = `${custDetails}📱 *${prod.name}*\n${invAmt > 0 ? `*INVOICE AMOUNT:* ₹${invAmt}\n\n` : "" }✅ *Scheme:* ${d.currentTenure}/${d.advEmi}\n💰 *DP:* ₹${Math.round(d.dp).toLocaleString()}\n🗓️ *EMI:* ₹${Math.round(d.emi).toLocaleString()} x ${d.inst}\n✨ *Daily EMI:* ₹${Math.round(d.daily).toLocaleString()}`;
-        function showSuccess() { 
-            let originalText = btnElement.innerText; 
-            btnElement.innerText = "COPIED!"; 
-            btnElement.style.background = "var(--success)"; 
-            showToast("📋 Scheme Details Copied!", "success");
-            setTimeout(() => { btnElement.innerText = originalText; btnElement.style.background = "var(--primary)"; }, 2000); 
-        }
+        function showSuccess() { let originalText = btnElement.innerText; btnElement.innerText = "COPIED!"; btnElement.style.background = "var(--success)"; setTimeout(() => { btnElement.innerText = originalText; btnElement.style.background = "var(--primary)"; }, 2000); }
         if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(textToCopy).then(showSuccess).catch(() => fallbackCopy(textToCopy, showSuccess)); } else { fallbackCopy(textToCopy, showSuccess); }
     }
 
     function fallbackCopy(text, successCb) {
         let ta = document.createElement("textarea"); ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = "absolute"; ta.style.left = "-9999px"; document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, 99999); 
-        try { let success = document.execCommand('copy'); if (success) { successCb(); } else { showToast("⚠️ Auto-copy fail. Kripya manual copy karein.", "warning"); } } catch (err) { showToast("⚠️ Auto-copy fail. Kripya manual copy karein.", "warning"); }
+        try { let success = document.execCommand('copy'); if (success) { successCb(); } else { prompt("⚠️ Auto-copy block ho gaya. Kripya manual copy karein:", text); } } catch (err) { prompt("⚠️ Auto-copy fail ho gaya. Kripya copy karein:", text); }
         document.body.removeChild(ta);
     }
 
@@ -1609,7 +1616,7 @@
     }
     
     function openQuoteSelectionModal() {
-        if(current_products.length === 0) { showToast("⚠️ Kripya pehle matrix mein koi product add karein!", "warning"); return; }
+        if(current_products.length === 0) return alert("⚠️ Kripya pehle matrix mein koi product add karein!");
         let html = current_products.map((p, idx) => `
             <div style="display:flex; align-items:center; gap:8px; padding:8px; background:#f8f9fa; border:1px solid #ddd; border-radius:4px;">
                 <input type="checkbox" id="qchk_${idx}" class="quote-model-chk" value="${idx}" checked style="width:16px; height:16px; cursor:pointer;">
@@ -1622,7 +1629,7 @@
 
     function promptForSelectedImageGeneration() {
         let chks = document.querySelectorAll('.quote-model-chk:checked');
-        if(chks.length === 0) { showToast("⚠️ Kam se kam ek model select karein!", "warning"); return; }
+        if(chks.length === 0) return alert("⚠️ Kripya image generate karne ke liye kam se kam ek model select karein!");
         window.tempImageGenIndices = Array.from(chks).map(c => parseInt(c.value));
         document.getElementById('quoteSelectionModal').style.display = 'none';
         let custName = getActiveName(); let custMobile = getActiveMobile();
@@ -1667,7 +1674,7 @@
             </div>
             <table style="width:100%; border-collapse:collapse; text-align:center; font-weight:900; font-size:18px;">
                 <thead>
-                    <tr style="background:#eaeaea; color:#000000; font-size:22px;">
+                    <tr style="background:#eaeaea; color:#000000; font-size:16px;">
                         <th style="padding:15px 8px; border:1px solid #ccc;">SCHEME</th>
                         <th style="padding:15px 8px; border:1px solid #ccc;">DP</th>
                         <th style="padding:15px 8px; border:1px solid #ccc;">EMI</th>
@@ -1689,7 +1696,7 @@
             html += `</tbody></table></div>`;
         });
         
-        if(!hasV) { showToast("⚠️ Download ke liye koi active/eligible scheme nahi hai!", "warning"); return; }
+        if(!hasV) { alert("⚠️ Download ke liye koi active/eligible scheme nahi hai!"); return; }
         html += `<div style="text-align:center; margin-top: 20px; color:#888; font-size: 14px; font-weight: bold;">Generated via Persistent Portal</div>`;
         quoteDiv.innerHTML = html; document.body.appendChild(quoteDiv);
         
@@ -1704,7 +1711,7 @@
                     let a = document.createElement("a"); a.href = imgDataUrl;
                     let safeName = activeCustName !== "-" ? activeCustName.replace(/\s+/g, '_') : "Customer";
                     a.download = `Quotation_${safeName}.png`; document.body.appendChild(a); a.click(); document.body.removeChild(a);
-                    showToast("✅ Image downloaded! Opening WhatsApp...", "success");
+                    alert("✅ Image download ho gayi hai! Ab WhatsApp khulega, waha image attach karke bhejein.");
                     setTimeout(() => { let mobile = getActiveMobile(); if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank'); }, 500);
                 } else {
                     document.getElementById('clipboardStatusAlert').style.display = 'none';
@@ -1714,7 +1721,7 @@
                                 document.getElementById('clipboardStatusAlert').style.display = 'block';
                                 setTimeout(() => { let mobile = getActiveMobile(); if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank'); }, 500);
                             }).catch(err => {
-                                showToast("📋 Click / Long Press karke Copy Image karein.", "warning");
+                                alert("📋 Click / Long Press karke Copy Image karein.");
                                 let mobile = getActiveMobile(); if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank');
                             });
                         } catch (e) { let mobile = getActiveMobile(); if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank'); }
