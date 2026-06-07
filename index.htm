@@ -408,9 +408,9 @@
     const CLOUD_EXCEL_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQbqqK70wY9J_xOq9l92N9Z4FGxh46HCwuC9pfvBjYvmfHapFUmi8oBRFP-2J--1Q/pub?output=xlsx";
 
     // 🚀 SUPABASE REAL-TIME DATABASE SYNC CONFIGURATION
-    const SUPABASE_URL = "https://vsrxiqjtrjcimtcsyuoi.supabase.co/rest/v1/"; // ⚠️ इथे तुझा सुपाबेस प्रोजेक्ट URL टाक
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzcnhpcWp0cmpjaW10Y3N5dW9pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA4NDE0MDgsImV4cCI6MjA5NjQxNzQwOH0.3jQNuAl4PPVjHy1hn93uF1Lulk3KCWJ6uB6cyEaJWwY";       // ⚠️ इथे तुझी सुपाबेस एनेन की (Anon Key) टाक
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const SUPABASE_URL = "https://vsrxiqjtrjcimtcsyuoi.supabase.co"; // 🌟 फिक्स: शेवटचा /rest/v1/ काढून टाकला आहे
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzcnhpcWp0cmpjaW10Y3N5dW9pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA4NDE0MDgsImV4cCI6MjA5NjQxNzQwOH0.3jQNuAl4PPVjHy1hn93uF1Lulk3KCWJ6uB6cyEaJWwY";       
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); // 🌟 फिक्स: window.supabase वापरून क्रॅश होणे थांबवले
 
     const DEVICE_ID = Math.random().toString(36).substring(7);
     let CURRENT_SYNC_ROOM = "";
@@ -604,7 +604,7 @@
                     }, { onConflict: 'room_code' });
                     
                 if (error) console.error("❌ क्लाऊड डेटाबेस सिंक फेल:", error);
-                else console.log(`💾 डेटा रूम '${CURRENT_SYNC_ROOM}' मध्ये परमनंट सेव्ह झाला!`);
+                else console.log(`💾 डेटा ROOM '${CURRENT_SYNC_ROOM}' मध्ये परमनंट सेव्ह झाला!`);
             }
         } catch(e) {
             console.error("IndexedDB save failed:", e);
@@ -925,6 +925,7 @@
         updateUniversalActionButtons();
     }
 
+    // --- (बजेट / EMI कॅल्क्युलेशन फंक्शन्स पूर्ववत चालू राहतील) ---
     function getActiveName() { return customerQueue[activeCustomerIndex]?.name || "-"; }
     function getActiveMobile() { return customerQueue[activeCustomerIndex]?.mobile || ""; }
     function getActiveLimit() { return customerQueue[activeCustomerIndex]?.limit || 0; }
@@ -1516,7 +1517,7 @@
                 <td class="hidden-col" id="ltv_${pIdx}_${d.dIdx}">${Math.round(d.curLTV)}%</td>
                 <td class="hidden-col" id="extra_${pIdx}_${d.dIdx}" style="font-weight:900; color:var(--danger);">₹${Math.round(d.extra).toLocaleString()}</td>
                 ${isNT ? '<td class="bound-col">'+(d.minLoan>0?'₹'+d.minLoan:'0')+'</td><td class="bound-col">'+(d.maxLoan<9999999?'₹'+d.maxLoan:'NO')+'</td>' : '<td style="color:#777; font-size:8px;">₹'+Math.floor(d.nbfcMaxL)+'</td>'}
-                <td><div class="stepper"><button class="step-btn" onclick="step(${pIdx},${d.dIdx},-${d.isFixed ? d.fixedEmi : 1000})">-</button><input id="l_${pIdx}_${d.dIdx}" type="number" value="${Math.floor(d.loan)}" class="step-inp" oninput="manual(${pIdx},${d.dIdx})"><button class="step-btn" onclick="step(${pIdx},${d.dIdx},${d.isFixed ? d.fixedEmi : 1000})">+</button></div></td>
+                <td><div class="stepper"><button class="step-btn" onclick="step(${pIdx},${d.dIdx},-${d.isFixed ? d.fixedEmi : 1000})">-</button><input id="l_${pIdx}_${dIdx}" type="number" value="${Math.floor(d.loan)}" class="step-inp" oninput="manual(${pIdx},${d.dIdx})"><button class="step-btn" onclick="step(${pIdx},${d.dIdx},${d.isFixed ? d.fixedEmi : 1000})">+</button></div></td>
                 <td id="ta_${pIdx}_${dIdx}" style="font-weight:900;">${d.currentTenure}/${d.advEmi}</td>
                 <td id="dp_${pIdx}_${dIdx}" style="color:var(--success); font-weight:950;">₹${Math.round(d.dp).toLocaleString()}</td>
                 <td id="emi_${pIdx}_${dIdx}" style="color:var(--primary); font-weight:950;">₹${Math.round(d.emi).toLocaleString()}</td>
@@ -1717,19 +1718,11 @@
                     document.getElementById('clipboardStatusAlert').style.display = 'none';
                     canvas.toBlob(blob => {
                         try {
-                            navigator.clipboard.write([ new ClipboardItem({ "image/png": blob }) ]).then(() => {
+                            navigator.clipboard.write([ new ClipboardItem({ \"image/png\": blob }) ]).then(() => {
                                 document.getElementById('clipboardStatusAlert').style.display = 'block';
                                 setTimeout(() => { let mobile = getActiveMobile(); if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank'); }, 500);
                             }).catch(err => {
                                 alert("📋 Click / Long Press karke Copy Image karein.");
                                 let mobile = getActiveMobile(); if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank');
                             });
-                        } catch (e) { let mobile = getActiveMobile(); if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank'); }
-                    }, 'image/png');
-                }
-            } else { document.getElementById('clipboardStatusAlert').style.display = 'none'; }
-        });
-    }
-</script>
-</body>
-</html>
+                        } catch (e) { let mobile = getActiveMobile(); if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank'); }\r\n                    }, 'image/png');\r\n                }\r\n            } else { document.getElementById('clipboardStatusAlert').style.display = 'none'; }\r\n        });\r\n    }\r\n</script>\r\n</body>\r\n</html>
