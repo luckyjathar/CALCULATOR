@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Persistent Portal V75.3 - Ultimate Sync Edition</title>
+    <title>Persistent Portal V75.4 - Ultimate Script Sync Edition</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
@@ -104,7 +104,7 @@
         .toast-error { background: #ffebee; color: var(--danger); border-color: var(--danger); }
         .toast-warning { background: #fff8e1; color: #d35400; border-color: #f39c12; }
 
-        /* Sync Code Input - Removed uppercase transform so typing is natural */
+        /* Sync Code Input */
         #importCodeInput { width:100%; border:2px solid var(--primary); border-radius:6px; padding:10px; font-size:16px; text-align:center; font-weight:900; letter-spacing:2px; height: 40px; }
     </style>
 </head>
@@ -436,8 +436,8 @@
 </footer>
 
 <script>
-    // 📢 GOOGLE SHEETS LIVE AUTO-SYNC CONFIGURATION
-    const CLOUD_EXCEL_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQbqqK70wY9J_xOq9l92N9Z4FGxh46HCwuC9pfvBjYvmfHapFUmi8oBRFP-2J--1Q/pub?output=xlsx";
+    // 📢 GOOGLE APPS SCRIPT URL (Tuzi navin Web App URL)
+    const CLOUD_APP_URL = "https://script.google.com/macros/s/AKfycby8OiOWuloPMdl1eSZah2EFqTH6feWugXwJcQFRMaNneZkTfyN2n5-czuqCfqYrJ5lo7w/exec";
 
     // --- SLEEK TOAST NOTIFICATION SYSTEM ---
     function showToast(msg, type = 'info') {
@@ -536,7 +536,7 @@
     let selectedQueueIndex = -1; 
     let tempPendingProduct = null; 
 
-    // --- NEW: SHORT-CODE CROSS-DEVICE SYNC ENGINE (Powered by Bytebin) ---
+    // --- SHORT-CODE CROSS-DEVICE SYNC ENGINE ---
     function openSyncModal() {
         document.getElementById('importCodeInput').value = '';
         document.getElementById('exportCodeOutput').value = '';
@@ -556,7 +556,6 @@
         hintText.style.display = 'none';
 
         try {
-            // Hum sirf zaroori data bhejenge taaki upload fast ho
             let compactQueue = customerQueue.map(c => {
                 let cp = (c.products || []).map(p => {
                     let { calculatedData, allSchemes, ...keepProduct } = p;
@@ -565,7 +564,6 @@
                 return { ...c, products: cp };
             });
 
-            // Bytebin open-source JSON store
             let response = await fetch("https://bytebin.lucko.me/post", {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -575,7 +573,6 @@
             if (!response.ok) throw new Error("Server error");
             let result = await response.json();
             
-            // Ye server ek 7 character ka code deta hai
             outputBox.value = result.key;
             hintText.style.display = 'block';
             showToast("✅ Short Code ban gaya! Dusre device me daalein.", "success");
@@ -597,10 +594,9 @@
         }
     }
 
-    // Input processing with .trim() ensuring spaces do not cause issues.
     async function processSyncImport() {
         let codeInput = document.getElementById('importCodeInput');
-        let code = codeInput.value.trim();
+        let code = codeInput.value.trim(); // Trimmed and Case-Insensitive (handled by server mostly, but text-transform removed from CSS)
         
         if(!code) return showToast("⚠️ Kripya valid Short Code type karein!", "warning");
 
@@ -637,7 +633,7 @@
                 throw new Error("Format mismatch");
             }
         } catch(e) {
-            codeInput.value = code; // Input reset to original so user can correct it
+            codeInput.value = code;
             showToast("❌ Invalid Code! Ya toh code galat hai ya expire ho chuka hai.", "error");
         }
     }
@@ -658,69 +654,29 @@
         }
     }
 
-    // --- UPGRADED CLOUD SYNC ENGINE (Fixed Google Sheet CORS blocks) ---
+    // --- 100% RELIABLE DIRECT GOOGLE APPS SCRIPT SYNC ---
     async function fetchDataFromCloud(isManualRefresh = false) {
-        if (!CLOUD_EXCEL_URL || CLOUD_EXCEL_URL.includes("YAHAN_APNA_LINK")) return;
+        if (!CLOUD_APP_URL || CLOUD_APP_URL.includes("tumchi_navin_link_yethe")) return;
         
         if (isManualRefresh) {
             document.getElementById('loadingText').innerText = "Syncing Master Sheet";
-            document.getElementById('loadingSubText').innerText = "Connecting to Google Servers...";
+            document.getElementById('loadingSubText').innerText = "Connecting to Google Servers securely...";
             document.getElementById('loadingOverlay').style.display = 'flex';
         }
         
         try {
-            let cacheBusterUrl = CLOUD_EXCEL_URL + (CLOUD_EXCEL_URL.includes('?') ? '&' : '?') + 't=' + Date.now();
-            let wb = null;
-            let fetchSuccess = false;
-
-            // PROXY 1: AllOrigins RAW (Best for binary Google Sheets)
-            if (!fetchSuccess) {
-                try {
-                    let url1 = "https://api.allorigins.win/raw?url=" + encodeURIComponent(cacheBusterUrl);
-                    let res1 = await fetch(url1);
-                    if (res1.ok) {
-                        let dataBuffer = await res1.arrayBuffer();
-                        wb = XLSX.read(new Uint8Array(dataBuffer), { type: 'array' });
-                        fetchSuccess = true;
-                    }
-                } catch (e) { console.warn("Proxy 1 failed"); }
-            }
-
-            // PROXY 2: CorsProxy.io
-            if (!fetchSuccess) {
-                try {
-                    let url2 = "https://corsproxy.io/?" + encodeURIComponent(cacheBusterUrl);
-                    let res2 = await fetch(url2);
-                    if (res2.ok) {
-                        let dataBuffer = await res2.arrayBuffer();
-                        wb = XLSX.read(new Uint8Array(dataBuffer), { type: 'array' });
-                        fetchSuccess = true;
-                    }
-                } catch (e) { console.warn("Proxy 2 failed"); }
-            }
-
-            // PROXY 3: CodeTabs Proxy
-            if (!fetchSuccess) {
-                try {
-                    let url3 = "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(cacheBusterUrl);
-                    let res3 = await fetch(url3);
-                    if (res3.ok) {
-                        let dataBuffer = await res3.arrayBuffer();
-                        wb = XLSX.read(new Uint8Array(dataBuffer), { type: 'array' });
-                        fetchSuccess = true;
-                    }
-                } catch (e) { console.warn("Proxy 3 failed"); }
-            }
-
-            if (!fetchSuccess || !wb) {
-                throw new Error("Proxy exhausted.");
-            }
+            // Fetch JSON output from Google Web App
+            let response = await fetch(CLOUD_APP_URL);
+            if (!response.ok) throw new Error("Server Error");
             
-            // Parse Sheets
-            tempSheet1Data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { raw: false, defval: "" });
-            parsedSheet2Data = wb.SheetNames.length > 1 ? XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[1]], { raw: false, defval: "" }).map(r => mapData(r, SPECIAL_MODEL)).filter(x => x && (x.tenure > 0 || x.fixedEmi > 0)) : [];
+            let data = await response.json();
             
+            tempSheet1Data = data.sheet1 || [];
+            let rawSheet2Data = data.sheet2 || [];
+            
+            parsedSheet2Data = rawSheet2Data.map(r => mapData(r, SPECIAL_MODEL)).filter(x => x && (x.tenure > 0 || x.fixedEmi > 0));
             let filteredSheet1 = tempSheet1Data.map(r => mapData(r, "REG")).filter(m => m && (m.tenure > 0 || m.fixedEmi > 0));
+            
             let rawCombined = [...filteredSheet1, ...parsedSheet2Data];
             let uniqueDB = []; let seenDB = new Set();
             
@@ -740,11 +696,13 @@
                     renderMatrix();
                 }
                 if (isManualRefresh) showToast("✅ Cloud Database successfully refreshed!", "success");
+            } else {
+                throw new Error("No active schemes found");
             }
         } catch(err) {
-            console.warn("Cloud Sync Silent Fail: ", err.message);
+            console.warn("Cloud Sync Fail: ", err.message);
             if (isManualRefresh) {
-                showToast("⚠️ Sync servers busy. Purane offline data se load kiya gaya.", "warning");
+                showToast("⚠️ Sync failed. Purane offline data varun load zale ahe.", "warning");
             }
         } finally {
             if (isManualRefresh) document.getElementById('loadingOverlay').style.display = 'none';
