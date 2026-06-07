@@ -1701,28 +1701,53 @@
         html += `<div style="text-align:center; margin-top: 20px; color:#888; font-size: 14px; font-weight: bold;">Generated via Persistent Portal</div>`;
         quoteDiv.innerHTML = html; document.body.appendChild(quoteDiv);
         
-        html2canvas(quoteDiv, {scale: 2}).then(canvas => { 
+html2canvas(quoteDiv, {scale: 2}).then(canvas => { 
             let imgDataUrl = canvas.toDataURL("image/png");
             document.getElementById('generatedImage').src = imgDataUrl; 
-            document.getElementById('imageViewerModal').style.display = 'flex'; document.body.removeChild(quoteDiv); 
+            document.getElementById('imageViewerModal').style.display = 'flex'; 
+            document.body.removeChild(quoteDiv); 
             
             if(requestWhatsAppDispatch) {
                 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
                 if (isMobile) {
-                    let a = document.createElement("a"); a.href = imgDataUrl;
+                    let a = document.createElement("a"); 
+                    a.href = imgDataUrl;
                     let safeName = activeCustName !== "-" ? activeCustName.replace(/\s+/g, '_') : "Customer";
-                    a.download = `Quotation_${safeName}.png`; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                    a.download = `Quotation_${safeName}.png`; 
+                    document.body.appendChild(a); 
+                    a.click(); 
+                    document.body.removeChild(a);
                     alert("✅ Image download ho gayi hai! Ab WhatsApp khulega, waha image attach karke bhejein.");
-                    setTimeout(() => { let mobile = getActiveMobile(); if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank'); }, 500);
+                    setTimeout(() => { 
+                        let mobile = getActiveMobile(); 
+                        if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank'); 
+                    }, 500);
                 } else {
                     document.getElementById('clipboardStatusAlert').style.display = 'none';
                     canvas.toBlob(blob => {
                         try {
-                            navigator.clipboard.write([ new ClipboardItem({ \"image/png\": blob }) ]).then(() => {
+                            navigator.clipboard.write([ new ClipboardItem({ "image/png": blob }) ]).then(() => {
                                 document.getElementById('clipboardStatusAlert').style.display = 'block';
-                                setTimeout(() => { let mobile = getActiveMobile(); if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank'); }, 500);
+                                setTimeout(() => { 
+                                    let mobile = getActiveMobile(); 
+                                    if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank'); 
+                                }, 500);
                             }).catch(err => {
                                 alert("📋 Click / Long Press karke Copy Image karein.");
-                                let mobile = getActiveMobile(); if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank');
+                                let mobile = getActiveMobile(); 
+                                if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank');
                             });
-                        } catch (e) { let mobile = getActiveMobile(); if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank'); }\r\n                    }, 'image/png');\r\n                }\r\n            } else { document.getElementById('clipboardStatusAlert').style.display = 'none'; }\r\n        });\r\n    }\r\n</script>\r\n</body>\r\n</html>
+                        } catch (e) { 
+                            let mobile = getActiveMobile(); 
+                            if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank'); 
+                        }
+                    }, 'image/png');
+                }
+            } else { 
+                document.getElementById('clipboardStatusAlert').style.display = 'none'; 
+            }
+        });
+    }
+</script>
+</body>
+</html>
