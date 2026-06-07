@@ -613,107 +613,119 @@
 
     // --- UPGRADED AUTOMATIC CLOUD SYNC ENGINE WITH MULTI-LAYER PROXY FALLBACKS ---
     async function fetchDataFromCloud(isManualRefresh = false) {
-        if (!CLOUD_EXCEL_URL || CLOUD_EXCEL_URL.includes("YAHAN_APNA_LINK")) return;
+    if (!CLOUD_EXCEL_URL || CLOUD_EXCEL_URL.includes("YAHAN_APNA_LINK")) return;
+    
+    // UI मधील रिफ्रेश बटण आणि स्टेटस ट्रॅक करण्यासाठी
+    let refreshBtn = document.querySelector("button[onclick*='fetchDataFromCloud']");
+    if(refreshBtn) {
+        refreshBtn.innerText = "🔄 SYNCING...";
+        refreshBtn.style.background = "var(--warning)";
+    }
+
+    if (isManualRefresh) {
+        document.getElementById('loadingText').innerText = "Syncing Master Sheet";
+        document.getElementById('loadingSubText').innerText = "Please wait...";
+        document.getElementById('loadingOverlay').style.display = 'flex';
+    }
+    
+    try {
+        console.log("Fetching latest rates via Multi-Layer Proxy System...");
+        let cacheBusterUrl = CLOUD_EXCEL_URL + (CLOUD_EXCEL_URL.includes('?') ? '&' : '?') + 't=' + Date.now();
+        let wb = null;
+        let fetchSuccess = false;
+
+        // PROXY 1: CorsProxy.io
+        if (!fetchSuccess) {
+            try {
+                let url1 = "https://corsproxy.io/?" + encodeURIComponent(cacheBusterUrl);
+                let res1 = await fetch(url1);
+                if (res1.ok) {
+                    let dataBuffer = await res1.arrayBuffer();
+                    wb = XLSX.read(new Uint8Array(dataBuffer), { type: 'array' });
+                    fetchSuccess = true;
+                    console.log("✅ Success via Proxy 1");
+                }
+            } catch (e) { console.warn("Proxy 1 failed:", e); }
+        }
+
+        // PROXY 2: CodeTabs
+        if (!fetchSuccess) {
+            try {
+                let url2 = "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(cacheBusterUrl);
+                let res2 = await fetch(url2);
+                if (res2.ok) {
+                    let dataBuffer = await res2.arrayBuffer();
+                    wb = XLSX.read(new Uint8Array(dataBuffer), { type: 'array' });
+                    fetchSuccess = true;
+                    console.log("✅ Success via Proxy 2");
+                }
+            } catch (e) { console.warn("Proxy 2 failed:", e); }
+        }
+
+        // BACKUP PROXY 3: Standard Fetch (काही नेटवर्क्सवर थेट चालते)
+        if (!fetchSuccess) {
+            try {
+                let res3 = await fetch(cacheBusterUrl);
+                if (res3.ok) {
+                    let dataBuffer = await res3.arrayBuffer();
+                    wb = XLSX.read(new Uint8Array(dataBuffer), { type: 'array' });
+                    fetchSuccess = true;
+                    console.log("✅ Success via Direct Fetch");
+                }
+            } catch (e) { console.warn("Direct Fetch failed:", e); }
+        }
+
+        if (!fetchSuccess || !wb) {
+            throw new Error("सर्व मोफत प्रॉक्सी सर्व्हर्स ब्लॉक झाले आहेत किंवा नेटवर्क उपलब्ध नाही.");
+        }
+        
+        // Data Parsing Logic
+        tempSheet1Data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { raw: false, defval: "" });
+        parsedSheet2Data = wb.SheetNames.length > 1 ? XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[1]], { raw: false, defval: "" }).map(r => mapData(r, SPECIAL_MODEL)).filter(x => x && (x.tenure > 0 || x.fixedEmi > 0)) : [];
+        
+        let filteredSheet1 = tempSheet1Data.map(r => mapData(r, "REG")).filter(m => m && (m.tenure > 0 || m.fixedEmi > 0));
+        let rawCombined = [...filteredSheet1, ...parsedSheet2Data];
+        let uniqueDB = []; let seenDB = new Set();
+        
+        rawCombined.forEach(r => { 
+            let key = `${r.model}_${r.category}_${r.tenure}_${r.advEmi}_${r.fixedEmi}_${r.minLoan}_${r.maxLoan}`; 
+            if (!seenDB.has(key)) { seenDB.add(key); uniqueDB.push(r); }
+        });
+        
+        if (uniqueDB.length > 0) {
+            db_records = uniqueDB; 
+            await saveToDB("persistent_db", db_records); 
+            renderImportSummary();
+            document.getElementById('globalSchemeSearchBox').style.display = 'block';
+            
+            if (activeCustomerIndex !== -1) {
+                loadCurrentProducts();
+                renderMatrix();
+            }
+            
+            // UI वर सक्सेस दाखवणे
+            if(refreshBtn) {
+                refreshBtn.innerText = "🔄 REFRESH";
+                refreshBtn.style.background = "var(--indigo)";
+            }
+            if (isManualRefresh) alert("✅ Cloud Database successfully refreshed!");
+        }
+    } catch(err) {
+        console.error("❌ Cloud Auto-Fetch System Interrupted: ", err);
+        
+        // ऑटो-सिंक फेल झाल्यास बटणाचा रंग लाल होईल जेणेकरून युझरला समजेल
+        if(refreshBtn) {
+            refreshBtn.innerText = "⚠️ SYNC FAILED";
+            refreshBtn.style.background = "var(--danger)";
+        }
         
         if (isManualRefresh) {
-            document.getElementById('loadingText').innerText = "Syncing Master Sheet";
-            document.getElementById('loadingSubText').innerText = "Please wait...";
-            document.getElementById('loadingOverlay').style.display = 'flex';
+            alert("❌ Sync Failed: " + err.message + "\n\nकृपया मॅन्युअल एक्सेल फाईल अपलोड करा किंवा नेटवर्क तपासा.");
         }
-        
-        try {
-            console.log("Fetching latest rates via Multi-Layer Proxy System...");
-            
-            let cacheBusterUrl = CLOUD_EXCEL_URL + (CLOUD_EXCEL_URL.includes('?') ? '&' : '?') + 't=' + Date.now();
-            let wb = null;
-            let fetchSuccess = false;
-
-            // PROXY 1: CorsProxy.io
-            if (!fetchSuccess) {
-                try {
-                    let url1 = "https://corsproxy.io/?" + encodeURIComponent(cacheBusterUrl);
-                    let res1 = await fetch(url1);
-                    if (res1.ok) {
-                        let dataBuffer = await res1.arrayBuffer();
-                        wb = XLSX.read(new Uint8Array(dataBuffer), { type: 'array' });
-                        fetchSuccess = true;
-                        console.log("✅ Success via Proxy 1 (CorsProxy.io)");
-                    }
-                } catch (e) { console.warn("Proxy 1 failed:", e); }
-            }
-
-            // PROXY 2: CodeTabs
-            if (!fetchSuccess) {
-                try {
-                    let url2 = "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(cacheBusterUrl);
-                    let res2 = await fetch(url2);
-                    if (res2.ok) {
-                        let dataBuffer = await res2.arrayBuffer();
-                        wb = XLSX.read(new Uint8Array(dataBuffer), { type: 'array' });
-                        fetchSuccess = true;
-                        console.log("✅ Success via Proxy 2 (CodeTabs)");
-                    }
-                } catch (e) { console.warn("Proxy 2 failed:", e); }
-            }
-
-            // PROXY 3: AllOrigins (Base64 Override Fix)
-            if (!fetchSuccess) {
-                try {
-                    let url3 = "https://api.allorigins.win/get?url=" + encodeURIComponent(cacheBusterUrl);
-                    let res3 = await fetch(url3);
-                    if (res3.ok) {
-                        let json = await res3.json();
-                        if (json.contents) {
-                            let cleanContents = json.contents.trim();
-                            if (!cleanContents.startsWith("<html") && !cleanContents.startsWith("<!DOCTYPE")) {
-                                let base64String = cleanContents.includes(",") ? cleanContents.split(',')[1] : cleanContents;
-                                wb = XLSX.read(base64String, { type: 'base64', cellDates: true });
-                                fetchSuccess = true;
-                                console.log("✅ Success via Proxy 3 (AllOrigins JSON Override)");
-                            }
-                        }
-                    }
-                } catch (e) { console.warn("Proxy 3 failed:", e); }
-            }
-
-            if (!fetchSuccess || !wb) {
-                throw new Error("Saare Backup Proxy Servers block ho gaye hain.");
-            }
-            
-            // Parse Sheets
-            tempSheet1Data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { raw: false, defval: "" });
-            parsedSheet2Data = wb.SheetNames.length > 1 ? XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[1]], { raw: false, defval: "" }).map(r => mapData(r, SPECIAL_MODEL)).filter(x => x && (x.tenure > 0 || x.fixedEmi > 0)) : [];
-            
-            let filteredSheet1 = tempSheet1Data.map(r => mapData(r, "REG")).filter(m => m && (m.tenure > 0 || m.fixedEmi > 0));
-            let rawCombined = [...filteredSheet1, ...parsedSheet2Data];
-            let uniqueDB = []; let seenDB = new Set();
-            
-            rawCombined.forEach(r => { 
-                let key = `${r.model}_${r.category}_${r.tenure}_${r.advEmi}_${r.fixedEmi}_${r.minLoan}_${r.maxLoan}`; 
-                if (!seenDB.has(key)) { seenDB.add(key); uniqueDB.push(r); }
-            });
-            
-            if (uniqueDB.length > 0) {
-                db_records = uniqueDB; 
-                await saveToDB("persistent_db", db_records); 
-                renderImportSummary();
-                document.getElementById('globalSchemeSearchBox').style.display = 'block';
-                
-                if (activeCustomerIndex !== -1) {
-                    loadCurrentProducts();
-                    renderMatrix();
-                }
-                if (isManualRefresh) alert("✅ Cloud Database successfully refreshed!");
-            }
-        } catch(err) {
-            console.error("❌ Cloud Auto-Fetch System Interrupted: ", err);
-            if (isManualRefresh) {
-                alert("❌ Sync Failed: " + err.message + "\n\nKripya ek baar MANUAL EXCEL BACKUP se file upload kar lein.");
-            }
-        } finally {
-            if (isManualRefresh) document.getElementById('loadingOverlay').style.display = 'none';
-        }
+    } finally {
+        if (isManualRefresh) document.getElementById('loadingOverlay').style.display = 'none';
     }
+}
 
     window.onload = async function() {
         generateStackCards(); 
