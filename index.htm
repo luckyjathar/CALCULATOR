@@ -6,7 +6,6 @@
     <title>Persistent Portal V75.1 - Master Edition</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
         :root { --primary: #0984e3; --success: #27ae60; --danger: #d63031; --warning: #f39c12; --dark: #2d3436; --bg: #f4f7f6; --indigo: #341f97; --bajaj-blue: #0059A3; --bajaj-green: #00A34F; }
@@ -111,12 +110,6 @@
         <button onclick="fetchDataFromCloud(true)" style="background: var(--indigo); color: white; padding: 6px 10px; border-radius: 4px; font-weight: 900; font-size: 9px; box-shadow: 0 2px 4px rgba(52,31,151,0.3); border:none; cursor:pointer;">
             🔄 REFRESH
         </button>
-
-        <div style="display: inline-flex; gap: 4px; align-items: center; background: #f1f2f6; padding: 3px 6px; border-radius: 4px; border: 1.5px solid var(--indigo);">
-            <input type="text" id="syncRoomCode" placeholder="ENTER CODE" style="width: 85px; height: 22px; text-transform: uppercase; font-size: 9px; text-align: center; font-weight: 900; border-color: var(--indigo);" onchange="connectToNewRoom(this.value)">
-            <button onclick="generateNewSyncCode()" style="background: var(--indigo); color: white; padding: 0 6px; font-size: 8px; height: 22px; font-weight: 900; border-radius: 3px;">GEN CODE</button>
-        </div>
-
         <label for="fileInp" style="background: var(--success); color: white; padding: 6px 10px; border-radius: 4px; font-weight: 900; font-size: 9px; cursor: pointer; box-shadow: 0 2px 4px rgba(39,174,96,0.3); margin: 0;">
             📂 EXCEL
         </label>
@@ -404,17 +397,8 @@
 </footer>
 
 <script>
-    // 📢 GOOGLE SHEETS LIVE AUTO-SYNC VIA PRIVATE GOOGLE APPS SCRIPT WEB APP
-    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyeGjSCWd4fDoeNVLtArtw3ueOsGlWqTa0dtzlMZWzSN1N7wsqX_MIvKbv8YEUAZLmd3A/exec";
-
-    // 🚀 SUPABASE REAL-TIME DATABASE SYNC CONFIGURATION
-    const SUPABASE_URL = "https://vsrxiqjtrjcimtcsyuoi.supabase.co"; 
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzcnhpcWp0cmpjaW10Y3N5dW9pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA4NDE0MDgsImV4cCI6MjA5NjQxNzQwOH0.3jQNuAl4PPVjHy1hn93uF1Lulk3KCWJ6uB6cyEaJWwY";       
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); 
-
-    const DEVICE_ID = Math.random().toString(36).substring(7);
-    let CURRENT_SYNC_ROOM = "";
-    let activeSupabaseChannel = null;
+    // 📢 GOOGLE SHEETS LIVE AUTO-SYNC CONFIGURATION
+    const CLOUD_EXCEL_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQbqqK70wY9J_xOq9l92N9Z4FGxh46HCwuC9pfvBjYvmfHapFUmi8oBRFP-2J--1Q/pub?output=xlsx";
 
     // --- INDEXED DB WRAPPER ---
     const DB_NAME = "PersistentPortalDB";
@@ -492,89 +476,6 @@
     let selectedQueueIndex = -1; 
     let tempPendingProduct = null; 
 
-    function generateNewSyncCode() {
-        let randCode = "RCD-" + Math.floor(100000 + Math.random() * 900000);
-        document.getElementById('syncRoomCode').value = randCode;
-        connectToNewRoom(randCode);
-        alert(`🔑 तुमचा सिक्रेट सिंक कोड: ${randCode}\n\nहाच कोड डेटा सिंक करण्यासाठी दुसऱ्या डिव्हाइसवर टाका!`);
-    }
-
-    async function connectToNewRoom(roomCode) {
-        if (!roomCode) {
-            CURRENT_SYNC_ROOM = "";
-            if (activeSupabaseChannel) activeSupabaseChannel.unsubscribe();
-            localStorage.removeItem('persistent_sync_room_code');
-            return;
-        }
-        
-        CURRENT_SYNC_ROOM = roomCode.trim().toUpperCase();
-        if (activeSupabaseChannel) activeSupabaseChannel.unsubscribe();
-        localStorage.setItem('persistent_sync_room_code', CURRENT_SYNC_ROOM);
-        
-        console.log(`📡 Database Room शी कनेक्ट होत आहे: ${CURRENT_SYNC_ROOM}`);
-        
-        try {
-            let { data, error } = await supabase
-                .from('portal_sync')
-                .select('queue_data, active_index')
-                .eq('room_code', CURRENT_SYNC_ROOM)
-                .maybeSingle();
-                
-            if (data && !error) {
-                console.log("📥 सर्व्हरवरील लेटेस्ट डेटा लोड झाला!");
-                customerQueue = data.queue_data || [];
-                activeCustomerIndex = data.active_index !== undefined ? parseInt(data.active_index) : -1;
-                
-                if (dbInstance) {
-                    let tx = dbInstance.transaction(STORE_NAME, 'readwrite');
-                    let store = tx.objectStore(STORE_NAME);
-                    store.put(JSON.stringify(customerQueue), 'persistent_queue');
-                    store.put(JSON.stringify(activeCustomerIndex), 'persistent_active_idx');
-                }
-                refreshSyncUI();
-            }
-        } catch (err) { 
-            console.error("Initial data fetch error:", err); 
-        }
-        
-        activeSupabaseChannel = supabase
-          .channel(`db_track_${CURRENT_SYNC_ROOM}`)
-          .on('postgres_changes', { 
-              event: '*', 
-              schema: 'public', 
-              table: 'portal_sync', 
-              filter: `room_code=eq.${CURRENT_SYNC_ROOM}` 
-          }, async (payload) => {
-              if (payload.new) {
-                  console.log("⚡ रिअल-टाईम क्लाऊड डेटाबेस बदल प्राप्त झाला!");
-                  customerQueue = payload.new.queue_data || [];
-                  activeCustomerIndex = parseInt(payload.new.active_index);
-                  
-                  if (dbInstance) {
-                      let tx = dbInstance.transaction(STORE_NAME, 'readwrite');
-                      let store = tx.objectStore(STORE_NAME);
-                      store.put(JSON.stringify(customerQueue), 'persistent_queue');
-                      store.put(JSON.stringify(activeCustomerIndex), 'persistent_active_idx');
-                  }
-                  refreshSyncUI();
-              }
-          })
-          .subscribe();
-    }
-
-    function refreshSyncUI() {
-        renderCustomerQueue();
-        updateUniversalActionButtons();
-        if (activeCustomerIndex !== -1) {
-            loadCurrentProducts();
-            renderMatrix();
-            updateMatrixTopCard();
-        } else {
-            document.getElementById('finalEligibleArea').style.display = 'none';
-            document.getElementById('unifiedHome').style.display = 'flex';
-        }
-    }
-
     async function saveQueueToLocal() {
         try {
             let compactQueue = customerQueue.map(c => {
@@ -584,36 +485,17 @@
                 });
                 return { ...c, products: cp };
             });
-            
             await saveToDB('persistent_queue', compactQueue);
             await saveToDB('persistent_active_idx', activeCustomerIndex);
-            
-            if (CURRENT_SYNC_ROOM) {
-                let { error } = await supabase
-                    .from('portal_sync')
-                    .upsert({ 
-                        room_code: CURRENT_SYNC_ROOM, 
-                        queue_data: customerQueue, 
-                        active_index: activeCustomerIndex
-                    }, { onConflict: 'room_code' });
-                    
-                if (error) console.error("❌ क्लाऊड डेटाबेस सिंक फेल:", error);
-                else console.log(`💾 डेटा ROOM '${CURRENT_SYNC_ROOM}' मध्ये परमनंट सेव्ह झाला!`);
-            }
         } catch(e) {
             console.error("IndexedDB save failed:", e);
         }
     }
 
+    // --- UPGRADED AUTOMATIC CLOUD SYNC ENGINE WITH MULTI-LAYER PROXY FALLBACKS ---
     async function fetchDataFromCloud(isManualRefresh = false) {
-        if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("ENTER_CODE")) return;
+        if (!CLOUD_EXCEL_URL || CLOUD_EXCEL_URL.includes("YAHAN_APNA_LINK")) return;
         
-        let refreshBtn = document.querySelector("button[onclick*='fetchDataFromCloud']");
-        if(refreshBtn) {
-            refreshBtn.innerText = "🔄 SYNCING...";
-            refreshBtn.style.background = "var(--warning)";
-        }
-
         if (isManualRefresh) {
             document.getElementById('loadingText').innerText = "Syncing Master Sheet";
             document.getElementById('loadingSubText').innerText = "Please wait...";
@@ -621,16 +503,62 @@
         }
         
         try {
-            console.log("Fetching latest rates via Private GAS Proxy Server...");
-            let finalUrl = GAS_WEB_APP_URL + "?t=" + Date.now();
-            let res = await fetch(finalUrl);
-            if (!res.ok) throw new Error("GAS Web App कडून प्रतिसाद मिळाला नाही.");
+            console.log("Fetching latest rates via Multi-Layer Proxy System...");
             
-            let json = await res.json();
-            if (json.status !== "success") throw new Error(json.message || "GAS सर्व्हरवर एरर आली आहे.");
+            let cacheBusterUrl = CLOUD_EXCEL_URL + (CLOUD_EXCEL_URL.includes('?') ? '&' : '?') + 't=' + Date.now();
+            let wb = null;
+            let fetchSuccess = false;
+
+            // PROXY 1: CorsProxy.io (Fastest & most reliable for binary data)
+            if (!fetchSuccess) {
+                try {
+                    let url1 = "https://corsproxy.io/?" + encodeURIComponent(cacheBusterUrl);
+                    let res1 = await fetch(url1);
+                    if (res1.ok) {
+                        let dataBuffer = await res1.arrayBuffer();
+                        wb = XLSX.read(new Uint8Array(dataBuffer), { type: 'array' });
+                        fetchSuccess = true;
+                        console.log("✅ Success via Proxy 1 (CorsProxy.io)");
+                    }
+                } catch (e) { console.warn("Proxy 1 failed:", e); }
+            }
+
+            // PROXY 2: CodeTabs (Solid backup for binary streams)
+            if (!fetchSuccess) {
+                try {
+                    let url2 = "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(cacheBusterUrl);
+                    let res2 = await fetch(url2);
+                    if (res2.ok) {
+                        let dataBuffer = await res2.arrayBuffer();
+                        wb = XLSX.read(new Uint8Array(dataBuffer), { type: 'array' });
+                        fetchSuccess = true;
+                        console.log("✅ Success via Proxy 2 (CodeTabs)");
+                    }
+                } catch (e) { console.warn("Proxy 2 failed:", e); }
+            }
+
+            // PROXY 3: AllOrigins (Base64 JSON Fallback)
+            if (!fetchSuccess) {
+                try {
+                    let url3 = "https://api.allorigins.win/get?url=" + encodeURIComponent(cacheBusterUrl);
+                    let res3 = await fetch(url3);
+                    if (res3.ok) {
+                        let json = await res3.json();
+                        if (json.contents && !json.contents.includes("data:text/html") && !json.contents.substring(0, 20).toLowerCase().includes("<html")) {
+                            let base64String = json.contents.split(',')[1] || json.contents;
+                            wb = XLSX.read(base64String, { type: 'base64' });
+                            fetchSuccess = true;
+                            console.log("✅ Success via Proxy 3 (AllOrigins)");
+                        }
+                    }
+                } catch (e) { console.warn("Proxy 3 failed:", e); }
+            }
+
+            if (!fetchSuccess || !wb) {
+                throw new Error("Saare Backup Proxy Servers block ho gaye hain.");
+            }
             
-            let wb = XLSX.read(json.data, { type: 'base64', cellDates: true });
-            
+            // Parse Sheets
             tempSheet1Data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { raw: false, defval: "" });
             parsedSheet2Data = wb.SheetNames.length > 1 ? XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[1]], { raw: false, defval: "" }).map(r => mapData(r, SPECIAL_MODEL)).filter(x => x && (x.tenure > 0 || x.fixedEmi > 0)) : [];
             
@@ -653,20 +581,12 @@
                     loadCurrentProducts();
                     renderMatrix();
                 }
-                if(refreshBtn) {
-                    refreshBtn.innerText = "🔄 REFRESH";
-                    refreshBtn.style.background = "var(--indigo)";
-                }
                 if (isManualRefresh) alert("✅ Cloud Database successfully refreshed!");
             }
         } catch(err) {
-            console.error("❌ GAS Auto-Fetch System Interrupted: ", err);
-            if(refreshBtn) {
-                refreshBtn.innerText = "⚠️ SYNC FAILED";
-                refreshBtn.style.background = "var(--danger)";
-            }
+            console.error("⌛ Cloud Auto-Fetch System Interrupted: ", err);
             if (isManualRefresh) {
-                alert("❌ Sync Failed: " + err.message + "\n\nKripya manual backup file cha vapar kara.");
+                alert("⌛ " + err.message + "\n\nKripya ek baar  page  refresh kar lein, Google Server abhi busy hai.");
             }
         } finally {
             if (isManualRefresh) document.getElementById('loadingOverlay').style.display = 'none';
@@ -688,6 +608,7 @@
                 }
             }
             
+            // Core trigger: Hot-swap stream deployment for automatic updates
             fetchDataFromCloud(false);
             
             let savedQ = await getFromDB('persistent_queue');
@@ -702,6 +623,7 @@
             
             let savedIdx = await getFromDB('persistent_active_idx');
             if (savedIdx !== null && savedIdx !== undefined) activeCustomerIndex = parseInt(savedIdx);
+            
             if(activeCustomerIndex >= customerQueue.length) activeCustomerIndex = -1;
 
         } catch(e) { 
@@ -711,12 +633,7 @@
         renderCustomerQueue();
         updateUniversalActionButtons();
 
-        let savedRoom = localStorage.getItem('persistent_sync_room_code');
-        if (savedRoom) {
-            document.getElementById('syncRoomCode').value = savedRoom;
-            connectToNewRoom(savedRoom);
-        }
-
+        // 🔄 AUTOMATIC TIMER: Har 5 minute me khud data fetch karega
         setInterval(function() {
             console.log("Timer Triggered: Auto syncing cloud rates...");
             fetchDataFromCloud(false);
@@ -925,11 +842,13 @@
         document.getElementById('globalSchemeViewerModal').style.display = 'flex';
     }
 
+    // --- INTEGRATED CLOCK SUMMARY RENDERING MATRIX (STICKY MODE) ---
     function renderImportSummary() {
         let summaryDiv = document.getElementById('importedDataSummary');
         if (!summaryDiv) return;
         if (!db_records || db_records.length === 0) { summaryDiv.style.display = 'none'; return; }
         
+        // High-precision timing sync mechanism
         let now = new Date();
         let timeStr = now.toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'}) + ' ' + now.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
         
@@ -1145,6 +1064,7 @@
         let gtl = mrp > 100000 ? 2398 : (mrp > 50000 ? 1799 : (mrp > 30000 ? 1499 : (mrp > 10000 ? 1199 : (mrp > 0 ? 699 : 0))));
         document.getElementById('compGtl').value = gtl;
         
+        // RFC Calculation logic
         let rfcSlab = 0;
         if(mrp > 100000) rfcSlab = 11438;
         else if(mrp > 60000) rfcSlab = 8686;
@@ -1443,10 +1363,7 @@
             if(dpExact > 0) dpRounded = Math.ceil(dpExact / 10) * 10; else dpRounded = dpExact;
             let extraVal = ((emi * inst) + dpRounded) - effectivePrice; let dbdAmt = loan * dbdRate; let roiAmt = (loan * roiRateDP) + (loan * roiRate * inst);
             let curLTV = currentTenure > 0 ? ((currentTenure - s.advEmi) / currentTenure) * 100 : 0;
-            
-            let dailyCalculated = emi > 0 ? (emi / 30) : 0;
-
-            return { ...s, currentTenure, nbfcMaxL, loan, dp: dpRounded, emi, inst, daily: dailyCalculated, dIdx, isFixed, curLTV, extra: extraVal, dbdAmt, roiAmt, inactive: s.inactive || false };
+            return { ...s, currentTenure, nbfcMaxL, loan, dp: dpRounded, emi, inst, daily: emi/30, dIdx, isFixed, curLTV, extra: extraVal, dbdAmt, roiAmt, inactive: s.inactive || false };
         });
         renderRows(pIdx);
     }
@@ -1516,7 +1433,7 @@
             let inst = d.tenure - d.advEmi; if(inst < 1) inst = 1; let insTotal = (parseFloat(inp.gtl)||0)+(parseFloat(inp.rfc)||0)+(parseFloat(inp.exw)||0); let emi = (loan / d.tenure) + (insTotal / inst) + roiInEmi;
             d.loan = loan; d.dp = dpR; d.emi = emi;
         }
-        d.extra = ((d.emi * d.inst) + d.dp) - effectivePrice; d.dbdAmt = loan * dbdRate; d.roiAmt = (loan * roiRateDP) + (loan * roiRate * (d.emi > 0 ? d.inst : 1));
+        d.extra = ((d.emi * d.inst) + d.dp) - effectivePrice; d.dbdAmt = loan * dbdRate; d.roiAmt = (loan * roiRateDP) + (loan * roiRate * d.inst);
         document.getElementById(`dp_${pIdx}_${dIdx}`).innerText = "₹" + Math.round(d.dp).toLocaleString(); document.getElementById(`emi_${pIdx}_${dIdx}`).innerText = "₹" + Math.round(d.emi).toLocaleString();
         
         d.curLTV = d.currentTenure > 0 ? ((d.currentTenure - d.advEmi) / d.currentTenure) * 100 : 0; let ltvCell = document.getElementById(`ltv_${pIdx}_${dIdx}`); if(ltvCell) ltvCell.innerText = Math.round(d.curLTV) + "%";
@@ -1657,48 +1574,31 @@
         html2canvas(quoteDiv, {scale: 2}).then(canvas => { 
             let imgDataUrl = canvas.toDataURL("image/png");
             document.getElementById('generatedImage').src = imgDataUrl; 
-            document.getElementById('imageViewerModal').style.display = 'flex'; 
-            document.body.removeChild(quoteDiv); 
+            document.getElementById('imageViewerModal').style.display = 'flex'; document.body.removeChild(quoteDiv); 
             
             if(requestWhatsAppDispatch) {
                 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
                 if (isMobile) {
-                    let a = document.createElement("a"); 
-                    a.href = imgDataUrl;
+                    let a = document.createElement("a"); a.href = imgDataUrl;
                     let safeName = activeCustName !== "-" ? activeCustName.replace(/\s+/g, '_') : "Customer";
-                    a.download = `Quotation_${safeName}.png`; 
-                    document.body.appendChild(a); 
-                    a.click(); 
-                    document.body.removeChild(a);
+                    a.download = `Quotation_${safeName}.png`; document.body.appendChild(a); a.click(); document.body.removeChild(a);
                     alert("✅ Image download ho gayi hai! Ab WhatsApp khulega, waha image attach karke bhejein.");
-                    setTimeout(() => { 
-                        let mobile = getActiveMobile(); 
-                        if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank'); 
-                    }, 500);
+                    setTimeout(() => { let mobile = getActiveMobile(); if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank'); }, 500);
                 } else {
                     document.getElementById('clipboardStatusAlert').style.display = 'none';
                     canvas.toBlob(blob => {
                         try {
                             navigator.clipboard.write([ new ClipboardItem({ "image/png": blob }) ]).then(() => {
                                 document.getElementById('clipboardStatusAlert').style.display = 'block';
-                                setTimeout(() => { 
-                                    let mobile = getActiveMobile(); 
-                                    if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank'); 
-                                }, 500);
+                                setTimeout(() => { let mobile = getActiveMobile(); if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank'); }, 500);
                             }).catch(err => {
                                 alert("📋 Click / Long Press karke Copy Image karein.");
-                                let mobile = getActiveMobile(); 
-                                if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank');
+                                let mobile = getActiveMobile(); if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank');
                             });
-                        } catch (e) { 
-                            let mobile = getActiveMobile(); 
-                            if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank'); 
-                        }
+                        } catch (e) { let mobile = getActiveMobile(); if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank'); }
                     }, 'image/png');
                 }
-            } else { 
-                document.getElementById('clipboardStatusAlert').style.display = 'none'; 
-            }
+            } else { document.getElementById('clipboardStatusAlert').style.display = 'none'; }
         });
     }
 </script>
