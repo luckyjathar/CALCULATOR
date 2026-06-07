@@ -404,13 +404,13 @@
 </footer>
 
 <script>
-    // 📢 GOOGLE SHEETS LIVE AUTO-SYNC CONFIGURATION
-    const CLOUD_EXCEL_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQbqqK70wY9J_xOq9l92N9Z4FGxh46HCwuC9pfvBjYvmfHapFUmi8oBRFP-2J--1Q/pub?output=xlsx";
+    // 📢 GOOGLE SHEETS LIVE AUTO-SYNC VIA PRIVATE GOOGLE APPS SCRIPT WEB APP
+    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyeGjSCWd4fDoeNVLtArtw3ueOsGlWqTa0dtzlMZWzSN1N7wsqX_MIvKbv8YEUAZLmd3A/exec";
 
     // 🚀 SUPABASE REAL-TIME DATABASE SYNC CONFIGURATION
-    const SUPABASE_URL = "https://vsrxiqjtrjcimtcsyuoi.supabase.co"; // 🌟 फिक्स: शेवटचा /rest/v1/ काढून टाकला आहे
+    const SUPABASE_URL = "https://vsrxiqjtrjcimtcsyuoi.supabase.co"; 
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzcnhpcWp0cmpjaW10Y3N5dW9pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA4NDE0MDgsImV4cCI6MjA5NjQxNzQwOH0.3jQNuAl4PPVjHy1hn93uF1Lulk3KCWJ6uB6cyEaJWwY";       
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); // 🌟 फिक्स: window.supabase वापरून क्रॅश होणे थांबवले
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); 
 
     const DEVICE_ID = Math.random().toString(36).substring(7);
     let CURRENT_SYNC_ROOM = "";
@@ -492,7 +492,6 @@
     let selectedQueueIndex = -1; 
     let tempPendingProduct = null; 
 
-    // 🔑 १. नवीन सिंक कोड बनवणे
     function generateNewSyncCode() {
         let randCode = "RCD-" + Math.floor(100000 + Math.random() * 900000);
         document.getElementById('syncRoomCode').value = randCode;
@@ -500,7 +499,6 @@
         alert(`🔑 तुमचा सिक्रेट सिंक कोड: ${randCode}\n\nहाच कोड डेटा सिंक करण्यासाठी दुसऱ्या डिव्हाइसवर टाका!`);
     }
 
-    // 🔒 २. क्लाऊड टेबल स्टोरेज आणि रिआल-टाईम लिसनर कनेक्शन
     async function connectToNewRoom(roomCode) {
         if (!roomCode) {
             CURRENT_SYNC_ROOM = "";
@@ -515,7 +513,6 @@
         
         console.log(`📡 Database Room शी कनेक्ट होत आहे: ${CURRENT_SYNC_ROOM}`);
         
-        // अ) पहिल्यांदा रिफ्रेश केल्यावर सर्व्हरवरील जुना परमनंट डेटा ओढणे
         try {
             let { data, error } = await supabase
                 .from('portal_sync')
@@ -540,7 +537,6 @@
             console.error("Initial data fetch error:", err); 
         }
         
-        // ब) लाईव्ह डेटाबेस बदलांवर २४ तास लक्ष ठेवणे
         activeSupabaseChannel = supabase
           .channel(`db_track_${CURRENT_SYNC_ROOM}`)
           .on('postgres_changes', { 
@@ -589,11 +585,9 @@
                 return { ...c, products: cp };
             });
             
-            // १. लोकल मेमरीमध्ये बॅकअप सेव्ह
             await saveToDB('persistent_queue', compactQueue);
             await saveToDB('persistent_active_idx', activeCustomerIndex);
             
-            // 🚀 २. सुपाबेस क्लाऊड परमनंट टेबलमध्ये डेटा सेव्ह (UPSERT)
             if (CURRENT_SYNC_ROOM) {
                 let { error } = await supabase
                     .from('portal_sync')
@@ -611,121 +605,73 @@
         }
     }
 
-    // --- UPGRADED AUTOMATIC CLOUD SYNC ENGINE WITH MULTI-LAYER PROXY FALLBACKS ---
     async function fetchDataFromCloud(isManualRefresh = false) {
-    if (!CLOUD_EXCEL_URL || CLOUD_EXCEL_URL.includes("YAHAN_APNA_LINK")) return;
-    
-    // UI मधील रिफ्रेश बटण आणि स्टेटस ट्रॅक करण्यासाठी
-    let refreshBtn = document.querySelector("button[onclick*='fetchDataFromCloud']");
-    if(refreshBtn) {
-        refreshBtn.innerText = "🔄 SYNCING...";
-        refreshBtn.style.background = "var(--warning)";
-    }
-
-    if (isManualRefresh) {
-        document.getElementById('loadingText').innerText = "Syncing Master Sheet";
-        document.getElementById('loadingSubText').innerText = "Please wait...";
-        document.getElementById('loadingOverlay').style.display = 'flex';
-    }
-    
-    try {
-        console.log("Fetching latest rates via Multi-Layer Proxy System...");
-        let cacheBusterUrl = CLOUD_EXCEL_URL + (CLOUD_EXCEL_URL.includes('?') ? '&' : '?') + 't=' + Date.now();
-        let wb = null;
-        let fetchSuccess = false;
-
-        // PROXY 1: CorsProxy.io
-        if (!fetchSuccess) {
-            try {
-                let url1 = "https://corsproxy.io/?" + encodeURIComponent(cacheBusterUrl);
-                let res1 = await fetch(url1);
-                if (res1.ok) {
-                    let dataBuffer = await res1.arrayBuffer();
-                    wb = XLSX.read(new Uint8Array(dataBuffer), { type: 'array' });
-                    fetchSuccess = true;
-                    console.log("✅ Success via Proxy 1");
-                }
-            } catch (e) { console.warn("Proxy 1 failed:", e); }
-        }
-
-        // PROXY 2: CodeTabs
-        if (!fetchSuccess) {
-            try {
-                let url2 = "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(cacheBusterUrl);
-                let res2 = await fetch(url2);
-                if (res2.ok) {
-                    let dataBuffer = await res2.arrayBuffer();
-                    wb = XLSX.read(new Uint8Array(dataBuffer), { type: 'array' });
-                    fetchSuccess = true;
-                    console.log("✅ Success via Proxy 2");
-                }
-            } catch (e) { console.warn("Proxy 2 failed:", e); }
-        }
-
-        // BACKUP PROXY 3: Standard Fetch (काही नेटवर्क्सवर थेट चालते)
-        if (!fetchSuccess) {
-            try {
-                let res3 = await fetch(cacheBusterUrl);
-                if (res3.ok) {
-                    let dataBuffer = await res3.arrayBuffer();
-                    wb = XLSX.read(new Uint8Array(dataBuffer), { type: 'array' });
-                    fetchSuccess = true;
-                    console.log("✅ Success via Direct Fetch");
-                }
-            } catch (e) { console.warn("Direct Fetch failed:", e); }
-        }
-
-        if (!fetchSuccess || !wb) {
-            throw new Error("सर्व मोफत प्रॉक्सी सर्व्हर्स ब्लॉक झाले आहेत किंवा नेटवर्क उपलब्ध नाही.");
-        }
+        if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("ENTER_CODE")) return;
         
-        // Data Parsing Logic
-        tempSheet1Data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { raw: false, defval: "" });
-        parsedSheet2Data = wb.SheetNames.length > 1 ? XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[1]], { raw: false, defval: "" }).map(r => mapData(r, SPECIAL_MODEL)).filter(x => x && (x.tenure > 0 || x.fixedEmi > 0)) : [];
-        
-        let filteredSheet1 = tempSheet1Data.map(r => mapData(r, "REG")).filter(m => m && (m.tenure > 0 || m.fixedEmi > 0));
-        let rawCombined = [...filteredSheet1, ...parsedSheet2Data];
-        let uniqueDB = []; let seenDB = new Set();
-        
-        rawCombined.forEach(r => { 
-            let key = `${r.model}_${r.category}_${r.tenure}_${r.advEmi}_${r.fixedEmi}_${r.minLoan}_${r.maxLoan}`; 
-            if (!seenDB.has(key)) { seenDB.add(key); uniqueDB.push(r); }
-        });
-        
-        if (uniqueDB.length > 0) {
-            db_records = uniqueDB; 
-            await saveToDB("persistent_db", db_records); 
-            renderImportSummary();
-            document.getElementById('globalSchemeSearchBox').style.display = 'block';
-            
-            if (activeCustomerIndex !== -1) {
-                loadCurrentProducts();
-                renderMatrix();
-            }
-            
-            // UI वर सक्सेस दाखवणे
-            if(refreshBtn) {
-                refreshBtn.innerText = "🔄 REFRESH";
-                refreshBtn.style.background = "var(--indigo)";
-            }
-            if (isManualRefresh) alert("✅ Cloud Database successfully refreshed!");
-        }
-    } catch(err) {
-        console.error("❌ Cloud Auto-Fetch System Interrupted: ", err);
-        
-        // ऑटो-सिंक फेल झाल्यास बटणाचा रंग लाल होईल जेणेकरून युझरला समजेल
+        let refreshBtn = document.querySelector("button[onclick*='fetchDataFromCloud']");
         if(refreshBtn) {
-            refreshBtn.innerText = "⚠️ SYNC FAILED";
-            refreshBtn.style.background = "var(--danger)";
+            refreshBtn.innerText = "🔄 SYNCING...";
+            refreshBtn.style.background = "var(--warning)";
+        }
+
+        if (isManualRefresh) {
+            document.getElementById('loadingText').innerText = "Syncing Master Sheet";
+            document.getElementById('loadingSubText').innerText = "Please wait...";
+            document.getElementById('loadingOverlay').style.display = 'flex';
         }
         
-        if (isManualRefresh) {
-            alert("❌ Sync Failed: " + err.message + "\n\nकृपया मॅन्युअल एक्सेल फाईल अपलोड करा किंवा नेटवर्क तपासा.");
+        try {
+            console.log("Fetching latest rates via Private GAS Proxy Server...");
+            let finalUrl = GAS_WEB_APP_URL + "?t=" + Date.now();
+            let res = await fetch(finalUrl);
+            if (!res.ok) throw new Error("GAS Web App कडून प्रतिसाद मिळाला नाही.");
+            
+            let json = await res.json();
+            if (json.status !== "success") throw new Error(json.message || "GAS सर्व्हरवर एरर आली आहे.");
+            
+            let wb = XLSX.read(json.data, { type: 'base64', cellDates: true });
+            
+            tempSheet1Data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { raw: false, defval: "" });
+            parsedSheet2Data = wb.SheetNames.length > 1 ? XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[1]], { raw: false, defval: "" }).map(r => mapData(r, SPECIAL_MODEL)).filter(x => x && (x.tenure > 0 || x.fixedEmi > 0)) : [];
+            
+            let filteredSheet1 = tempSheet1Data.map(r => mapData(r, "REG")).filter(m => m && (m.tenure > 0 || m.fixedEmi > 0));
+            let rawCombined = [...filteredSheet1, ...parsedSheet2Data];
+            let uniqueDB = []; let seenDB = new Set();
+            
+            rawCombined.forEach(r => { 
+                let key = `${r.model}_${r.category}_${r.tenure}_${r.advEmi}_${r.fixedEmi}_${r.minLoan}_${r.maxLoan}`; 
+                if (!seenDB.has(key)) { seenDB.add(key); uniqueDB.push(r); }
+            });
+            
+            if (uniqueDB.length > 0) {
+                db_records = uniqueDB; 
+                await saveToDB("persistent_db", db_records); 
+                renderImportSummary();
+                document.getElementById('globalSchemeSearchBox').style.display = 'block';
+                
+                if (activeCustomerIndex !== -1) {
+                    loadCurrentProducts();
+                    renderMatrix();
+                }
+                if(refreshBtn) {
+                    refreshBtn.innerText = "🔄 REFRESH";
+                    refreshBtn.style.background = "var(--indigo)";
+                }
+                if (isManualRefresh) alert("✅ Cloud Database successfully refreshed!");
+            }
+        } catch(err) {
+            console.error("❌ GAS Auto-Fetch System Interrupted: ", err);
+            if(refreshBtn) {
+                refreshBtn.innerText = "⚠️ SYNC FAILED";
+                refreshBtn.style.background = "var(--danger)";
+            }
+            if (isManualRefresh) {
+                alert("❌ Sync Failed: " + err.message + "\n\nKripya manual backup file cha vapar kara.");
+            }
+        } finally {
+            if (isManualRefresh) document.getElementById('loadingOverlay').style.display = 'none';
         }
-    } finally {
-        if (isManualRefresh) document.getElementById('loadingOverlay').style.display = 'none';
     }
-}
 
     window.onload = async function() {
         generateStackCards(); 
@@ -765,14 +711,12 @@
         renderCustomerQueue();
         updateUniversalActionButtons();
 
-        // 🔄 मेमरीमधून जुना सिंक कोड लोड करणे
         let savedRoom = localStorage.getItem('persistent_sync_room_code');
         if (savedRoom) {
             document.getElementById('syncRoomCode').value = savedRoom;
             connectToNewRoom(savedRoom);
         }
 
-        // 🔄 AUTOMATIC TIMER (5 Minutes Cloud Sync)
         setInterval(function() {
             console.log("Timer Triggered: Auto syncing cloud rates...");
             fetchDataFromCloud(false);
@@ -937,7 +881,6 @@
         updateUniversalActionButtons();
     }
 
-    // --- (बजेट / EMI कॅल्क्युलेशन फंक्शन्स पूर्ववत चालू राहतील) ---
     function getActiveName() { return customerQueue[activeCustomerIndex]?.name || "-"; }
     function getActiveMobile() { return customerQueue[activeCustomerIndex]?.mobile || ""; }
     function getActiveLimit() { return customerQueue[activeCustomerIndex]?.limit || 0; }
@@ -1202,7 +1145,6 @@
         let gtl = mrp > 100000 ? 2398 : (mrp > 50000 ? 1799 : (mrp > 30000 ? 1499 : (mrp > 10000 ? 1199 : (mrp > 0 ? 699 : 0))));
         document.getElementById('compGtl').value = gtl;
         
-        // RFC Calculation logic
         let rfcSlab = 0;
         if(mrp > 100000) rfcSlab = 11438;
         else if(mrp > 60000) rfcSlab = 8686;
@@ -1502,7 +1444,6 @@
             let extraVal = ((emi * inst) + dpRounded) - effectivePrice; let dbdAmt = loan * dbdRate; let roiAmt = (loan * roiRateDP) + (loan * roiRate * inst);
             let curLTV = currentTenure > 0 ? ((currentTenure - s.advEmi) / currentTenure) * 100 : 0;
             
-            // 🚀 Daily EMI zero validation safety fix
             let dailyCalculated = emi > 0 ? (emi / 30) : 0;
 
             return { ...s, currentTenure, nbfcMaxL, loan, dp: dpRounded, emi, inst, daily: dailyCalculated, dIdx, isFixed, curLTV, extra: extraVal, dbdAmt, roiAmt, inactive: s.inactive || false };
@@ -1529,12 +1470,12 @@
                 <td class="hidden-col" id="ltv_${pIdx}_${d.dIdx}">${Math.round(d.curLTV)}%</td>
                 <td class="hidden-col" id="extra_${pIdx}_${d.dIdx}" style="font-weight:900; color:var(--danger);">₹${Math.round(d.extra).toLocaleString()}</td>
                 ${isNT ? '<td class="bound-col">'+(d.minLoan>0?'₹'+d.minLoan:'0')+'</td><td class="bound-col">'+(d.maxLoan<9999999?'₹'+d.maxLoan:'NO')+'</td>' : '<td style="color:#777; font-size:8px;">₹'+Math.floor(d.nbfcMaxL)+'</td>'}
-                <td><div class="stepper"><button class="step-btn" onclick="step(${pIdx},${d.dIdx},-${d.isFixed ? d.fixedEmi : 1000})">-</button><input id="l_${pIdx}_${dIdx}" type="number" value="${Math.floor(d.loan)}" class="step-inp" oninput="manual(${pIdx},${d.dIdx})"><button class="step-btn" onclick="step(${pIdx},${d.dIdx},${d.isFixed ? d.fixedEmi : 1000})">+</button></div></td>
-                <td id="ta_${pIdx}_${dIdx}" style="font-weight:900;">${d.currentTenure}/${d.advEmi}</td>
-                <td id="dp_${pIdx}_${dIdx}" style="color:var(--success); font-weight:950;">₹${Math.round(d.dp).toLocaleString()}</td>
-                <td id="emi_${pIdx}_${dIdx}" style="color:var(--primary); font-weight:950;">₹${Math.round(d.emi).toLocaleString()}</td>
-                <td id="inst_${pIdx}_${dIdx}" style="font-weight:900;">${d.inst}</td>
-                <td id="day_${pIdx}_${dIdx}" style="color:var(--success); font-weight:950;">₹${Math.round(d.daily).toLocaleString()}</td>
+                <td><div class="stepper"><button class="step-btn" onclick="step(${pIdx},${d.dIdx},-${d.isFixed ? d.fixedEmi : 1000})">-</button><input id="l_${pIdx}_${d.dIdx}" type="number" value="${Math.floor(d.loan)}" class="step-inp" oninput="manual(${pIdx},${d.dIdx})"><button class="step-btn" onclick="step(${pIdx},${d.dIdx},${d.isFixed ? d.fixedEmi : 1000})">+</button></div></td>
+                <td id="ta_${pIdx}_${d.dIdx}" style="font-weight:900;">${d.currentTenure}/${d.advEmi}</td>
+                <td id="dp_${pIdx}_${d.dIdx}" style="color:var(--success); font-weight:950;">₹${Math.round(d.dp).toLocaleString()}</td>
+                <td id="emi_${pIdx}_${d.dIdx}" style="color:var(--primary); font-weight:950;">₹${Math.round(d.emi).toLocaleString()}</td>
+                <td id="inst_${pIdx}_${d.dIdx}" style="font-weight:900;">${d.inst}</td>
+                <td id="day_${pIdx}_${d.dIdx}" style="color:var(--success); font-weight:950;">₹${Math.round(d.daily).toLocaleString()}</td>
                 <td>
                     <div style="display:flex; flex-direction:column; gap:2px; min-width: 40px;">
                         <button class="action-btn btn-copy" onclick="copySchemeText(${pIdx}, ${d.dIdx}, this)">COPY</button>
@@ -1575,7 +1516,7 @@
             let inst = d.tenure - d.advEmi; if(inst < 1) inst = 1; let insTotal = (parseFloat(inp.gtl)||0)+(parseFloat(inp.rfc)||0)+(parseFloat(inp.exw)||0); let emi = (loan / d.tenure) + (insTotal / inst) + roiInEmi;
             d.loan = loan; d.dp = dpR; d.emi = emi;
         }
-        d.extra = ((d.emi * d.inst) + d.dp) - effectivePrice; d.dbdAmt = loan * dbdRate; d.roiAmt = (loan * roiRateDP) + (loan * roiRate * d.emi > 0 ? d.inst : 1);
+        d.extra = ((d.emi * d.inst) + d.dp) - effectivePrice; d.dbdAmt = loan * dbdRate; d.roiAmt = (loan * roiRateDP) + (loan * roiRate * (d.emi > 0 ? d.inst : 1));
         document.getElementById(`dp_${pIdx}_${dIdx}`).innerText = "₹" + Math.round(d.dp).toLocaleString(); document.getElementById(`emi_${pIdx}_${dIdx}`).innerText = "₹" + Math.round(d.emi).toLocaleString();
         
         d.curLTV = d.currentTenure > 0 ? ((d.currentTenure - d.advEmi) / d.currentTenure) * 100 : 0; let ltvCell = document.getElementById(`ltv_${pIdx}_${dIdx}`); if(ltvCell) ltvCell.innerText = Math.round(d.curLTV) + "%";
@@ -1713,7 +1654,7 @@
         html += `<div style="text-align:center; margin-top: 20px; color:#888; font-size: 14px; font-weight: bold;">Generated via Persistent Portal</div>`;
         quoteDiv.innerHTML = html; document.body.appendChild(quoteDiv);
         
-html2canvas(quoteDiv, {scale: 2}).then(canvas => { 
+        html2canvas(quoteDiv, {scale: 2}).then(canvas => { 
             let imgDataUrl = canvas.toDataURL("image/png");
             document.getElementById('generatedImage').src = imgDataUrl; 
             document.getElementById('imageViewerModal').style.display = 'flex'; 
