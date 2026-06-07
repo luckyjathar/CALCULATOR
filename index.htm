@@ -492,7 +492,7 @@
         }
     }
 
-    // --- UPGRADED AUTOMATIC CLOUD SYNC ENGINE WITH MULTI-LAYER PROXY FALLBACKS ---
+    // --- UPGRADED BULLETPROOF AUTOMATIC CLOUD SYNC ENGINE ---
     async function fetchDataFromCloud(isManualRefresh = false) {
         if (!CLOUD_EXCEL_URL || CLOUD_EXCEL_URL.includes("YAHAN_APNA_LINK")) return;
         
@@ -503,13 +503,26 @@
         }
         
         try {
-            console.log("Fetching latest rates via Multi-Layer Proxy System...");
+            console.log("Fetching latest rates...");
             
             let cacheBusterUrl = CLOUD_EXCEL_URL + (CLOUD_EXCEL_URL.includes('?') ? '&' : '?') + 't=' + Date.now();
             let wb = null;
             let fetchSuccess = false;
 
-            // PROXY 1: CorsProxy.io (Fastest & most reliable for binary data)
+            // 🚀 LAYER 0: DIRECT FETCH (Google web-published endpoints have native CORS!)
+            try {
+                let res0 = await fetch(cacheBusterUrl);
+                if (res0.ok) {
+                    let dataBuffer = await res0.arrayBuffer();
+                    wb = XLSX.read(new Uint8Array(dataBuffer), { type: 'array' });
+                    fetchSuccess = true;
+                    console.log("✅ Success via Direct Fetch (Native Connection)");
+                }
+            } catch (e) { 
+                console.warn("Direct Connection skipped, launching backup proxies...", e); 
+            }
+
+            // PROXY 1: CorsProxy.io
             if (!fetchSuccess) {
                 try {
                     let url1 = "https://corsproxy.io/?" + encodeURIComponent(cacheBusterUrl);
@@ -523,7 +536,7 @@
                 } catch (e) { console.warn("Proxy 1 failed:", e); }
             }
 
-            // PROXY 2: CodeTabs (Solid backup for binary streams)
+            // PROXY 2: CodeTabs
             if (!fetchSuccess) {
                 try {
                     let url2 = "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(cacheBusterUrl);
@@ -537,7 +550,7 @@
                 } catch (e) { console.warn("Proxy 2 failed:", e); }
             }
 
-            // PROXY 3: AllOrigins (Base64 JSON Fallback)
+            // PROXY 3: AllOrigins
             if (!fetchSuccess) {
                 try {
                     let url3 = "https://api.allorigins.win/get?url=" + encodeURIComponent(cacheBusterUrl);
@@ -555,7 +568,7 @@
             }
 
             if (!fetchSuccess || !wb) {
-                throw new Error("Saare Backup Proxy Servers block ho gaye hain.");
+                throw new Error("All data streams are currently limited or unresponsive.");
             }
             
             // Parse Sheets
@@ -584,9 +597,9 @@
                 if (isManualRefresh) alert("✅ Cloud Database successfully refreshed!");
             }
         } catch(err) {
-            console.error("⌛ Cloud Auto-Fetch System Interrupted: ", err);
+            console.error("⌛ Background Sync Interrupted safely: ", err);
             if (isManualRefresh) {
-                alert("⌛ " + err.message + "\n\nKripya ek baar  page  refresh kar lein, Google Server abhi busy hai.");
+                alert("⌛ Data update process paused temporary. Check your internet connection or Google Sheet publication status.");
             }
         } finally {
             if (isManualRefresh) document.getElementById('loadingOverlay').style.display = 'none';
@@ -608,7 +621,6 @@
                 }
             }
             
-            // Core trigger: Hot-swap stream deployment for automatic updates
             fetchDataFromCloud(false);
             
             let savedQ = await getFromDB('persistent_queue');
@@ -633,7 +645,7 @@
         renderCustomerQueue();
         updateUniversalActionButtons();
 
-        // 🔄 AUTOMATIC TIMER: Har 5 minute me khud data fetch karega
+        // 🔄 AUTOMATIC TIMER: Har 5 minute me updates catch karega smoothly
         setInterval(function() {
             console.log("Timer Triggered: Auto syncing cloud rates...");
             fetchDataFromCloud(false);
@@ -842,13 +854,11 @@
         document.getElementById('globalSchemeViewerModal').style.display = 'flex';
     }
 
-    // --- INTEGRATED CLOCK SUMMARY RENDERING MATRIX (STICKY MODE) ---
     function renderImportSummary() {
         let summaryDiv = document.getElementById('importedDataSummary');
         if (!summaryDiv) return;
         if (!db_records || db_records.length === 0) { summaryDiv.style.display = 'none'; return; }
         
-        // High-precision timing sync mechanism
         let now = new Date();
         let timeStr = now.toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'}) + ' ' + now.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
         
@@ -1064,7 +1074,6 @@
         let gtl = mrp > 100000 ? 2398 : (mrp > 50000 ? 1799 : (mrp > 30000 ? 1499 : (mrp > 10000 ? 1199 : (mrp > 0 ? 699 : 0))));
         document.getElementById('compGtl').value = gtl;
         
-        // RFC Calculation logic
         let rfcSlab = 0;
         if(mrp > 100000) rfcSlab = 11438;
         else if(mrp > 60000) rfcSlab = 8686;
@@ -1387,7 +1396,7 @@
                 <td class="hidden-col" id="ltv_${pIdx}_${d.dIdx}">${Math.round(d.curLTV)}%</td>
                 <td class="hidden-col" id="extra_${pIdx}_${d.dIdx}" style="font-weight:900; color:var(--danger);">₹${Math.round(d.extra).toLocaleString()}</td>
                 ${isNT ? '<td class="bound-col">'+(d.minLoan>0?'₹'+d.minLoan:'0')+'</td><td class="bound-col">'+(d.maxLoan<9999999?'₹'+d.maxLoan:'NO')+'</td>' : '<td style="color:#777; font-size:8px;">₹'+Math.floor(d.nbfcMaxL)+'</td>'}
-                <td><div class="stepper"><button class="step-btn" onclick="step(${pIdx},${d.dIdx},-${d.isFixed ? d.fixedEmi : 1000})">-</button><input id="l_${pIdx}_${d.dIdx}" type="number" value="${Math.floor(d.loan)}" class="step-inp" oninput="manual(${pIdx},${d.dIdx})"><button class="step-btn" onclick="step(${pIdx},${d.dIdx},${d.isFixed ? d.fixedEmi : 1000})">+</button></div></td>
+                <td><div class="stepper"><button class="step-btn" onclick="step(${pIdx},${d.dIdx},-${d.isFixed ? d.fixedEmi : 1000})">-</button><input id="l_${pIdx}_${dIdx}" type="number" value="${Math.floor(d.loan)}" class="step-inp" oninput="manual(${pIdx},${d.dIdx})"><button class="step-btn" onclick="step(${pIdx},${d.dIdx},${d.isFixed ? d.fixedEmi : 1000})">+</button></div></td>
                 <td id="ta_${pIdx}_${d.dIdx}" style="font-weight:900;">${d.currentTenure}/${d.advEmi}</td>
                 <td id="dp_${pIdx}_${d.dIdx}" style="color:var(--success); font-weight:950;">₹${Math.round(d.dp).toLocaleString()}</td>
                 <td id="emi_${pIdx}_${d.dIdx}" style="color:var(--primary); font-weight:950;">₹${Math.round(d.emi).toLocaleString()}</td>
