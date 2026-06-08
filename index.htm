@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Persistent Portal V75.1 - Master Edition</title>
+    <title>Persistent Portal V76.0 - Smart Sync Edition</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
@@ -96,7 +96,7 @@
 
 <header>
     <div id="gitStatusBadge" style="font-weight: 950; font-size: 10px; background: rgba(39, 174, 96, 0.15); color: var(--success); padding: 5px 10px; border-radius: 4px; border: 1px solid var(--success); letter-spacing: 0.5px; transition: all 0.3s ease;">
-        Pro RCD Calculator
+        ⚙️ GITHUB INTERFACE CONNECTED
     </div>
     <h1>🚀 Persistent Portal Master</h1>
 </header>
@@ -147,7 +147,7 @@
 
         <div class="action-box">
             <div class="disclaimer-box">
-                <b>Disclaimer:</b> GitHub data stream loaded successfully. Kisi bhi model scheme ka use karne se pehle system application ke saath <b>verify zaroor karein</b>.
+                <b>Disclaimer:</b> GitHub smart stream activated. System will only download files if updates are detected. Original application ke saath verify zaroor karein.
             </div>
             
             <div id="globalSchemeSearchBox" style="display:none; position:relative; background:#fdfdfd; padding:8px; border:1px solid #ccc; border-radius:6px;">
@@ -322,7 +322,7 @@
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-top:8px;">
                 <div><label>TENURE (Max)</label><input type="number" id="manTen" placeholder="12"></div>
                 <div><label>ADVANCE</label><input type="number" id="manAdv" placeholder="4"></div>
-                <div><label>DBD %</label><input type="number" id="manDbd?" placeholder="0"></div>
+                <div><label>DBD %</label><input type="number" id="manDbd" placeholder="0"></div>
                 <div><label>PF (₹)</label><input type="number" id="manPf" placeholder="0"></div>
                 <div><label>ROI %</label><input type="number" id="manRoi" placeholder="0"></div>
                 <div><label>FIXED EMI (₹)</label><input type="number" id="manFixed" placeholder="0"></div>
@@ -367,8 +367,9 @@
 </footer>
 
 <script>
-    // 📢 AUTOMATIC ENCODED GITHUB CONFIGURATION - ZERO INTERRUPTIONS
+    // 📢 GITHUB SMART SYNC CONFIGURATION
     const GITHUB_RAW_URL = "https://raw.githubusercontent.com/luckyjathar/CALCULATOR/main/master_data.xlsx";
+    const GITHUB_API_URL = "https://api.github.com/repos/luckyjathar/CALCULATOR/commits?path=master_data.xlsx&page=1&per_page=1";
 
     // --- INDEXED DB WRAPPER ---
     const DB_NAME = "PersistentPortalDB";
@@ -389,9 +390,7 @@
                 dbInstance = e.target.result;
                 resolve(dbInstance);
             };
-            request.onerror = function(e) {
-                reject(e);
-            };
+            request.onerror = function(e) { reject(e); };
         });
     }
 
@@ -404,9 +403,7 @@
                 let req = store.put(JSON.stringify(data), key);
                 req.onsuccess = () => resolve();
                 req.onerror = (e) => reject(e.target.error);
-            } catch(e) {
-                reject(e);
-            }
+            } catch(e) { reject(e); }
         });
     }
 
@@ -422,14 +419,10 @@
                     if (res) {
                         if (typeof res === 'string') resolve(JSON.parse(res));
                         else resolve(res); 
-                    } else {
-                        resolve(null);
-                    }
+                    } else { resolve(null); }
                 };
                 req.onerror = (e) => reject(e.target.error);
-            } catch(e) {
-                reject(e);
-            }
+            } catch(e) { reject(e); }
         });
     }
 
@@ -456,22 +449,49 @@
             });
             await saveToDB('persistent_queue', compactQueue);
             await saveToDB('persistent_active_idx', activeCustomerIndex);
-        } catch(e) {
-            console.error("Local Save Interrupted", e);
-        }
+        } catch(e) { console.error("Local Save Interrupted", e); }
     }
 
-    // --- SILENT BACKGROUND STREAM DIRECT DISPATCH SYSTEM ---
+    // --- SMART BACKGROUND VERSION CHECKER ---
     async function fetchFromMasterStream() {
         let statusBadge = document.getElementById('gitStatusBadge');
         if(statusBadge) {
-            statusBadge.innerHTML = '🔄 SYNCING BACKGROUND...';
+            statusBadge.innerHTML = '🔄 CHECKING UPDATES...';
             statusBadge.style.color = '#f39c12';
             statusBadge.style.borderColor = '#f39c12';
             statusBadge.style.background = 'rgba(243, 156, 18, 0.15)';
         }
 
         try {
+            // 1. Ask GitHub: "What is the latest version of master_data.xlsx?"
+            let apiRes = await fetch(GITHUB_API_URL);
+            if (!apiRes.ok) throw new Error("API Limit Reached or Repo Error");
+            
+            let apiData = await apiRes.json();
+            if (!apiData || apiData.length === 0) throw new Error("No commits found for file.");
+            
+            let latestSha = apiData[0].sha; // Unique ID for the latest file version
+            let savedSha = localStorage.getItem('persistent_master_sha');
+            
+            // Fallback check: If local DB is empty, we MUST sync even if SHA matches
+            let savedDB = await getFromDB("persistent_db");
+            let isDbEmpty = (!savedDB || savedDB.length === 0);
+
+            // 2. Decide if we need to download the full Excel file
+            if (latestSha === savedSha && !isDbEmpty) {
+                console.log("No new updates on GitHub. Skipping Excel download.");
+                if(statusBadge) {
+                    statusBadge.innerHTML = '✅ SYSTEM OPTIMIZED (FAST LOAD)';
+                    statusBadge.style.color = 'var(--success)';
+                    statusBadge.style.borderColor = 'var(--success)';
+                    statusBadge.style.background = 'rgba(39, 174, 96, 0.15)';
+                }
+                return; // EXIT EARLY - NO DOWNLOAD NEEDED
+            }
+
+            // 3. Download Process Starts (Only runs if data is updated or empty)
+            if(statusBadge) statusBadge.innerHTML = '⬇️ DOWNLOADING NEW RATES...';
+            
             let cacheBusterUrl = GITHUB_RAW_URL + '?t=' + Date.now();
             let res = await fetch(cacheBusterUrl);
             if (!res.ok) throw new Error("File not deployed inside path setup yet.");
@@ -494,6 +514,10 @@
             if (uniqueDB.length > 0) {
                 db_records = uniqueDB; 
                 await saveToDB("persistent_db", db_records); 
+                
+                // SAVE THE NEW SHA TO PREVENT FUTURE DOWNLOADS UNTIL IT CHANGES
+                localStorage.setItem('persistent_master_sha', latestSha);
+                
                 renderImportSummary();
                 document.getElementById('globalSchemeSearchBox').style.display = 'block';
                 
@@ -510,9 +534,9 @@
                 statusBadge.style.background = 'rgba(39, 174, 96, 0.15)';
             }
         } catch(err) {
-            console.error("Direct Core Pull Error: ", err);
+            console.error("Smart Version Check Error: ", err);
             if(statusBadge) {
-                statusBadge.innerHTML = '⚠️ SYNC FAILED (USING LOCAL DATA)';
+                statusBadge.innerHTML = '⚠️ OFFLINE MODE (USING LOCAL DATA)';
                 statusBadge.style.color = 'var(--danger)';
                 statusBadge.style.borderColor = 'var(--danger)';
                 statusBadge.style.background = 'rgba(214, 48, 49, 0.15)';
@@ -526,16 +550,15 @@
         try {
             await initDB(); 
 
+            // STEP 1: Instantly load local data (Fast render)
             let savedDB = await getFromDB("persistent_db");
-            if (savedDB) {
+            if (savedDB && savedDB.length > 0) {
                 db_records = savedDB; 
-                if (db_records.length > 0) {
-                    renderImportSummary();
-                    document.getElementById('globalSchemeSearchBox').style.display = 'block';
-                }
+                renderImportSummary();
+                document.getElementById('globalSchemeSearchBox').style.display = 'block';
             }
             
-            // Background Structural payload fetch execution - SILENT NO POPUP
+            // STEP 2: Silently check GitHub API in the background
             fetchFromMasterStream();
             
             let savedQ = await getFromDB('persistent_queue');
@@ -770,7 +793,7 @@
         
         let html = `
         <div style="position: sticky; top: 0; background: #fff; z-index: 10; color:var(--success); font-weight:900; text-align:center; font-size:13px; border-bottom: 2px solid var(--success); padding: 10px 5px 6px 5px; margin-bottom: 8px; border-radius: 6px 6px 0 0; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
-            ✅ GITHUB CONFIGURATION ACTIVE: ${totalSchemes} MODELS ALIVE
+            ✅ GITHUB MASTER SYSTEM: ${totalSchemes} MODELS ALIVE
         </div>
         <div style="padding: 0 10px 10px 10px;">`;
         
