@@ -13,7 +13,6 @@
         
         header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; border-bottom: 2px solid var(--primary); margin-bottom: 6px; padding: 6px 10px; background: #fff; border-radius: 6px; }
         header h1 { margin: 0; font-size: 1.1rem; color: var(--primary); font-weight: 900; text-align: right; }
-        .header-actions { display: flex; gap: 6px; align-items: center; }
 
         main { flex: 1; } 
 
@@ -65,7 +64,7 @@
 
         .stepper { display: flex; align-items: center; justify-content: center; gap: 2px; }
         .step-btn { width: 18px; height: 22px; background: var(--primary); color: white; border-radius: 3px; font-size: 12px; cursor: pointer; padding:0; }
-        .step-inp { width: 65px; text-align: center; font-weight: 950; border: 1px solid var(--indigo); height: 22px; font-size: 10px; color: var(--indigo); }
+        .step-inp { width: 65px; text-align: center; font-weight: 955; border: 1px solid var(--indigo); height: 22px; font-size: 10px; color: var(--indigo); }
 
         .model-panel { background: #f1f2f6; padding: 6px; border-radius: 6px; border: 1.5px solid var(--primary); margin-bottom: 10px; }
         
@@ -101,19 +100,13 @@
 
 <div id="loadingOverlay">
     <div class="spinner"></div>
-    <h3 style="margin:0; font-weight:900; letter-spacing:1px;" id="loadingText">IMPORTING DATA...</h3>
-    <p style="font-size:10px; color:#aaa; margin-top:5px;" id="loadingSubText">Please wait while we process the Excel file</p>
+    <h3 style="margin:0; font-weight:900; letter-spacing:1px;" id="loadingText">LOADING DATABASE...</h3>
+    <p style="font-size:10px; color:#aaa; margin-top:5px;" id="loadingSubText">Fetching verified schemes stream securely</p>
 </div>
 
 <header>
-    <div class="header-actions">
-        <button onclick="fetchDataFromCloud(true)" style="background: var(--indigo); color: white; padding: 6px 10px; border-radius: 4px; font-weight: 900; font-size: 9px; box-shadow: 0 2px 4px rgba(52,31,151,0.3); border:none; cursor:pointer;">
-            🔄 REFRESH
-        </button>
-        <label for="fileInp" style="background: var(--success); color: white; padding: 6px 10px; border-radius: 4px; font-weight: 900; font-size: 9px; cursor: pointer; box-shadow: 0 2px 4px rgba(39,174,96,0.3); margin: 0;">
-            📂 EXCEL
-        </label>
-        <input type="file" id="fileInp" accept=".xlsx,.xls" onchange="handleFileUpload()" style="display:none;">
+    <div style="font-weight: 950; font-size: 10px; background: rgba(39, 174, 96, 0.15); color: var(--success); padding: 5px 10px; border-radius: 4px; border: 1px solid var(--success); letter-spacing: 0.5px;">
+        ⚙️ GITHUB INTERFACE CONNECTED
     </div>
     <h1>🚀 Persistent Portal Master</h1>
 </header>
@@ -139,7 +132,7 @@
                     </div>
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-bottom:10px;">
                         <div><label>MAX LTV %</label><input type="number" id="cqLtv" value="100" max="100" oninput="if(this.value>100)this.value=100;"></div>
-                        <div><label>EMI CAPPING</label><input type="number" id="cqCap" placeholder="₹ Cap"></div>
+                        <div><label>DAILY EMI CAPPING</label><input type="number" id="cqCap" placeholder="₹ Cap"></div>
                     </div>
                 </div>
                 
@@ -164,7 +157,7 @@
 
         <div class="action-box">
             <div class="disclaimer-box">
-                <b>Disclaimer:</b> Is sheet mein update kiye gaye models aur schemes use karne se pehle kripya system ki original scheme ke saath <b>verify zaroor karein</b>.
+                <b>Disclaimer:</b> GitHub data stream loaded successfully. Kisi bhi model scheme ka use karne se pehle system application ke saath <b>verify zaroor karein</b>.
             </div>
             
             <div id="globalSchemeSearchBox" style="display:none; position:relative; background:#fdfdfd; padding:8px; border:1px solid #ccc; border-radius:6px;">
@@ -234,7 +227,7 @@
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:12px;">
                 <div><label>MRP (₹)</label><input type="number" id="compMrp" placeholder="0" oninput="compMrpChanged()"></div>
                 <div><label>INV (₹)</label><input type="number" id="compInv" placeholder="0"></div>
-                <div><label>EMI CAPPING (₹)</label><input type="number" id="compCap" placeholder="MAX"></div>
+                <div><label>DAILY EMI CAPPING (₹)</label><input type="number" id="compCap" placeholder="MAX"></div>
                 <div><label>TARGET DP (₹)</label><input type="number" id="compTarget" placeholder="0"></div>
                 <div><label>GTL (₹)</label>
                     <select id="compGtl">
@@ -352,7 +345,7 @@
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-top:8px;">
                 <div><label>TENURE (Max)</label><input type="number" id="manTen" placeholder="12"></div>
                 <div><label>ADVANCE</label><input type="number" id="manAdv" placeholder="4"></div>
-                <div><label>DBD %</label><input type="number" id="manDbd" placeholder="0"></div>
+                <div><label>DBD %</label><input type="number" id="manDbd?" placeholder="0"></div>
                 <div><label>PF (₹)</label><input type="number" id="manPf" placeholder="0"></div>
                 <div><label>ROI %</label><input type="number" id="manRoi" placeholder="0"></div>
                 <div><label>FIXED EMI (₹)</label><input type="number" id="manFixed" placeholder="0"></div>
@@ -377,7 +370,7 @@
             <span style="color: #87c3f7;">LIMIT:</span> <span id="infoLimit" class="highlight">₹0</span> |
             <span style="color: #87c3f7;">TYPE:</span> <span id="infoType" style="color: #fff;">-</span> |
             <span style="color: #87c3f7;">LTV:</span> <span id="infoLtv" style="color: #fff;">0%</span> |
-            <span style="color: #87c3f7;">EMI CAPPING:</span> <span id="infoCap" style="color: #fff;">-</span>
+            <span style="color: #87c3f7;">DAILY EMI CAP:</span> <span id="infoCap" style="color: #fff;">-</span>
         </div>
         
         <button onclick="openAddProductModal()" style="width: 100%; background:var(--warning); color:#000; padding:10px; border-radius:6px; font-size:11px; font-weight:900; margin-bottom:8px; border: 1.5px solid #d35400; box-shadow: 0 2px 5px rgba(0,0,0,0.1); cursor:pointer;">➕ ADD NEW PRODUCT (SEARCH / NON-TIEUP / MANUAL)</button>
@@ -397,8 +390,8 @@
 </footer>
 
 <script>
-    // 📢 GOOGLE SHEETS LIVE AUTO-SYNC CONFIGURATION
-    const CLOUD_EXCEL_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQbqqK70wY9J_xOq9l92N9Z4FGxh46HCwuC9pfvBjYvmfHapFUmi8oBRFP-2J--1Q/pub?output=xlsx";
+    // 📢 AUTOMATIC ENCODED GITHUB CONFIGURATION - ZERO INTERRUPTIONS
+    const GITHUB_RAW_URL = "https://raw.githubusercontent.com/luckyjathar/CALCULATOR/main/master_data.xlsx";
 
     // --- INDEXED DB WRAPPER ---
     const DB_NAME = "PersistentPortalDB";
@@ -420,7 +413,6 @@
                 resolve(dbInstance);
             };
             request.onerror = function(e) {
-                console.error("IndexedDB error:", e);
                 reject(e);
             };
         });
@@ -488,77 +480,21 @@
             await saveToDB('persistent_queue', compactQueue);
             await saveToDB('persistent_active_idx', activeCustomerIndex);
         } catch(e) {
-            console.error("IndexedDB save failed:", e);
+            console.error("Local Save Interrupted", e);
         }
     }
 
-    // --- UPGRADED AUTOMATIC CLOUD SYNC ENGINE WITH MULTI-LAYER PROXY FALLBACKS ---
-    async function fetchDataFromCloud(isManualRefresh = false) {
-        if (!CLOUD_EXCEL_URL || CLOUD_EXCEL_URL.includes("YAHAN_APNA_LINK")) return;
-        
-        if (isManualRefresh) {
-            document.getElementById('loadingText').innerText = "Syncing Master Sheet";
-            document.getElementById('loadingSubText').innerText = "Please wait...";
-            document.getElementById('loadingOverlay').style.display = 'flex';
-        }
-        
+    // --- STREAM DIRECT DISPATCH SYSTEM ---
+    async function fetchFromMasterStream() {
+        document.getElementById('loadingOverlay').style.display = 'flex';
         try {
-            console.log("Fetching latest rates via Multi-Layer Proxy System...");
+            let cacheBusterUrl = GITHUB_RAW_URL + '?t=' + Date.now();
+            let res = await fetch(cacheBusterUrl);
+            if (!res.ok) throw new Error("File not deployed inside path setup yet.");
             
-            let cacheBusterUrl = CLOUD_EXCEL_URL + (CLOUD_EXCEL_URL.includes('?') ? '&' : '?') + 't=' + Date.now();
-            let wb = null;
-            let fetchSuccess = false;
-
-            // PROXY 1: CorsProxy.io (Fastest & most reliable for binary data)
-            if (!fetchSuccess) {
-                try {
-                    let url1 = "https://corsproxy.io/?" + encodeURIComponent(cacheBusterUrl);
-                    let res1 = await fetch(url1);
-                    if (res1.ok) {
-                        let dataBuffer = await res1.arrayBuffer();
-                        wb = XLSX.read(new Uint8Array(dataBuffer), { type: 'array' });
-                        fetchSuccess = true;
-                        console.log("✅ Success via Proxy 1 (CorsProxy.io)");
-                    }
-                } catch (e) { console.warn("Proxy 1 failed:", e); }
-            }
-
-            // PROXY 2: CodeTabs (Solid backup for binary streams)
-            if (!fetchSuccess) {
-                try {
-                    let url2 = "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(cacheBusterUrl);
-                    let res2 = await fetch(url2);
-                    if (res2.ok) {
-                        let dataBuffer = await res2.arrayBuffer();
-                        wb = XLSX.read(new Uint8Array(dataBuffer), { type: 'array' });
-                        fetchSuccess = true;
-                        console.log("✅ Success via Proxy 2 (CodeTabs)");
-                    }
-                } catch (e) { console.warn("Proxy 2 failed:", e); }
-            }
-
-            // PROXY 3: AllOrigins (Base64 JSON Fallback)
-            if (!fetchSuccess) {
-                try {
-                    let url3 = "https://api.allorigins.win/get?url=" + encodeURIComponent(cacheBusterUrl);
-                    let res3 = await fetch(url3);
-                    if (res3.ok) {
-                        let json = await res3.json();
-                        if (json.contents && !json.contents.includes("data:text/html") && !json.contents.substring(0, 20).toLowerCase().includes("<html")) {
-                            let base64String = json.contents.split(',')[1] || json.contents;
-                            wb = XLSX.read(base64String, { type: 'base64' });
-                            fetchSuccess = true;
-                            console.log("✅ Success via Proxy 3 (AllOrigins)");
-                        }
-                    }
-                } catch (e) { console.warn("Proxy 3 failed:", e); }
-            }
-
-            if (!fetchSuccess || !wb) {
-                throw new Error("Saare Backup Proxy Servers block ho gaye hain.");
-            }
+            let dataBuffer = await res.arrayBuffer();
+            let wb = XLSX.read(new Uint8Array(dataBuffer), { type: 'array' });
             
-            // Parse Sheets
             tempSheet1Data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { raw: false, defval: "" });
             parsedSheet2Data = wb.SheetNames.length > 1 ? XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[1]], { raw: false, defval: "" }).map(r => mapData(r, SPECIAL_MODEL)).filter(x => x && (x.tenure > 0 || x.fixedEmi > 0)) : [];
             
@@ -581,15 +517,11 @@
                     loadCurrentProducts();
                     renderMatrix();
                 }
-                if (isManualRefresh) alert("✅ Cloud Database successfully refreshed!");
             }
         } catch(err) {
-            console.error("⌛ Cloud Auto-Fetch System Interrupted: ", err);
-            if (isManualRefresh) {
-                alert("⌛ " + err.message + "\n\nKripya ek baar  page  refresh kar lein, Google Server abhi busy hai.");
-            }
+            console.error("Direct Core Pull Error: ", err);
         } finally {
-            if (isManualRefresh) document.getElementById('loadingOverlay').style.display = 'none';
+            document.getElementById('loadingOverlay').style.display = 'none';
         }
     }
 
@@ -608,8 +540,8 @@
                 }
             }
             
-            // Core trigger: Hot-swap stream deployment for automatic updates
-            fetchDataFromCloud(false);
+            // Automatic structural payload fetch execution
+            await fetchFromMasterStream();
             
             let savedQ = await getFromDB('persistent_queue');
             if (savedQ) {
@@ -623,21 +555,14 @@
             
             let savedIdx = await getFromDB('persistent_active_idx');
             if (savedIdx !== null && savedIdx !== undefined) activeCustomerIndex = parseInt(savedIdx);
-            
             if(activeCustomerIndex >= customerQueue.length) activeCustomerIndex = -1;
 
         } catch(e) { 
-            console.error("IndexedDB Load failed", e); 
+            console.error("Local Data Initialization Failure", e); 
         }
         
         renderCustomerQueue();
         updateUniversalActionButtons();
-
-        // 🔄 AUTOMATIC TIMER: Har 5 minute me khud data fetch karega
-        setInterval(function() {
-            console.log("Timer Triggered: Auto syncing cloud rates...");
-            fetchDataFromCloud(false);
-        }, 5 * 60 * 1000); 
     };
 
     async function addCustomerToQueue() {
@@ -676,7 +601,7 @@
 
     function copyCustomerDetails(idx, btnElement) {
         let c = customerQueue[idx];
-        let cappingLine = (c.cap && c.cap !== "") ? `\nEMI CAPPING- ${c.cap}` : "";
+        let cappingLine = (c.cap && c.cap !== "") ? `\nDAILY EMI CAP- ${c.cap}` : "";
         let textToCopy = `CUSTOMER NAME- ${c.name}\nNUMBER- ${c.mobile || ''}\nLIMIT- ${c.limit}\nLTV- ${c.ltv}${cappingLine}`;
         
         function showSuccess() { 
@@ -768,7 +693,7 @@
                     <span style="font-size:8px; color:#888; font-weight:bold;">${c.timestamp || ''}</span>
                 </div>
                 <div style="font-size:9px; color:#555; font-weight:bold;">
-                    LMT: <span style="color:var(--success)">₹${c.limit}</span> | LTV: ${c.ltv}% | CAP: ${c.cap ? '₹'+c.cap : 'NO'} | ${c.type}
+                    LMT: <span style="color:var(--success)">₹${c.limit}</span> | LTV: ${c.ltv}% | DAILY EMI CAP: ${c.cap ? '₹'+c.cap : 'NO'} | ${c.type}
                     ${isActive ? '<span style="float:right; color:var(--primary); font-size:8px;">[ACTIVE ✓]</span>' : ''}
                 </div>
             </div>`;
@@ -776,7 +701,7 @@
     }
 
     async function setActiveCustomer(idx) { 
-        if(db_records.length === 0) { alert('⚠️ Database empty. Please check network connection.'); return; }
+        if(db_records.length === 0) { alert('⚠️ Master Stream deployment empty.'); return; }
         activeCustomerIndex = idx; 
         await saveQueueToLocal(); 
         document.getElementById('queueSearch').value = '';
@@ -797,13 +722,6 @@
         renderCustomerQueue();
         updateUniversalActionButtons();
     }
-
-    function getActiveName() { return customerQueue[activeCustomerIndex]?.name || "-"; }
-    function getActiveMobile() { return customerQueue[activeCustomerIndex]?.mobile || ""; }
-    function getActiveLimit() { return customerQueue[activeCustomerIndex]?.limit || 0; }
-    function getActiveLtv() { return customerQueue[activeCustomerIndex]?.ltv || 100; }
-    function getActiveType() { return customerQueue[activeCustomerIndex]?.type || 'NEW'; }
-    function getActiveCap() { return customerQueue[activeCustomerIndex]?.cap || ""; }
 
     function isLimitValid() {
         if (activeCustomerIndex === -1 || !customerQueue[activeCustomerIndex]) { alert("⚠️ Kripya pehle queue mein ek customer add karein aur use 'ACTIVE' rakhein."); return false; }
@@ -842,17 +760,13 @@
         document.getElementById('globalSchemeViewerModal').style.display = 'flex';
     }
 
-    // --- INTEGRATED CLOCK SUMMARY RENDERING MATRIX (STICKY MODE) ---
     function renderImportSummary() {
         let summaryDiv = document.getElementById('importedDataSummary');
         if (!summaryDiv) return;
         if (!db_records || db_records.length === 0) { summaryDiv.style.display = 'none'; return; }
         
-        // High-precision timing sync mechanism
-        let now = new Date();
-        let timeStr = now.toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'}) + ' ' + now.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
-        
-        let stats = {}; let totalSchemes = db_records.length;
+        let totalSchemes = db_records.length;
+        let stats = {};
         db_records.forEach(r => {
             let cat = (r.category || 'OTHER').toString().trim().toUpperCase(); let mod = (r.model || 'UNKNOWN').toString().trim().toUpperCase();
             if (!stats[cat]) stats[cat] = { total: 0, brands: {} }; stats[cat].total++;
@@ -861,8 +775,7 @@
         
         let html = `
         <div style="position: sticky; top: 0; background: #fff; z-index: 10; color:var(--success); font-weight:900; text-align:center; font-size:13px; border-bottom: 2px solid var(--success); padding: 10px 5px 6px 5px; margin-bottom: 8px; border-radius: 6px 6px 0 0; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
-            ✅ ${totalSchemes} SCHEMES LOADED<br>
-            <span style="font-size:10px; color:#555; font-weight:normal;">🕒 Last Sync: ${timeStr}</span>
+            ✅ GITHUB CONFIGURATION ACTIVE: ${totalSchemes} MODELS ALIVE
         </div>
         <div style="padding: 0 10px 10px 10px;">`;
         
@@ -911,7 +824,7 @@
             let comp = customerQueue[activeCustomerIndex].components || {};
             current_products.push({ 
                 name: modelName, schemes: validSchemes, 
-                inputs: { mrp: comp.mrp||"", inv: comp.inv||"", cap: comp.cap||getActiveCap(), target: comp.target||"", gtl: comp.gtl||0, rfc: comp.rfc||0, exw: comp.exw||"", niva: comp.niva||"", margin: comp.margin||"", dealer: comp.dealer||"", surch: 0 }, 
+                inputs: { mrp: comp.mrp||"", inv: comp.inv||"", cap: comp.cap||(customerQueue[activeCustomerIndex]?.cap || ""), target: comp.target||"", gtl: comp.gtl||0, rfc: comp.rfc||0, exw: comp.exw||"", niva: comp.niva||"", margin: comp.margin||"", dealer: comp.dealer||"", surch: 0 }, 
                 isManual: true, isNonTieup: false 
             });
             sortConfigs.push({ key: 'dp', dir: 'asc' }); 
@@ -925,60 +838,6 @@
 
     function findValLocal(row, targets) { let key = Object.keys(row).find(k => targets.includes(k.toUpperCase().replace(/\s/g, ''))); return key ? row[key] : null; }
 
-    function handleFileUpload() {
-        let inputElement = document.getElementById('fileInp'); let f = inputElement.files[0]; if(!f) return;
-        document.getElementById('loadingText').innerText = "IMPORTING DATA...";
-        document.getElementById('loadingSubText').innerText = "Please wait while we process the Excel file";
-        document.getElementById('loadingOverlay').style.display = 'flex';
-        setTimeout(() => {
-            let r = new FileReader(); 
-            r.onload = e => { 
-                setTimeout(() => {
-                    try {
-                        let wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' }); 
-                        tempSheet1Data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { raw: false, defval: "" });
-                        let uniqueCategories = new Set();
-                        tempSheet1Data.forEach(row => { let cat = String(findValLocal(row, ['CATEGORY', 'CAT']) || "").toUpperCase().trim(); if(cat) uniqueCategories.add(cat); });
-                        parsedSheet2Data = wb.SheetNames.length > 1 ? XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[1]], { raw: false, defval: "" }).map(r => mapData(r, SPECIAL_MODEL)).filter(x => x && (x.tenure > 0 || x.fixedEmi > 0)) : [];
-                        
-                        let catSelect = document.getElementById('importCategorySelect');
-                        catSelect.innerHTML = '<option value="ALL">ALL CATEGORIES (Import Everything)</option>';
-                        Array.from(uniqueCategories).sort().forEach(c => { catSelect.innerHTML += `<option value="${c}">${c}</option>`; });
-                        document.getElementById('loadingOverlay').style.display = 'none';
-                        document.getElementById('smartImportModal').style.display = 'flex';
-                    } catch(err) { 
-                        document.getElementById('loadingOverlay').style.display = 'none';
-                        alert("❌ EXCEL IMPORT FAIL: " + err.message); document.getElementById('fileInp').value = ""; 
-                    }
-                }, 50);
-            }; 
-            r.readAsArrayBuffer(f); 
-        }, 50);
-    }
-
-    async function finalizeSmartImport() {
-        let selectedCat = document.getElementById('importCategorySelect').value; document.getElementById('smartImportModal').style.display = 'none';
-        let filteredSheet1 = tempSheet1Data.filter(row => { let cat = String(findValLocal(row, ['CATEGORY', 'CAT']) || "").toUpperCase().trim(); return (selectedCat === "ALL" || cat === selectedCat); }).map(r => mapData(r, "REG")).filter(m => m && (m.tenure > 0 || m.fixedEmi > 0));
-        let rawCombined = [...filteredSheet1, ...parsedSheet2Data];
-        let uniqueDB = []; let seenDB = new Set();
-        rawCombined.forEach(r => { let key = `${r.model}_${r.category}_${r.tenure}_${r.advEmi}_${r.fixedEmi}_${r.minLoan}_${r.maxLoan}`; if (!seenDB.has(key)) { seenDB.add(key); uniqueDB.push(r); }});
-        
-        db_records = uniqueDB; 
-        try {
-            await saveToDB("persistent_db", db_records); 
-            alert("✅ Backup Data successfully imported!");
-            document.getElementById('globalSchemeSearchBox').style.display = 'block';
-        } catch(e) {
-            alert(`⚠️ IndexedDB Save Error.`);
-            document.getElementById('globalSchemeSearchBox').style.display = 'block';
-        }
-        renderImportSummary(); 
-        document.getElementById('fileInp').value = ""; 
-        if(activeCustomerIndex !== -1) goToFinalPage();
-    }
-    
-    function cancelSmartImport() { document.getElementById('smartImportModal').style.display = 'none'; document.getElementById('fileInp').value = ""; }
-    
     function mapData(row, type) { 
         if(!row) return null;
         return { model: type === SPECIAL_MODEL ? SPECIAL_MODEL : String(findValLocal(row,['MODEL','BRANDMODEL'])||"").toUpperCase(), mrp: parseFloat(findValLocal(row, ['MRP', 'PRICE', 'M.R.P'])) || 0, tenure: parseInt(findValLocal(row, ['TOTALTENURE', 'TENURE', 'TA'])) || 0, advEmi: parseInt(findValLocal(row, ['ADVANCEEMI', 'ADV'])) || 0, dbd: parseFloat(findValLocal(row,['DBD','DBD%'])||0), pf: parseInt(findValLocal(row,['PF','PROCESSINGFEE'])||0), roi: parseFloat(findValLocal(row,['ROI','ROI%'])||0), fixedEmi: parseFloat(findValLocal(row,['FIXEDEMI', 'FIXED'])||0), category: String(findValLocal(row,['CATEGORY','CAT'])||""), minLoan: parseFloat(findValLocal(row, ['MINLOAN', 'MINL'])) || 0, maxLoan: parseFloat(findValLocal(row, ['MAXLOAN', 'MAXL'])) || 9999999, inactive: false }; 
@@ -1053,7 +912,7 @@
     }
 
     function selectCategory(catName) {
-        document.getElementById('catSelectionModal').style.display = 'none';
+        document.getElementById('catSelectionModal').style.none;
         tempPendingProduct = { name: SPECIAL_MODEL + " - " + catName, isNT: true, category: catName };
         showComponentsModal("");
     }
@@ -1064,7 +923,6 @@
         let gtl = mrp > 100000 ? 2398 : (mrp > 50000 ? 1799 : (mrp > 30000 ? 1499 : (mrp > 10000 ? 1199 : (mrp > 0 ? 699 : 0))));
         document.getElementById('compGtl').value = gtl;
         
-        // RFC Calculation logic
         let rfcSlab = 0;
         if(mrp > 100000) rfcSlab = 11438;
         else if(mrp > 60000) rfcSlab = 8686;
@@ -1151,7 +1009,7 @@
 
     async function finalizeProductAddition() {
         let raw = tempPendingProduct.isNT ? db_records.filter(r => r.model === SPECIAL_MODEL && r.category === tempPendingProduct.category) : db_records.filter(r => r.model === tempPendingProduct.name);
-        let ltvLimit = getActiveLtv();
+        let ltvLimit = customerQueue[activeCustomerIndex]?.ltv || 100;
         let matrixEligible = raw.filter(s => s.fixedEmi > 0 || tempPendingProduct.isNT || (s.tenure > 0 && ((s.tenure-s.advEmi)/s.tenure)*100 <= ltvLimit));
         matrixEligible.forEach(s => s.inactive = false); 
         let comp = customerQueue[activeCustomerIndex].components || {};
@@ -1159,7 +1017,7 @@
 
         current_products.push({ 
             name: tempPendingProduct.name, isNonTieup: tempPendingProduct.isNT, schemes: matrixEligible, 
-            inputs: { mrp: finalMrp, inv: finalInv, cap: comp.cap || getActiveCap(), target: comp.target || "", gtl: comp.gtl || 0, rfc: comp.rfc || 0, exw: comp.exw || "", niva: comp.niva || "", margin: comp.margin || "", dealer: comp.dealer || "", surch: surch }, 
+            inputs: { mrp: finalMrp, inv: finalInv, cap: comp.cap || (customerQueue[activeCustomerIndex]?.cap || ""), target: comp.target || "", gtl: comp.gtl || 0, rfc: comp.rfc || 0, exw: comp.exw || "", niva: comp.niva || "", margin: comp.margin || "", dealer: comp.dealer || "", surch: surch }, 
             isManual: false 
         });
         sortConfigs.push({ key: 'dp', dir: 'asc' }); 
@@ -1179,12 +1037,13 @@
     }
 
     function updateMatrixTopCard() {
-        document.getElementById('infoName').innerText = getActiveName();
-        document.getElementById('infoMobile').innerText = getActiveMobile();
-        document.getElementById('infoLimit').innerText = "₹" + getActiveLimit();
-        document.getElementById('infoLtv').innerText = getActiveLtv() + "%";
-        document.getElementById('infoCap').innerText = getActiveCap() ? "₹" + getActiveCap() : "NONE";
-        document.getElementById('infoType').innerText = getActiveType();
+        let c = customerQueue[activeCustomerIndex];
+        document.getElementById('infoName').innerText = c?.name || "-";
+        document.getElementById('infoMobile').innerText = c?.mobile || "";
+        document.getElementById('infoLimit').innerText = "₹" + (c?.limit || 0);
+        document.getElementById('infoLtv').innerText = (c?.ltv || 100) + "%";
+        document.getElementById('infoCap').innerText = c?.cap ? "₹" + c.cap : "NONE";
+        document.getElementById('infoType').innerText = c?.type || 'NEW';
     }
 
     function loadCurrentProducts() {
@@ -1240,7 +1099,7 @@
                     </div>
                 </div>
                 <div class="control-grid" id="cg_${pIdx}" style="display:${gridStyle};">
-                    <div><label>EMI CAPPING</label><input type="number" id="capInp_${pIdx}" value="${prod.inputs.cap}" placeholder="MAX" oninput="updateVal(${pIdx},'cap',this.value)"></div>
+                    <div><label>DAILY EMI CAP</label><input type="number" id="capInp_${pIdx}" value="${prod.inputs.cap}" placeholder="MAX" oninput="updateVal(${pIdx},'cap',this.value)"></div>
                     <div><label>TARGET DP</label><input type="number" value="${prod.inputs.target}" placeholder="0" oninput="updateVal(${pIdx},'target',this.value)"></div>
                     <div><label>GTL</label><select id="gtl_${pIdx}" onchange="updateVal(${pIdx},'gtl',this.value)">
                         <option value="0" ${prod.inputs.gtl == 0 ? 'selected' : ''}>0</option>
@@ -1327,7 +1186,7 @@
 
     function recalcModel(pIdx) {
         if(!current_products[pIdx]) return;
-        let prod = current_products[pIdx], limit = getActiveLimit(), type = getActiveType();
+        let prod = current_products[pIdx], limit = customerQueue[activeCustomerIndex]?.limit || 0, type = customerQueue[activeCustomerIndex]?.type || 'NEW';
         let fee = (type === 'EMI CARD') ? 270 : (type === 'W/O CARD' ? 320 : 850), inp = prod.inputs, totalFees = fee + (parseFloat(inp.niva)||0) + (parseFloat(inp.margin)||0) + (parseFloat(inp.dealer)||0) + (parseFloat(inp.surch)||0);
         let currentLimit = limit > 0 ? limit : 9999999;
         let inputMrp = parseFloat(inp.mrp) || 0; let inputInv = parseFloat(inp.inv) || 0; 
@@ -1357,7 +1216,7 @@
                 let absoluteMax = Math.min(loanCapPrice > 0 ? loanCapPrice : 999999, nbfcMaxL); if (prod.isNonTieup && s.maxLoan < 9999999) absoluteMax = Math.min(absoluteMax, s.maxLoan); loan = absoluteMax;
                 if(parseFloat(inp.target) > 0 && effectivePrice > 0) { let advRate = s.advEmi / s.tenure; let numerator = parseFloat(inp.target) - effectivePrice - s.pf - totalFees; let denominator = advRate + dbdRate + roiRateDP - 1; let solvedLoan = numerator / denominator; loan = Math.min(loan, Math.max(0, Math.floor(solvedLoan))); }
                 inst = s.tenure - s.advEmi; if(inst < 1) inst = 1; let insTotal = (parseFloat(inp.gtl)||0)+(parseFloat(inp.rfc)||0)+(parseFloat(inp.exw)||0); let roiInEmi = loan * roiRate; emi = (loan / s.tenure) + (insTotal / inst) + roiInEmi;
-                if(emi > parseFloat(inp.cap) && parseFloat(inp.cap) > 0) { loan = (parseFloat(inp.cap) - (insTotal/inst)) / ( (1/s.tenure) + roiRate ); roiInEmi = loan * roiRate; emi = (loan / s.tenure) + (insTotal / inst) + roiInEmi; }
+                if(emi/30 > parseFloat(inp.cap) && parseFloat(inp.cap) > 0) { loan = ((parseFloat(inp.cap)*30) - (insTotal/inst)) / ( (1/s.tenure) + roiRate ); roiInEmi = loan * roiRate; emi = (loan / s.tenure) + (insTotal / inst) + roiInEmi; }
                 let roiInDp = loan * roiRateDP; dpExact = effectivePrice - loan + ((loan/s.tenure) * s.advEmi) + (loan * dbdRate) + s.pf + totalFees + roiInDp;
             }
             if(dpExact > 0) dpRounded = Math.ceil(dpExact / 10) * 10; else dpRounded = dpExact;
@@ -1371,7 +1230,7 @@
     function renderRows(pIdx) {
         let prod = current_products[pIdx]; if(!sortConfigs[pIdx]) sortConfigs[pIdx] = {key: 'dp', dir: 'asc'}; let conf = sortConfigs[pIdx];
         prod.calculatedData.sort((a,b) => conf.dir==='asc' ? a[conf.key]-b[conf.key] : b[conf.key]-a[conf.key]);
-        let ltvLimit = getActiveLtv(); let isNT = prod.isNonTieup;
+        let ltvLimit = customerQueue[activeCustomerIndex]?.ltv || 100; let isNT = prod.isNonTieup;
 
         document.getElementById(`body_${pIdx}`).innerHTML = prod.calculatedData.map(d => {
             let curLTV = d.curLTV; let isLtvB = curLTV > ltvLimit; let isBoundB = false; if (isNT && prod.inputs.mrp > 0) { if (d.loan < d.minLoan || d.loan > d.maxLoan) isBoundB = true; }
@@ -1407,9 +1266,9 @@
     function step(pIdx, dIdx, amt) { let el = document.getElementById(`l_${pIdx}_${dIdx}`); el.value = Math.max(0, parseInt(el.value) + amt); manual(pIdx, dIdx); }
 
     function manual(pIdx, dIdx) {
-        let el = document.getElementById(`l_${pIdx}_${dIdx}`), loan = parseFloat(el.value) || 0, prod = current_products[pIdx], d = prod.calculatedData.find(x => x.dIdx === dIdx), inp = prod.inputs, type = getActiveType();
+        let el = document.getElementById(`l_${pIdx}_${dIdx}`), loan = parseFloat(el.value) || 0, prod = current_products[pIdx], d = prod.calculatedData.find(x => x.dIdx === dIdx), inp = prod.inputs, type = customerQueue[activeCustomerIndex]?.type || 'NEW';
         let fee = (type === 'EMI CARD') ? 270 : (type === 'W/O CARD' ? 320 : 850), totalFees = fee + (parseFloat(inp.niva)||0) + (parseFloat(inp.margin)||0) + (parseFloat(inp.dealer)||0) + (parseFloat(inp.surch)||0);
-        let ltvLimit = getActiveLtv(); let limit = getActiveLimit(); let currentLimit = limit > 0 ? limit : 9999999;
+        let ltvLimit = customerQueue[activeCustomerIndex]?.ltv || 100; let limit = customerQueue[activeCustomerIndex]?.limit || 0; let currentLimit = limit > 0 ? limit : 9999999;
         let inputMrp = parseFloat(inp.mrp) || 0; let inputInv = parseFloat(inp.inv) || 0; 
         let effectivePrice = inputInv > 0 ? inputInv : (inputMrp > 0 ? inputMrp : 0);
         let loanCapPrice = (inputMrp > 0 && inputInv > 0) ? Math.min(inputMrp, inputInv) : effectivePrice;
@@ -1448,13 +1307,13 @@
 
     function sortM(pIdx, key) { 
         let conf = sortConfigs[pIdx]; conf.dir = (conf.key === key && conf.dir === 'asc') ? 'desc' : 'asc'; conf.key = key; renderRows(pIdx); 
-        customerQueue[activeCustomerIndex].sortConfigs = sortConfigs; saveQueueToLocal(); 
+        customerQueue[activeCustomerIndex].products = current_products; saveQueueToLocal(); 
     }
     
     function copySchemeText(pIdx, dIdx, btnElement) {
         let prod = current_products[pIdx], d = prod.calculatedData.find(x => x.dIdx === dIdx); let invAmt = prod.inputs.inv > 0 ? prod.inputs.inv : prod.inputs.mrp;
         let c = customerQueue[activeCustomerIndex];
-        let cappingLine = (c.cap && c.cap !== "") ? `\nEMI CAPPING- ${c.cap}` : "";
+        let cappingLine = (c.cap && c.cap !== "") ? `\nDAILY EMI CAP- ${c.cap}` : "";
         let custDetails = `CUSTOMER NAME- ${c.name}\nNUMBER- ${c.mobile || ''}\nLIMIT- ${c.limit}\nLTV- ${c.ltv}${cappingLine}\n\n`;
 
         let textToCopy = `${custDetails}📱 *${prod.name}*\n${invAmt > 0 ? `*INVOICE AMOUNT:* ₹${invAmt}\n\n` : "" }✅ *Scheme:* ${d.currentTenure}/${d.advEmi}\n💰 *DP:* ₹${Math.round(d.dp).toLocaleString()}\n🗓️ *EMI:* ₹${Math.round(d.emi).toLocaleString()} x ${d.inst}\n✨ *Daily EMI:* ₹${Math.round(d.daily).toLocaleString()}`;
@@ -1475,10 +1334,11 @@
 
     async function executeManualAction() {
         let mode = document.getElementById('targetPIdx').value; let scheme = { tenure: parseInt(document.getElementById('manTen').value), advEmi: parseInt(document.getElementById('manAdv').value), dbd: parseFloat(document.getElementById('manDbd').value)||0, pf: parseInt(document.getElementById('manPf').value)||0, roi: parseFloat(document.getElementById('manRoi').value)||0, fixedEmi: parseInt(document.getElementById('manFixed').value)||0, minLoan: 0, maxLoan: 9999999, category: "MANUAL", inactive: false };
+        let cCap = customerQueue[activeCustomerIndex]?.cap || "";
         if(mode === "NEW") {
             let name = document.getElementById('manName').value.toUpperCase() || "MANUAL MODEL";
             let comp = customerQueue[activeCustomerIndex].components || {};
-            current_products.push({ name: name, schemes: [scheme], inputs: { mrp: "", inv: "", mtCap: getActiveCap(), target: "", gtl: 0, rfc: 0, exw: comp.exw||"", niva: comp.niva||"", margin: comp.margin||"", dealer: comp.dealer||"", surch: 0 }, isManual: true });
+            current_products.push({ name: name, schemes: [scheme], inputs: { mrp: "", inv: "", mtCap: cCap, target: "", gtl: 0, rfc: 0, exw: comp.exw||"", niva: comp.niva||"", margin: comp.margin||"", dealer: comp.dealer||"", surch: 0 }, isManual: true });
             sortConfigs.push({ key: 'dp', dir: 'asc' }); 
             customerQueue[activeCustomerIndex].products = current_products; customerQueue[activeCustomerIndex].sortConfigs = sortConfigs;
             await saveQueueToLocal(); renderMatrix();
@@ -1503,9 +1363,9 @@
         if(chks.length === 0) return alert("⚠️ Kripya image generate karne ke liye kam se kam ek model select karein!");
         window.tempImageGenIndices = Array.from(chks).map(c => parseInt(c.value));
         document.getElementById('quoteSelectionModal').style.display = 'none';
-        let custName = getActiveName(); let custMobile = getActiveMobile();
-        document.getElementById('promptCustName').value = custName === "-" ? "" : custName;
-        document.getElementById('promptCustMobile').value = custMobile;
+        let c = customerQueue[activeCustomerIndex];
+        document.getElementById('promptCustName').value = c?.name === "-" ? "" : (c?.name || "");
+        document.getElementById('promptCustMobile').value = c?.mobile || "";
         document.getElementById('custInfoPromptModal').style.display = 'flex';
     }
     
@@ -1515,22 +1375,22 @@
 
     function doGenerateCustomerImage() {
         let quoteDiv = document.createElement('div'); quoteDiv.style.width = "540px"; quoteDiv.style.padding = "25px 20px"; quoteDiv.style.background = "#fff"; quoteDiv.style.position = "absolute"; quoteDiv.style.top = "-9999px"; quoteDiv.style.fontFamily = "'Segoe UI', sans-serif";
-        let activeCustName = getActiveName(); let activeCustMobile = getActiveMobile(); let cLmt = getActiveLimit(); let cLtv = getActiveLtv(); let cType = getActiveType(); let cCap = getActiveCap();
-        let headerText = activeCustName !== "-" ? activeCustName.toUpperCase() : "CUSTOMER QUOTATION";
+        let c = customerQueue[activeCustomerIndex];
+        let headerText = c?.name !== "-" ? c.name.toUpperCase() : "CUSTOMER QUOTATION";
 
         let html = `
         <div style="text-align:center; border-bottom:4px solid var(--bajaj-blue); padding-bottom:15px; margin-bottom:20px;">
             <h2 style="margin:0; color:var(--bajaj-blue); font-size:28px; font-weight:900; letter-spacing: 1px;">${headerText}</h2>
-            ${activeCustMobile ? `<h3 style="margin:5px 0 0 0; color:#333; font-size:22px;">📞 ${activeCustMobile}</h3>` : ''}
+            ${c?.mobile ? `<h3 style="margin:5px 0 0 0; color:#333; font-size:22px;">📞 ${c.mobile}</h3>` : ''}
             <div style="margin-top:10px; font-size:14px; color:#555; display:flex; justify-content:center; gap:15px; font-weight:bold; flex-wrap:wrap;">
-                <span style="background:#f0f0f0; padding:4px 10px; border-radius:4px;">LIMIT: ₹${cLmt}</span>
-                <span style="background:#f0f0f0; padding:4px 10px; border-radius:4px;">LTV: ${cLtv}%</span>
-                <span style="background:#f0f0f0; padding:4px 10px; border-radius:4px;">TYPE: ${cType}</span>
-                ${cCap ? `<span style="background:#f0f0f0; padding:4px 10px; border-radius:4px;">EMI CAPPING: ₹${cCap}</span>` : ''}
+                <span style="background:#f0f0f0; padding:4px 10px; border-radius:4px;">LIMIT: ₹${c?.limit || 0}</span>
+                <span style="background:#f0f0f0; padding:4px 10px; border-radius:4px;">LTV: ${c?.ltv || 100}%</span>
+                <span style="background:#f0f0f0; padding:4px 10px; border-radius:4px;">TYPE: ${c?.type || 'NEW'}</span>
+                ${c?.cap ? `<span style="background:#f0f0f0; padding:4px 10px; border-radius:4px;">DAILY EMI CAP: ₹${c.cap}</span>` : ''}
             </div>
         </div>`;
         
-        let hasV = false; let ltvLimit = getActiveLtv();
+        let hasV = false; let ltvLimit = c?.ltv || 100;
         let productsToRender = window.tempImageGenIndices.map(idx => current_products[idx]);
 
         productsToRender.forEach((prod) => {
@@ -1580,22 +1440,22 @@
                 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
                 if (isMobile) {
                     let a = document.createElement("a"); a.href = imgDataUrl;
-                    let safeName = activeCustName !== "-" ? activeCustName.replace(/\s+/g, '_') : "Customer";
+                    let safeName = c?.name !== "-" ? c.name.replace(/\s+/g, '_') : "Customer";
                     a.download = `Quotation_${safeName}.png`; document.body.appendChild(a); a.click(); document.body.removeChild(a);
                     alert("✅ Image download ho gayi hai! Ab WhatsApp khulega, waha image attach karke bhejein.");
-                    setTimeout(() => { let mobile = getActiveMobile(); if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank'); }, 500);
+                    setTimeout(() => { let mobile = c?.mobile || ""; if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank'); }, 500);
                 } else {
                     document.getElementById('clipboardStatusAlert').style.display = 'none';
                     canvas.toBlob(blob => {
                         try {
                             navigator.clipboard.write([ new ClipboardItem({ "image/png": blob }) ]).then(() => {
                                 document.getElementById('clipboardStatusAlert').style.display = 'block';
-                                setTimeout(() => { let mobile = getActiveMobile(); if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank'); }, 500);
+                                setTimeout(() => { let mobile = c?.mobile || ""; if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank'); }, 500);
                             }).catch(err => {
                                 alert("📋 Click / Long Press karke Copy Image karein.");
-                                let mobile = getActiveMobile(); if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank');
+                                let mobile = c?.mobile || ""; if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank');
                             });
-                        } catch (e) { let mobile = getActiveMobile(); if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank'); }
+                        } catch (e) { let mobile = c?.mobile || ""; if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank'); }
                     }, 'image/png');
                 }
             } else { document.getElementById('clipboardStatusAlert').style.display = 'none'; }
