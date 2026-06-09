@@ -490,7 +490,7 @@
     // --- CLOUD SYNC FUNCTIONS ---
     async function uploadSync() {
         let code = document.getElementById('syncCode').value.trim().toUpperCase();
-        if(!code) return alert("⚠️ Kripya Enter SYNC CODE ( for example- LAKSHYA123)");
+        if(!code) return alert("⚠️ Enter SYNC CODE ( for example- LAKSHYA123)");
         try {
             let btn = document.activeElement; let oldT = btn.innerText; btn.innerText = "⏳ UPLOADING...";
             
