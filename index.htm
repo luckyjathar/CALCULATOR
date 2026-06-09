@@ -488,42 +488,60 @@
 
     // --- CLOUD SYNC FUNCTIONS ---
 // --- CLOUD SYNC FUNCTIONS ---
+    
+    // १. डेटाची साईज 95% कमी करण्यासाठी Compressor
+    function compressQ(queue) {
+        return queue.map(c => ({
+            n: c.name || "", m: c.mobile || "", l: c.limit || 0, v: c.ltv || 100, t: c.type || "NEW", c: c.cap || "", ts: c.timestamp || "",
+            p: (c.products || []).map(p => ({
+                n: p.name, u: p.isNonTieup?1:0, man: p.isManual?1:0, cat: p.category || "",
+                i: [p.inputs.mrp||0, p.inputs.inv||0, p.inputs.cap||"", p.inputs.target||0, p.inputs.gtl||0, p.inputs.rfc||0, p.inputs.exw||0, p.inputs.niva||0, p.inputs.margin||0, p.inputs.dealer||0, p.inputs.surch||0],
+                s: p.isManual ? (p.schemes||[]).map(s => [s.tenure||0, s.advEmi||0, s.dbd||0, s.pf||0, s.roi||0, s.fixedEmi||0]) : []
+            }))
+        }));
+    }
+
+    // २. डाउनलोड केलेला छोटा डेटा पुन्हा मोठा करण्यासाठी Decompressor
+    function decompressQ(minifiedQueue) {
+        return minifiedQueue.map(c => {
+            let cp = c.p.map(p => {
+                let prod = {
+                    name: p.n, isNonTieup: p.u === 1, isManual: p.man === 1, category: p.cat || "",
+                    inputs: { mrp: p.i[0], inv: p.i[1], cap: p.i[2], target: p.i[3], gtl: p.i[4], rfc: p.i[5], exw: p.i[6], niva: p.i[7], margin: p.i[8], dealer: p.i[9], surch: p.i[10] }
+                };
+                if (prod.isManual) {
+                    prod.schemes = p.s.map(s => ({ tenure: s[0], advEmi: s[1], dbd: s[2], pf: s[3], roi: s[4], fixedEmi: s[5], minLoan: 0, maxLoan: 9999999, category: "MANUAL", inactive: false }));
+                } else {
+                    let raw = prod.isNonTieup ? db_records.filter(r => r.model === "NON TIEUP" && prod.name.includes(r.category)) : db_records.filter(r => r.model === prod.name);
+                    prod.schemes = raw.filter(s => s.fixedEmi > 0 || prod.isNonTieup || (s.tenure > 0 && ((s.tenure-s.advEmi)/s.tenure)*100 <= c.v));
+                }
+                return prod;
+            });
+            return {
+                name: c.n, mobile: c.m, limit: c.l, ltv: c.v, type: c.t, cap: c.c, timestamp: c.ts,
+                components: {}, sortConfigs: [], products: cp
+            };
+        });
+    }
+
     async function uploadSync() {
         let code = document.getElementById('syncCode').value.trim().toUpperCase();
         if(!code) return alert("⚠️ Kripya upload karnyasaathi ek SYNC CODE (उदा. LAKSHYA123) taka!");
         try {
             let btn = document.activeElement; let oldT = btn.innerText; btn.innerText = "⏳ UPLOADING...";
             
-            // SUPER COMPACT LOGIC: Remove heavy 'schemes' array for normal products
-            let compactQueue = customerQueue.map(c => {
-                let cp = (c.products || []).map(p => {
-                    let { calculatedData, schemes, ...keepProduct } = p;
-                    let compactP = { ...keepProduct };
-                    // फक्त Manual Product ला स्कीम्सची गरज असते, बाकी Master DB मधून मिळतील 
-                    if(p.isManual) compactP.schemes = schemes; 
-                    return compactP;
-                });
-                return { ...c, products: cp };
-            });
-
-            let compactRecycle = recycleBin.map(c => {
-                let cp = (c.products || []).map(p => {
-                    let { calculatedData, schemes, ...keepProduct } = p;
-                    let compactP = { ...keepProduct };
-                    if(p.isManual) compactP.schemes = schemes; 
-                    return compactP;
-                });
-                return { ...c, products: cp };
-            });
-
-            let payload = { queue: compactQueue, recycle: compactRecycle };
+            // डेटा कॉम्प्रेस करून पाठवणे
+            let payload = { 
+                q: compressQ(customerQueue), 
+                r: compressQ(recycleBin) 
+            };
 
             let response = await fetch(`https://getpantry.cloud/apiv1/pantry/${PANTRY_ID}/basket/${code}`, {
                 method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)
             });
 
             if(response.ok) alert("✅ Data successfully Cloud var UPLOAD jhala! Ha code dusrya device var vapra.");
-            else alert("⚠️ Server issue: Pantry Cloud Server Error. Kripya thodya velane try kara.");
+            else alert("⚠️ Server issue: Pantry Cloud Server Error. Kripya Queue madhil kahi customers Recycle Bin madhe delete kara ani punha try kara.");
             
             btn.innerText = oldT;
         } catch(e) { 
@@ -541,30 +559,12 @@
             if(!res.ok) throw new Error("Code not found");
             let data = await res.json();
             
-            if(data.queue) {
-                // REBUILD SCHEMES FROM DB_RECORDS: डाउनलोड झाल्यावर स्कीम्स पुन्हा ऍड करणे
-                let rebuildProducts = (products, ltvLimit) => {
-                    return products.map(p => {
-                        if(!p.isManual) {
-                            let raw = p.isNonTieup ? db_records.filter(r => r.model === "NON TIEUP" && p.name.includes(r.category)) : db_records.filter(r => r.model === p.name);
-                            let matrixEligible = raw.filter(s => s.fixedEmi > 0 || p.isNonTieup || (s.tenure > 0 && ((s.tenure-s.advEmi)/s.tenure)*100 <= ltvLimit));
-                            p.schemes = matrixEligible;
-                        }
-                        return p;
-                    });
-                };
-
-                customerQueue = data.queue.map(c => {
-                    if(c.products) c.products = rebuildProducts(c.products, c.ltv || 100);
-                    return c;
-                });
-                
-                recycleBin = (data.recycle || []).map(c => {
-                    if(c.products) c.products = rebuildProducts(c.products, c.ltv || 100);
-                    return c;
-                });
-
+            if(data.q) {
+                // मिळालेला कॉम्प्रेस डेटा पुन्हा डी-कॉम्प्रेस करणे
+                customerQueue = decompressQ(data.q);
+                recycleBin = data.r ? decompressQ(data.r) : [];
                 activeCustomerIndex = -1; selectedQueueIndex = -1;
+                
                 await saveQueueToLocal();
                 await saveToDB('persistent_recycle', recycleBin);
                 renderCustomerQueue();
@@ -577,7 +577,6 @@
             document.activeElement.innerText = "☁️ DOWNLOAD"; 
         }
     }
-
     async function saveQueueToLocal() {
         try {
             let compactQueue = customerQueue.map(c => {
