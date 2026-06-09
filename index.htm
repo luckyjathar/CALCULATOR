@@ -1240,7 +1240,6 @@
                 // FIX: Added minLoan bound for NON TIEUP
                 if (prod.isNonTieup) {
                     if (s.maxLoan < 9999999) absoluteMax = Math.min(absoluteMax, s.maxLoan); 
-                    if (s.minLoan > 0) absoluteMax = Math.max(absoluteMax, s.minLoan);
                 }
                 
                 loan = absoluteMax;
