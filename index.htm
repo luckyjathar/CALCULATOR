@@ -95,8 +95,15 @@
 <body>
 
 <header>
-    <div id="gitStatusBadge" style="font-weight: 950; font-size: 10px; background: rgba(39, 174, 96, 0.15); color: var(--success); padding: 5px 10px; border-radius: 4px; border: 1px solid var(--success); letter-spacing: 0.5px; transition: all 0.3s ease;">
-        ⚙️ GITHUB INTERFACE CONNECTED
+    <div>
+        <div id="gitStatusBadge" style="font-weight: 950; font-size: 10px; background: rgba(39, 174, 96, 0.15); color: var(--success); padding: 5px 10px; border-radius: 4px; border: 1px solid var(--success); letter-spacing: 0.5px; transition: all 0.3s ease; display: inline-block;">
+            ⚙️ GITHUB INTERFACE CONNECTED
+        </div>
+        <div style="display:flex; gap:4px; margin-top:6px; max-width: 300px;">
+            <input type="text" id="syncCode" placeholder="SYNC CODE (e.g. USER123)" style="flex:2; font-size:10px; border: 1px solid var(--primary); background: #fdfdfd;">
+            <button onclick="uploadSync()" style="flex:1; background:var(--primary); color:white; font-size:8px; border-radius:3px; padding: 4px;">☁️ UPLOAD</button>
+            <button onclick="downloadSync()" style="flex:1; background:var(--success); color:white; font-size:8px; border-radius:3px; padding: 4px;">☁️ DOWNLOAD</button>
+        </div>
     </div>
     <h1>🚀 Persistent Portal Master</h1>
 </header>
@@ -130,16 +137,20 @@
             </div>
 
             <div class="form-container" style="flex: 1.5; min-width: 280px; margin-bottom:0; border: 2px solid var(--bajaj-blue); box-sizing: border-box; display: flex; flex-direction: column;">
-                <label style="color:var(--bajaj-blue); font-size:11px; border-bottom:2px solid #ccc; padding-bottom:4px; margin-bottom:6px; display:block; text-align:center;">👥 SAVED CUSTOMERS QUEUE (<span id="queueCount">0</span>)</label>
+                <label style="color:var(--bajaj-blue); font-size:11px; border-bottom:2px solid #ccc; padding-bottom:4px; margin-bottom:6px; display:block; text-align:center;">
+                    👥 SAVED CUSTOMERS QUEUE (<span id="queueCount">0</span>)
+                    <span onclick="openRecycleBin()" style="cursor:pointer; float:right; font-size:14px; background: #fff; border:1px solid #ccc; border-radius:4px; padding: 0 4px;" title="Recycle Bin">🗑️</span>
+                </label>
                 
                 <input type="text" id="queueSearch" placeholder="🔍 Search saved customer by name, number, limit..." oninput="renderCustomerQueue()" style="margin-bottom: 6px; border-color:var(--bajaj-blue);">
                 
-                <div id="customerQueueList" class="custom-scroll" style="display:flex; flex-direction:column; gap:6px; overflow-y:auto; flex:1; min-height: 150px; padding-right:4px;">
+                <div id="customerQueueList" class="custom-scroll" style="display:flex; flex-direction:column; gap:6px; overflow-y:auto; flex:1; max-height: 250px; padding-right:4px;">
                 </div>
                 
                 <div style="display:flex; gap:6px; margin-top:8px; border-top:1px solid #ccc; padding-top:8px;">
                     <button id="uniCopyBtn" onclick="uniCopy()" style="flex:1; background:var(--warning); color:#000; font-size:10px; opacity:0.5; pointer-events:none;">📋 COPY</button>
                     <button id="uniSelectBtn" onclick="uniSelect()" style="flex:1.5; background:var(--primary); color:white; font-size:10px; opacity:0.5; pointer-events:none;">▶ SELECT</button>
+                    <button id="uniEditBtn" onclick="uniEdit()" style="flex:1; background:#8e44ad; color:white; font-size:10px; opacity:0.5; pointer-events:none;">✏️ EDIT</button>
                     <button id="uniDeleteBtn" onclick="uniDelete()" style="flex:1; background:var(--danger); color:white; font-size:10px; opacity:0.5; pointer-events:none;">✖ DELETE</button>
                 </div>
             </div>
@@ -161,6 +172,39 @@
         </div>
     </div>
 
+    <div id="editCustomerModal" class="modal">
+        <div class="modal-content" style="max-width:300px;">
+            <h3 style="margin-top:0; color:#8e44ad; font-size:15px; border-bottom: 2px solid #ddd; padding-bottom: 6px;">✏️ Edit Customer Details</h3>
+            <div style="margin-bottom:6px;"><label>CUSTOMER NAME</label><input type="text" id="ecName"></div>
+            <div style="margin-bottom:6px;"><label>MOBILE NO.</label><input type="text" id="ecMobile" maxlength="10"></div>
+            <div style="margin-bottom:6px;"><label>NBFC LIMIT</label><input type="number" id="ecLimit"></div>
+            <div style="margin-bottom:6px;"><label>CUSTOMER TYPE</label>
+                <select id="ecType">
+                    <option value="NEW">NEW</option>
+                    <option value="EMI CARD">EMI CARD</option>
+                    <option value="VIRTUAL">VIRTUAL</option>
+                    <option value="W/O CARD">W/O CARD</option>
+                </select>
+            </div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-bottom:12px;">
+                <div><label>MAX LTV %</label><input type="number" id="ecLtv" max="100" oninput="if(this.value>100)this.value=100;"></div>
+                <div><label>DAILY EMI CAPPING</label><input type="number" id="ecCap"></div>
+            </div>
+            <div style="display:flex; gap:8px;">
+                <button onclick="saveCustomerEdit()" style="flex:2; background:var(--success); color:white; padding:8px;">SAVE CHANGES</button>
+                <button onclick="closeCustomerEdit()" style="flex:1; background:var(--danger); color:white; padding:8px;">CANCEL</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="recycleBinModal" class="modal">
+        <div class="modal-content" style="max-width:350px;">
+            <h3 style="margin-top:0; color:var(--danger); font-size:15px; border-bottom: 2px solid #ddd; padding-bottom: 6px;">🗑️ Recycle Bin</h3>
+            <div id="recycleBinList" class="custom-scroll" style="display:flex; flex-direction:column; gap:6px; max-height: 250px; overflow-y: auto; margin-bottom: 12px; padding-right: 4px;"></div>
+            <button onclick="closeRecycleBin()" style="width:100%; background:var(--dark); color:white; padding:8px; font-weight:900;">CLOSE</button>
+        </div>
+    </div>
+
     <div id="addProductModal" class="modal">
         <div class="modal-content" style="max-width: 350px;">
             <h3 style="margin-top:0; color:var(--bajaj-blue); font-size:15px; border-bottom: 2px solid #ddd; padding-bottom: 6px;">🔍 ADD NEW PRODUCT</h3>
@@ -171,7 +215,7 @@
             </div>
             <div style="display:flex; gap:8px;">
                 <button onclick="quickNonTieup();" style="flex:1; background:var(--warning); color:#000; padding:10px; font-size:10px; font-weight:900;">⚡ NON TIEUP</button>
-                <button onclick="openFullManualModal();" style="flex:1; background:var(--indigo); color:white; padding:10px; font-size:10px; font-weight:900;">+ MANUAL</button>
+                <button onclick="openMultiStackModal();" style="flex:1.2; background:var(--indigo); color:white; padding:10px; font-size:9px; font-weight:900;">+ MANUAL (10 SCHEMES)</button>
             </div>
             <button onclick="document.getElementById('addProductModal').style.display='none'" style="width:100%; background:var(--danger); color:white; padding:8px; margin-top:12px; font-weight:900;">CANCEL</button>
         </div>
@@ -277,9 +321,9 @@
 
     <div id="multiStackModal" class="modal">
         <div class="modal-content">
-            <h3 style="margin-top:0; color:var(--dark); font-size:15px;">Add Manual Product</h3>
+            <h3 style="margin-top:0; color:var(--dark); font-size:15px;">Add Manual Product (Up to 10 Schemes)</h3>
             <div style="margin-bottom: 12px; background: #f8f9fa; padding: 8px; border-radius: 6px; border: 1.5px solid #ccc;">
-                <label style="font-size: 10px; color: var(--indigo);">MODEL NAME</label>
+                <label style="font-size: 10px; color: var(--indigo);">MODEL NAME (One for all schemes below)</label>
                 <input type="text" id="multiStackModelName" placeholder="Enter Product Model Name" value="MANUAL MODEL" style="height: 32px; font-size: 12px;">
             </div>
             <div class="stack-grid" id="stackInputsContainer"></div>
@@ -292,10 +336,12 @@
 
     <div id="editSchemeModal" class="modal">
         <div class="modal-content" style="max-width: 280px;">
-            <h3 style="margin-top:0; color:var(--indigo); font-size:15px;">Modify Scheme</h3>
+            <h3 style="margin-top:0; color:var(--indigo); font-size:15px;">Modify Scheme Components</h3>
             <input type="hidden" id="editPIdx">
             <input type="hidden" id="editDIdx">
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:12px;">
+                <div><label>TENURE (Max)</label><input type="number" id="editTen"></div>
+                <div><label>ADVANCE</label><input type="number" id="editAdv"></div>
                 <div><label>DBD %</label><input type="number" id="editDbd" step="0.01"></div>
                 <div><label>PF (₹)</label><input type="number" id="editPf"></div>
                 <div><label>ROI %</label><input type="number" id="editRoi" step="0.01"></div>
@@ -317,8 +363,8 @@
 
     <div id="manualModal" class="modal">
         <div class="modal-content" style="max-width:300px;">
-            <h3 id="modalTitle" style="font-size:15px; margin-top:0;">Manual Scheme</h3>
-            <div id="modelNameInputArea"><label>Model Name</label><input type="text" id="manName" value="MANUAL MODEL"></div>
+            <h3 id="modalTitle" style="font-size:15px; margin-top:0;">Add Custom Scheme</h3>
+            <div id="modelNameInputArea" style="display:none;"><label>Model Name</label><input type="text" id="manName" value="MANUAL MODEL"></div>
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-top:8px;">
                 <div><label>TENURE (Max)</label><input type="number" id="manTen" placeholder="12"></div>
                 <div><label>ADVANCE</label><input type="number" id="manAdv" placeholder="4"></div>
@@ -370,6 +416,7 @@
     // 📢 GITHUB SMART SYNC CONFIGURATION
     const GITHUB_RAW_URL = "https://raw.githubusercontent.com/luckyjathar/CALCULATOR/main/master_data.xlsx";
     const GITHUB_API_URL = "https://api.github.com/repos/luckyjathar/CALCULATOR/commits?path=master_data.xlsx&page=1&per_page=1";
+    const PANTRY_ID = "011f0a82-12f5-4fc1-a966-2244a1e944d1"; // Used for free Cloud Sync between devices
 
     // --- INDEXED DB WRAPPER ---
     const DB_NAME = "PersistentPortalDB";
@@ -434,9 +481,48 @@
     let parsedSheet2Data = [];
 
     let customerQueue = [];
+    let recycleBin = []; // To store deleted customers
     let activeCustomerIndex = -1;
     let selectedQueueIndex = -1; 
     let tempPendingProduct = null; 
+
+    // --- CLOUD SYNC FUNCTIONS ---
+    async function uploadSync() {
+        let code = document.getElementById('syncCode').value.trim().toUpperCase();
+        if(!code) return alert("⚠️ Kripya upload karnyasaathi ek SYNC CODE (उदा. LAKSHYA123) taka!");
+        try {
+            let btn = document.activeElement; let oldT = btn.innerText; btn.innerText = "⏳ UPLOADING...";
+            let payload = { queue: customerQueue, recycle: recycleBin };
+            let response = await fetch(`https://getpantry.cloud/apiv1/pantry/${PANTRY_ID}/basket/${code}`, {
+                method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)
+            });
+            if(response.ok) alert("✅ Data successfully Cloud var UPLOAD jhala! Ha code dusrya device var vapra.");
+            else alert("⚠️ Server issue. Please try again later.");
+            btn.innerText = oldT;
+        } catch(e) { alert("⚠️ Upload fail jhala. Check your internet connection."); document.activeElement.innerText = "☁️ UPLOAD"; }
+    }
+
+    async function downloadSync() {
+        let code = document.getElementById('syncCode').value.trim().toUpperCase();
+        if(!code) return alert("⚠️ Kripya download karnyasaathi tumcha SYNC CODE taka!");
+        try {
+            let btn = document.activeElement; let oldT = btn.innerText; btn.innerText = "⏳ DOWNLOADING...";
+            let res = await fetch(`https://getpantry.cloud/apiv1/pantry/${PANTRY_ID}/basket/${code}`);
+            if(!res.ok) throw new Error("Code not found");
+            let data = await res.json();
+            if(data.queue) {
+                customerQueue = data.queue;
+                recycleBin = data.recycle || [];
+                activeCustomerIndex = -1; selectedQueueIndex = -1;
+                await saveQueueToLocal();
+                await saveToDB('persistent_recycle', recycleBin);
+                renderCustomerQueue();
+                updateUniversalActionButtons();
+                alert("✅ Data successfully Cloud varun DOWNLOAD jhala!");
+            }
+            btn.innerText = oldT;
+        } catch(e) { alert("⚠️ Invalid Code kiva data milala nahi. Puna try kara."); document.activeElement.innerText = "☁️ DOWNLOAD"; }
+    }
 
     async function saveQueueToLocal() {
         try {
@@ -463,21 +549,18 @@
         }
 
         try {
-            // 1. Ask GitHub: "What is the latest version of master_data.xlsx?"
             let apiRes = await fetch(GITHUB_API_URL);
             if (!apiRes.ok) throw new Error("API Limit Reached or Repo Error");
             
             let apiData = await apiRes.json();
             if (!apiData || apiData.length === 0) throw new Error("No commits found for file.");
             
-            let latestSha = apiData[0].sha; // Unique ID for the latest file version
+            let latestSha = apiData[0].sha; 
             let savedSha = localStorage.getItem('persistent_master_sha');
             
-            // Fallback check: If local DB is empty, we MUST sync even if SHA matches
             let savedDB = await getFromDB("persistent_db");
             let isDbEmpty = (!savedDB || savedDB.length === 0);
 
-            // 2. Decide if we need to download the full Excel file
             if (latestSha === savedSha && !isDbEmpty) {
                 console.log("No new updates on GitHub. Skipping Excel download.");
                 if(statusBadge) {
@@ -486,10 +569,9 @@
                     statusBadge.style.borderColor = 'var(--success)';
                     statusBadge.style.background = 'rgba(39, 174, 96, 0.15)';
                 }
-                return; // EXIT EARLY - NO DOWNLOAD NEEDED
+                return; 
             }
 
-            // 3. Download Process Starts (Only runs if data is updated or empty)
             if(statusBadge) statusBadge.innerHTML = '⬇️ DOWNLOADING NEW RATES...';
             
             let cacheBusterUrl = GITHUB_RAW_URL + '?t=' + Date.now();
@@ -514,8 +596,6 @@
             if (uniqueDB.length > 0) {
                 db_records = uniqueDB; 
                 await saveToDB("persistent_db", db_records); 
-                
-                // SAVE THE NEW SHA TO PREVENT FUTURE DOWNLOADS UNTIL IT CHANGES
                 localStorage.setItem('persistent_master_sha', latestSha);
                 
                 renderImportSummary();
@@ -550,7 +630,6 @@
         try {
             await initDB(); 
 
-            // STEP 1: Instantly load local data (Fast render)
             let savedDB = await getFromDB("persistent_db");
             if (savedDB && savedDB.length > 0) {
                 db_records = savedDB; 
@@ -558,7 +637,6 @@
                 document.getElementById('globalSchemeSearchBox').style.display = 'block';
             }
             
-            // STEP 2: Silently check GitHub API in the background
             fetchFromMasterStream();
             
             let savedQ = await getFromDB('persistent_queue');
@@ -571,6 +649,9 @@
                 }));
             }
             
+            let savedRecycle = await getFromDB('persistent_recycle');
+            if (savedRecycle) recycleBin = savedRecycle;
+
             let savedIdx = await getFromDB('persistent_active_idx');
             if (savedIdx !== null && savedIdx !== undefined) activeCustomerIndex = parseInt(savedIdx);
             if(activeCustomerIndex >= customerQueue.length) activeCustomerIndex = -1;
@@ -658,22 +739,112 @@
     function updateUniversalActionButtons() {
         let copyB = document.getElementById('uniCopyBtn');
         let selB = document.getElementById('uniSelectBtn');
+        let editB = document.getElementById('uniEditBtn');
         let delB = document.getElementById('uniDeleteBtn');
         
         if (selectedQueueIndex !== -1 && customerQueue[selectedQueueIndex]) {
             copyB.style.opacity = '1'; copyB.style.pointerEvents = 'auto';
             selB.style.opacity = '1'; selB.style.pointerEvents = 'auto';
+            editB.style.opacity = '1'; editB.style.pointerEvents = 'auto';
             delB.style.opacity = '1'; delB.style.pointerEvents = 'auto';
         } else {
             copyB.style.opacity = '0.5'; copyB.style.pointerEvents = 'none';
             selB.style.opacity = '0.5'; selB.style.pointerEvents = 'none';
+            editB.style.opacity = '0.5'; editB.style.pointerEvents = 'none';
             delB.style.opacity = '0.5'; delB.style.pointerEvents = 'none';
         }
     }
 
     function uniCopy() { if(selectedQueueIndex !== -1) copyCustomerDetails(selectedQueueIndex, document.getElementById('uniCopyBtn')); }
     function uniSelect() { if(selectedQueueIndex !== -1) setActiveCustomer(selectedQueueIndex); }
+    
+    // --- Edit Customer Logic ---
+    function uniEdit() {
+        if(selectedQueueIndex === -1) return;
+        let c = customerQueue[selectedQueueIndex];
+        document.getElementById('ecName').value = c.name;
+        document.getElementById('ecMobile').value = c.mobile || '';
+        document.getElementById('ecLimit').value = c.limit;
+        document.getElementById('ecLtv').value = c.ltv || 100;
+        document.getElementById('ecType').value = c.type;
+        document.getElementById('ecCap').value = c.cap || '';
+        document.getElementById('editCustomerModal').style.display='flex';
+    }
+    function closeCustomerEdit() { document.getElementById('editCustomerModal').style.display='none'; }
+    async function saveCustomerEdit() {
+        if(selectedQueueIndex === -1) return;
+        let c = customerQueue[selectedQueueIndex];
+        c.name = document.getElementById('ecName').value || 'Customer';
+        c.mobile = document.getElementById('ecMobile').value;
+        c.limit = parseFloat(document.getElementById('ecLimit').value) || 0;
+        c.ltv = parseFloat(document.getElementById('ecLtv').value) || 100;
+        c.type = document.getElementById('ecType').value;
+        let cap = parseFloat(document.getElementById('ecCap').value);
+        c.cap = cap > 0 ? cap : '';
+        
+        await saveQueueToLocal();
+        renderCustomerQueue();
+        if(activeCustomerIndex === selectedQueueIndex) {
+            updateMatrixTopCard();
+            current_products.forEach((_, idx) => recalcModel(idx)); 
+        }
+        closeCustomerEdit();
+    }
+
+    // --- Delete & Recycle Bin Logic ---
     async function uniDelete() { if(selectedQueueIndex !== -1) await removeCustomer(selectedQueueIndex); }
+
+    async function removeCustomer(idx) {
+        let c = customerQueue[idx];
+        recycleBin.push(c);
+        await saveToDB('persistent_recycle', recycleBin);
+
+        if(activeCustomerIndex === idx) activeCustomerIndex = -1;
+        else if (activeCustomerIndex > idx) activeCustomerIndex--;
+        customerQueue.splice(idx, 1);
+        
+        if (selectedQueueIndex === idx) selectedQueueIndex = -1;
+        else if (selectedQueueIndex > idx) selectedQueueIndex--;
+
+        if(customerQueue.length > 0 && activeCustomerIndex === -1) activeCustomerIndex = 0;
+        
+        await saveQueueToLocal();
+        renderCustomerQueue();
+        updateUniversalActionButtons();
+    }
+
+    function openRecycleBin() {
+        let list = document.getElementById('recycleBinList');
+        if(recycleBin.length === 0) {
+            list.innerHTML = `<div style="text-align:center; color:#888; font-size:11px; margin-top:10px;">Recycle Bin empty ahe.</div>`;
+        } else {
+            list.innerHTML = recycleBin.map((c, i) => `
+                <div style="display:flex; justify-content:space-between; align-items:center; background:#fff; padding:8px; border-radius:4px; border:1px solid #ddd;">
+                    <div style="font-size:10px; color:var(--dark); font-weight:bold;">
+                        👤 ${c.name} <br><span style="color:var(--success);">LMT: ₹${c.limit}</span>
+                    </div>
+                    <button onclick="restoreCustomer(${i})" style="background:var(--primary); color:white; font-size:9px; padding:4px 8px; border-radius:3px;">↩️ RESTORE</button>
+                </div>
+            `).join('');
+        }
+        document.getElementById('recycleBinModal').style.display='flex';
+    }
+    
+    function closeRecycleBin() { document.getElementById('recycleBinModal').style.display='none'; }
+    
+    async function restoreCustomer(idx) {
+        let c = recycleBin.splice(idx, 1)[0];
+        customerQueue.unshift(c);
+        
+        if(activeCustomerIndex !== -1) activeCustomerIndex++;
+        if(selectedQueueIndex !== -1) selectedQueueIndex++;
+
+        await saveQueueToLocal();
+        await saveToDB('persistent_recycle', recycleBin);
+        openRecycleBin();
+        renderCustomerQueue();
+        updateUniversalActionButtons();
+    }
 
     function renderCustomerQueue() {
         document.getElementById('queueCount').innerText = customerQueue.length;
@@ -726,21 +897,6 @@
         goToFinalPage();
     }
     
-    async function removeCustomer(idx) {
-        if(activeCustomerIndex === idx) activeCustomerIndex = -1;
-        else if (activeCustomerIndex > idx) activeCustomerIndex--;
-        customerQueue.splice(idx, 1);
-        
-        if (selectedQueueIndex === idx) selectedQueueIndex = -1;
-        else if (selectedQueueIndex > idx) selectedQueueIndex--;
-
-        if(customerQueue.length > 0 && activeCustomerIndex === -1) activeCustomerIndex = 0;
-        
-        await saveQueueToLocal();
-        renderCustomerQueue();
-        updateUniversalActionButtons();
-    }
-
     function isLimitValid() {
         if (activeCustomerIndex === -1 || !customerQueue[activeCustomerIndex]) { alert("⚠️ Kripya pehle queue mein ek customer add karein aur use 'ACTIVE' rakhein."); return false; }
         return true;
@@ -824,7 +980,11 @@
         }
     }
 
-    function openMultiStackModal() { if (!isLimitValid()) return; document.getElementById('multiStackModal').style.display='flex'; }
+    function openMultiStackModal() { 
+        if (!isLimitValid()) return; 
+        document.getElementById('addProductModal').style.display='none'; 
+        document.getElementById('multiStackModal').style.display='flex'; 
+    }
     function closeMultiStackModal() { document.getElementById('multiStackModal').style.display='none'; }
 
     async function processMultiStack() {
@@ -880,26 +1040,37 @@
         document.getElementById('addProductModal').style.display = 'flex';
     }
 
-    function openFullManualModal() { 
+    function openSchemeOnlyModal(pIdx) { 
         if (!isLimitValid()) return; 
-        document.getElementById('addProductModal').style.display = 'none';
-        document.getElementById('modalTitle').innerText = "Add Manual Product"; 
-        document.getElementById('modelNameInputArea').style.display = 'block'; 
-        document.getElementById('targetPIdx').value = "NEW"; 
+        document.getElementById('modalTitle').innerText = "Add Custom Scheme"; 
+        document.getElementById('modelNameInputArea').style.display = 'none'; 
+        document.getElementById('targetPIdx').value = pIdx; 
         document.getElementById('manualModal').style.display='flex'; 
     }
-    
-    function openSchemeOnlyModal(pIdx) { if (!isLimitValid()) return; document.getElementById('modalTitle').innerText = "Add Custom Scheme"; document.getElementById('modelNameInputArea').style.display = 'none'; document.getElementById('targetPIdx').value = pIdx; document.getElementById('manualModal').style.display='flex'; }
     function closeManualModal() { document.getElementById('manualModal').style.display='none'; }
 
+    // --- Edited Scheme Edit logic ---
     function openEditSchemeModal(pIdx, dIdx) {
         let scheme = current_products[pIdx].schemes[dIdx];
-        document.getElementById('editPIdx').value = pIdx; document.getElementById('editDIdx').value = dIdx; document.getElementById('editDbd').value = scheme.dbd || 0; document.getElementById('editPf').value = scheme.pf || 0; document.getElementById('editRoi').value = scheme.roi || 0; document.getElementById('editFixed').value = scheme.fixedEmi || 0; document.getElementById('editSchemeModal').style.display = 'flex';
+        document.getElementById('editPIdx').value = pIdx; 
+        document.getElementById('editDIdx').value = dIdx; 
+        document.getElementById('editTen').value = scheme.tenure || 0; 
+        document.getElementById('editAdv').value = scheme.advEmi || 0; 
+        document.getElementById('editDbd').value = scheme.dbd || 0; 
+        document.getElementById('editPf').value = scheme.pf || 0; 
+        document.getElementById('editRoi').value = scheme.roi || 0; 
+        document.getElementById('editFixed').value = scheme.fixedEmi || 0; 
+        document.getElementById('editSchemeModal').style.display = 'flex';
     }
     function closeEditSchemeModal() { document.getElementById('editSchemeModal').style.display = 'none'; }
     function saveSchemeEdit() {
         let pIdx = parseInt(document.getElementById('editPIdx').value); let dIdx = parseInt(document.getElementById('editDIdx').value); let scheme = current_products[pIdx].schemes[dIdx];
-        scheme.dbd = parseFloat(document.getElementById('editDbd').value) || 0; scheme.pf = parseInt(document.getElementById('editPf').value) || 0; scheme.roi = parseFloat(document.getElementById('editRoi').value) || 0; scheme.fixedEmi = parseFloat(document.getElementById('editFixed').value) || 0;
+        scheme.tenure = parseInt(document.getElementById('editTen').value) || 0; 
+        scheme.advEmi = parseInt(document.getElementById('editAdv').value) || 0; 
+        scheme.dbd = parseFloat(document.getElementById('editDbd').value) || 0; 
+        scheme.pf = parseInt(document.getElementById('editPf').value) || 0; 
+        scheme.roi = parseFloat(document.getElementById('editRoi').value) || 0; 
+        scheme.fixedEmi = parseFloat(document.getElementById('editFixed').value) || 0;
         closeEditSchemeModal(); recalcModel(pIdx);
     }
 
@@ -1206,8 +1377,6 @@
         if(!current_products[pIdx]) return;
         let prod = current_products[pIdx], limit = customerQueue[activeCustomerIndex]?.limit || 0, type = customerQueue[activeCustomerIndex]?.type || 'NEW';
         let fee = (type === 'EMI CARD') ? 270 : (type === 'W/O CARD' ? 320 : 850), inp = prod.inputs;
-        
-        // FIX: Removed surch from totalFees to prevent double addition in DP
         let totalFees = fee + (parseFloat(inp.niva)||0) + (parseFloat(inp.margin)||0) + (parseFloat(inp.dealer)||0);
         
         let currentLimit = limit > 0 ? limit : 9999999;
@@ -1236,8 +1405,6 @@
                 let insTotal = (parseFloat(inp.gtl)||0) + (parseFloat(inp.rfc)||0) + (parseFloat(inp.exw)||0); let roiInEmi = loan * roiRate; emi = s.fixedEmi + (insTotal / inst) + roiInEmi;
             } else {
                 let absoluteMax = Math.min(loanCapPrice > 0 ? loanCapPrice : 999999, nbfcMaxL); 
-                
-                // FIX: Added minLoan bound for NON TIEUP
                 if (prod.isNonTieup) {
                     if (s.maxLoan < 9999999) absoluteMax = Math.min(absoluteMax, s.maxLoan); 
                 }
@@ -1297,7 +1464,6 @@
     function manual(pIdx, dIdx) {
         let el = document.getElementById(`l_${pIdx}_${dIdx}`), loan = parseFloat(el.value) || 0, prod = current_products[pIdx], d = prod.calculatedData.find(x => x.dIdx === dIdx), inp = prod.inputs, type = customerQueue[activeCustomerIndex]?.type || 'NEW';
         
-        // FIX: Removed surch from totalFees to prevent double addition in DP
         let fee = (type === 'EMI CARD') ? 270 : (type === 'W/O CARD' ? 320 : 850);
         let totalFees = fee + (parseFloat(inp.niva)||0) + (parseFloat(inp.margin)||0) + (parseFloat(inp.dealer)||0);
         
@@ -1383,7 +1549,7 @@
         if(current_products.length === 0) return alert("⚠️ Kripya pehle matrix mein koi product add karein!");
         let html = current_products.map((p, idx) => `
             <div style="display:flex; align-items:center; gap:8px; padding:8px; background:#f8f9fa; border:1px solid #ddd; border-radius:4px;">
-                <input type="checkbox" id="qchk_${idx}" class="quote-model-chk" value="${idx}" checked style="width:16px; height:16px; cursor:pointer;">
+                <input type="checkbox" id="qchk_${idx}" class="quote-model-chk" value="${idx}" style="width:16px; height:16px; cursor:pointer;">
                 <label for="qchk_${idx}" style="font-size:11px; font-weight:bold; cursor:pointer; flex:1; margin:0;">${p.name}</label>
             </div>
         `).join('');
