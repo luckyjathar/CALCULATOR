@@ -487,26 +487,31 @@
     let tempPendingProduct = null; 
 
     // --- CLOUD SYNC FUNCTIONS ---
-    // --- CLOUD SYNC FUNCTIONS ---
+// --- CLOUD SYNC FUNCTIONS ---
     async function uploadSync() {
         let code = document.getElementById('syncCode').value.trim().toUpperCase();
-        if(!code) return alert("⚠️ Enter SYNC CODE ( for example- LAKSHYA123)");
+        if(!code) return alert("⚠️ Kripya upload karnyasaathi ek SYNC CODE (उदा. LAKSHYA123) taka!");
         try {
             let btn = document.activeElement; let oldT = btn.innerText; btn.innerText = "⏳ UPLOADING...";
             
-            // डेटाची साईज कमी (Lightweight) करण्यासाठी Compact लॉजिक
+            // SUPER COMPACT LOGIC: Remove heavy 'schemes' array for normal products
             let compactQueue = customerQueue.map(c => {
                 let cp = (c.products || []).map(p => {
-                    let { calculatedData, allSchemes, ...keepProduct } = p;
-                    return keepProduct;
+                    let { calculatedData, schemes, ...keepProduct } = p;
+                    let compactP = { ...keepProduct };
+                    // फक्त Manual Product ला स्कीम्सची गरज असते, बाकी Master DB मधून मिळतील 
+                    if(p.isManual) compactP.schemes = schemes; 
+                    return compactP;
                 });
                 return { ...c, products: cp };
             });
 
             let compactRecycle = recycleBin.map(c => {
                 let cp = (c.products || []).map(p => {
-                    let { calculatedData, allSchemes, ...keepProduct } = p;
-                    return keepProduct;
+                    let { calculatedData, schemes, ...keepProduct } = p;
+                    let compactP = { ...keepProduct };
+                    if(p.isManual) compactP.schemes = schemes; 
+                    return compactP;
                 });
                 return { ...c, products: cp };
             });
@@ -535,9 +540,30 @@
             let res = await fetch(`https://getpantry.cloud/apiv1/pantry/${PANTRY_ID}/basket/${code}`);
             if(!res.ok) throw new Error("Code not found");
             let data = await res.json();
+            
             if(data.queue) {
-                customerQueue = data.queue;
-                recycleBin = data.recycle || [];
+                // REBUILD SCHEMES FROM DB_RECORDS: डाउनलोड झाल्यावर स्कीम्स पुन्हा ऍड करणे
+                let rebuildProducts = (products, ltvLimit) => {
+                    return products.map(p => {
+                        if(!p.isManual) {
+                            let raw = p.isNonTieup ? db_records.filter(r => r.model === "NON TIEUP" && p.name.includes(r.category)) : db_records.filter(r => r.model === p.name);
+                            let matrixEligible = raw.filter(s => s.fixedEmi > 0 || p.isNonTieup || (s.tenure > 0 && ((s.tenure-s.advEmi)/s.tenure)*100 <= ltvLimit));
+                            p.schemes = matrixEligible;
+                        }
+                        return p;
+                    });
+                };
+
+                customerQueue = data.queue.map(c => {
+                    if(c.products) c.products = rebuildProducts(c.products, c.ltv || 100);
+                    return c;
+                });
+                
+                recycleBin = (data.recycle || []).map(c => {
+                    if(c.products) c.products = rebuildProducts(c.products, c.ltv || 100);
+                    return c;
+                });
+
                 activeCustomerIndex = -1; selectedQueueIndex = -1;
                 await saveQueueToLocal();
                 await saveToDB('persistent_recycle', recycleBin);
@@ -546,7 +572,10 @@
                 alert("✅ Data successfully Cloud varun DOWNLOAD jhala!");
             }
             btn.innerText = oldT;
-        } catch(e) { alert("⚠️ Invalid Code kiva data milala nahi. Puna try kara."); document.activeElement.innerText = "☁️ DOWNLOAD"; }
+        } catch(e) { 
+            alert("⚠️ Invalid Code kiva data milala nahi. Puna try kara."); 
+            document.activeElement.innerText = "☁️ DOWNLOAD"; 
+        }
     }
 
     async function saveQueueToLocal() {
