@@ -841,7 +841,7 @@
     function openRecycleBin() {
         let list = document.getElementById('recycleBinList');
         if(recycleBin.length === 0) {
-            list.innerHTML = `<div style="text-align:center; color:#888; font-size:11px; margin-top:10px;">Recycle Bin empty ahe.</div>`;
+            list.innerHTML = `<div style="text-align:center; color:#888; font-size:11px; margin-top:10px;">Recycle Bin empty</div>`;
         } else {
             list.innerHTML = recycleBin.map((c, i) => `
                 <div style="display:flex; justify-content:space-between; align-items:center; background:#fff; padding:8px; border-radius:4px; border:1px solid #ddd;">
