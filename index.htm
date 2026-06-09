@@ -487,19 +487,44 @@
     let tempPendingProduct = null; 
 
     // --- CLOUD SYNC FUNCTIONS ---
+    // --- CLOUD SYNC FUNCTIONS ---
     async function uploadSync() {
         let code = document.getElementById('syncCode').value.trim().toUpperCase();
-        if(!code) return alert("⚠️ Kripya upload karnyasaathi ek SYNC CODE (उदा. LAKSHYA123) taka!");
+        if(!code) return alert("⚠️ Kripya Enter SYNC CODE ( for example- LAKSHYA123)");
         try {
             let btn = document.activeElement; let oldT = btn.innerText; btn.innerText = "⏳ UPLOADING...";
-            let payload = { queue: customerQueue, recycle: recycleBin };
+            
+            // डेटाची साईज कमी (Lightweight) करण्यासाठी Compact लॉजिक
+            let compactQueue = customerQueue.map(c => {
+                let cp = (c.products || []).map(p => {
+                    let { calculatedData, allSchemes, ...keepProduct } = p;
+                    return keepProduct;
+                });
+                return { ...c, products: cp };
+            });
+
+            let compactRecycle = recycleBin.map(c => {
+                let cp = (c.products || []).map(p => {
+                    let { calculatedData, allSchemes, ...keepProduct } = p;
+                    return keepProduct;
+                });
+                return { ...c, products: cp };
+            });
+
+            let payload = { queue: compactQueue, recycle: compactRecycle };
+
             let response = await fetch(`https://getpantry.cloud/apiv1/pantry/${PANTRY_ID}/basket/${code}`, {
                 method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)
             });
+
             if(response.ok) alert("✅ Data successfully Cloud var UPLOAD jhala! Ha code dusrya device var vapra.");
-            else alert("⚠️ Server issue. Please try again later.");
+            else alert("⚠️ Server issue: Pantry Cloud Server Error. Kripya thodya velane try kara.");
+            
             btn.innerText = oldT;
-        } catch(e) { alert("⚠️ Upload fail jhala. Check your internet connection."); document.activeElement.innerText = "☁️ UPLOAD"; }
+        } catch(e) { 
+            alert("⚠️ Upload fail jhala. Check your internet connection."); 
+            document.activeElement.innerText = "☁️ UPLOAD"; 
+        }
     }
 
     async function downloadSync() {
