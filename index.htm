@@ -1205,7 +1205,11 @@
     function recalcModel(pIdx) {
         if(!current_products[pIdx]) return;
         let prod = current_products[pIdx], limit = customerQueue[activeCustomerIndex]?.limit || 0, type = customerQueue[activeCustomerIndex]?.type || 'NEW';
-        let fee = (type === 'EMI CARD') ? 270 : (type === 'W/O CARD' ? 320 : 850), inp = prod.inputs, totalFees = fee + (parseFloat(inp.niva)||0) + (parseFloat(inp.margin)||0) + (parseFloat(inp.dealer)||0) + (parseFloat(inp.surch)||0);
+        let fee = (type === 'EMI CARD') ? 270 : (type === 'W/O CARD' ? 320 : 850), inp = prod.inputs;
+        
+        // FIX: Removed surch from totalFees to prevent double addition in DP
+        let totalFees = fee + (parseFloat(inp.niva)||0) + (parseFloat(inp.margin)||0) + (parseFloat(inp.dealer)||0);
+        
         let currentLimit = limit > 0 ? limit : 9999999;
         let inputMrp = parseFloat(inp.mrp) || 0; let inputInv = parseFloat(inp.inv) || 0; 
         let effectivePrice = inputInv > 0 ? inputInv : (inputMrp > 0 ? inputMrp : 0);
@@ -1231,7 +1235,15 @@
                 inst = currentTenure - s.advEmi; if(inst < 1) inst = 1;
                 let insTotal = (parseFloat(inp.gtl)||0) + (parseFloat(inp.rfc)||0) + (parseFloat(inp.exw)||0); let roiInEmi = loan * roiRate; emi = s.fixedEmi + (insTotal / inst) + roiInEmi;
             } else {
-                let absoluteMax = Math.min(loanCapPrice > 0 ? loanCapPrice : 999999, nbfcMaxL); if (prod.isNonTieup && s.maxLoan < 9999999) absoluteMax = Math.min(absoluteMax, s.maxLoan); loan = absoluteMax;
+                let absoluteMax = Math.min(loanCapPrice > 0 ? loanCapPrice : 999999, nbfcMaxL); 
+                
+                // FIX: Added minLoan bound for NON TIEUP
+                if (prod.isNonTieup) {
+                    if (s.maxLoan < 9999999) absoluteMax = Math.min(absoluteMax, s.maxLoan); 
+                    if (s.minLoan > 0) absoluteMax = Math.max(absoluteMax, s.minLoan);
+                }
+                
+                loan = absoluteMax;
                 if(parseFloat(inp.target) > 0 && effectivePrice > 0) { let advRate = s.advEmi / s.tenure; let numerator = parseFloat(inp.target) - effectivePrice - s.pf - totalFees; let denominator = advRate + dbdRate + roiRateDP - 1; let solvedLoan = numerator / denominator; loan = Math.min(loan, Math.max(0, Math.floor(solvedLoan))); }
                 inst = s.tenure - s.advEmi; if(inst < 1) inst = 1; let insTotal = (parseFloat(inp.gtl)||0)+(parseFloat(inp.rfc)||0)+(parseFloat(inp.exw)||0); let roiInEmi = loan * roiRate; emi = (loan / s.tenure) + (insTotal / inst) + roiInEmi;
                 if(emi/30 > parseFloat(inp.cap) && parseFloat(inp.cap) > 0) { loan = ((parseFloat(inp.cap)*30) - (insTotal/inst)) / ( (1/s.tenure) + roiRate ); roiInEmi = loan * roiRate; emi = (loan / s.tenure) + (insTotal / inst) + roiInEmi; }
@@ -1285,7 +1297,11 @@
 
     function manual(pIdx, dIdx) {
         let el = document.getElementById(`l_${pIdx}_${dIdx}`), loan = parseFloat(el.value) || 0, prod = current_products[pIdx], d = prod.calculatedData.find(x => x.dIdx === dIdx), inp = prod.inputs, type = customerQueue[activeCustomerIndex]?.type || 'NEW';
-        let fee = (type === 'EMI CARD') ? 270 : (type === 'W/O CARD' ? 320 : 850), totalFees = fee + (parseFloat(inp.niva)||0) + (parseFloat(inp.margin)||0) + (parseFloat(inp.dealer)||0) + (parseFloat(inp.surch)||0);
+        
+        // FIX: Removed surch from totalFees to prevent double addition in DP
+        let fee = (type === 'EMI CARD') ? 270 : (type === 'W/O CARD' ? 320 : 850);
+        let totalFees = fee + (parseFloat(inp.niva)||0) + (parseFloat(inp.margin)||0) + (parseFloat(inp.dealer)||0);
+        
         let ltvLimit = customerQueue[activeCustomerIndex]?.ltv || 100; let limit = customerQueue[activeCustomerIndex]?.limit || 0; let currentLimit = limit > 0 ? limit : 9999999;
         let inputMrp = parseFloat(inp.mrp) || 0; let inputInv = parseFloat(inp.inv) || 0; 
         let effectivePrice = inputInv > 0 ? inputInv : (inputMrp > 0 ? inputMrp : 0);
