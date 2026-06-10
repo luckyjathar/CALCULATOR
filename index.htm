@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Persistent Portal V76.1 - Dealer Link Edition</title>
+    <title>Persistent Portal V76.2 - Header Calc Edition</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
@@ -95,12 +95,15 @@
 <body>
 
 <header>
-    <div style="display: flex; align-items: center; gap: 8px;">
+    <div style="display: flex; align-items: center; gap: 6px;">
         <div id="gitStatusBadge" style="font-weight: 950; font-size: 10px; background: rgba(39, 174, 96, 0.15); color: var(--success); padding: 5px 10px; border-radius: 4px; border: 1px solid var(--success); letter-spacing: 0.5px; transition: all 0.3s ease; display: inline-block;">
             ⚙️ GITHUB INTERFACE CONNECTED
         </div>
         <button onclick="openDealerSearchModal()" style="background: var(--bajaj-blue); color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: 900; font-size: 10px; cursor: pointer;">
             🔗 DEALER LINKS
+        </button>
+        <button onclick="openFastCalculator()" style="background: var(--primary); color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: 900; font-size: 10px; cursor: pointer;">
+            🧮 FAST CALC
         </button>
     </div>
     <h1>🚀 Persistent Portal Master</h1>
@@ -163,7 +166,6 @@
                 <label style="color:var(--indigo); font-size:11px; margin-bottom:4px;">🔍 SEARCH SCHEMES DICTIONARY</label>
                 <div style="display: flex; gap: 6px; align-items: center;">
                     <input type="search" id="globalModelSearch" oninput="doGlobalSearch()" placeholder="Type Model Name to view all its schemes..." style="height:32px; font-size:11px; flex: 1; border:1.5px solid var(--indigo);">
-                    <button onclick="openFastCalculator()" style="background:var(--primary); color:white; font-size:11px; font-weight:bold; padding: 0 12px; height: 32px; border-radius: 4px; border: none; cursor: pointer; white-space: nowrap;">🧮 FAST CALC</button>
                 </div>
                 <div id="globalModelDropdown" style="position: absolute; width: calc(100% - 16px); background: #fff; z-index: 1000; border: 1px solid #ddd; display: none; box-shadow: 0 10px 20px rgba(0,0,0,0.15); border-radius: 4px; max-height: 200px; overflow-y: auto;"></div>
             </div>
@@ -415,7 +417,7 @@
                     </div>
                     <div>
                         <label style="color:var(--primary);">LOAN AMOUNT (₹)</label>
-                        <input type="number" id="fcLoanInput" placeholder="Optional Custom Loan" style="border-color:var(--primary);" oninput="fcInvChanged();">
+                        <input type="number" id="fcLoanInput" placeholder="Optional Custom Loan" style="border-color:var(--primary);" oninput="calculateFastData();">
                     </div>
                 </div>
 
@@ -1678,11 +1680,11 @@ LTV- ${c.ltv}${cappingLine}`;
                 <td class="hidden-col" id="extra_${pIdx}_${d.dIdx}" style="font-weight:900; color:var(--danger);">₹${Math.round(d.extra).toLocaleString()}</td>
                 ${isNT ? `<td class="bound-col">${d.minLoan > 0 ? '₹' + d.minLoan : '0'}</td><td class="bound-col">${d.maxLoan < 9999999 ? '₹' + d.maxLoan : 'NO'}</td>` : `<td style="color:#777; font-size:8px;">₹${Math.floor(d.nbfcMaxL)}</td>`}
                 <td><div class="stepper"><button class="step-btn" onclick="step(${pIdx},${d.dIdx},-${d.isFixed ? d.fixedEmi : 1000})">-</button><input id="l_${pIdx}_${d.dIdx}" type="number" value="${Math.floor(d.loan)}" class="step-inp" oninput="manual(${pIdx},${d.dIdx})"><button class="step-btn" onclick="step(${pIdx},${d.dIdx},${d.isFixed ? d.fixedEmi : 1000})">+</button></div></td>
-                <td id="ta_${pIdx}_${d.dIdx}" style="font-weight:900;">${d.currentTenure}/${d.advEmi}</td>
-                <td id="dp_${pIdx}_${d.dIdx}" style="color:var(--success); font-weight:950;">₹${Math.round(d.dp).toLocaleString()}</td>
-                <td id="emi_${pIdx}_${d.dIdx}" style="color:var(--primary); font-weight:950;">₹${Math.round(d.emi).toLocaleString()}</td>
-                <td id="inst_${pIdx}_${d.dIdx}" style="font-weight:900;">${d.inst}</td>
-                <td id="day_${pIdx}_${d.dIdx}" style="color:var(--success); font-weight:950;">₹${Math.round(d.daily).toLocaleString()}</td>
+                <td id="ta_${pIdx}_${dIdx}" style="font-weight:900;">${d.currentTenure}/${d.advEmi}</td>
+                <td id="dp_${pIdx}_${dIdx}" style="color:var(--success); font-weight:950;">₹${Math.round(d.dp).toLocaleString()}</td>
+                <td id="emi_${pIdx}_${dIdx}" style="color:var(--primary); font-weight:950;">₹${Math.round(d.emi).toLocaleString()}</td>
+                <td id="inst_${pIdx}_${dIdx}" style="font-weight:900;">${d.inst}</td>
+                <td id="day_${pIdx}_${dIdx}" style="color:var(--success); font-weight:950;">₹${Math.round(d.daily).toLocaleString()}</td>
                 <td>
                     <div style="display:flex; flex-direction:column; gap:2px; min-width: 40px;">
                         <button class="action-btn btn-copy" onclick="copySchemeText(${pIdx}, ${d.dIdx}, this)">COPY</button>
