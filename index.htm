@@ -463,7 +463,7 @@
                     <span style="font-weight:900; color:#555; font-size:11px;">MONTHLY EMI:</span> 
                     <span id="fcResEmi" style="color:var(--primary); font-weight:900; font-size:14px;">₹0</span>
                 </div>
-                <div style="display:flex; justify-content:space-between; margin">
+                <div style="display:flex; justify-content:space-between;">
                     <span style="font-weight:900; color:#555; font-size:11px;">DAILY EMI:</span> 
                     <span id="fcResDaily" style="color:#d35400; font-weight:900; font-size:14px;">₹0</span>
                 </div>
@@ -1159,7 +1159,7 @@
         sortedCats.forEach(cat => {
             let catData = stats[cat]; let brandHtml = ''; let sortedBrands = Object.keys(catData.brands).sort();
             sortedBrands.forEach(b => { brandHtml += `<div style="display:flex; justify-content:space-between; padding: 4px 10px; border-bottom: 1px solid #eee; font-size: 10px;"><span style="color:#555; font-weight:700;">🏷️ ${b}</span> <span style="color:var(--primary); font-weight:900; background:#e3f2fd; padding:1px 4px; border-radius:3px;">${catData.brands[b]}</span></div>`; });
-            html += `<details style="margin-bottom:6px; background:#f8f9fa; border:1px solid #ddd; border-radius:4px; overflow:hidden;"><summary style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; font-weight:900; color:var(--indigo); padding:8px; list-style:none; outline:none; background:#e3f2fd;"><span style="font-size:11px;">📁 ${cat}</span><span style="background:var(--primary); color:#fff; padding:2px 8px; border-radius:10px; font-size:9px;">${catData.total} Schemes ▼</summary><div style="background:#fff; color:#333; padding:4px 0;">${brandHtml}</div></details>`;
+            html += `<details style="margin-bottom:6px; background:#f8f9fa; border:1px solid #ddd; border-radius:4px; overflow:hidden;"><summary style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; font-weight:900; color:var(--indigo); padding:8px; list-style:none; outline:none; background:#e3f2fd;"><span style="font-size:11px;">📁 ${cat}</span><span style="background:var(--primary); color:#fff; padding:2px 8px; border-radius:10px; font-size:9px;">${catData.total} Schemes ▼</span></summary><div style="background:#fff; color:#333; padding:4px 0;">${brandHtml}</div></details>`;
         });
         html += `</div>`;
         summaryDiv.innerHTML = html; summaryDiv.style.display = 'block';
@@ -1301,10 +1301,11 @@
         document.getElementById('catSelectionModal').style.display = 'flex';
     }
 
+    // FIXED: Non-Tieup category addition directly updates matrix without opening components prompt modal
     function selectCategory(catName) {
         document.getElementById('catSelectionModal').style.display = 'none';
         tempPendingProduct = { name: SPECIAL_MODEL + " - " + catName, isNT: true, category: catName };
-        showComponentsModal("");
+        finalizeProductAddition();
     }
 
     function compMrpChanged() {
@@ -1520,7 +1521,7 @@
                                 <th class="hidden-col" onclick="sortM(${pIdx},'fixedEmi')">FIXED ↕</th>
                                 <th class="hidden-col" onclick="sortM(${pIdx},'curLTV')">LTV% ↕</th>
                                 <th class="hidden-col" onclick="sortM(${pIdx},'extra')">EXTRA ↕</th>
-                                ${isNT ? '<th onclick="sortM('+pIdx+',\'minLoan\')">MIN ↕</th><th onclick="sortM('+pIdx+',\'maxLoan\')">MAX ↕</th>' : '<th onclick="sortM('+pIdx+',\'nbfcMaxL\')">NBFC LMT ↕</th>'}
+                                ${isNT ? `<th onclick="sortM(${pIdx},'minLoan')">MIN ↕</th><th onclick="sortM(${pIdx},'maxLoan')">MAX ↕</th>` : `<th onclick="sortM(${pIdx},'nbfcMaxL')">NBFC LMT ↕</th>`}
                                 <th onclick="sortM(${pIdx},'loan')">LOAN ↕</th>
                                 <th onclick="sortM(${pIdx},'currentTenure')">T/A ↕</th>
                                 <th onclick="sortM(${pIdx},'dp')">NET DP ↕</th><th onclick="sortM(${pIdx},'emi')">EMI ↕</th><th onclick="sortM(${pIdx},'inst')">M ↕</th><th onclick="sortM(${pIdx},'daily')">DAILY ↕</th>
@@ -1642,7 +1643,7 @@
                 <td class="hidden-col">${d.fixedEmi > 0 ? '₹'+d.fixedEmi : 'N/A'}</td>
                 <td class="hidden-col" id="ltv_${pIdx}_${d.dIdx}">${Math.round(d.curLTV)}%</td>
                 <td class="hidden-col" id="extra_${pIdx}_${d.dIdx}" style="font-weight:900; color:var(--danger);">₹${Math.round(d.extra).toLocaleString()}</td>
-                ${isNT ? '<td class="bound-col">'+(d.minLoan>0?'₹'+d.minLoan:'0')+'</td><td class="bound-col">'+(d.maxLoan<9999999?'₹'+d.maxLoan:'NO')+'</td>' : '<td style="color:#777; font-size:8px;">₹'+Math.floor(d.nbfcMaxL)+'</td>'}
+                ${isNT ? `<td class="bound-col">${d.minLoan > 0 ? '₹' + d.minLoan : '0'}</td><td class="bound-col">${d.maxLoan < 9999999 ? '₹' + d.maxLoan : 'NO'}</td>` : `<td style="color:#777; font-size:8px;">₹${Math.floor(d.nbfcMaxL)}</td>`}
                 <td><div class="stepper"><button class="step-btn" onclick="step(${pIdx},${d.dIdx},-${d.isFixed ? d.fixedEmi : 1000})">-</button><input id="l_${pIdx}_${d.dIdx}" type="number" value="${Math.floor(d.loan)}" class="step-inp" oninput="manual(${pIdx},${d.dIdx})"><button class="step-btn" onclick="step(${pIdx},${d.dIdx},${d.isFixed ? d.fixedEmi : 1000})">+</button></div></td>
                 <td id="ta_${pIdx}_${d.dIdx}" style="font-weight:900;">${d.currentTenure}/${d.advEmi}</td>
                 <td id="dp_${pIdx}_${d.dIdx}" style="color:var(--success); font-weight:950;">₹${Math.round(d.dp).toLocaleString()}</td>
