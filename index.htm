@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Persistent Portal V76.0 - Smart Edition</title>
+    <title>Persistent Portal V76.1 - Dealer Link Edition</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
@@ -95,10 +95,13 @@
 <body>
 
 <header>
-    <div>
+    <div style="display: flex; align-items: center; gap: 8px;">
         <div id="gitStatusBadge" style="font-weight: 950; font-size: 10px; background: rgba(39, 174, 96, 0.15); color: var(--success); padding: 5px 10px; border-radius: 4px; border: 1px solid var(--success); letter-spacing: 0.5px; transition: all 0.3s ease; display: inline-block;">
             ⚙️ GITHUB INTERFACE CONNECTED
         </div>
+        <button onclick="openDealerSearchModal()" style="background: var(--bajaj-blue); color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: 900; font-size: 10px; cursor: pointer;">
+            🔗 DEALER LINKS
+        </button>
     </div>
     <h1>🚀 Persistent Portal Master</h1>
 </header>
@@ -166,6 +169,22 @@
             </div>
 
             <div id="importedDataSummary" class="custom-scroll" style="display:none; margin-top:8px; background:#fff; border:2px solid var(--success); border-radius:6px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); max-height: 350px; overflow-y: auto; position: relative; padding: 0;">
+            </div>
+        </div>
+    </div>
+
+    <!-- Dealer Links Search Modal -->
+    <div id="dealerSearchModal" class="modal">
+        <div class="modal-content" style="max-width: 400px; padding: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--bajaj-blue); padding-bottom: 8px; margin-bottom: 15px;">
+                <h3 style="margin:0; color:var(--bajaj-blue); font-size:16px; font-weight:900;">🔗 SEARCH DEALER LINK</h3>
+                <button onclick="closeDealerSearchModal()" style="background:none; border:none; color:var(--danger); font-weight:bold; cursor:pointer; font-size:16px;">✖</button>
+            </div>
+            
+            <input type="text" id="dealerSearchInput" placeholder="🔍 Enter Dealer ID or Name..." oninput="searchDealer()" style="width: 100%; padding: 10px; border: 2px solid var(--primary); border-radius: 6px; font-size: 12px; margin-bottom: 10px; outline: none;">
+            
+            <div id="dealerSearchResults" class="custom-scroll" style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding-right: 4px;">
+                <div style="text-align:center; color:#888; font-size:11px; margin-top:10px;">Type ID or Name to search...</div>
             </div>
         </div>
     </div>
@@ -396,7 +415,7 @@
                     </div>
                     <div>
                         <label style="color:var(--primary);">LOAN AMOUNT (₹)</label>
-                        <input type="number" id="fcLoanInput" placeholder="Optional Custom Loan" style="border-color:var(--primary);" oninput="calculateFastData();">
+                        <input type="number" id="fcLoanInput" placeholder="Optional Custom Loan" style="border-color:var(--primary);" oninput="fcInvChanged();">
                     </div>
                 </div>
 
@@ -564,6 +583,7 @@
     }
 
     let db_records = [];
+    let dealer_records = [];
     let current_products = [];
     let sortConfigs = [];
     const SPECIAL_MODEL = "NON TIEUP";
@@ -635,6 +655,11 @@
             tempSheet1Data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { raw: false, defval: "" });
             parsedSheet2Data = wb.SheetNames.length > 1 ? XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[1]], { raw: false, defval: "" }).map(r => mapData(r, SPECIAL_MODEL)).filter(x => x && (x.tenure > 0 || x.fixedEmi > 0)) : [];
             
+            if (wb.SheetNames.length > 2) {
+                dealer_records = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[2]], { raw: false, defval: "" });
+                await saveToDB("persistent_dealers", dealer_records);
+            }
+
             let filteredSheet1 = tempSheet1Data.map(r => mapData(r, "REG")).filter(m => m && (m.tenure > 0 || m.fixedEmi > 0));
             let rawCombined = [...filteredSheet1, ...parsedSheet2Data];
             let uniqueDB = []; let seenDB = new Set();
@@ -688,6 +713,11 @@
                 document.getElementById('globalSchemeSearchBox').style.display = 'block';
             }
             
+            let savedDealers = await getFromDB("persistent_dealers");
+            if (savedDealers && savedDealers.length > 0) {
+                dealer_records = savedDealers;
+            }
+
             fetchFromMasterStream();
             
             let savedQ = await getFromDB('persistent_queue');
@@ -890,8 +920,12 @@
 
     function copyCustomerDetails(idx, btnElement) {
         let c = customerQueue[idx];
-        let cappingLine = (c.cap && c.cap !== "") ? `\nDAILY EMI CAP- ${c.cap}` : "";
-        let textToCopy = `CUSTOMER NAME- ${c.name}\nNUMBER- ${c.mobile || ''}\nLIMIT- ${c.limit}\nLTV- ${c.ltv}${cappingLine}`;
+        let cappingLine = (c.cap && c.cap !== "") ? `
+DAILY EMI CAP- ${c.cap}` : "";
+        let textToCopy = `CUSTOMER NAME- ${c.name}
+NUMBER- ${c.mobile || ''}
+LIMIT- ${c.limit}
+LTV- ${c.ltv}${cappingLine}`;
         
         function showSuccess() { 
             let originalText = btnElement.innerText; 
@@ -1301,7 +1335,6 @@
         document.getElementById('catSelectionModal').style.display = 'flex';
     }
 
-    // FIXED: Non-Tieup category addition directly updates matrix without opening components prompt modal
     function selectCategory(catName) {
         document.getElementById('catSelectionModal').style.display = 'none';
         tempPendingProduct = { name: SPECIAL_MODEL + " - " + catName, isNT: true, category: catName };
@@ -1474,7 +1507,7 @@
                 <div style="font-weight:900; color:var(--indigo); border-bottom:1px solid #ccc; padding-bottom:4px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
                     <div style="display:flex; align-items:center; gap: 8px; flex-wrap:wrap;">
                         <span style="font-size:13px; text-transform:uppercase; display:flex; align-items:center;"><span id="togIcon_${pIdx}" onclick="toggleModelView(${pIdx})" style="cursor:pointer; color:var(--primary); padding-right:6px; font-size:15px; user-select:none;">${toggleIcon}</span>${prod.name}</span>
-                        <div style="display:flex; gap:4px; align-items:center; background:#e3f2fd; padding:2px 6px; border-radius:4px; border:1px solid var(--primary);">
+                        <div style="display:flex; gap:4px; align-items:center; background:#e3f2fd; padding:2px 6px; border-radius:4px; border:1px solid #0984e3;">
                             <label style="margin:0; font-size:8px; color:var(--primary);">MRP:</label>
                             <input type="number" id="mrp_${pIdx}" value="${prod.inputs.mrp}" style="width:60px; height:20px; font-size:10px; padding:2px;" oninput="updateVal(${pIdx},'mrp',this.value)">
                             <label style="margin:0; font-size:8px; color:var(--primary);">INV:</label>
@@ -1714,10 +1747,22 @@
     function copySchemeText(pIdx, dIdx, btnElement) {
         let prod = current_products[pIdx], d = prod.calculatedData.find(x => x.dIdx === dIdx); let invAmt = prod.inputs.inv > 0 ? prod.inputs.inv : prod.inputs.mrp;
         let c = customerQueue[activeCustomerIndex];
-        let cappingLine = (c.cap && c.cap !== "") ? `\nDAILY EMI CAP- ${c.cap}` : "";
-        let custDetails = `CUSTOMER NAME- ${c.name}\nNUMBER- ${c.mobile || ''}\nLIMIT- ${c.limit}\nLTV- ${c.ltv}${cappingLine}\n\n`;
+        let cappingLine = (c.cap && c.cap !== "") ? `
+DAILY EMI CAP- ${c.cap}` : "";
+        let custDetails = `CUSTOMER NAME- ${c.name}
+NUMBER- ${c.mobile || ''}
+LIMIT- ${c.limit}
+LTV- ${c.ltv}${cappingLine}
 
-        let textToCopy = `${custDetails}📱 *${prod.name}*\n${invAmt > 0 ? `*INVOICE AMOUNT:* ₹${invAmt}\n\n` : "" }✅ *Scheme:* ${d.currentTenure}/${d.advEmi}\n💰 *DP:* ₹${Math.round(d.dp).toLocaleString()}\n🗓️ *EMI:* ₹${Math.round(d.emi).toLocaleString()} x ${d.inst}\n✨ *Daily EMI:* ₹${Math.round(d.daily).toLocaleString()}`;
+`;
+
+        let textToCopy = `${custDetails}📱 *${prod.name}*
+${invAmt > 0 ? `*INVOICE AMOUNT:* ₹${invAmt}
+
+` : "" }✅ *Scheme:* ${d.currentTenure}/${d.advEmi}
+💰 *DP:* ₹${Math.round(d.dp).toLocaleString()}
+🗓️ *EMI:* ₹${Math.round(d.emi).toLocaleString()} x ${d.inst}
+✨ *Daily EMI:* ₹${Math.round(d.daily).toLocaleString()}`;
         function showSuccess() { let originalText = btnElement.innerText; btnElement.innerText = "COPIED!"; btnElement.style.background = "var(--success)"; setTimeout(() => { btnElement.innerText = originalText; btnElement.style.background = "var(--primary)"; }, 2000); }
         if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(textToCopy).then(showSuccess).catch(() => fallbackCopy(textToCopy, showSuccess)); } else { fallbackCopy(textToCopy, showSuccess); }
     }
@@ -1861,6 +1906,72 @@
                 }
             } else { document.getElementById('clipboardStatusAlert').style.display = 'none'; }
         });
+    }
+
+    // --- DEALER SEARCH LOGIC ---
+    function openDealerSearchModal() {
+        document.getElementById('dealerSearchInput').value = '';
+        document.getElementById('dealerSearchResults').innerHTML = '<div style="text-align:center; color:#888; font-size:11px; margin-top:10px;">Type ID or Name to search...</div>';
+        document.getElementById('dealerSearchModal').style.display = 'flex';
+        setTimeout(() => document.getElementById('dealerSearchInput').focus(), 100);
+    }
+
+    function closeDealerSearchModal() {
+        document.getElementById('dealerSearchModal').style.display = 'none';
+    }
+
+    function searchDealer() {
+        let q = document.getElementById('dealerSearchInput').value.toLowerCase().trim();
+        let resultsDiv = document.getElementById('dealerSearchResults');
+        
+        if (!q) {
+            resultsDiv.innerHTML = '<div style="text-align:center; color:#888; font-size:11px; margin-top:10px;">Type ID or Name to search...</div>';
+            return;
+        }
+        
+        if (dealer_records.length === 0) {
+            resultsDiv.innerHTML = '<div style="text-align:center; color:var(--danger); font-size:11px; margin-top:10px;">⚠️ Dealer data ajun load zala nahi kiva sheet missing ahe.</div>';
+            return;
+        }
+
+        let matches = dealer_records.filter(d => {
+            let dId = String(d['DealerId'] || d['dealerid'] || '').toLowerCase();
+            let dName = String(d['Dealer Name'] || d['dealer name'] || '').toLowerCase();
+            return dId.includes(q) || dName.includes(q);
+        }).slice(0, 15);
+
+        if (matches.length === 0) {
+            resultsDiv.innerHTML = '<div style="text-align:center; color:#d35400; font-size:11px; margin-top:10px;">No dealers found.</div>';
+            return;
+        }
+
+        resultsDiv.innerHTML = matches.map(m => {
+            let bitly = m['BitlyLink'] || m['bitlylink'] || '#';
+            let dId = m['DealerId'] || m['dealerid'] || '-';
+            let dName = m['Dealer Name'] || m['dealer name'] || 'Unknown Dealer';
+            return `
+            <div onclick="openBitlyLink('${bitly}')" style="display:flex; justify-content:space-between; align-items:center; background:#f8f9fa; padding:10px; border-radius:6px; border:1px solid #ddd; cursor:pointer; transition:0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05);" onmouseover="this.style.borderColor='var(--primary)'; this.style.background='#e3f2fd';" onmouseout="this.style.borderColor='#ddd'; this.style.background='#f8f9fa';">
+                <div>
+                    <strong style="color:var(--indigo); font-size:12px; display:block;">🏪 ${dName}</strong>
+                    <span style="font-size:10px; color:#555; font-weight:bold;">ID: <span style="color:var(--primary);">${dId}</span></span>
+                </div>
+                <button style="background:var(--success); color:white; border:none; padding:6px 12px; border-radius:4px; font-weight:bold; font-size:10px; cursor:pointer;">
+                    OPEN ↗
+                </button>
+            </div>`;
+        }).join('');
+    }
+
+    function openBitlyLink(url) {
+        if (url && url !== '#' && url.trim() !== '') {
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                url = 'https://' + url;
+            }
+            window.open(url, '_blank');
+            closeDealerSearchModal();
+        } else {
+            alert('⚠️ Ya dealer sathi Bitly link available nahi ahe!');
+        }
     }
 </script>
 </body>
