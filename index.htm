@@ -383,7 +383,7 @@
     <div id="fastCalcModal" class="modal">
         <div class="modal-content" style="max-width:480px;">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--bajaj-blue); padding-bottom: 6px; margin-bottom: 10px;">
-                <h3 style="margin:0; color:var(--bajaj-blue); font-size:15px; font-weight:900;">🧮 PRO ZATPAT CALCULATOR</h3>
+                <h3 style="margin:0; color:var(--bajaj-blue); font-size:15px; font-weight:900;">🧮 PRO ZATPAT CALCULATOR (LIVE)</h3>
                 <button onclick="document.getElementById('fastCalcModal').style.display='none'" style="background:none; border:none; color:var(--danger); font-weight:bold; cursor:pointer; font-size:14px;">✖</button>
             </div>
             
@@ -392,22 +392,22 @@
                 <div style="grid-column: span 3; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom:4px;">
                     <div>
                         <label style="color:var(--primary);">INVOICE AMOUNT / MRP (₹)</label>
-                        <input type="number" id="fcInv" placeholder="Enter Amount" style="border-color:var(--primary);" oninput="fcInvChanged()">
+                        <input type="number" id="fcInv" placeholder="Enter Amount" style="border-color:var(--primary);" oninput="fcInvChanged();">
                     </div>
                     <div>
                         <label style="color:var(--primary);">LOAN AMOUNT (₹)</label>
-                        <input type="number" id="fcLoanInput" placeholder="Optional / Custom Loan" style="border-color:var(--primary);">
+                        <input type="number" id="fcLoanInput" placeholder="Optional Custom Loan" style="border-color:var(--primary);" oninput="calculateFastData();">
                     </div>
                 </div>
 
-                <div><label>TENURE (Max)</label><input type="number" id="fcTenure" placeholder="0"></div>
-                <div><label>ADVANCE EMI</label><input type="number" id="fcAdv" placeholder="0"></div>
-                <div><label>ROI (%)</label><input type="number" id="fcRoi" placeholder="0" step="0.01"></div>
+                <div><label>TENURE (Max)</label><input type="number" id="fcTenure" placeholder="0" oninput="calculateFastData();"></div>
+                <div><label>ADVANCE EMI</label><input type="number" id="fcAdv" placeholder="0" oninput="calculateFastData();"></div>
+                <div><label>ROI (%)</label><input type="number" id="fcRoi" placeholder="0" step="0.01" oninput="calculateFastData();"></div>
                 
-                <div><label>PF (₹)</label><input type="number" id="fcPf" placeholder="0"></div>
-                <div><label>DBD (%)</label><input type="number" id="fcDbd" placeholder="0" step="0.01"></div>
+                <div><label>PF (₹)</label><input type="number" id="fcPf" placeholder="0" oninput="calculateFastData();"></div>
+                <div><label>DBD (%)</label><input type="number" id="fcDbd" placeholder="0" step="0.01" oninput="calculateFastData();"></div>
                 <div><label>CUSTOMER TYPE</label>
-                    <select id="fcCustType">
+                    <select id="fcCustType" onchange="calculateFastData();">
                         <option value="NEW">NEW</option>
                         <option value="EMI CARD">EMI CARD</option>
                         <option value="VIRTUAL">VIRTUAL</option>
@@ -417,16 +417,16 @@
 
                 <div style="grid-column: span 3; border-top: 1px dashed #ccc; margin-top:4px; padding-top:6px;"></div>
                 
-                <div><label>FIXED EMI (₹)</label><input type="number" id="fcFixed" placeholder="Optional"></div>
-                <div><label>DAILY EMI CAP</label><input type="number" id="fcCap" placeholder="MAX"></div>
-                <div><label>TARGET DP (₹)</label><input type="number" id="fcTarget" placeholder="Reverse Calc"></div>
+                <div><label>FIXED EMI (₹)</label><input type="number" id="fcFixed" placeholder="Optional" oninput="calculateFastData();"></div>
+                <div><label>DAILY EMI CAP</label><input type="number" id="fcCap" placeholder="MAX" oninput="calculateFastData();"></div>
+                <div><label>TARGET DP (₹)</label><input type="number" id="fcTarget" placeholder="Reverse Calc" oninput="calculateFastData();"></div>
 
                 <div style="grid-column: span 3; border-top: 1px dashed #ccc; margin-top:4px; padding-top:6px;">
                     <label style="color:var(--indigo);">🛡️ INSURANCE & COMPONENTS</label>
                 </div>
 
                 <div><label>GTL (₹)</label>
-                    <select id="fcGtl">
+                    <select id="fcGtl" onchange="calculateFastData();">
                         <option value="0">0</option>
                         <option value="699">699</option>
                         <option value="1099">1099</option>
@@ -437,20 +437,18 @@
                     </select>
                 </div>
                 <div><label>RFC (₹)</label>
-                    <select id="fcRfc">
+                    <select id="fcRfc" onchange="calculateFastData();">
                         <option value="0">0</option>
                         <option id="fcRfcOpt" value="0">0</option>
                     </select>
                 </div>
-                <div><label>EXW (₹)</label><input type="number" id="fcExw" placeholder="0"></div>
+                <div><label>EXW (₹)</label><input type="number" id="fcExw" placeholder="0" oninput="calculateFastData();"></div>
                 
-                <div><label>NIVA BUPA (₹)</label><input type="number" id="fcNiva" placeholder="0"></div>
-                <div><label>MARGIN (₹)</label><input type="number" id="fcMargin" placeholder="0"></div>
-                <div><label>DEALER (₹)</label><input type="number" id="fcDealer" placeholder="0"></div>
+                <div><label>NIVA BUPA (₹)</label><input type="number" id="fcNiva" placeholder="0" oninput="calculateFastData();"></div>
+                <div><label>MARGIN (₹)</label><input type="number" id="fcMargin" placeholder="0" oninput="calculateFastData();"></div>
+                <div><label>DEALER (₹)</label><input type="number" id="fcDealer" placeholder="0" oninput="calculateFastData();"></div>
 
             </div>
-            
-            <button onclick="calculateFastData()" style="width:100%; background:var(--success); color:white; padding:10px; font-weight:900; font-size:12px; border-radius:4px; box-shadow: 0 2px 4px rgba(39,174,96,0.3); text-transform:uppercase;">⚡ Calculate Result</button>
             
             <div id="fcResult" style="display:none; margin-top:12px; background:#fff; border:2px solid var(--primary); padding:10px; border-radius:6px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
                 <div style="display:flex; justify-content:space-between; margin-bottom:6px; border-bottom:1px solid #eee; padding-bottom:4px;">
@@ -717,7 +715,7 @@
         updateUniversalActionButtons();
     };
 
-    // --- PRO ZATPAT CALCULATOR LOGIC ---
+    // --- PRO LIVE ZATPAT CALCULATOR LOGIC ---
     function openFastCalculator() {
         document.getElementById('fcResult').style.display = 'none';
         let fields = ['fcInv', 'fcLoanInput', 'fcTenure', 'fcAdv', 'fcRoi', 'fcPf', 'fcDbd', 'fcFixed', 'fcCap', 'fcTarget', 'fcExw', 'fcNiva', 'fcMargin', 'fcDealer'];
@@ -753,6 +751,9 @@
             rfcOpt.innerText = rfcSlab;
         }
         document.getElementById('fcRfc').value = rfcSlab;
+        
+        // Live Trigger
+        calculateFastData();
     }
 
     function calculateFastData() {
@@ -776,8 +777,9 @@
         let margin = parseFloat(document.getElementById('fcMargin').value) || 0;
         let dealer = parseFloat(document.getElementById('fcDealer').value) || 0;
 
+        // Quieter verification for fluid live calculations
         if (inv <= 0 && loanInput <= 0) {
-            alert("⚠️ Kripya Invoice Amount kiva Loan Amount enter kara!");
+            document.getElementById('fcResult').style.display = 'none';
             return;
         }
 
@@ -789,7 +791,6 @@
         let roiRate = roi / 1200;
         let roiRateDP = roiRate * adv;
         
-        // Use manual loan component if provided, else fall back to invoice amount
         let loan = loanInput > 0 ? loanInput : inv;
         let emi = 0;
         let dpRounded = 0;
@@ -833,6 +834,7 @@
             let roiInEmi = loan * roiRate;
             emi = (loan / tenure) + (insTotal / inst) + roiInEmi;
 
+            // Daily EMI Cap Core Filter
             if (cap > 0 && (emi / 30) > cap) {
                 loan = ((cap * 30) - (insTotal / inst)) / ((1 / tenure) + roiRate);
                 roiInEmi = loan * roiRate;
@@ -1303,7 +1305,7 @@
     }
 
     function selectCategory(catName) {
-        document.getElementById('catSelectionModal').style.display = 'none';
+        document.getElementById('catSelectionModal').style.none;
         tempPendingProduct = { name: SPECIAL_MODEL + " - " + catName, isNT: true, category: catName };
         showComponentsModal("");
     }
