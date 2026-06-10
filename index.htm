@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Persistent Portal V76.3 - Non Tie-up Fix Edition</title>
+    <title>Persistent Portal V76.4 - Non Tie-up LTV Constraint Edition</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
@@ -480,7 +480,7 @@
                     <span id="fcResDp" style="color:var(--success); font-weight:900; font-size:14px;">₹0</span>
                 </div>
                 <div style="display:flex; justify-content:space-between; margin-bottom:6px; border-bottom:1px solid #eee; padding-bottom:4px;">
-                    <span style="font-weight:900; color:#555; font-size:11px;">MONTHLY EMI:</span> 
+                    <span style="font-weight:900; color(--primary); font-size:11px;">MONTHLY EMI:</span> 
                     <span id="fcResEmi" style="color:var(--primary); font-weight:900; font-size:14px;">₹0</span>
                 </div>
                 <div style="display:flex; justify-content:space-between;">
@@ -1338,6 +1338,7 @@
         finalizeProductAddition();
     }
 
+    // --- MRP/INV INSURANCE SYNC LOGIC ---
     function compMrpChanged() {
         let mrp = parseFloat(document.getElementById('compMrp').value) || 0;
         document.getElementById('compInv').value = mrp; 
@@ -1432,8 +1433,8 @@
         let raw = tempPendingProduct.isNT ? db_records.filter(r => r.model === SPECIAL_MODEL && r.category === tempPendingProduct.category) : db_records.filter(r => r.model === tempPendingProduct.name);
         let ltvLimit = customerQueue[activeCustomerIndex]?.ltv || 100;
         
-        // BUG FIX: Non Tieup (isNT) sathi ltvLimit filter bypass kela ahe जेणेकरून स्कीम्स गायब होणार नाहीत
-        let matrixEligible = raw.filter(s => tempPendingProduct.isNT ? true : (s.fixedEmi > 0 || (s.tenure > 0 && ((s.tenure-s.advEmi)/s.tenure)*100 <= ltvLimit)));
+        // BUG FIX RESOLVED: Non Tieup sathi suddha Matrix validation filter standard kela aahe जेणेकरून LTV Breach cha niyam lagoo rahil
+        let matrixEligible = raw.filter(s => s.fixedEmi > 0 || (s.tenure > 0 && ((s.tenure-s.advEmi)/s.tenure)*100 <= ltvLimit));
         matrixEligible.forEach(s => s.inactive = false); 
         let comp = customerQueue[activeCustomerIndex].components || {};
         let finalMrp = comp.mrp || ""; let finalInv = comp.inv || ""; let surch = (finalInv > finalMrp && finalMrp > 0) ? finalInv - finalMrp : 0;
@@ -1638,7 +1639,6 @@
                 inst = currentTenure - s.advEmi; if(inst < 1) inst = 1;
                 let insTotal = (parseFloat(inp.gtl)||0) + (parseFloat(inp.rfc)||0) + (parseFloat(inp.exw)||0); let roiInEmi = loan * roiRate; emi = s.fixedEmi + (insTotal / inst) + roiInEmi;
             } else {
-                // BUG FIX: Non Tieup sathi effectivePrice nasel tr 50000 standard loan target default dila ahe जेणेकरून सुरुवातीला लिस्ट ब्लँक पडणार नाही
                 let checkPrice = effectivePrice > 0 ? loanCapPrice : 50000;
                 let absoluteMax = Math.min(checkPrice, nbfcMaxL); 
                 if (prod.isNonTieup) {
@@ -1666,8 +1666,8 @@
 
         document.getElementById(`body_${pIdx}`).innerHTML = prod.calculatedData.map(d => {
             let curLTV = d.curLTV; 
-            // BUG FIX: Non Tieup (isNT) sathi ltv Breach लाल रंगाचे हायलाईट काढले जेणेकरून मॅन्युअल व्हॅल्यू इनपुट विस्कळीत होणार नाही
-            let isLtvB = isNT ? false : (curLTV > ltvLimit); 
+            // BUG RESOLVED: NON TIEUP asel tari actual scheme LTV limit barobar validation check karel (उदा. ७० % पेक्षा जास्त असेल तर Breach दाखवेल)
+            let isLtvB = (curLTV > ltvLimit); 
             let isBoundB = false; if (isNT && prod.inputs.mrp > 0) { if (d.loan < d.minLoan || d.loan > d.maxLoan) isBoundB = true; }
             let isInactive = d.inactive; let rowClass = (d.isFixed ? "fixed-row " : "") + (isLtvB || isBoundB ? "ltv-breach " : "") + (isInactive ? "inactive-row " : "");
             let toggleBtnHTML = isInactive ? `<button class="action-btn" style="background:var(--success);" onclick="toggleInactive(${pIdx}, ${d.dIdx})">ADD</button>` : `<button class="action-btn" style="background:var(--danger);" onclick="toggleInactive(${pIdx}, ${d.dIdx})">DISABLE</button>`;
@@ -1681,12 +1681,12 @@
                 <td class="hidden-col" id="ltv_${pIdx}_${d.dIdx}">${Math.round(d.curLTV)}%</td>
                 <td class="hidden-col" id="extra_${pIdx}_${d.dIdx}" style="font-weight:900; color:var(--danger);">₹${Math.round(d.extra).toLocaleString()}</td>
                 ${isNT ? `<td class="bound-col">${d.minLoan > 0 ? '₹' + d.minLoan : '0'}</td><td class="bound-col">${d.maxLoan < 9999999 ? '₹' + d.maxLoan : 'NO'}</td>` : `<td style="color:#777; font-size:8px;">₹${Math.floor(d.nbfcMaxL)}</td>`}
-                <td><div class="stepper"><button class="step-btn" onclick="step(${pIdx},${d.dIdx},-${d.isFixed ? d.fixedEmi : 1000})">-</button><input id="l_${pIdx}_${d.dIdx}" type="number" value="${Math.floor(d.loan)}" class="step-inp" oninput="manual(${pIdx},${d.dIdx})"><button class="step-btn" onclick="step(${pIdx},${d.dIdx},${d.isFixed ? d.fixedEmi : 1000})">+</button></div></td>
-                <td id="ta_${pIdx}_${d.dIdx}" style="font-weight:900;">${d.currentTenure}/${d.advEmi}</td>
-                <td id="dp_${pIdx}_${d.dIdx}" style="color:var(--success); font-weight:950;">₹${Math.round(d.dp).toLocaleString()}</td>
-                <td id="emi_${pIdx}_${d.dIdx}" style="color:var(--primary); font-weight:950;">₹${Math.round(d.emi).toLocaleString()}</td>
-                <td id="inst_${pIdx}_${d.dIdx}" style="font-weight:900;">${d.inst}</td>
-                <td id="day_${pIdx}_${d.dIdx}" style="color:var(--success); font-weight:950;">₹${Math.round(d.daily).toLocaleString()}</td>
+                <td><div class="stepper"><button class="step-btn" onclick="step(${pIdx},${d.dIdx},-${d.isFixed ? d.fixedEmi : 1000})">-</button><input id="l_${pIdx}_${dIdx}" type="number" value="${Math.floor(d.loan)}" class="step-inp" oninput="manual(${pIdx},${d.dIdx})"><button class="step-btn" onclick="step(${pIdx},${d.dIdx},${d.isFixed ? d.fixedEmi : 1000})">+</button></div></td>
+                <td id="ta_${pIdx}_${dIdx}" style="font-weight:900;">${d.currentTenure}/${d.advEmi}</td>
+                <td id="dp_${pIdx}_${dIdx}" style="color:var(--success); font-weight:950;">₹${Math.round(d.dp).toLocaleString()}</td>
+                <td id="emi_${pIdx}_${dIdx}" style="color:var(--primary); font-weight:950;">₹${Math.round(d.emi).toLocaleString()}</td>
+                <td id="inst_${pIdx}_${dIdx}" style="font-weight:900;">${d.inst}</td>
+                <td id="day_${pIdx}_${dIdx}" style="color:var(--success); font-weight:950;">₹${Math.round(d.daily).toLocaleString()}</td>
                 <td>
                     <div style="display:flex; flex-direction:column; gap:2px; min-width: 40px;">
                         <button class="action-btn btn-copy" onclick="copySchemeText(${pIdx}, ${d.dIdx}, this)">COPY</button>
@@ -1737,8 +1737,8 @@
         d.curLTV = d.currentTenure > 0 ? ((d.currentTenure - d.advEmi) / d.currentTenure) * 100 : 0; let ltvCell = document.getElementById(`ltv_${pIdx}_${dIdx}`); if(ltvCell) ltvCell.innerText = Math.round(d.curLTV) + "%";
         let extraCell = document.getElementById(`extra_${pIdx}_${dIdx}`); if(extraCell) extraCell.innerText = "₹" + Math.round(d.extra).toLocaleString();
         
-        // BUG FIX: Non Tieup sathi row breach condition bypass केली जेणेकरून युझरला कस्टमायझेशन सहज करता येईल
-        let isB = prod.isNonTieup ? (loan > 0 && (loan < d.minLoan || loan > d.maxLoan)) : (d.curLTV > ltvLimit);
+        // BUG RESOLVED: Non-tieup proper check karel, LTV breach sathi high-contrast red alert background apply hoil
+        let isB = (d.curLTV > ltvLimit) || (prod.isNonTieup && loan > 0 && (loan < d.minLoan || loan > d.maxLoan));
         let rowEl = document.getElementById(`row_${pIdx}_${dIdx}`); if(rowEl) isB ? rowEl.classList.add('ltv-breach') : rowEl.classList.remove('ltv-breach');
         let dbdCell = document.querySelector(`#row_${pIdx}_${dIdx} td:nth-child(2)`); if(dbdCell) dbdCell.innerHTML = `${+parseFloat(d.dbd).toFixed(3)}%<br><span style="color:var(--danger); font-size:8px; font-weight:900;">₹${Math.round(d.dbdAmt||0).toLocaleString()}</span>`;
         let roiCell = document.querySelector(`#row_${pIdx}_${dIdx} td:nth-child(4)`); if(roiCell) roiCell.innerHTML = `${+parseFloat(d.roi).toFixed(2)}%<br><span style="color:var(--danger); font-size:8px; font-weight:900;">₹${Math.round(d.roiAmt||0).toLocaleString()}</span>`;
@@ -1748,7 +1748,7 @@
 
     function sortM(pIdx, key) { 
         let conf = sortConfigs[pIdx]; conf.dir = (conf.key === key && conf.dir === 'asc') ? 'desc' : 'asc'; conf.key = key; renderRows(pIdx); 
-        customerQueue[activeCustomerIndex].sortConfigs = sortConfigs; saveQueueToLocal(); 
+        customerQueue[activeCustomerIndex].products = current_products; saveQueueToLocal(); 
     }
     
     function copySchemeText(pIdx, dIdx, btnElement) {
@@ -1759,7 +1759,7 @@
 
         let textToCopy = `${custDetails}📱 *${prod.name}*\n${invAmt > 0 ? `*INVOICE AMOUNT:* ₹${invAmt}\n\n` : "" }✅ *Scheme:* ${d.currentTenure}/${d.advEmi}\n💰 *DP:* ₹${Math.round(d.dp).toLocaleString()}\n🗓️ *EMI:* ₹${Math.round(d.emi).toLocaleString()} x ${d.inst}\n✨ *Daily EMI:* ₹${Math.round(d.daily).toLocaleString()}`;
         function showSuccess() { let originalText = btnElement.innerText; btnElement.innerText = "COPIED!"; btnElement.style.background = "var(--success)"; setTimeout(() => { btnElement.innerText = originalText; btnElement.style.background = "var(--primary)"; }, 2000); }
-        if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(textToCopy).then(showSuccess).catch(() => fallbackCopy(textToCopy, showSuccess)); } else { fallbackCopy(textToCopy, showSuccess); }
+        if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(textToCopy).then(showSuccess).catch(() => fallbackCopy(textToCopy, showSuccess)); } else { fallbackCopy(textToCopy, successCb); }
     }
 
     function fallbackCopy(text, successCb) {
@@ -1835,8 +1835,9 @@
         let productsToRender = window.tempImageGenIndices.map(idx => current_products[idx]);
 
         productsToRender.forEach((prod) => {
+            // BUG RESOLVED: Non tie-up sathi suddha image generation chya veli ltvLimit rigid track path karel
             let validS = prod.calculatedData.filter(d => { 
-                let isLtvB = prod.isNonTieup ? false : (d.curLTV > ltvLimit); 
+                let isLtvB = (d.curLTV > ltvLimit); 
                 let isBoundB = false; if (prod.isNonTieup && prod.inputs.mrp > 0) { if (d.loan < d.minLoan || d.loan > d.maxLoan) isBoundB = true; } return !isLtvB && !isBoundB && !d.inactive; 
             });
             if(validS.length === 0) return; hasV = true;
