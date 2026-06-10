@@ -103,6 +103,8 @@
     <h1>🚀 Persistent Portal Master</h1>
 </header>
 
+<img id="generatedImage" style="display:none;" />
+
 <main>
     <div id="unifiedHome">
         <div class="forms-row">
@@ -381,50 +383,84 @@
     </div>
 
     <div id="fastCalcModal" class="modal">
-        <div class="modal-content" style="max-width:320px;">
-            <h3 style="margin-top:0; color:var(--bajaj-blue); font-size:15px; border-bottom: 2px solid #ddd; padding-bottom: 6px;">🧮 ZATPAT CALCULATOR</h3>
-            
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:12px;">
-                <div style="grid-column: span 2;">
-                    <label>INVOICE AMOUNT / LOAN (₹)</label>
-                    <input type="number" id="fcInv" placeholder="Enter Amount">
-                </div>
-                <div>
-                    <label>TENURE (Months)</label>
-                    <input type="number" id="fcTenure" placeholder="e.g. 12">
-                </div>
-                <div>
-                    <label>ADVANCE EMI</label>
-                    <input type="number" id="fcAdv" placeholder="e.g. 4">
-                </div>
-                <div>
-                    <label>ROI (%)</label>
-                    <input type="number" id="fcRoi" placeholder="0" step="0.01">
-                </div>
-                <div>
-                    <label>PF (₹)</label>
-                    <input type="number" id="fcPf" placeholder="0">
-                </div>
+        <div class="modal-content" style="max-width:480px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--bajaj-blue); padding-bottom: 6px; margin-bottom: 10px;">
+                <h3 style="margin:0; color:var(--bajaj-blue); font-size:15px; font-weight:900;">🧮 PRO ZATPAT CALCULATOR</h3>
+                <button onclick="document.getElementById('fastCalcModal').style.display='none'" style="background:none; border:none; color:var(--danger); font-weight:bold; cursor:pointer; font-size:14px;">✖</button>
             </div>
             
-            <button onclick="calculateFastData()" style="width:100%; background:var(--bajaj-blue); color:white; padding:10px; font-weight:900; font-size:11px; border-radius:4px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">⚡ CALCULATE</button>
-            
-            <div id="fcResult" style="display:none; margin-top:12px; background:#f8f9fa; border:1px solid var(--success); border-left:4px solid var(--success); padding:10px; border-radius:4px;">
-                <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-                    <span style="font-weight:900; color:#555; font-size:10px;">NET DP:</span> 
-                    <span id="fcResDp" style="color:var(--success); font-weight:900; font-size:12px;">₹0</span>
+            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:6px; margin-bottom:12px; background: #f8f9fa; padding: 8px; border-radius: 6px; border: 1px solid #eee;">
+                
+                <div style="grid-column: span 3; margin-bottom:4px;">
+                    <label style="color:var(--primary);">INVOICE AMOUNT / MRP (₹)</label>
+                    <input type="number" id="fcInv" placeholder="Enter Amount" style="border-color:var(--primary);">
                 </div>
-                <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-                    <span style="font-weight:900; color:#555; font-size:10px;">MONTHLY EMI:</span> 
-                    <span id="fcResEmi" style="color:var(--primary); font-weight:900; font-size:12px;">₹0</span>
+                <div><label>TENURE (Max)</label><input type="number" id="fcTenure" placeholder="0"></div>
+                <div><label>ADVANCE EMI</label><input type="number" id="fcAdv" placeholder="0"></div>
+                <div><label>ROI (%)</label><input type="number" id="fcRoi" placeholder="0" step="0.01"></div>
+                
+                <div><label>PF (₹)</label><input type="number" id="fcPf" placeholder="0"></div>
+                <div><label>DBD (%)</label><input type="number" id="fcDbd" placeholder="0" step="0.01"></div>
+                <div><label>CUSTOMER TYPE</label>
+                    <select id="fcCustType">
+                        <option value="NEW">NEW</option>
+                        <option value="EMI CARD">EMI CARD</option>
+                        <option value="VIRTUAL">VIRTUAL</option>
+                        <option value="W/O CARD">W/O CARD</option>
+                    </select>
+                </div>
+
+                <div style="grid-column: span 3; border-top: 1px dashed #ccc; margin-top:4px; padding-top:6px;"></div>
+                
+                <div><label>FIXED EMI (₹)</label><input type="number" id="fcFixed" placeholder="Optional"></div>
+                <div><label>DAILY EMI CAP</label><input type="number" id="fcCap" placeholder="MAX"></div>
+                <div><label>TARGET DP (₹)</label><input type="number" id="fcTarget" placeholder="Reverse Calc"></div>
+
+                <div style="grid-column: span 3; border-top: 1px dashed #ccc; margin-top:4px; padding-top:6px;">
+                    <label style="color:var(--indigo);">🛡️ INSURANCE & COMPONENTS</label>
+                </div>
+
+                <div><label>GTL (₹)</label>
+                    <select id="fcGtl">
+                        <option value="0">0</option>
+                        <option value="699">699</option>
+                        <option value="1099">1099</option>
+                        <option value="1199">1199</option>
+                        <option value="1499">1499</option>
+                        <option value="1799">1799</option>
+                        <option value="2398">2398</option>
+                    </select>
+                </div>
+                <div><label>RFC (₹)</label><input type="number" id="fcRfc" placeholder="0"></div>
+                <div><label>EXW (₹)</label><input type="number" id="fcExw" placeholder="0"></div>
+                
+                <div><label>NIVA BUPA (₹)</label><input type="number" id="fcNiva" placeholder="0"></div>
+                <div><label>MARGIN (₹)</label><input type="number" id="fcMargin" placeholder="0"></div>
+                <div><label>DEALER (₹)</label><input type="number" id="fcDealer" placeholder="0"></div>
+
+            </div>
+            
+            <button onclick="calculateFastData()" style="width:100%; background:var(--success); color:white; padding:10px; font-weight:900; font-size:12px; border-radius:4px; box-shadow: 0 2px 4px rgba(39,174,96,0.3); text-transform:uppercase;">⚡ Calculate Result</button>
+            
+            <div id="fcResult" style="display:none; margin-top:12px; background:#fff; border:2px solid var(--primary); padding:10px; border-radius:6px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+                <div style="display:flex; justify-content:space-between; margin-bottom:6px; border-bottom:1px solid #eee; padding-bottom:4px;">
+                    <span style="font-weight:900; color:#555; font-size:11px;">LOAN AMOUNT:</span> 
+                    <span id="fcResLoan" style="color:var(--dark); font-weight:900; font-size:13px;">₹0</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:6px; border-bottom:1px solid #eee; padding-bottom:4px;">
+                    <span style="font-weight:900; color:#555; font-size:11px;">NET DP:</span> 
+                    <span id="fcResDp" style="color:var(--success); font-weight:900; font-size:14px;">₹0</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:6px; border-bottom:1px solid #eee; padding-bottom:4px;">
+                    <span style="font-weight:900; color:#555; font-size:11px;">MONTHLY EMI:</span> 
+                    <span id="fcResEmi" style="color:var(--primary); font-weight:900; font-size:14px;">₹0</span>
                 </div>
                 <div style="display:flex; justify-content:space-between;">
-                    <span style="font-weight:900; color:#555; font-size:10px;">DAILY EMI:</span> 
-                    <span id="fcResDaily" style="color:#d35400; font-weight:900; font-size:12px;">₹0</span>
+                    <span style="font-weight:900; color:#555; font-size:11px;">DAILY EMI:</span> 
+                    <span id="fcResDaily" style="color:#d35400; font-weight:900; font-size:14px;">₹0</span>
                 </div>
+                <div id="fcResTa" style="text-align:center; font-size:10px; font-weight:bold; color:var(--indigo); margin-top:6px;">T/A: 0/0 | M: 0</div>
             </div>
-
-            <button onclick="document.getElementById('fastCalcModal').style.display='none'" style="width:100%; background:var(--danger); color:white; padding:8px; margin-top:12px; font-weight:900; border-radius:4px;">✖ CLOSE</button>
         </div>
     </div>
 
@@ -529,7 +565,7 @@
     let parsedSheet2Data = [];
 
     let customerQueue = [];
-    let recycleBin = []; // To store deleted customers
+    let recycleBin = []; 
     let activeCustomerIndex = -1;
     let selectedQueueIndex = -1; 
     let tempPendingProduct = null; 
@@ -674,14 +710,13 @@
         updateUniversalActionButtons();
     };
 
-    // --- FAST CALCULATOR LOGIC ---
+    // --- ADVANCED FAST CALCULATOR LOGIC ---
     function openFastCalculator() {
         document.getElementById('fcResult').style.display = 'none';
-        document.getElementById('fcInv').value = '';
-        document.getElementById('fcTenure').value = '';
-        document.getElementById('fcAdv').value = '';
-        document.getElementById('fcRoi').value = '';
-        document.getElementById('fcPf').value = '';
+        let fields = ['fcInv', 'fcTenure', 'fcAdv', 'fcRoi', 'fcPf', 'fcDbd', 'fcFixed', 'fcCap', 'fcTarget', 'fcRfc', 'fcExw', 'fcNiva', 'fcMargin', 'fcDealer'];
+        fields.forEach(id => document.getElementById(id).value = '');
+        document.getElementById('fcGtl').value = '0';
+        document.getElementById('fcCustType').value = 'NEW';
         document.getElementById('fastCalcModal').style.display = 'flex';
     }
 
@@ -691,30 +726,92 @@
         let adv = parseInt(document.getElementById('fcAdv').value) || 0;
         let roi = parseFloat(document.getElementById('fcRoi').value) || 0;
         let pf = parseFloat(document.getElementById('fcPf').value) || 0;
+        let dbd = parseFloat(document.getElementById('fcDbd').value) || 0;
+        let custType = document.getElementById('fcCustType').value;
+        
+        let fixedEmi = parseFloat(document.getElementById('fcFixed').value) || 0;
+        let cap = parseFloat(document.getElementById('fcCap').value) || 0;
+        let target = parseFloat(document.getElementById('fcTarget').value) || 0;
 
-        if (inv <= 0 || tenure <= 0) {
-            alert("⚠️ Kripya Invoice Amount aani Tenure enter kara!");
+        let gtl = parseFloat(document.getElementById('fcGtl').value) || 0;
+        let rfc = parseFloat(document.getElementById('fcRfc').value) || 0;
+        let exw = parseFloat(document.getElementById('fcExw').value) || 0;
+        let niva = parseFloat(document.getElementById('fcNiva').value) || 0;
+        let margin = parseFloat(document.getElementById('fcMargin').value) || 0;
+        let dealer = parseFloat(document.getElementById('fcDealer').value) || 0;
+
+        if (inv <= 0 || (tenure <= 0 && fixedEmi <= 0)) {
+            alert("⚠️ Kripya Invoice Amount aani Tenure (kiva Fixed EMI) enter kara!");
             return;
         }
 
-        let inst = tenure - adv;
-        if (inst < 1) inst = 1;
+        let fee = (custType === 'EMI CARD') ? 270 : (custType === 'W/O CARD' ? 320 : 850);
+        let totalFees = fee + niva + margin + dealer;
+        let insTotal = gtl + rfc + exw;
+        
+        let dbdRate = (dbd * 1.18 / 100);
+        let roiRate = roi / 1200;
+        let roiRateDP = roiRate * adv;
+        
+        let loan = inv;
+        let emi = 0;
+        let dpRounded = 0;
+        let inst = 0;
+        let finalTenure = tenure;
 
-        let loan = inv; 
-        let roiRate = roi / 1200; 
-        
-        let roiInEmi = loan * roiRate;
-        let finalEmi = (loan / tenure) + roiInEmi;
-        
-        let roiInDp = loan * roiRate * adv;
-        let dpExact = (finalEmi * adv) + pf + roiInDp;
-        
-        let dpRounded = Math.ceil(dpExact / 10) * 10;
-        let dailyEmi = finalEmi / 30;
+        if (fixedEmi > 0) {
+            finalTenure = Math.floor(loan / fixedEmi) || 1;
+            
+            if (target > 0) {
+                let numerator = target - inv - (fixedEmi * adv) - pf - totalFees; 
+                let denominator = dbdRate + roiRateDP - 1; 
+                let solvedLoan = numerator / denominator;
+                let solvedTenure = Math.floor(solvedLoan / fixedEmi);
+                loan = Math.max(0, solvedTenure * fixedEmi); 
+                finalTenure = Math.floor(loan / fixedEmi) || 1;
+            } else {
+                loan = finalTenure * fixedEmi;
+            }
 
+            inst = finalTenure - adv; if (inst < 1) inst = 1;
+            let roiInEmi = loan * roiRate;
+            emi = fixedEmi + (insTotal / inst) + roiInEmi;
+            
+            let roiInDp = loan * roiRateDP;
+            let dpExact = inv - loan + (fixedEmi * adv) + (loan * dbdRate) + pf + totalFees + roiInDp;
+            dpRounded = Math.ceil(dpExact / 10) * 10;
+
+        } else {
+            if (target > 0 && inv > 0) {
+                let advRate = adv / tenure; 
+                let numerator = target - inv - pf - totalFees; 
+                let denominator = advRate + dbdRate + roiRateDP - 1; 
+                let solvedLoan = numerator / denominator; 
+                loan = Math.min(inv, Math.max(0, Math.floor(solvedLoan)));
+            }
+
+            inst = tenure - adv; if (inst < 1) inst = 1;
+            let roiInEmi = loan * roiRate;
+            emi = (loan / tenure) + (insTotal / inst) + roiInEmi;
+
+            if (cap > 0 && (emi / 30) > cap) {
+                loan = ((cap * 30) - (insTotal / inst)) / ((1 / tenure) + roiRate);
+                roiInEmi = loan * roiRate;
+                emi = (loan / tenure) + (insTotal / inst) + roiInEmi;
+            }
+
+            let roiInDp = loan * roiRateDP;
+            let dpExact = inv - loan + ((loan / tenure) * adv) + (loan * dbdRate) + pf + totalFees + roiInDp;
+            dpRounded = Math.ceil(dpExact / 10) * 10;
+        }
+
+        let dailyEmi = emi / 30;
+
+        document.getElementById('fcResLoan').innerText = "₹" + Math.floor(loan).toLocaleString();
         document.getElementById('fcResDp').innerText = "₹" + Math.round(dpRounded).toLocaleString();
-        document.getElementById('fcResEmi').innerText = "₹" + Math.round(finalEmi).toLocaleString();
+        document.getElementById('fcResEmi').innerText = "₹" + Math.round(emi).toLocaleString();
         document.getElementById('fcResDaily').innerText = "₹" + Math.round(dailyEmi).toLocaleString();
+        document.getElementById('fcResTa').innerText = `T/A: ${finalTenure}/${adv} | M: ${inst}`;
         
         document.getElementById('fcResult').style.display = 'block';
     }
@@ -813,7 +910,6 @@
     function uniCopy() { if(selectedQueueIndex !== -1) copyCustomerDetails(selectedQueueIndex, document.getElementById('uniCopyBtn')); }
     function uniSelect() { if(selectedQueueIndex !== -1) setActiveCustomer(selectedQueueIndex); }
     
-    // --- Edit Customer Logic ---
     function uniEdit() {
         if(selectedQueueIndex === -1) return;
         let c = customerQueue[selectedQueueIndex];
@@ -846,7 +942,6 @@
         closeCustomerEdit();
     }
 
-    // --- Delete & Recycle Bin Logic ---
     async function uniDelete() { if(selectedQueueIndex !== -1) await removeCustomer(selectedQueueIndex); }
 
     async function removeCustomer(idx) {
@@ -910,7 +1005,7 @@
         if (confirmDelete) {
             recycleBin = [];
             await saveToDB('persistent_recycle', recycleBin);
-            openRecycleBin(); // Update UI
+            openRecycleBin(); 
             alert("Recycle Bin completely emptied!");
         }
     }
@@ -1118,7 +1213,6 @@
     }
     function closeManualModal() { document.getElementById('manualModal').style.display='none'; }
 
-    // --- Edited Scheme Edit logic ---
     function openEditSchemeModal(pIdx, dIdx) {
         let scheme = current_products[pIdx].schemes[dIdx];
         document.getElementById('editPIdx').value = pIdx; 
@@ -1512,11 +1606,11 @@
                 <td class="hidden-col" id="extra_${pIdx}_${d.dIdx}" style="font-weight:900; color:var(--danger);">₹${Math.round(d.extra).toLocaleString()}</td>
                 ${isNT ? '<td class="bound-col">'+(d.minLoan>0?'₹'+d.minLoan:'0')+'</td><td class="bound-col">'+(d.maxLoan<9999999?'₹'+d.maxLoan:'NO')+'</td>' : '<td style="color:#777; font-size:8px;">₹'+Math.floor(d.nbfcMaxL)+'</td>'}
                 <td><div class="stepper"><button class="step-btn" onclick="step(${pIdx},${d.dIdx},-${d.isFixed ? d.fixedEmi : 1000})">-</button><input id="l_${pIdx}_${d.dIdx}" type="number" value="${Math.floor(d.loan)}" class="step-inp" oninput="manual(${pIdx},${d.dIdx})"><button class="step-btn" onclick="step(${pIdx},${d.dIdx},${d.isFixed ? d.fixedEmi : 1000})">+</button></div></td>
-                <td id="ta_${pIdx}_${d.dIdx}" style="font-weight:900;">${d.currentTenure}/${d.advEmi}</td>
-                <td id="dp_${pIdx}_${d.dIdx}" style="color:var(--success); font-weight:950;">₹${Math.round(d.dp).toLocaleString()}</td>
-                <td id="emi_${pIdx}_${d.dIdx}" style="color:var(--primary); font-weight:950;">₹${Math.round(d.emi).toLocaleString()}</td>
-                <td id="inst_${pIdx}_${d.dIdx}" style="font-weight:900;">${d.inst}</td>
-                <td id="day_${pIdx}_${d.dIdx}" style="color:var(--success); font-weight:950;">₹${Math.round(d.daily).toLocaleString()}</td>
+                <td id="ta_${pIdx}_${dIdx}" style="font-weight:900;">${d.currentTenure}/${d.advEmi}</td>
+                <td id="dp_${pIdx}_${dIdx}" style="color:var(--success); font-weight:950;">₹${Math.round(d.dp).toLocaleString()}</td>
+                <td id="emi_${pIdx}_${dIdx}" style="color:var(--primary); font-weight:950;">₹${Math.round(d.emi).toLocaleString()}</td>
+                <td id="inst_${pIdx}_${dIdx}" style="font-weight:900;">${d.inst}</td>
+                <td id="day_${pIdx}_${dIdx}" style="color:var(--success); font-weight:950;">₹${Math.round(d.daily).toLocaleString()}</td>
                 <td>
                     <div style="display:flex; flex-direction:column; gap:2px; min-width: 40px;">
                         <button class="action-btn btn-copy" onclick="copySchemeText(${pIdx}, ${d.dIdx}, this)">COPY</button>
