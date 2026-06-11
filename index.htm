@@ -130,7 +130,7 @@
                     </div>
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-bottom:10px;">
                         <div><label>MAX LTV %</label><input type="number" id="cqLtv" value="100" max="100" oninput="if(this.value>100)this.value=100;"></div>
-                        <div><label>DAILY EMI CAPPING</label><input type="number" id="cqCap" placeholder="₹ Cap"></div>
+                        <div><label>EMI CAPPING</label><input type="number" id="cqCap" placeholder="₹ Cap"></div>
                     </div>
                 </div>
                 
@@ -206,7 +206,7 @@
             </div>
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-bottom:12px;">
                 <div><label>MAX LTV %</label><input type="number" id="ecLtv" max="100" oninput="if(this.value>100)this.value=100;"></div>
-                <div><label>DAILY EMI CAPPING</label><input type="number" id="ecCap"></div>
+                <div><label>EMI CAPPING</label><input type="number" id="ecCap"></div>
             </div>
             <div style="display:flex; gap:8px;">
                 <button onclick="saveCustomerEdit()" style="flex:2; background:var(--success); color:white; padding:8px;">SAVE CHANGES</button>
@@ -282,7 +282,7 @@
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:12px;">
                 <div><label>MRP (₹)</label><input type="number" id="compMrp" placeholder="0" oninput="compMrpChanged()"></div>
                 <div><label>INV (₹)</label><input type="number" id="compInv" placeholder="0"></div>
-                <div><label>DAILY EMI CAPPING (₹)</label><input type="number" id="compCap" placeholder="MAX"></div>
+                <div><label>EMI CAPPING (₹)</label><input type="number" id="compCap" placeholder="MAX"></div>
                 <div><label>TARGET DP (₹)</label><input type="number" id="compTarget" placeholder="0"></div>
                 <div><label>GTL (₹)</label>
                     <select id="compGtl">
@@ -438,7 +438,7 @@
                 <div style="grid-column: span 3; border-top: 1px dashed #ccc; margin-top:4px; padding-top:6px;"></div>
                 
                 <div><label>FIXED EMI (₹)</label><input type="number" id="fcFixed" placeholder="Optional" oninput="calculateFastData();"></div>
-                <div><label>DAILY EMI CAP</label><input type="number" id="fcCap" placeholder="MAX" oninput="calculateFastData();"></div>
+                <div><label>EMI CAPPING</label><input type="number" id="fcCap" placeholder="MAX" oninput="calculateFastData();"></div>
                 <div><label>TARGET DP (₹)</label><input type="number" id="fcTarget" placeholder="Reverse Calc" oninput="calculateFastData();"></div>
 
                 <div style="grid-column: span 3; border-top: 1px dashed #ccc; margin-top:4px; padding-top:6px;">
@@ -506,7 +506,7 @@
             <span style="color: #87c3f7;">LIMIT:</span> <span id="infoLimit" class="highlight">₹0</span> |
             <span style="color: #87c3f7;">TYPE:</span> <span id="infoType" style="color: #fff;">-</span> |
             <span style="color: #87c3f7;">LTV:</span> <span id="infoLtv" style="color: #fff;">0%</span> |
-            <span style="color: #87c3f7;">DAILY EMI CAP:</span> <span id="infoCap" style="color: #fff;">-</span>
+            <span style="color: #87c3f7;">EMI CAPPING:</span> <span id="infoCap" style="color: #fff;">-</span>
         </div>
         
         <button onclick="openAddProductModal()" style="width: 100%; background:var(--warning); color:#000; padding:10px; border-radius:6px; font-size:11px; font-weight:900; margin-bottom:8px; border: 1.5px solid #d35400; box-shadow: 0 2px 5px rgba(0,0,0,0.1); cursor:pointer;">➕ ADD NEW PRODUCT (SEARCH / NON-TIEUP / MANUAL)</button>
@@ -863,8 +863,8 @@
             let roiInEmi = loan * roiRate;
             emi = (loan / tenure) + (insTotal / inst) + roiInEmi;
 
-            if (cap > 0 && (emi / 30) > cap) {
-                loan = ((cap * 30) - (insTotal / inst)) / ((1 / tenure) + roiRate);
+            if (cap > 0 && emi > cap) {
+                loan = (cap - (insTotal / inst)) / ((1 / tenure) + roiRate);
                 roiInEmi = loan * roiRate;
                 emi = (loan / tenure) + (insTotal / inst) + roiInEmi;
             }
@@ -921,7 +921,7 @@
 
     function copyCustomerDetails(idx, btnElement) {
         let c = customerQueue[idx];
-        let cappingLine = (c.cap && c.cap !== "") ? `\nDAILY EMI CAP- ${c.cap}` : "";
+        let cappingLine = (c.cap && c.cap !== "") ? `\nEMI CAPPING- ${c.cap}` : "";
         let textToCopy = `CUSTOMER NAME- ${c.name}\nNUMBER- ${c.mobile || ''}\nLIMIT- ${c.limit}\nLTV- ${c.ltv}${cappingLine}`;
         
         function showSuccess() { 
@@ -1115,7 +1115,7 @@
                     <span style="font-size:8px; color:#888; font-weight:bold;">${c.timestamp || ''}</span>
                 </div>
                 <div style="font-size:9px; color:#555; font-weight:bold;">
-                    LMT: <span style="color:var(--success)">₹${c.limit}</span> | LTV: ${c.ltv}% | DAILY EMI CAP: ${c.cap ? '₹'+c.cap : 'NO'} | ${c.type}
+                    LMT: <span style="color:var(--success)">₹${c.limit}</span> | LTV: ${c.ltv}% | EMI CAPPING: ${c.cap ? '₹'+c.cap : 'NO'} | ${c.type}
                     ${isActive ? '<span style="float:right; color:var(--primary); font-size:8px;">[ACTIVE ✓]</span>' : ''}
                 </div>
             </div>`;
@@ -1535,7 +1535,7 @@
                     </div>
                 </div>
                 <div class="control-grid" id="cg_${pIdx}" style="display:${gridStyle};">
-                    <div><label>DAILY EMI CAP</label><input type="number" id="capInp_${pIdx}" value="${prod.inputs.cap}" placeholder="MAX" oninput="updateVal(${pIdx},'cap',this.value)"></div>
+                    <div><label>EMI CAPPING</label><input type="number" id="capInp_${pIdx}" value="${prod.inputs.cap}" placeholder="MAX" oninput="updateVal(${pIdx},'cap',this.value)"></div>
                     <div><label>TARGET DP</label><input type="number" value="${prod.inputs.target}" placeholder="0" oninput="updateVal(${pIdx},'target',this.value)"></div>
                     <div><label>GTL</label><select id="gtl_${pIdx}" onchange="updateVal(${pIdx},'gtl',this.value)">
                         <option value="0" ${prod.inputs.gtl == 0 ? 'selected' : ''}>0</option>
@@ -1660,7 +1660,7 @@
                 loan = absoluteMax;
                 if(parseFloat(inp.target) > 0 && effectivePrice > 0) { let advRate = s.advEmi / s.tenure; let numerator = parseFloat(inp.target) - effectivePrice - s.pf - totalFees; let denominator = advRate + dbdRate + roiRateDP - 1; let solvedLoan = numerator / denominator; loan = Math.min(loan, Math.max(0, Math.floor(solvedLoan))); }
                 inst = s.tenure - s.advEmi; if(inst < 1) inst = 1; let insTotal = (parseFloat(inp.gtl)||0)+(parseFloat(inp.rfc)||0)+(parseFloat(inp.exw)||0); let roiInEmi = loan * roiRate; emi = (loan / s.tenure) + (insTotal / inst) + roiInEmi;
-                if(emi/30 > parseFloat(inp.cap) && parseFloat(inp.cap) > 0) { loan = ((parseFloat(inp.cap)*30) - (insTotal/inst)) / ( (1/s.tenure) + roiRate ); roiInEmi = loan * roiRate; emi = (loan / s.tenure) + (insTotal / inst) + roiInEmi; }
+                if(emi > parseFloat(inp.cap) && parseFloat(inp.cap) > 0) { loan = (parseFloat(inp.cap) - (insTotal/inst)) / ( (1/s.tenure) + roiRate ); roiInEmi = loan * roiRate; emi = (loan / s.tenure) + (insTotal / inst) + roiInEmi; }
                 let roiInDp = loan * roiRateDP; dpExact = effectivePrice - loan + ((loan/s.tenure) * s.advEmi) + (loan * dbdRate) + s.pf + totalFees + roiInDp;
             }
             if(dpExact > 0) dpRounded = Math.ceil(dpExact / 10) * 10; else dpRounded = dpExact;
@@ -1764,7 +1764,7 @@
     function copySchemeText(pIdx, dIdx, btnElement) {
         let prod = current_products[pIdx], d = prod.calculatedData.find(x => x.dIdx === dIdx); let invAmt = prod.inputs.inv > 0 ? prod.inputs.inv : prod.inputs.mrp;
         let c = customerQueue[activeCustomerIndex];
-        let cappingLine = (c.cap && c.cap !== "") ? `\nDAILY EMI CAP- ${c.cap}` : "";
+        let cappingLine = (c.cap && c.cap !== "") ? `\nEMI CAPPING- ${c.cap}` : "";
         let custDetails = `CUSTOMER NAME- ${c.name}\nNUMBER- ${c.mobile || ''}\nLIMIT- ${c.limit}\nLTV- ${c.ltv}${cappingLine}\n\n`;
 
         let textToCopy = `${custDetails}📱 *${prod.name}*\n${invAmt > 0 ? `*INVOICE AMOUNT:* ₹${invAmt}\n\n` : "" }✅ *Scheme:* ${d.currentTenure}/${d.advEmi}\n💰 *DP:* ₹${Math.round(d.dp).toLocaleString()}\n🗓️ *EMI:* ₹${Math.round(d.emi).toLocaleString()} x ${d.inst}\n✨ *Daily EMI:* ₹${Math.round(d.daily).toLocaleString()}`;
@@ -1837,7 +1837,7 @@
                 <span style="background:#f0f0f0; padding:4px 10px; border-radius:4px;">LIMIT: ₹${c?.limit || 0}</span>
                 <span style="background:#f0f0f0; padding:4px 10px; border-radius:4px;">LTV: ${c?.ltv || 100}%</span>
                 <span style="background:#f0f0f0; padding:4px 10px; border-radius:4px;">TYPE: ${c?.type || 'NEW'}</span>
-                ${c?.cap ? `<span style="background:#f0f0f0; padding:4px 10px; border-radius:4px;">DAILY EMI CAP: ₹${c.cap}</span>` : ''}
+                ${c?.cap ? `<span style="background:#f0f0f0; padding:4px 10px; border-radius:4px;">EMI CAPPING: ₹${c.cap}</span>` : ''}
             </div>
         </div>`;
         
