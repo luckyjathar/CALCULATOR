@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Persistent Portal V76.4 - Non Tie-up LTV Constraint Edition</title>
+    <title>Persistent Portal V76.5 - Non Tie-up Double Fix Edition</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
@@ -59,7 +59,7 @@
         .bound-col { color: #d35400; font-weight: 800; font-size: 8px; }
 
         .stepper { display: flex; align-items: center; justify-content: center; gap: 2px; }
-        .step-btn { width: 18px; height: 22px; background: var(--primary); color: white; border-radius: 3px; font-size: 12px; cursor: pointer; padding:0; }
+        .step-btn { width: 18px; height: 22px; background: var(--primary); color: white; border-radius: 3px; font-size: 12px; cursor: pointer; padding: 0; }
         .step-inp { width: 65px; text-align: center; font-weight: 955; border: 1px solid var(--indigo); height: 22px; font-size: 10px; color: var(--indigo); }
 
         .model-panel { background: #f1f2f6; padding: 6px; border-radius: 6px; border: 1.5px solid var(--primary); margin-bottom: 10px; }
@@ -1433,14 +1433,26 @@
         let raw = tempPendingProduct.isNT ? db_records.filter(r => r.model === SPECIAL_MODEL && r.category === tempPendingProduct.category) : db_records.filter(r => r.model === tempPendingProduct.name);
         let ltvLimit = customerQueue[activeCustomerIndex]?.ltv || 100;
         
-        // BUG FIX RESOLVED: Non Tieup sathi suddha Matrix validation filter standard kela aahe जेणेकरून LTV Constraint lagoo rahil
+        // LTV Constraint filter
         let matrixEligible = raw.filter(s => s.fixedEmi > 0 || (s.tenure > 0 && ((s.tenure-s.advEmi)/s.tenure)*100 <= ltvLimit));
-        matrixEligible.forEach(s => s.inactive = false); 
+        
+        // BUG FIXED (Double/Duplicate Schemes Block): नॉन-टायअप स्कीम्स मधील Duplicate Tenure आणि Advance EMI चे स्लॅब्स फिल्टर आउट केले
+        let uniqueSchemes = [];
+        let seenSchemes = new Set();
+        matrixEligible.forEach(s => {
+            let schemeKey = `${s.tenure}_${s.advEmi}_${s.fixedEmi}`;
+            if (!seenSchemes.has(schemeKey)) {
+                seenSchemes.add(schemeKey);
+                s.inactive = false;
+                uniqueSchemes.push(s);
+            }
+        });
+
         let comp = customerQueue[activeCustomerIndex].components || {};
         let finalMrp = comp.mrp || ""; let finalInv = comp.inv || ""; let surch = (finalInv > finalMrp && finalMrp > 0) ? finalInv - finalMrp : 0;
 
         current_products.push({ 
-            name: tempPendingProduct.name, isNonTieup: tempPendingProduct.isNT, schemes: matrixEligible, 
+            name: tempPendingProduct.name, isNonTieup: tempPendingProduct.isNT, schemes: uniqueSchemes, 
             inputs: { mrp: finalMrp, inv: finalInv, cap: comp.cap || (customerQueue[activeCustomerIndex]?.cap || ""), target: comp.target || "", gtl: comp.gtl || 0, rfc: comp.rfc || 0, exw: comp.exw || "", niva: comp.niva || "", margin: comp.margin || "", dealer: comp.dealer || "", surch: surch }, 
             isManual: false 
         });
@@ -1666,7 +1678,6 @@
 
         document.getElementById(`body_${pIdx}`).innerHTML = prod.calculatedData.map(d => {
             let curLTV = d.curLTV; 
-            // BUG RESOLVED: NON TIEUP asel tari actual scheme LTV limit barobar validation check karel (उदा. ७० % पेक्षा जास्त असेल तर Breach दाखवेल)
             let isLtvB = (curLTV > ltvLimit); 
             let isBoundB = false; if (isNT && prod.inputs.mrp > 0) { if (d.loan < d.minLoan || d.loan > d.maxLoan) isBoundB = true; }
             let isInactive = d.inactive; let rowClass = (d.isFixed ? "fixed-row " : "") + (isLtvB || isBoundB ? "ltv-breach " : "") + (isInactive ? "inactive-row " : "");
@@ -1737,7 +1748,6 @@
         d.curLTV = d.currentTenure > 0 ? ((d.currentTenure - d.advEmi) / d.currentTenure) * 100 : 0; let ltvCell = document.getElementById(`ltv_${pIdx}_${dIdx}`); if(ltvCell) ltvCell.innerText = Math.round(d.curLTV) + "%";
         let extraCell = document.getElementById(`extra_${pIdx}_${dIdx}`); if(extraCell) extraCell.innerText = "₹" + Math.round(d.extra).toLocaleString();
         
-        // BUG RESOLVED: Non-tieup proper check karel, LTV breach sathi high-contrast red alert background apply hoil
         let isB = (d.curLTV > ltvLimit) || (prod.isNonTieup && loan > 0 && (loan < d.minLoan || loan > d.maxLoan));
         let rowEl = document.getElementById(`row_${pIdx}_${dIdx}`); if(rowEl) isB ? rowEl.classList.add('ltv-breach') : rowEl.classList.remove('ltv-breach');
         let dbdCell = document.querySelector(`#row_${pIdx}_${dIdx} td:nth-child(2)`); if(dbdCell) dbdCell.innerHTML = `${+parseFloat(d.dbd).toFixed(3)}%<br><span style="color:var(--danger); font-size:8px; font-weight:900;">₹${Math.round(d.dbdAmt||0).toLocaleString()}</span>`;
@@ -1835,7 +1845,6 @@
         let productsToRender = window.tempImageGenIndices.map(idx => current_products[idx]);
 
         productsToRender.forEach((prod) => {
-            // BUG RESOLVED: Non tie-up sathi suddha image generation chya veli ltvLimit rigid track path karel
             let validS = prod.calculatedData.filter(d => { 
                 let isLtvB = (d.curLTV > ltvLimit); 
                 let isBoundB = false; if (prod.isNonTieup && prod.inputs.mrp > 0) { if (d.loan < d.minLoan || d.loan > d.maxLoan) isBoundB = true; } return !isLtvB && !isBoundB && !d.inactive; 
@@ -1949,7 +1958,7 @@
             let dId = m['DealerId'] || m['dealerid'] || '-';
             let dName = m['Dealer Name'] || m['dealer name'] || 'Unknown Dealer';
             return `
-            <div onclick="openBitlyLink('${bitly}')" style="display:flex; justify-content:space-between; align-items:center; background:#f8f9fa; padding:10px; border-radius:6px; border:1px solid #ddd; cursor:pointer; transition:0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05);" onmouseover="this.style.borderColor='var(--primary)'; this.style.background='#e3f2fd';" onmouseout="this.style.borderColor='#ddd'; this.style.background='#f8f9fa';">
+            <div onclick=\"openBitlyLink('${bitly}')\" style="display:flex; justify-content:space-between; align-items:center; background:#f8f9fa; padding:10px; border-radius:6px; border:1px solid #ddd; cursor:pointer; transition:0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05);\" onmouseover=\"this.style.borderColor='var(--primary)'; this.style.background='#e3f2fd';\" onmouseout=\"this.style.borderColor='#ddd'; this.style.background='#f8f9fa';\">
                 <div>
                     <strong style="color:var(--indigo); font-size:12px; display:block;">🏪 ${dName}</strong>
                     <span style="font-size:10px; color:#555; font-weight:bold;">ID: <span style="color:var(--primary);">${dId}</span></span>
