@@ -1437,10 +1437,11 @@
         let matrixEligible = raw.filter(s => s.fixedEmi > 0 || (s.tenure > 0 && ((s.tenure-s.advEmi)/s.tenure)*100 <= ltvLimit));
         
         // BUG FIXED (Double/Duplicate Schemes Block): नॉन-टायअप स्कीम्स मधील Duplicate Tenure आणि Advance EMI चे स्लॅब्स फिल्टर आउट केले
+        // Fix Applied: Added minLoan and maxLoan to schemeKey so distinct slabs are NOT treated as duplicates
         let uniqueSchemes = [];
         let seenSchemes = new Set();
         matrixEligible.forEach(s => {
-            let schemeKey = `${s.tenure}_${s.advEmi}_${s.fixedEmi}`;
+            let schemeKey = `${s.tenure}_${s.advEmi}_${s.fixedEmi}_${s.minLoan}_${s.maxLoan}`;
             if (!seenSchemes.has(schemeKey)) {
                 seenSchemes.add(schemeKey);
                 s.inactive = false;
