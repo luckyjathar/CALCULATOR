@@ -302,7 +302,6 @@
                     </select>
                 </div>
                 <div><label>EXW (₹)</label><input type="number" id="compExw" placeholder="0"></div>
-                <div><label>NIVA BUPA (₹)</label><input type="number" id="compNiva" placeholder="0"></div>
                 <div><label>MARGIN (₹)</label><input type="number" id="compMargin" placeholder="0"></div>
                 <div><label>DEALER CONTRI (₹)</label><input type="number" id="compDealer" placeholder="0"></div>
             </div>
@@ -464,7 +463,6 @@
                 </div>
                 <div><label>EXW (₹)</label><input type="number" id="fcExw" placeholder="0" oninput="calculateFastData();"></div>
                 
-                <div><label>NIVA BUPA (₹)</label><input type="number" id="fcNiva" placeholder="0" oninput="calculateFastData();"></div>
                 <div><label>MARGIN (₹)</label><input type="number" id="fcMargin" placeholder="0" oninput="calculateFastData();"></div>
                 <div><label>DEALER (₹)</label><input type="number" id="fcDealer" placeholder="0" oninput="calculateFastData();"></div>
 
@@ -749,7 +747,7 @@
     // --- PRO LIVE ZATPAT CALCULATOR LOGIC ---
     function openFastCalculator() {
         document.getElementById('fcResult').style.display = 'none';
-        let fields = ['fcInv', 'fcLoanInput', 'fcTenure', 'fcAdv', 'fcRoi', 'fcPf', 'fcDbd', 'fcFixed', 'fcCap', 'fcTarget', 'fcExw', 'fcNiva', 'fcMargin', 'fcDealer'];
+        let fields = ['fcInv', 'fcLoanInput', 'fcTenure', 'fcAdv', 'fcRoi', 'fcPf', 'fcDbd', 'fcFixed', 'fcCap', 'fcTarget', 'fcExw', 'fcMargin', 'fcDealer'];
         fields.forEach(id => document.getElementById(id).value = '');
         document.getElementById('fcGtl').value = '0';
         document.getElementById('fcRfc').value = '0';
@@ -803,7 +801,6 @@
         let gtl = parseFloat(document.getElementById('fcGtl').value) || 0;
         let rfc = parseFloat(document.getElementById('fcRfc').value) || 0;
         let exw = parseFloat(document.getElementById('fcExw').value) || 0;
-        let niva = parseFloat(document.getElementById('fcNiva').value) || 0;
         let margin = parseFloat(document.getElementById('fcMargin').value) || 0;
         let dealer = parseFloat(document.getElementById('fcDealer').value) || 0;
 
@@ -813,7 +810,7 @@
         }
 
         let fee = (custType === 'EMI CARD') ? 270 : (custType === 'W/O CARD' ? 320 : 850);
-        let totalFees = fee + niva + margin + dealer;
+        let totalFees = fee + margin + dealer;
         let insTotal = gtl + rfc + exw;
         
         let dbdRate = (dbd * 1.18 / 100);
@@ -1235,7 +1232,7 @@
             let comp = customerQueue[activeCustomerIndex].components || {};
             current_products.push({ 
                 name: modelName, schemes: validSchemes, 
-                inputs: { mrp: comp.mrp||"", inv: comp.inv||"", cap: comp.cap||(customerQueue[activeCustomerIndex]?.cap || ""), target: comp.target||"", gtl: comp.gtl||0, rfc: comp.rfc||0, exw: comp.exw||"", niva: comp.niva||"", margin: comp.margin||"", dealer: comp.dealer||"", surch: 0 }, 
+                inputs: { mrp: comp.mrp||"", inv: comp.inv||"", cap: comp.cap||(customerQueue[activeCustomerIndex]?.cap || ""), target: comp.target||"", gtl: comp.gtl||0, rfc: comp.rfc||0, exw: comp.exw||"", margin: comp.margin||"", dealer: comp.dealer||"", surch: 0 }, 
                 isManual: true, isNonTieup: false 
             });
             sortConfigs.push({ key: 'dp', dir: 'asc' }); 
@@ -1400,7 +1397,6 @@
         document.getElementById('compCap').value = c.components?.cap || c.cap || '';
         document.getElementById('compTarget').value = c.components?.target || '';
         document.getElementById('compExw').value = c.components?.exw || '';
-        document.getElementById('compNiva').value = c.components?.niva || '';
         document.getElementById('compMargin').value = c.components?.margin || '';
         document.getElementById('compDealer').value = c.components?.dealer || '';
         document.getElementById('componentsModal').style.display = 'flex';
@@ -1416,7 +1412,6 @@
         customerQueue[idx].components.gtl = parseFloat(document.getElementById('compGtl').value) || 0;
         customerQueue[idx].components.rfc = parseFloat(document.getElementById('compRfc').value) || 0;
         customerQueue[idx].components.exw = parseFloat(document.getElementById('compExw').value) || 0;
-        customerQueue[idx].components.niva = parseFloat(document.getElementById('compNiva').value) || 0;
         customerQueue[idx].components.margin = parseFloat(document.getElementById('compMargin').value) || 0;
         customerQueue[idx].components.dealer = parseFloat(document.getElementById('compDealer').value) || 0;
         
@@ -1454,7 +1449,7 @@
 
         current_products.push({ 
             name: tempPendingProduct.name, isNonTieup: tempPendingProduct.isNT, schemes: uniqueSchemes, 
-            inputs: { mrp: finalMrp, inv: finalInv, cap: comp.cap || (customerQueue[activeCustomerIndex]?.cap || ""), target: comp.target || "", gtl: comp.gtl || 0, rfc: comp.rfc || 0, exw: comp.exw || "", niva: comp.niva || "", margin: comp.margin || "", dealer: comp.dealer || "", surch: surch }, 
+            inputs: { mrp: finalMrp, inv: finalInv, cap: comp.cap || (customerQueue[activeCustomerIndex]?.cap || ""), target: comp.target || "", gtl: comp.gtl || 0, rfc: comp.rfc || 0, exw: comp.exw || "", margin: comp.margin || "", dealer: comp.dealer || "", surch: surch }, 
             isManual: false 
         });
         sortConfigs.push({ key: 'dp', dir: 'asc' }); 
@@ -1552,7 +1547,6 @@
                         <option id="rfc_opt_${pIdx}" value="${rfcSlab}" ${prod.inputs.rfc > 0 ? 'selected' : ''}>${rfcSlab}</option>
                     </select></div>
                     <div><label>EXW</label><input type="number" value="${prod.inputs.exw}" placeholder="0" oninput="updateVal(${pIdx},'exw',this.value)"></div>
-                    <div><label>NIVA BUPA</label><input type="number" value="${prod.inputs.niva}" placeholder="0" oninput="updateVal(${pIdx},'niva',this.value)"></div>
                     <div><label>MARGIN</label><input type="number" value="${prod.inputs.margin}" placeholder="0" oninput="updateVal(${pIdx},'margin',this.value)"></div>
                     <div><label>DEALER</label><input type="number" value="${prod.inputs.dealer}" placeholder="0" oninput="updateVal(${pIdx},'dealer',this.value)"></div>
                 </div>
@@ -1625,7 +1619,7 @@
         if(!current_products[pIdx]) return;
         let prod = current_products[pIdx], limit = customerQueue[activeCustomerIndex]?.limit || 0, type = customerQueue[activeCustomerIndex]?.type || 'NEW';
         let fee = (type === 'EMI CARD') ? 270 : (type === 'W/O CARD' ? 320 : 850), inp = prod.inputs;
-        let totalFees = fee + (parseFloat(inp.niva)||0) + (parseFloat(inp.margin)||0) + (parseFloat(inp.dealer)||0);
+        let totalFees = fee + (parseFloat(inp.margin)||0) + (parseFloat(inp.dealer)||0);
         
         let currentLimit = limit > 0 ? limit : 9999999;
         let inputMrp = parseFloat(inp.mrp) || 0; let inputInv = parseFloat(inp.inv) || 0; 
@@ -1716,7 +1710,7 @@
         let el = document.getElementById(`l_${pIdx}_${dIdx}`), loan = parseFloat(el.value) || 0, prod = current_products[pIdx], d = prod.calculatedData.find(x => x.dIdx === dIdx), inp = prod.inputs, type = customerQueue[activeCustomerIndex]?.type || 'NEW';
         
         let fee = (type === 'EMI CARD') ? 270 : (type === 'W/O CARD' ? 320 : 850);
-        let totalFees = fee + (parseFloat(inp.niva)||0) + (parseFloat(inp.margin)||0) + (parseFloat(inp.dealer)||0);
+        let totalFees = fee + (parseFloat(inp.margin)||0) + (parseFloat(inp.dealer)||0);
         
         let ltvLimit = customerQueue[activeCustomerIndex]?.ltv || 100; let limit = customerQueue[activeCustomerIndex]?.limit || 0; let currentLimit = limit > 0 ? limit : 9999999;
         let inputMrp = parseFloat(inp.mrp) || 0; let inputInv = parseFloat(inp.inv) || 0; 
@@ -1790,7 +1784,7 @@
         if(mode === "NEW") {
             let name = document.getElementById('manName').value.toUpperCase() || "MANUAL MODEL";
             let comp = customerQueue[activeCustomerIndex].components || {};
-            current_products.push({ name: name, schemes: [scheme], inputs: { mrp: "", inv: "", mtCap: cCap, target: "", gtl: 0, rfc: 0, exw: comp.exw||"", niva: comp.niva||"", margin: comp.margin||"", dealer: comp.dealer||"", surch: 0 }, isManual: true });
+            current_products.push({ name: name, schemes: [scheme], inputs: { mrp: "", inv: "", mtCap: cCap, target: "", gtl: 0, rfc: 0, exw: comp.exw||"", margin: comp.margin||"", dealer: comp.dealer||"", surch: 0 }, isManual: true });
             sortConfigs.push({ key: 'dp', dir: 'asc' }); 
             customerQueue[activeCustomerIndex].products = current_products; customerQueue[activeCustomerIndex].sortConfigs = sortConfigs;
             await saveQueueToLocal(); renderMatrix();
