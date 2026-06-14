@@ -8,10 +8,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <style>
-        :root { --primary: #0984e3; --success: #27ae60; --danger: #d63031; --warning: #f39c12; --dark: #2d3436; --bg: #f4f7f6; --indigo: #341f97; --bajaj-blue: #0059A3; --bajaj-green: #00A34F; }
+        :root { --primary: #0984e3; --success: #27ae60; --danger: #d63031; --warning: #f39c12; --dark: #2d3436; --bg: #f4f7f6; --indigo: #341f97; --bajaj-blue: #0059A3; --bajaj-green: #00A34F; --bg-pattern: none; }
         
-        /* Font size scaling globally applied here */
-        body { font-family: 'Segoe UI', sans-serif; margin: 0 auto; max-width: 1200px; padding: 4px; background: var(--bg); font-size: 14px; display: flex; flex-direction: column; min-height: 98vh; scroll-behavior: smooth; }
+        /* Font size scaling globally applied here & Background Pattern */
+        body { font-family: 'Segoe UI', sans-serif; margin: 0 auto; max-width: 1200px; padding: 4px; background-color: var(--bg); background-image: var(--bg-pattern); background-attachment: fixed; font-size: 14px; display: flex; flex-direction: column; min-height: 98vh; scroll-behavior: smooth; }
         
         header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; border-bottom: 2px solid var(--primary); margin-bottom: 6px; padding: 6px 10px; background: #fff; border-radius: 6px; }
         header h1 { margin: 0; font-size: 1.4rem; color: var(--primary); font-weight: 900; text-align: right; }
@@ -93,6 +93,15 @@
 
         .forms-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; align-items: stretch; }
 
+        /* Festive Enhancements */
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 5px var(--warning); }
+            50% { box-shadow: 0 0 15px var(--warning); transform: scale(1.02); }
+            100% { box-shadow: 0 0 5px var(--warning); }
+        }
+        .festive-glow { animation: pulseGlow 2s infinite; border: 1px solid #fff; }
+        .festive-banner { text-align: center; font-weight: 900; color: #fff; padding: 6px; border-radius: 4px; margin-bottom: 8px; font-size: 14px; letter-spacing: 0.5px; display: none; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+
         /* Mobile View - Forms Stacking */
         @media (max-width: 768px) {
             .forms-row { flex-direction: column; }
@@ -119,18 +128,19 @@
             🔗 DEALER LINKS
         </button>
         <button onclick="openFastCalculator()" style="background: var(--primary); color: white;">
-            🧮 FAST CALC
+            <span id="icon_fc">🧮</span> FAST CALC
         </button>
     </div>
     <h1>🚀 Persistent Portal Master</h1>
 </header>
 
 <main>
+    <div id="festiveBanner" class="festive-banner"></div>
     <div id="unifiedHome">
         <div class="forms-row">
             
             <div class="form-container" style="flex: 1; min-width: 250px; background: #e8f4f8; border: 2px solid var(--primary); margin-bottom:0; display: flex; flex-direction: column;">
-                <label style="color:var(--primary); font-size:13px !important; border-bottom:2px solid var(--primary); padding-bottom:4px; margin-bottom:8px; display:block;">📝 ADD NEW CUSTOMER</label>
+                <label style="color:var(--primary); font-size:13px !important; border-bottom:2px solid var(--primary); padding-bottom:4px; margin-bottom:8px; display:block;"><span id="icon_add">📝</span> ADD NEW CUSTOMER</label>
                 
                 <div style="flex: 1;">
                     <div style="margin-bottom:6px;"><label>MOBILE NO.</label><input type="text" id="cqMobile" placeholder="10 Digits" maxlength="10"></div>
@@ -150,12 +160,12 @@
                     </div>
                 </div>
                 
-                <button onclick="addCustomerToQueue()" style="width:100%; background:var(--success); color:white; padding:10px; border-radius:4px; box-shadow: 0 2px 4px rgba(39, 174, 96, 0.3); margin-top: 8px;">➕ ADD TO QUEUE</button>
+                <button id="addToQueueBtn" onclick="addCustomerToQueue()" style="width:100%; background:var(--success); color:white; padding:10px; border-radius:4px; box-shadow: 0 2px 4px rgba(39, 174, 96, 0.3); margin-top: 8px;"><span id="icon_btn_add">➕</span> ADD TO QUEUE</button>
             </div>
 
             <div class="form-container" style="flex: 1.5; min-width: 280px; margin-bottom:0; border: 2px solid var(--bajaj-blue); box-sizing: border-box; display: flex; flex-direction: column;">
                 <label style="color:var(--bajaj-blue); font-size:13px !important; border-bottom:2px solid #ccc; padding-bottom:4px; margin-bottom:6px; display:block; text-align:center;">
-                    👥 SAVED CUSTOMERS QUEUE (<span id="queueCount">0</span>)
+                    <span id="icon_queue">👥</span> SAVED CUSTOMERS QUEUE (<span id="queueCount">0</span>)
                     <span onclick="openRecycleBin()" style="cursor:pointer; float:right; font-size:16px !important; background: #fff; border:1px solid #ccc; border-radius:4px; padding: 0 4px;" title="Recycle Bin">🗑️</span>
                 </label>
                 
@@ -506,7 +516,7 @@
 
     <div id="finalEligibleArea">
         <div class="top-nav-box" style="margin-top: 4px; border-top: 2px dashed #ccc; padding-top: 8px;">
-            <button onclick="openQuoteSelectionModal()" style="flex:1; background:var(--bajaj-blue); color:white;">GEN QUOTE</button>
+            <button id="genQuoteBtn" onclick="openQuoteSelectionModal()" style="flex:1; background:var(--bajaj-blue); color:white;">GEN QUOTE</button>
             <select id="finalCustomerSwitcher" onchange="switchCustomerFinal(this.value)" style="flex:1.5; font-weight:bold; color:var(--indigo); padding:2px;">
             </select>
             <button onclick="goHome()" style="flex:0.8; background:var(--danger); color:white;">✖ BACK</button>
@@ -538,39 +548,59 @@
 </footer>
 
 <script>
+    // --- GLOBAL FESTIVAL STATE ---
+    window.isFestiveMode = false;
+
     // --- FESTIVAL THEME LOGIC ---
     function applyFestivalTheme() {
         const now = new Date();
         const month = now.getMonth() + 1; // 1 to 12
-        const date = now.getDate();
         const root = document.documentElement;
+        const banner = document.getElementById('festiveBanner');
+        
+        let emojiAdd = '📝', emojiQueue = '👥', emojiBtn = '➕', emojiFc = '🧮';
 
-        // Dynamic theme updates based on Indian Calendar/Festivals
         if (month === 1) { 
-            // Makar Sankranti / Republic Day (Saffron & Green hints)
-            root.style.setProperty('--primary', '#e67e22');
-            root.style.setProperty('--bajaj-blue', '#d35400');
-            root.style.setProperty('--bajaj-green', '#27ae60');
+            // Makar Sankranti
+            root.style.setProperty('--primary', '#e67e22'); root.style.setProperty('--bajaj-blue', '#d35400'); root.style.setProperty('--bajaj-green', '#27ae60');
+            root.style.setProperty('--bg-pattern', 'radial-gradient(circle, rgba(230,126,34,0.05) 0%, rgba(244,247,246,1) 100%)');
+            banner.innerText = "🪁 Makar Sankrantichya Hardik Shubhechha! Navya Varshat Navya Schemes!";
+            banner.style.background = "linear-gradient(90deg, #d35400, #e67e22)";
+            window.isFestiveMode = true; emojiAdd = '🪁'; emojiQueue = '☀️'; emojiBtn = '✨'; emojiFc = '📊';
         } else if (month === 3) { 
-            // Holi / Dhulivandan (Vibrant Pink & Purple)
-            root.style.setProperty('--primary', '#e84393');
-            root.style.setProperty('--bajaj-blue', '#8e44ad');
-            root.style.setProperty('--bajaj-green', '#00b894');
+            // Holi
+            root.style.setProperty('--primary', '#e84393'); root.style.setProperty('--bajaj-blue', '#8e44ad'); root.style.setProperty('--bajaj-green', '#00b894');
+            root.style.setProperty('--bg-pattern', 'radial-gradient(circle, rgba(232,67,147,0.05) 0%, rgba(244,247,246,1) 100%)');
+            banner.innerText = "🎨 Rangapanchamichya Rangit Shubhechha!";
+            banner.style.background = "linear-gradient(90deg, #8e44ad, #e84393)";
+            window.isFestiveMode = true; emojiAdd = '🎨'; emojiQueue = '🤝'; emojiBtn = '✨'; emojiFc = '🎯';
         } else if (month === 8 || month === 9) { 
-            // Ganesh Chaturthi (Festive Red & Gold)
-            root.style.setProperty('--primary', '#c0392b');
-            root.style.setProperty('--bajaj-blue', '#d35400');
-            root.style.setProperty('--bajaj-green', '#f39c12');
-            root.style.setProperty('--warning', '#f1c40f');
+            // Ganesh Chaturthi
+            root.style.setProperty('--primary', '#c0392b'); root.style.setProperty('--bajaj-blue', '#d35400'); root.style.setProperty('--bajaj-green', '#f39c12'); root.style.setProperty('--warning', '#f1c40f');
+            root.style.setProperty('--bg-pattern', 'radial-gradient(circle, rgba(243,156,18,0.1) 0%, rgba(244,247,246,1) 100%)');
+            banner.innerText = "🌺 Ganpati Bappa Morya! Vighnaharta tumchya targets purna karo!";
+            banner.style.background = "linear-gradient(90deg, #c0392b, #f39c12)";
+            window.isFestiveMode = true; emojiAdd = '🌺'; emojiQueue = '🙏'; emojiBtn = '🕉️'; emojiFc = '🥥';
         } else if (month === 10 || month === 11) { 
-            // Navratri / Diwali (Deep Purple & Diwali Gold)
-            root.style.setProperty('--primary', '#8e44ad');
-            root.style.setProperty('--bajaj-blue', '#f39c12');
-            root.style.setProperty('--bajaj-green', '#e67e22');
-            root.style.setProperty('--dark', '#2c3e50');
+            // Diwali
+            root.style.setProperty('--primary', '#8e44ad'); root.style.setProperty('--bajaj-blue', '#f39c12'); root.style.setProperty('--bajaj-green', '#e67e22'); root.style.setProperty('--dark', '#2c3e50');
+            root.style.setProperty('--bg-pattern', 'radial-gradient(circle, rgba(142,68,173,0.05) 0%, rgba(244,247,246,1) 100%)');
+            banner.innerText = "🪔 Diwali Dhamaka! Festive Offers Ani Navya Schemes Check Kara!";
+            banner.style.background = "linear-gradient(90deg, #2c3e50, #8e44ad)";
+            window.isFestiveMode = true; emojiAdd = '🪔'; emojiQueue = '✨'; emojiBtn = '🎆'; emojiFc = '🎁';
+        }
+
+        if (window.isFestiveMode) {
+            banner.style.display = 'block';
+            let addBtn = document.getElementById('addToQueueBtn'); if(addBtn) addBtn.classList.add('festive-glow');
+            let genBtn = document.getElementById('genQuoteBtn'); if(genBtn) genBtn.classList.add('festive-glow');
+            
+            let iAdd = document.getElementById('icon_add'); if(iAdd) iAdd.innerText = emojiAdd;
+            let iQueue = document.getElementById('icon_queue'); if(iQueue) iQueue.innerText = emojiQueue;
+            let iBtn = document.getElementById('icon_btn_add'); if(iBtn) iBtn.innerText = emojiBtn;
+            let iFc = document.getElementById('icon_fc'); if(iFc) iFc.innerText = emojiFc;
         }
     }
-    applyFestivalTheme();
 
     // --- MAIN LOGIC ---
     const GITHUB_RAW_URL = "https://raw.githubusercontent.com/luckyjathar/CALCULATOR/main/master_data.xlsx";
@@ -749,6 +779,7 @@
     }
 
     window.onload = async function() {
+        applyFestivalTheme();
         generateStackCards(); 
         
         try {
@@ -1530,6 +1561,9 @@
         prod.calculatedData.sort((a,b) => conf.dir==='asc' ? a[conf.key]-b[conf.key] : b[conf.key]-a[conf.key]);
         let ltvLimit = customerQueue[activeCustomerIndex]?.ltv || 100; let isNT = prod.isNonTieup;
 
+        // Add dynamic badge during festivals
+        let festiveBadgeHtml = window.isFestiveMode ? `<span style="background:var(--warning); color:#000; font-size:10px; padding:2px 4px; border-radius:3px; font-weight:900; margin-left:6px; display:inline-block; vertical-align:middle; line-height:1;">✨ OFFER</span>` : '';
+
         document.getElementById(`body_${pIdx}`).innerHTML = prod.calculatedData.map(d => {
             let curLTV = d.curLTV; let isLtvB = (curLTV > ltvLimit); 
             let isBoundB = false; if (isNT && prod.inputs.mrp > 0) { if (d.loan < d.minLoan || d.loan > d.maxLoan) isBoundB = true; }
@@ -1546,7 +1580,7 @@
                 <td class="hidden-col" id="extra_${pIdx}_${d.dIdx}" style="font-weight:900; color:var(--danger);">₹${Math.round(d.extra).toLocaleString()}</td>
                 ${isNT ? `<td class="bound-col">${d.minLoan > 0 ? '₹' + d.minLoan : '0'}</td><td class="bound-col">${d.maxLoan < 9999999 ? '₹' + d.maxLoan : 'NO'}</td>` : `<td style="color:#777;">₹${Math.floor(d.nbfcMaxL)}</td>`}
                 <td><div class="stepper"><button class="step-btn" onclick="step(${pIdx},${d.dIdx},-${d.isFixed ? d.fixedEmi : 1000})">-</button><input id="l_${pIdx}_${d.dIdx}" type="number" value="${Math.floor(d.loan)}" class="step-inp" oninput="manual(${pIdx},${d.dIdx})"><button class="step-btn" onclick="step(${pIdx},${d.dIdx},${d.isFixed ? d.fixedEmi : 1000})">+</button></div></td>
-                <td id="ta_${pIdx}_${d.dIdx}" style="font-weight:900;">${d.currentTenure}/${d.advEmi}</td>
+                <td id="ta_${pIdx}_${d.dIdx}" style="font-weight:900;">${d.currentTenure}/${d.advEmi}${festiveBadgeHtml}</td>
                 <td id="dp_${pIdx}_${d.dIdx}" style="color:var(--success); font-weight:950;">₹${Math.round(d.dp).toLocaleString()}</td>
                 <td id="emi_${pIdx}_${d.dIdx}" style="color:var(--primary); font-weight:950;">₹${Math.round(d.emi).toLocaleString()}</td>
                 <td id="inst_${pIdx}_${d.dIdx}" style="font-weight:900;">${d.inst}</td>
@@ -1582,7 +1616,7 @@
             let roiInEmi = loan * roiRate; let roiInDp = loan * roiRateDP;  
             let dpE = effectivePrice - loan + (d.fixedEmi * d.advEmi) + (loan * dbdRate) + d.pf + totalFees + roiInDp; let dpR = Math.ceil(dpE / 10) * 10; let inst = calcTenure - d.advEmi; if(inst < 1) inst = 1;
             let emi = d.fixedEmi + (((parseFloat(inp.gtl)||0) + (parseFloat(inp.rfc)||0) + (parseFloat(inp.exw)||0)) / inst) + roiInEmi;
-            document.getElementById(`ta_${pIdx}_${dIdx}`).innerText = `${calcTenure}/${d.advEmi}`; document.getElementById(`inst_${pIdx}_${dIdx}`).innerText = inst;
+            document.getElementById(`ta_${pIdx}_${dIdx}`).innerHTML = `${calcTenure}/${d.advEmi}${window.isFestiveMode ? `<span style="background:var(--warning); color:#000; font-size:10px; padding:2px 4px; border-radius:3px; font-weight:900; margin-left:6px; display:inline-block; vertical-align:middle; line-height:1;">✨ OFFER</span>` : ''}`; document.getElementById(`inst_${pIdx}_${dIdx}`).innerText = inst;
             d.loan = loan; d.currentTenure = calcTenure; d.dp = dpR; d.inst = inst; d.emi = emi;
         } else {
             let nbfcMaxL = (currentLimit * d.tenure) / (d.tenure - d.advEmi || 1); 
