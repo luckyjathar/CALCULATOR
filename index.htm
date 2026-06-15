@@ -731,14 +731,16 @@
             let wb = XLSX.read(new Uint8Array(dataBuffer), { type: 'array' });
             
             tempSheet1Data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { raw: false, defval: "" });
-            parsedSheet2Data = wb.SheetNames.length > 1 ? XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[1]], { raw: false, defval: "" }).map(r => mapData(r, SPECIAL_MODEL)).filter(x => x && (x.tenure > 0 || x.fixedEmi > 0)) : [];
+            // Modified: Only check if model is present (Don't filter out 0 tenure/EMI models)
+            parsedSheet2Data = wb.SheetNames.length > 1 ? XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[1]], { raw: false, defval: "" }).map(r => mapData(r, SPECIAL_MODEL)).filter(x => x && x.model && x.model.trim() !== "") : [];
             
             if (wb.SheetNames.length > 2) {
                 dealer_records = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[2]], { raw: false, defval: "" });
                 await saveToDB("persistent_dealers", dealer_records);
             }
 
-            let filteredSheet1 = tempSheet1Data.map(r => mapData(r, "REG")).filter(m => m && (m.tenure > 0 || m.fixedEmi > 0));
+            // Modified: Only check if model is present
+            let filteredSheet1 = tempSheet1Data.map(r => mapData(r, "REG")).filter(m => m && m.model && m.model.trim() !== "");
             let rawCombined = [...filteredSheet1, ...parsedSheet2Data];
             let uniqueDB = []; let seenDB = new Set();
             
@@ -1143,23 +1145,31 @@
         dd.style.display = matches.length ? 'block' : 'none';
     }
 
+    // Modified to display Please Add Manually message when schemes are missing/zero
     function viewGlobalModel(name) {
         document.getElementById('globalModelSearch').value = ''; document.getElementById('globalModelDropdown').style.display = 'none';
         let schemes = db_records.filter(r => r.model === name); if(schemes.length === 0) return;
         
         document.getElementById('globalViewerTitle').innerText = '📱 Model: ' + name;
         let tbody = document.getElementById('globalViewerBody');
-        tbody.innerHTML = schemes.map(s => `
-            <tr>
-                <td style="font-weight:900; color:var(--indigo); border:1px solid #ddd;">${s.tenure}/${s.advEmi}</td>
-                <td style="font-weight:900; color:var(--primary); border:1px solid #ddd;">${s.fixedEmi > 0 ? '₹'+s.fixedEmi : 'N/A'}</td>
-                <td style="border:1px solid #ddd;">${+parseFloat(s.dbd).toFixed(3)}%</td>
-                <td style="border:1px solid #ddd;">${+parseFloat(s.roi).toFixed(2)}%</td>
-                <td style="border:1px solid #ddd;">₹${s.pf}</td>
-                <td style="border:1px solid #ddd;">${s.minLoan > 0 ? '₹'+s.minLoan : '0'}</td>
-                <td style="border:1px solid #ddd;">${s.maxLoan < 9999999 ? '₹'+s.maxLoan : 'NO LMT'}</td>
-            </tr>
-        `).join('');
+
+        let validSchemes = schemes.filter(s => s.tenure > 0 || s.fixedEmi > 0);
+
+        if (validSchemes.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" style="color:var(--danger); font-weight:bold; padding: 25px 10px !important; text-align:center; font-size:15px !important; border:1px solid #ddd; background:#fff9e6;">⚠️ Please Add Schemes Manually</td></tr>`;
+        } else {
+            tbody.innerHTML = validSchemes.map(s => `
+                <tr>
+                    <td style="font-weight:900; color:var(--indigo); border:1px solid #ddd;">${s.tenure}/${s.advEmi}</td>
+                    <td style="font-weight:900; color:var(--primary); border:1px solid #ddd;">${s.fixedEmi > 0 ? '₹'+s.fixedEmi : 'N/A'}</td>
+                    <td style="border:1px solid #ddd;">${+parseFloat(s.dbd).toFixed(3)}%</td>
+                    <td style="border:1px solid #ddd;">${+parseFloat(s.roi).toFixed(2)}%</td>
+                    <td style="border:1px solid #ddd;">₹${s.pf}</td>
+                    <td style="border:1px solid #ddd;">${s.minLoan > 0 ? '₹'+s.minLoan : '0'}</td>
+                    <td style="border:1px solid #ddd;">${s.maxLoan < 9999999 ? '₹'+s.maxLoan : 'NO LMT'}</td>
+                </tr>
+            `).join('');
+        }
         document.getElementById('globalSchemeViewerModal').style.display = 'flex';
     }
 
