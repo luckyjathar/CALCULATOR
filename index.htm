@@ -176,6 +176,7 @@
                 
                 <div style="display:flex; gap:6px; margin-top:8px; border-top:1px solid #ccc; padding-top:8px;">
                     <button id="uniCopyBtn" onclick="uniCopy()" style="flex:1; background:var(--warning); color:#000; opacity:0.5; pointer-events:none;">📋 COPY</button>
+                    <button id="uniWhatsAppBtn" onclick="openWhatsAppUpdateModal()" style="flex:1.6; background:#25D366; color:white; opacity:0.5; pointer-events:none;">💬 SEND WHATSAPP UPDATE</button>
                     <button id="uniSelectBtn" onclick="uniSelect()" style="flex:1.5; background:var(--primary); color:white; opacity:0.5; pointer-events:none;">▶ SELECT</button>
                     <button id="uniEditBtn" onclick="uniEdit()" style="flex:1; background:#8e44ad; color:white; opacity:0.5; pointer-events:none;">✏️ EDIT</button>
                     <button id="uniDeleteBtn" onclick="uniDelete()" style="flex:1; background:var(--danger); color:white; opacity:0.5; pointer-events:none;">✖ DELETE</button>
@@ -332,6 +333,18 @@
             <div style="display:flex; gap:8px;">
                 <button onclick="proceedToMatrixFromComponents()" style="flex:2; background:var(--success); color:white;">CONTINUE</button>
                 <button onclick="document.getElementById('componentsModal').style.display='none'" style="flex:1; background:var(--danger); color:white;">CANCEL</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="whatsAppUpdateModal" class="modal">
+        <div class="modal-content" style="max-width:340px;">
+            <h3 style="margin-top:0; color:#25D366; text-align:center;">💬 Send WhatsApp Update</h3>
+            <div style="background:#f8f9fa; border:1px solid #ddd; border-radius:6px; padding:8px; margin-bottom:10px; font-weight:bold; color:#555; text-align:center;" id="whatsAppUpdateCustomer">Select customer</div>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+                <button onclick="sendWhatsAppUpdate('PRE_APPROVED')" style="width:100%; background:var(--bajaj-blue); color:white;">Bajaj Finance Pre-Approved Limit & Welcome</button>
+                <button onclick="sendWhatsAppUpdate('VISIT_INVITE')" style="width:100%; background:var(--success); color:white;">Store Visit Invitation / Offer</button>
+                <button onclick="closeWhatsAppUpdateModal()" style="width:100%; background:var(--danger); color:white;">CANCEL</button>
             </div>
         </div>
     </div>
@@ -680,6 +693,7 @@
     let recycleBin = []; 
     let activeCustomerIndex = -1;
     let selectedQueueIndex = -1; 
+    let whatsAppUpdateIndex = -1;
     let tempPendingProduct = null; 
 
     async function saveQueueToLocal() {
@@ -1062,16 +1076,18 @@
     function selectQueueItem(idx) { selectedQueueIndex = idx; renderCustomerQueue(); updateUniversalActionButtons(); }
 
     function updateUniversalActionButtons() {
-        let copyB = document.getElementById('uniCopyBtn'); let selB = document.getElementById('uniSelectBtn');
+        let copyB = document.getElementById('uniCopyBtn'); let waB = document.getElementById('uniWhatsAppBtn'); let selB = document.getElementById('uniSelectBtn');
         let editB = document.getElementById('uniEditBtn'); let delB = document.getElementById('uniDeleteBtn');
         
         if (selectedQueueIndex !== -1 && customerQueue[selectedQueueIndex]) {
             copyB.style.opacity = '1'; copyB.style.pointerEvents = 'auto';
+            waB.style.opacity = '1'; waB.style.pointerEvents = 'auto';
             selB.style.opacity = '1'; selB.style.pointerEvents = 'auto';
             editB.style.opacity = '1'; editB.style.pointerEvents = 'auto';
             delB.style.opacity = '1'; delB.style.pointerEvents = 'auto';
         } else {
             copyB.style.opacity = '0.5'; copyB.style.pointerEvents = 'none';
+            waB.style.opacity = '0.5'; waB.style.pointerEvents = 'none';
             selB.style.opacity = '0.5'; selB.style.pointerEvents = 'none';
             editB.style.opacity = '0.5'; editB.style.pointerEvents = 'none';
             delB.style.opacity = '0.5'; delB.style.pointerEvents = 'none';
@@ -1080,6 +1096,49 @@
 
     function uniCopy() { if(selectedQueueIndex !== -1) copyCustomerDetails(selectedQueueIndex, document.getElementById('uniCopyBtn')); }
     function uniSelect() { if(selectedQueueIndex !== -1) setActiveCustomer(selectedQueueIndex); }
+
+    function getWhatsAppMobile(mobile) {
+        let digits = (mobile || '').toString().replace(/\D/g, '');
+        if(digits.length === 10) return '91' + digits;
+        if(digits.length === 12 && digits.startsWith('91')) return digits;
+        return '';
+    }
+
+    function buildWhatsAppUpdateMessage(c, type) {
+        let customerName = (c.name && c.name !== '-') ? c.name : 'Customer';
+        let limitText = Math.round(parseFloat(c.limit) || 0).toLocaleString();
+        if(type === 'PRE_APPROVED') {
+            return `Dear ${customerName},\n\nWelcome! Aapka Bajaj Finance Pre-Approved Limit ₹${limitText} available aahe. Aaplya favourite product sathi easy EMI offer vapranyasathi store la visit kara.\n\nThank you.`;
+        }
+        return `Dear ${customerName},\n\nAaplyasathi special store visit invitation / offer available aahe. Best finance schemes ani latest offers sathi aajach store la visit kara.\n\nThank you.`;
+    }
+
+    function openWhatsAppUpdateModal(idx = selectedQueueIndex) {
+        if(idx === -1 || !customerQueue[idx]) return;
+        selectedQueueIndex = idx;
+        whatsAppUpdateIndex = idx;
+        renderCustomerQueue();
+        updateUniversalActionButtons();
+        let c = customerQueue[idx];
+        document.getElementById('whatsAppUpdateCustomer').innerText = `${c.name} ${c.mobile ? ' | ' + c.mobile : ''} | Limit: ₹${c.limit}`;
+        document.getElementById('whatsAppUpdateModal').style.display = 'flex';
+    }
+
+    function closeWhatsAppUpdateModal() {
+        whatsAppUpdateIndex = -1;
+        document.getElementById('whatsAppUpdateModal').style.display = 'none';
+    }
+
+    function sendWhatsAppUpdate(type) {
+        let idx = whatsAppUpdateIndex !== -1 ? whatsAppUpdateIndex : selectedQueueIndex;
+        if(idx === -1 || !customerQueue[idx]) return;
+        let c = customerQueue[idx];
+        let waMobile = getWhatsAppMobile(c.mobile);
+        if(!waMobile) { alert('⚠️ Customer cha valid 10 digit mobile number nahi aahe.'); return; }
+        let message = buildWhatsAppUpdateMessage(c, type);
+        window.open(`https://wa.me/${waMobile}?text=${encodeURIComponent(message)}`, '_blank');
+        closeWhatsAppUpdateModal();
+    }
     
     function uniEdit() {
         if(selectedQueueIndex === -1) return;
@@ -1176,6 +1235,7 @@
                     LMT: <span style="color:var(--success)">₹${c.limit}</span> | LTV: ${c.ltv}% | CAP: ${c.cap ? '₹'+c.cap : 'NO'} | ${c.type}
                     ${isActive ? '<span style="float:right; color:var(--primary);">[ACTIVE ✓]</span>' : ''}
                 </div>
+                <button onclick="event.stopPropagation(); openWhatsAppUpdateModal(${idx})" style="margin-top:6px; width:100%; background:#25D366; color:white; padding:6px;">💬 Send WhatsApp Update</button>
             </div>`;
         }).join('');
     }
@@ -1593,6 +1653,7 @@
                                 <th class="hidden-col" onclick="sortM(${pIdx},'fixedEmi')">FIXED ↕</th>
                                 <th class="hidden-col" onclick="sortM(${pIdx},'curLTV')">LTV% ↕</th>
                                 <th class="hidden-col" onclick="sortM(${pIdx},'extra')">EXTRA ↕</th>
+                                <th class="hidden-col" onclick="sortM(${pIdx},'merchantNetDisbursement')">MERCHANT NET ↕</th>
                                 ${isNT ? `<th onclick="sortM(${pIdx},'minLoan')">MIN ↕</th><th onclick="sortM(${pIdx},'maxLoan')">MAX ↕</th>` : `<th onclick="sortM(${pIdx},'nbfcMaxL')">NBFC LMT ↕</th>`}
                                 <th onclick="sortM(${pIdx},'loan')">LOAN ↕</th>
                                 <th onclick="sortM(${pIdx},'currentTenure')">T/A ↕</th>
@@ -1667,6 +1728,10 @@
         customerQueue[activeCustomerIndex].products = current_products; saveQueueToLocal();
     }
 
+    function getMerchantNetDisbursement(invoiceAmount, netDp, nivaBupa, marginMoney, roundupAdjustment, dealerContri) {
+        return invoiceAmount - netDp - nivaBupa - marginMoney - roundupAdjustment - dealerContri;
+    }
+
     function recalcModel(pIdx) {
         if(!current_products[pIdx]) return;
         let prod = current_products[pIdx], limit = customerQueue[activeCustomerIndex]?.limit || 0, type = customerQueue[activeCustomerIndex]?.type || 'NEW';
@@ -1709,9 +1774,12 @@
                 let roiInDp = loan * roiRateDP; dpExact = effectivePrice - loan + ((loan/s.tenure) * s.advEmi) + (loan * dbdRate) + s.pf + totalFees + roiInDp;
             }
             if(dpExact > 0) dpRounded = Math.ceil(dpExact / 10) * 10; else dpRounded = dpExact;
+            let roundupAdjustment = dpRounded - dpExact;
+            let nivaBupa = (parseFloat(inp.gtl)||0) + (parseFloat(inp.rfc)||0) + (parseFloat(inp.exw)||0);
+            let merchantNetDisbursement = getMerchantNetDisbursement(effectivePrice, dpRounded, nivaBupa, (parseFloat(inp.margin)||0), roundupAdjustment, (parseFloat(inp.dealer)||0));
             let extraVal = effectivePrice > 0 ? (((emi * inst) + dpRounded) - effectivePrice) : 0; let dbdAmt = loan * dbdRate; let roiAmt = (loan * roiRateDP) + (loan * roiRate * inst);
             let curLTV = currentTenure > 0 ? ((currentTenure - s.advEmi) / currentTenure) * 100 : 0;
-            return { ...s, currentTenure, nbfcMaxL, loan, dp: dpRounded, emi, inst, daily: emi/30, dIdx, isFixed, curLTV, extra: extraVal, dbdAmt, roiAmt, inactive: s.inactive || false };
+            return { ...s, currentTenure, nbfcMaxL, loan, dp: dpRounded, emi, inst, daily: emi/30, dIdx, isFixed, curLTV, extra: extraVal, dbdAmt, roiAmt, nivaBupa, roundupAdjustment, merchantNetDisbursement, inactive: s.inactive || false };
         });
         renderRows(pIdx);
     }
@@ -1738,6 +1806,7 @@
                 <td class="hidden-col">${d.fixedEmi > 0 ? '₹'+d.fixedEmi : 'N/A'}</td>
                 <td class="hidden-col" id="ltv_${pIdx}_${d.dIdx}">${Math.round(d.curLTV)}%</td>
                 <td class="hidden-col" id="extra_${pIdx}_${d.dIdx}" style="font-weight:900; color:var(--danger);">₹${Math.round(d.extra).toLocaleString()}</td>
+                <td class="hidden-col" id="merchant_net_${pIdx}_${d.dIdx}" title="Invoice Amount - Net DP - Niva Bupa - Margin Money - Roundup Adjustment - Dealer Contri" style="font-weight:900; color:var(--indigo);">₹${Math.round(d.merchantNetDisbursement || 0).toLocaleString()}</td>
                 ${isNT ? `<td class="bound-col">${d.minLoan > 0 ? '₹' + d.minLoan : '0'}</td><td class="bound-col">${d.maxLoan < 9999999 ? '₹' + d.maxLoan : 'NO'}</td>` : `<td style="color:#777;">₹${Math.floor(d.nbfcMaxL)}</td>`}
                 <td><div class="stepper"><button class="step-btn" onclick="step(${pIdx},${d.dIdx},-${d.isFixed ? d.fixedEmi : 1000})">-</button><input id="l_${pIdx}_${d.dIdx}" type="number" value="${Math.floor(d.loan)}" class="step-inp" oninput="manual(${pIdx},${d.dIdx})"><button class="step-btn" onclick="step(${pIdx},${d.dIdx},${d.isFixed ? d.fixedEmi : 1000})">+</button></div></td>
                 <td id="ta_${pIdx}_${d.dIdx}" style="font-weight:900;">${d.currentTenure}/${d.advEmi}${festiveBadgeHtml}</td>
@@ -1767,14 +1836,14 @@
         let effectivePrice = inputInv > 0 ? inputInv : (inputMrp > 0 ? inputMrp : 0); let loanCapPrice = (inputMrp > 0 && inputInv > 0) ? Math.min(inputMrp, inputInv) : effectivePrice;
 
         syncInsurance(pIdx, inputMrp, loan, 'LOAN'); 
-        let dbdRate = (d.dbd * 1.18 / 100); let roiRate = d.roi / 1200; let roiRateDP = roiRate * d.advEmi; 
+        let dbdRate = (d.dbd * 1.18 / 100); let roiRate = d.roi / 1200; let roiRateDP = roiRate * d.advEmi; let dpExact = 0;
         
         if (d.isFixed) {
             let maxRemainingEmis = Math.floor(currentLimit / d.fixedEmi); let maxTotalTenure = maxRemainingEmis + d.advEmi; d.nbfcMaxL = maxTotalTenure * d.fixedEmi; 
             let calcTenure = Math.floor(loan / d.fixedEmi) || 1; let maxBoundary = Math.min(d.nbfcMaxL, prod.isNonTieup ? d.maxLoan : 9999999, loanCapPrice > 0 ? loanCapPrice : 9999999);
             if (loan > maxBoundary) { loan = Math.floor(maxBoundary / d.fixedEmi) * d.fixedEmi; calcTenure = Math.floor(loan / d.fixedEmi) || 1; } el.value = loan;
             let roiInEmi = loan * roiRate; let roiInDp = loan * roiRateDP;  
-            let dpE = effectivePrice - loan + (d.fixedEmi * d.advEmi) + (loan * dbdRate) + d.pf + totalFees + roiInDp; let dpR = Math.ceil(dpE / 10) * 10; let inst = calcTenure - d.advEmi; if(inst < 1) inst = 1;
+            dpExact = effectivePrice - loan + (d.fixedEmi * d.advEmi) + (loan * dbdRate) + d.pf + totalFees + roiInDp; let dpR = Math.ceil(dpExact / 10) * 10; let inst = calcTenure - d.advEmi; if(inst < 1) inst = 1;
             let emi = d.fixedEmi + (((parseFloat(inp.gtl)||0) + (parseFloat(inp.rfc)||0) + (parseFloat(inp.exw)||0)) / inst) + roiInEmi;
             document.getElementById(`ta_${pIdx}_${dIdx}`).innerHTML = `${calcTenure}/${d.advEmi}${window.isFestiveMode ? `<span style="background:var(--warning); color:#000; font-size:10px; padding:2px 4px; border-radius:3px; font-weight:900; margin-left:6px; display:inline-block; vertical-align:middle; line-height:1;">✨ OFFER</span>` : ''}`; document.getElementById(`inst_${pIdx}_${dIdx}`).innerText = inst;
             d.loan = loan; d.currentTenure = calcTenure; d.dp = dpR; d.inst = inst; d.emi = emi;
@@ -1782,15 +1851,20 @@
             let nbfcMaxL = (currentLimit * d.tenure) / (d.tenure - d.advEmi || 1); 
             let maxBoundary = Math.min(loanCapPrice > 0 ? loanCapPrice : 999999, nbfcMaxL, prod.isNonTieup ? d.maxLoan : 9999999);
             if(loan > maxBoundary) { loan = maxBoundary; el.value = Math.floor(loan); } let roiInEmi = loan * roiRate; let roiInDp = loan * roiRateDP;  
-            let dpE = effectivePrice - loan + ((loan/d.tenure) * d.advEmi) + (loan * dbdRate) + d.pf + totalFees + roiInDp; let dpR = Math.ceil(dpE / 10) * 10;
+            dpExact = effectivePrice - loan + ((loan/d.tenure) * d.advEmi) + (loan * dbdRate) + d.pf + totalFees + roiInDp; let dpR = Math.ceil(dpExact / 10) * 10;
             let inst = d.tenure - d.advEmi; if(inst < 1) inst = 1; let insTotal = (parseFloat(inp.gtl)||0)+(parseFloat(inp.rfc)||0)+(parseFloat(inp.exw)||0); let emi = (loan / d.tenure) + (insTotal / inst) + roiInEmi;
             d.loan = loan; d.dp = dpR; d.emi = emi;
         }
+        let manualRoundupAdjustment = d.dp - dpExact;
+        d.nivaBupa = (parseFloat(inp.gtl)||0) + (parseFloat(inp.rfc)||0) + (parseFloat(inp.exw)||0);
+        d.roundupAdjustment = manualRoundupAdjustment;
+        d.merchantNetDisbursement = getMerchantNetDisbursement(effectivePrice, d.dp, d.nivaBupa, (parseFloat(inp.margin)||0), d.roundupAdjustment, (parseFloat(inp.dealer)||0));
         d.extra = effectivePrice > 0 ? (((d.emi * d.inst) + d.dp) - effectivePrice) : 0; d.dbdAmt = loan * dbdRate; d.roiAmt = (loan * roiRateDP) + (loan * roiRate * d.inst);
         document.getElementById(`dp_${pIdx}_${dIdx}`).innerText = "₹" + Math.round(d.dp).toLocaleString(); document.getElementById(`emi_${pIdx}_${dIdx}`).innerText = "₹" + Math.round(d.emi).toLocaleString();
         
         d.curLTV = d.currentTenure > 0 ? ((d.currentTenure - d.advEmi) / d.currentTenure) * 100 : 0; let ltvCell = document.getElementById(`ltv_${pIdx}_${dIdx}`); if(ltvCell) ltvCell.innerText = Math.round(d.curLTV) + "%";
         let extraCell = document.getElementById(`extra_${pIdx}_${dIdx}`); if(extraCell) extraCell.innerText = "₹" + Math.round(d.extra).toLocaleString();
+        let merchantNetCell = document.getElementById(`merchant_net_${pIdx}_${dIdx}`); if(merchantNetCell) merchantNetCell.innerText = "₹" + Math.round(d.merchantNetDisbursement || 0).toLocaleString();
         
         let isB = (d.curLTV > ltvLimit) || (prod.isNonTieup && loan > 0 && (loan < d.minLoan || loan > d.maxLoan));
         let rowEl = document.getElementById(`row_${pIdx}_${dIdx}`); if(rowEl) isB ? rowEl.classList.add('ltv-breach') : rowEl.classList.remove('ltv-breach');
