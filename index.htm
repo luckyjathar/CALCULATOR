@@ -6,6 +6,7 @@
     <title>Persistent Portal V76.5 - Non Tie-up Double Fix Edition</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 
     <style>
         :root { --primary: #0984e3; --success: #27ae60; --danger: #d63031; --warning: #f39c12; --dark: #2d3436; --bg: #f4f7f6; --indigo: #341f97; --bajaj-blue: #0059A3; --bajaj-green: #00A34F; --bg-pattern: none; }
@@ -123,6 +124,9 @@
         </button>
         <button onclick="openFastCalculator()" style="background: var(--primary); color: white;">
             <span id="icon_fc">🧮</span> FAST CALC
+        </button>
+        <button onclick="openSyncModal()" style="background: var(--indigo); color: white; box-shadow: 0 0 8px rgba(52, 31, 151, 0.4);">
+            🔄 CLOUD SYNC
         </button>
     </div>
     <h1>🚀 Persistent Portal Master</h1>
@@ -512,6 +516,39 @@
                 </div>
                 <div id="fcResTa" style="text-align:center; font-weight:bold; color:var(--indigo); margin-top:6px;">T/A: 0/0 | M: 0</div>
             </div>
+        </div>
+    </div>
+
+    <div id="cloudSyncModal" class="modal">
+        <div class="modal-content" style="max-width: 380px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--indigo); padding-bottom: 8px; margin-bottom: 12px;">
+                <h3 style="margin:0; color:var(--indigo);">🔒 ZERO-TRUST PORTAL SYNC</h3>
+                <button onclick="closeSyncModal()" style="background:none; border:none; color:var(--danger); font-weight:bold; cursor:pointer; font-size:16px;">✖</button>
+            </div>
+            
+            <div style="background:#e8f4f8; padding:8px 12px; border-radius:6px; margin-bottom:14px; border:1px solid var(--primary); display:flex; align-items:center; justify-content:space-between;">
+                <div>
+                    <label style="color:var(--primary); font-size:10px !important; margin:0;">🔑 TUMCHA SECRET PIN (4-Digits)</label>
+                    <span style="font-size:10px; color:#666;">Ekda theva, browser dhyanat thevel</span>
+                </div>
+                <input type="password" id="userSyncPin" maxlength="4" placeholder="PIN" oninput="saveSyncPin(this.value)" style="width:70px; text-align:center; font-weight:bold; font-size:16px !important; letter-spacing:2px; border:1.5px solid var(--primary);">
+            </div>
+
+            <div style="background:#f4f7f6; padding:12px; border-radius:6px; margin-bottom:12px; border:1px solid #ddd; text-align:center;">
+                <label style="color:var(--dark); font-size:11px !important;">📤 ENCRYPT & PUSH TO CLOUD</label>
+                <div style="margin:8px 0; font-size:24px; font-weight:950; letter-spacing:5px; color:var(--indigo); background:#fff; padding:8px; border-radius:4px; border:2px dashed var(--indigo);" id="syncCodeDisplay">------</div>
+                <button onclick="generateAndPushCode()" style="width:100%; background:var(--indigo); color:white; font-size:12px !important; padding:10px;">🔒 LOCK DATA & GET CODE</button>
+            </div>
+
+            <div style="text-align:center; font-weight:900; color:#aaa; margin-bottom:12px; font-size:11px;">─── FETCH ON YOUR 2ND DEVICE ───</div>
+
+            <div style="background:#fff9e6; padding:12px; border-radius:6px; border:1px solid #ffeaa7; text-align:center;">
+                <label style="color:#d35400; font-size:11px !important;">📥 ENTER 6-DIGIT SYNC CODE</label>
+                <input type="text" id="pullCodeInput" placeholder="XXXXXX" maxlength="6" style="text-align:center; font-size:18px !important; font-weight:950; letter-spacing:4px; text-transform:uppercase; margin-bottom:10px;">
+                <button onclick="pullDataFromCloud()" style="width:100%; background:var(--success); color:white; font-size:12px !important; padding:10px;">⬇️ DECRYPT & SYNC</button>
+            </div>
+            
+            <div id="syncStatusMsg" style="margin-top:10px; font-weight:bold; text-align:center; font-size:12px; display:none; padding:6px; border-radius:4px;"></div>
         </div>
     </div>
 
@@ -1693,7 +1730,6 @@
             let extraVal = effectivePrice > 0 ? (((emi * inst) + dpRounded) - effectivePrice) : 0; let dbdAmt = loan * dbdRate; let roiAmt = (loan * roiRateDP) + (loan * roiRate * inst);
             let curLTV = currentTenure > 0 ? ((currentTenure - s.advEmi) / currentTenure) * 100 : 0;
             
-            // --- NEW: NET DISBURSEMENT CALCULATION ---
             let marginMoney = parseFloat(inp.margin) || 0;
             let roundupAdj = (dpRounded > dpExact) ? (dpRounded - dpExact) : 0;
             let netDisb = effectivePrice > 0 ? (effectivePrice - dpRounded - marginMoney - roundupAdj) : 0;
@@ -1972,6 +2008,150 @@
 
     function openBitlyLink(url) {
         if (url && url !== '#' && url.trim() !== '') { if (!url.startsWith('http://') && !url.startsWith('https://')) { url = 'https://' + url; } window.open(url, '_blank'); closeDealerSearchModal(); } else { alert('⚠️ Ya dealer sathi Bitly link available nahi ahe!'); }
+    }
+
+    // =========================================================================
+    // 🔒 ZERO-TRUST E2EE SYNC ENGINE (CryptoJS AES-256 + Dweet.io Network)
+    // =========================================================================
+    const DWEET_NAMESPACE = "persistent_e2e_v765_";
+
+    function openSyncModal() {
+        document.getElementById('syncStatusMsg').style.display = 'none';
+        document.getElementById('pullCodeInput').value = '';
+        document.getElementById('syncCodeDisplay').innerText = '------';
+        
+        // Auto-load previously saved PIN into input box
+        let savedPin = localStorage.getItem('portal_user_pin') || "";
+        document.getElementById('userSyncPin').value = savedPin;
+        
+        document.getElementById('cloudSyncModal').style.display = 'flex';
+    }
+    function closeSyncModal() { document.getElementById('cloudSyncModal').style.display = 'none'; }
+
+    function saveSyncPin(val) {
+        let onlyNums = val.replace(/[^0-9]/g, '');
+        document.getElementById('userSyncPin').value = onlyNums;
+        if(onlyNums.length === 4) {
+            localStorage.setItem('portal_user_pin', onlyNums);
+        }
+    }
+
+    function getAgentPin() {
+        let pin = localStorage.getItem('portal_user_pin');
+        if(!pin || pin.length !== 4) {
+            alert("⚠️ Kripya varti 4-Digit 'SECRET PIN' set kara. Tyashivay data lock honar nahi!");
+            return null;
+        }
+        return pin;
+    }
+
+    function showSyncMsg(text, isError = false) {
+        let box = document.getElementById('syncStatusMsg');
+        box.innerText = text;
+        box.style.background = isError ? '#ffe6e6' : '#e8f5e9';
+        box.style.color = isError ? 'var(--danger)' : 'var(--success)';
+        box.style.display = 'block';
+    }
+
+    // 1. PUSH (Encrypting data with User's PIN)
+    async function generateAndPushCode() {
+        let pin = getAgentPin();
+        if(!pin) return;
+
+        if (customerQueue.length === 0) { 
+            alert("⚠️ Saved Queue madhye kamit-kami 1 customer hava!"); return; 
+        }
+
+        let codeBox = document.getElementById('syncCodeDisplay');
+        codeBox.innerText = "🔒 LOCKING...";
+
+        let rawPayload = {
+            activeIdx: activeCustomerIndex,
+            queue: customerQueue,
+            timestamp: new Date().getTime()
+        };
+
+        // AES-256 Military Grade Encryption using PIN as the passphrase
+        let encryptedString = CryptoJS.AES.encrypt(JSON.stringify(rawPayload), pin).toString();
+
+        let uniqueCode = generateTypoFreeCode(6);
+        let channel = DWEET_NAMESPACE + uniqueCode;
+
+        try {
+            let res = await fetch(`https://dweet.io/dweet/for/${channel}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ secure_blob: encryptedString })
+            });
+
+            if(!res.ok) throw new Error("Cloud rejection");
+
+            codeBox.innerText = uniqueCode;
+            showSyncMsg(`✅ DATA SECURED! Code: [ ${uniqueCode} ] (Valid for 24 hours)`);
+
+        } catch(err) {
+            codeBox.innerText = "FAIL";
+            showSyncMsg("⚠️ Internet connection drop zale ahe.", true);
+        }
+    }
+
+    // 2. PULL (Attempting to Decrypt data with current device's PIN)
+    async function pullDataFromCloud() {
+        let pin = getAgentPin();
+        if(!pin) return;
+
+        let inputCode = document.getElementById('pullCodeInput').value.trim().toUpperCase();
+        if(inputCode.length !== 6) { showSyncMsg("⚠️ 6 akshari barobar code type kara.", true); return; }
+
+        showSyncMsg("📥 Downloading encrypted package...", false);
+        let channel = DWEET_NAMESPACE + inputCode;
+
+        try {
+            let res = await fetch(`https://dweet.io/get/latest/dweet/for/${channel}`);
+            let json = await res.json();
+
+            if(json.this === "failed" || !json.with || !json.with[0]) {
+                showSyncMsg(`⚠️ Code [ ${inputCode} ] cha kontahi live data sapadla nahi.`, true);
+                return;
+            }
+
+            let encryptedBlob = json.with[0].content.secure_blob;
+            if(!encryptedBlob) throw new Error("Corrupted package");
+
+            let decryptedText;
+            try {
+                let bytes = CryptoJS.AES.decrypt(encryptedBlob, pin);
+                decryptedText = bytes.toString(CryptoJS.enc.Utf8);
+                if(!decryptedText) throw new Error("Passcode Mismatch");
+            } catch(cryptoErr) {
+                showSyncMsg("⛔ ACCESS DENIED: Ha data dusrya user cha ahe (Secret PIN chukla).", true);
+                return;
+            }
+
+            let finalData = JSON.parse(decryptedText);
+
+            if (customerQueue.length > 0) {
+                recycleBin.push(...customerQueue);
+                await saveToDB('persistent_recycle', recycleBin);
+            }
+
+            customerQueue = finalData.queue;
+            activeCustomerIndex = finalData.activeIdx ?? -1;
+
+            await saveQueueToLocal();
+            renderCustomerQueue(); updateUniversalActionButtons();
+
+            showSyncMsg("🎉 DATA SUCCESSFULLY UNLOCKED & MIRRORED!", false);
+            setTimeout(() => { closeSyncModal(); if(activeCustomerIndex !== -1) goToFinalPage(); }, 750);
+
+        } catch(err) {
+            showSyncMsg("⚠️ Data fetch fail. Code expire zala asel.", true);
+        }
+    }
+
+    function generateTypoFreeCode(len) {
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; 
+        return Array.from({length: len}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
     }
 </script>
 </body>
