@@ -10,7 +10,6 @@
     <style>
         :root { --primary: #0984e3; --success: #27ae60; --danger: #d63031; --warning: #f39c12; --dark: #2d3436; --bg: #f4f7f6; --indigo: #341f97; --bajaj-blue: #0059A3; --bajaj-green: #00A34F; --bg-pattern: none; }
         
-        /* Font size scaling globally applied here & Background Pattern */
         body { font-family: 'Segoe UI', sans-serif; margin: 0 auto; max-width: 1200px; padding: 4px; background-color: var(--bg); background-image: var(--bg-pattern); background-attachment: fixed; font-size: 14px; display: flex; flex-direction: column; min-height: 98vh; scroll-behavior: smooth; }
         
         header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; border-bottom: 2px solid var(--primary); margin-bottom: 6px; padding: 6px 10px; background: #fff; border-radius: 6px; }
@@ -22,7 +21,6 @@
         #unifiedHome { display: flex; flex-direction: column; }
         #finalEligibleArea { display: none; flex-direction: column; }
         
-        /* Global Inputs, Labels & Buttons Sizing */
         input, select { width: 100%; padding: 6px; border: 1.5px solid #ccc; border-radius: 4px; font-weight: 600; font-size: 14px !important; height: 34px !important; box-sizing: border-box; transition: border 0.3s; }
         label { font-weight: 900; font-size: 11px !important; color: #555; text-transform: uppercase; margin-bottom: 3px; display: block; }
         button { padding: 8px; border-radius: 4px; font-weight: 900; cursor: pointer; border: none; text-transform: uppercase; transition: background 0.3s; font-size: 12px !important; }
@@ -44,7 +42,6 @@
         #generatedImage { max-width: 100%; max-height: 80vh; width: auto; height: auto; object-fit: contain; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: block; margin: 10px auto; }
         .close-img-btn { position: fixed; top: 10px; right: 15px; background: var(--danger); color: white; border: none; border-radius: 50%; width: 35px; height: 35px; font-size: 16px; cursor: pointer; font-weight: bold; z-index: 2100; }
         
-        /* Table Layout Enhancements */
         .table-wrapper { overflow-x: auto; background: white; border-radius: 4px; border: 1px solid #eee; transition: max-height 0.3s ease; }
         table { width: 100%; border-collapse: collapse; font-size: 13px !important; white-space: nowrap; }
         th, td { padding: 6px 4px !important; border-bottom: 1px solid #eee; text-align: center; width: 1%; }
@@ -93,7 +90,6 @@
 
         .forms-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; align-items: stretch; }
 
-        /* Festive Enhancements */
         @keyframes pulseGlow {
             0% { box-shadow: 0 0 5px var(--warning); }
             50% { box-shadow: 0 0 15px var(--warning); transform: scale(1.02); }
@@ -102,14 +98,12 @@
         .festive-glow { animation: pulseGlow 2s infinite; border: 1px solid #fff; }
         .festive-banner { text-align: center; font-weight: 900; color: #fff; padding: 6px; border-radius: 4px; margin-bottom: 8px; font-size: 14px; letter-spacing: 0.5px; display: none; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
 
-        /* Mobile View - Forms Stacking */
         @media (max-width: 768px) {
             .forms-row { flex-direction: column; }
             .form-container { width: 100%; margin-bottom: 8px; flex: none !important; }
             #customerQueueList { max-height: 350px !important; }
         }
 
-        /* Override JS inline font-sizes globally for consistency */
         div[style*="font-size"] { font-size: 13px !important; }
         span[style*="font-size"] { font-size: 13px !important; }
         strong[style*="font-size"] { font-size: 14px !important; }
@@ -555,11 +549,9 @@
 </footer>
 
 <script>
-    // --- GLOBAL FESTIVAL STATE ---
     window.isFestiveMode = false;
-    let currentModalCategory = ""; // Global variable for active category check
+    let currentModalCategory = ""; 
 
-    // --- MASTER RFC SLAB CALCULATOR ---
     function getRfcSlabValue(val) {
         let amount = parseFloat(val) || 0;
         if (amount < 8000) return 0;
@@ -577,38 +569,33 @@
         return 0;
     }
 
-    // --- FESTIVAL THEME LOGIC ---
     function applyFestivalTheme() {
         const now = new Date();
-        const month = now.getMonth() + 1; // 1 to 12
+        const month = now.getMonth() + 1;
         const root = document.documentElement;
         const banner = document.getElementById('festiveBanner');
         
         let emojiAdd = '📝', emojiQueue = '👥', emojiBtn = '➕', emojiFc = '🧮';
 
         if (month === 1) { 
-            // Makar Sankranti
             root.style.setProperty('--primary', '#e67e22'); root.style.setProperty('--bajaj-blue', '#d35400'); root.style.setProperty('--bajaj-green', '#27ae60');
             root.style.setProperty('--bg-pattern', 'radial-gradient(circle, rgba(230,126,34,0.05) 0%, rgba(244,247,246,1) 100%)');
             banner.innerText = "🪁 Makar Sankrantichya Hardik Shubhechha! Navya Varshat Navya Schemes!";
             banner.style.background = "linear-gradient(90deg, #d35400, #e67e22)";
             window.isFestiveMode = true; emojiAdd = '🪁'; emojiQueue = '☀️'; emojiBtn = '✨'; emojiFc = '📊';
         } else if (month === 3) { 
-            // Holi
             root.style.setProperty('--primary', '#e84393'); root.style.setProperty('--bajaj-blue', '#8e44ad'); root.style.setProperty('--bajaj-green', '#00b894');
             root.style.setProperty('--bg-pattern', 'radial-gradient(circle, rgba(232,67,147,0.05) 0%, rgba(244,247,246,1) 100%)');
             banner.innerText = "🎨 Rangapanchamichya Rangit Shubhechha!";
             banner.style.background = "linear-gradient(90deg, #8e44ad, #e84393)";
             window.isFestiveMode = true; emojiAdd = '🎨'; emojiQueue = '🤝'; emojiBtn = '✨'; emojiFc = '🎯';
         } else if (month === 8 || month === 9) { 
-            // Ganesh Chaturthi
             root.style.setProperty('--primary', '#c0392b'); root.style.setProperty('--bajaj-blue', '#d35400'); root.style.setProperty('--bajaj-green', '#f39c12'); root.style.setProperty('--warning', '#f1c40f');
             root.style.setProperty('--bg-pattern', 'radial-gradient(circle, rgba(243,156,18,0.1) 0%, rgba(244,247,246,1) 100%)');
             banner.innerText = "🌺 Ganpati Bappa Morya! Vighnaharta tumchya targets purna karo!";
             banner.style.background = "linear-gradient(90deg, #c0392b, #f39c12)";
             window.isFestiveMode = true; emojiAdd = '🌺'; emojiQueue = '🙏'; emojiBtn = '🕉️'; emojiFc = '🥥';
         } else if (month === 10 || month === 11) { 
-            // Diwali
             root.style.setProperty('--primary', '#8e44ad'); root.style.setProperty('--bajaj-blue', '#f39c12'); root.style.setProperty('--bajaj-green', '#e67e22'); root.style.setProperty('--dark', '#2c3e50');
             root.style.setProperty('--bg-pattern', 'radial-gradient(circle, rgba(142,68,173,0.05) 0%, rgba(244,247,246,1) 100%)');
             banner.innerText = "🪔 Diwali Dhamaka! Festive Offers Ani Navya Schemes Check Kara!";
@@ -628,7 +615,6 @@
         }
     }
 
-    // --- MAIN LOGIC ---
     const GITHUB_RAW_URL = "https://raw.githubusercontent.com/luckyjathar/CALCULATOR/main/master_data.xlsx";
     const GITHUB_API_URL = "https://api.github.com/repos/luckyjathar/CALCULATOR/commits?path=master_data.xlsx&page=1&per_page=1";
 
@@ -737,7 +723,7 @@
             let isDbEmpty = (!savedDB || savedDB.length === 0);
 
             if (latestSha === savedSha && !isDbEmpty) {
-                console.log("No new updates on GitHub. Skipping Excel download.");
+                console.log("No new updates on GitHub.");
                 if(statusBadge) {
                     statusBadge.innerHTML = '✅ SYSTEM OPTIMIZED (FAST LOAD)';
                     statusBadge.style.color = 'var(--success)';
@@ -757,7 +743,6 @@
             let wb = XLSX.read(new Uint8Array(dataBuffer), { type: 'array' });
             
             tempSheet1Data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { raw: false, defval: "" });
-            // Modified: Only check if model is present (Don't filter out 0 tenure/EMI models)
             parsedSheet2Data = wb.SheetNames.length > 1 ? XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[1]], { raw: false, defval: "" }).map(r => mapData(r, SPECIAL_MODEL)).filter(x => x && x.model && x.model.trim() !== "") : [];
             
             if (wb.SheetNames.length > 2) {
@@ -765,7 +750,6 @@
                 await saveToDB("persistent_dealers", dealer_records);
             }
 
-            // Modified: Only check if model is present
             let filteredSheet1 = tempSheet1Data.map(r => mapData(r, "REG")).filter(m => m && m.model && m.model.trim() !== "");
             let rawCombined = [...filteredSheet1, ...parsedSheet2Data];
             let uniqueDB = []; let seenDB = new Set();
@@ -873,12 +857,10 @@
         let exwInput = document.getElementById('fcExw');
 
         if(isPhone) {
-            // RFC Enable
             rSelect.disabled = false;
             rSelect.style.background = '#fff';
             rSelect.style.cursor = 'default';
             
-            // EXW Disable & Set to 0
             exwInput.value = "";
             exwInput.disabled = true;
             exwInput.style.background = '#e9ecef';
@@ -886,13 +868,11 @@
 
             fcInvChanged(); 
         } else {
-            // RFC Disable & Set to 0
             rSelect.value = "0";
             rSelect.disabled = true;
             rSelect.style.background = '#e9ecef';
             rSelect.style.cursor = 'not-allowed';
             
-            // EXW Enable
             exwInput.disabled = false;
             exwInput.style.background = '#fff';
             exwInput.style.cursor = 'text';
@@ -1360,7 +1340,7 @@
         let baseMrp = raw.find(s => s.mrp > 0)?.mrp || "";
         let cat = raw[0]?.category || ""; 
         tempPendingProduct = { name: name, isNT: false, category: cat };
-        currentModalCategory = cat; // Set Global
+        currentModalCategory = cat; 
 
         document.getElementById('modalMatrixSearchDropdown').style.display = 'none'; 
         document.getElementById('modalMatrixSearch').value = ''; 
@@ -1379,7 +1359,7 @@
     function selectCategory(catName) {
         document.getElementById('catSelectionModal').style.display = 'none';
         tempPendingProduct = { name: SPECIAL_MODEL + " - " + catName, isNT: true, category: catName };
-        currentModalCategory = catName; // Set Global
+        currentModalCategory = catName; 
         finalizeProductAddition();
     }
 
@@ -1394,7 +1374,6 @@
         let rfcOpt = document.getElementById('compRfcOpt');
         if(rfcOpt) { rfcOpt.value = rfcSlab; rfcOpt.innerText = rfcSlab; }
         
-        // Category Dependent Logic
         if (currentModalCategory === 'PHONE(WEB-MOBILE)') {
             document.getElementById('compRfc').value = rfcSlab;
         } else {
@@ -1405,29 +1384,24 @@
     function showComponentsModal(baseMrp = "") {
         let c = customerQueue[activeCustomerIndex];
         
-        // Disable/Enable RFC & EXW Logic based on Category
         let rfcSelect = document.getElementById('compRfc');
         let exwInput = document.getElementById('compExw');
 
         if (currentModalCategory === 'PHONE(WEB-MOBILE)') {
-            // RFC Enable
             rfcSelect.disabled = false;
             rfcSelect.style.background = '#fff';
             rfcSelect.style.cursor = 'default';
 
-            // EXW Disable & Set to 0
             exwInput.disabled = true;
             exwInput.style.background = '#e9ecef';
             exwInput.style.cursor = 'not-allowed';
             exwInput.value = "";
         } else {
-            // RFC Disable & Set to 0
             rfcSelect.disabled = true;
             rfcSelect.style.background = '#e9ecef';
             rfcSelect.style.cursor = 'not-allowed';
             rfcSelect.value = "0";
 
-            // EXW Enable
             exwInput.disabled = false;
             exwInput.style.background = '#fff';
             exwInput.style.cursor = 'text';
@@ -1469,7 +1443,6 @@
         customerQueue[idx].components.cap = parseFloat(document.getElementById('compCap').value) || 0; customerQueue[idx].components.target = parseFloat(document.getElementById('compTarget').value) || 0;
         customerQueue[idx].components.gtl = parseFloat(document.getElementById('compGtl').value) || 0; 
         
-        // Ensure disabled values aren't saved incorrectly
         customerQueue[idx].components.rfc = currentModalCategory === 'PHONE(WEB-MOBILE)' ? (parseFloat(document.getElementById('compRfc').value) || 0) : 0;
         customerQueue[idx].components.exw = currentModalCategory === 'PHONE(WEB-MOBILE)' ? 0 : (parseFloat(document.getElementById('compExw').value) || 0);
         
@@ -1544,8 +1517,8 @@
             let displayStyle = isCollapsed ? 'none' : 'block'; let gridStyle = isCollapsed ? 'none' : 'grid'; let toggleIcon = isCollapsed ? '▶' : '▼';
 
             let isPhoneWebMobile = (prod.category === 'PHONE(WEB-MOBILE)');
-            if (!isPhoneWebMobile) prod.inputs.rfc = 0; // Enforce zero if not phone
-            if (isPhoneWebMobile) prod.inputs.exw = 0; // Enforce zero if phone
+            if (!isPhoneWebMobile) prod.inputs.rfc = 0; 
+            if (isPhoneWebMobile) prod.inputs.exw = 0; 
 
             let mVal = parseFloat(prod.inputs.mrp) || 0;
             let rfcSlab = getRfcSlabValue(mVal);
@@ -1599,6 +1572,7 @@
                                 <th class="hidden-col" onclick="sortM(${pIdx},'roi')">ROI% ↕</th>
                                 <th class="hidden-col" onclick="sortM(${pIdx},'fixedEmi')">FIXED ↕</th>
                                 <th class="hidden-col" onclick="sortM(${pIdx},'curLTV')">LTV% ↕</th>
+                                <th class="hidden-col" onclick="sortM(${pIdx},'netDisb')" style="color:var(--bajaj-blue);">NET DISB ↕</th>
                                 <th class="hidden-col" onclick="sortM(${pIdx},'extra')">EXTRA ↕</th>
                                 ${isNT ? `<th onclick="sortM(${pIdx},'minLoan')">MIN ↕</th><th onclick="sortM(${pIdx},'maxLoan')">MAX ↕</th>` : `<th onclick="sortM(${pIdx},'nbfcMaxL')">NBFC LMT ↕</th>`}
                                 <th onclick="sortM(${pIdx},'loan')">LOAN ↕</th>
@@ -1718,7 +1692,13 @@
             if(dpExact > 0) dpRounded = Math.ceil(dpExact / 10) * 10; else dpRounded = dpExact;
             let extraVal = effectivePrice > 0 ? (((emi * inst) + dpRounded) - effectivePrice) : 0; let dbdAmt = loan * dbdRate; let roiAmt = (loan * roiRateDP) + (loan * roiRate * inst);
             let curLTV = currentTenure > 0 ? ((currentTenure - s.advEmi) / currentTenure) * 100 : 0;
-            return { ...s, currentTenure, nbfcMaxL, loan, dp: dpRounded, emi, inst, daily: emi/30, dIdx, isFixed, curLTV, extra: extraVal, dbdAmt, roiAmt, inactive: s.inactive || false };
+            
+            // --- NEW: NET DISBURSEMENT CALCULATION ---
+            let marginMoney = parseFloat(inp.margin) || 0;
+            let roundupAdj = (dpRounded > dpExact) ? (dpRounded - dpExact) : 0;
+            let netDisb = effectivePrice > 0 ? (effectivePrice - dpRounded - marginMoney - roundupAdj) : 0;
+
+            return { ...s, currentTenure, nbfcMaxL, loan, dp: dpRounded, emi, inst, daily: emi/30, dIdx, isFixed, curLTV, extra: extraVal, dbdAmt, roiAmt, netDisb, inactive: s.inactive || false };
         });
         renderRows(pIdx);
     }
@@ -1728,7 +1708,6 @@
         prod.calculatedData.sort((a,b) => conf.dir==='asc' ? a[conf.key]-b[conf.key] : b[conf.key]-a[conf.key]);
         let ltvLimit = customerQueue[activeCustomerIndex]?.ltv || 100; let isNT = prod.isNonTieup;
 
-        // Add dynamic badge during festivals
         let festiveBadgeHtml = window.isFestiveMode ? `<span style="background:var(--warning); color:#000; font-size:10px; padding:2px 4px; border-radius:3px; font-weight:900; margin-left:6px; display:inline-block; vertical-align:middle; line-height:1;">✨ OFFER</span>` : '';
 
         document.getElementById(`body_${pIdx}`).innerHTML = prod.calculatedData.map(d => {
@@ -1744,6 +1723,7 @@
                 <td class="hidden-col">${+parseFloat(d.roi).toFixed(2)}%<br><span style="color:var(--danger); font-weight:900;">₹${Math.round(d.roiAmt||0).toLocaleString()}</span></td>
                 <td class="hidden-col">${d.fixedEmi > 0 ? '₹'+d.fixedEmi : 'N/A'}</td>
                 <td class="hidden-col" id="ltv_${pIdx}_${d.dIdx}">${Math.round(d.curLTV)}%</td>
+                <td class="hidden-col" id="nd_${pIdx}_${d.dIdx}" style="font-weight:900; color:var(--bajaj-blue);">₹${Math.round(d.netDisb).toLocaleString()}</td>
                 <td class="hidden-col" id="extra_${pIdx}_${d.dIdx}" style="font-weight:900; color:var(--danger);">₹${Math.round(d.extra).toLocaleString()}</td>
                 ${isNT ? `<td class="bound-col">${d.minLoan > 0 ? '₹' + d.minLoan : '0'}</td><td class="bound-col">${d.maxLoan < 9999999 ? '₹' + d.maxLoan : 'NO'}</td>` : `<td style="color:#777;">₹${Math.floor(d.nbfcMaxL)}</td>`}
                 <td><div class="stepper"><button class="step-btn" onclick="step(${pIdx},${d.dIdx},-${d.isFixed ? d.fixedEmi : 1000})">-</button><input id="l_${pIdx}_${d.dIdx}" type="number" value="${Math.floor(d.loan)}" class="step-inp" oninput="manual(${pIdx},${d.dIdx})"><button class="step-btn" onclick="step(${pIdx},${d.dIdx},${d.isFixed ? d.fixedEmi : 1000})">+</button></div></td>
@@ -1775,13 +1755,14 @@
 
         syncInsurance(pIdx, inputMrp, loan, 'LOAN'); 
         let dbdRate = (d.dbd * 1.18 / 100); let roiRate = d.roi / 1200; let roiRateDP = roiRate * d.advEmi; 
+        let dpE = 0; let dpR = 0;
         
         if (d.isFixed) {
             let maxRemainingEmis = Math.floor(currentLimit / d.fixedEmi); let maxTotalTenure = maxRemainingEmis + d.advEmi; d.nbfcMaxL = maxTotalTenure * d.fixedEmi; 
             let calcTenure = Math.floor(loan / d.fixedEmi) || 1; let maxBoundary = Math.min(d.nbfcMaxL, prod.isNonTieup ? d.maxLoan : 9999999, loanCapPrice > 0 ? loanCapPrice : 9999999);
             if (loan > maxBoundary) { loan = Math.floor(maxBoundary / d.fixedEmi) * d.fixedEmi; calcTenure = Math.floor(loan / d.fixedEmi) || 1; } el.value = loan;
             let roiInEmi = loan * roiRate; let roiInDp = loan * roiRateDP;  
-            let dpE = effectivePrice - loan + (d.fixedEmi * d.advEmi) + (loan * dbdRate) + d.pf + totalFees + roiInDp; let dpR = Math.ceil(dpE / 10) * 10; let inst = calcTenure - d.advEmi; if(inst < 1) inst = 1;
+            dpE = effectivePrice - loan + (d.fixedEmi * d.advEmi) + (loan * dbdRate) + d.pf + totalFees + roiInDp; dpR = Math.ceil(dpE / 10) * 10; let inst = calcTenure - d.advEmi; if(inst < 1) inst = 1;
             let emi = d.fixedEmi + (((parseFloat(inp.gtl)||0) + (parseFloat(inp.rfc)||0) + (parseFloat(inp.exw)||0)) / inst) + roiInEmi;
             document.getElementById(`ta_${pIdx}_${dIdx}`).innerHTML = `${calcTenure}/${d.advEmi}${window.isFestiveMode ? `<span style="background:var(--warning); color:#000; font-size:10px; padding:2px 4px; border-radius:3px; font-weight:900; margin-left:6px; display:inline-block; vertical-align:middle; line-height:1;">✨ OFFER</span>` : ''}`; document.getElementById(`inst_${pIdx}_${dIdx}`).innerText = inst;
             d.loan = loan; d.currentTenure = calcTenure; d.dp = dpR; d.inst = inst; d.emi = emi;
@@ -1789,13 +1770,21 @@
             let nbfcMaxL = (currentLimit * d.tenure) / (d.tenure - d.advEmi || 1); 
             let maxBoundary = Math.min(loanCapPrice > 0 ? loanCapPrice : 999999, nbfcMaxL, prod.isNonTieup ? d.maxLoan : 9999999);
             if(loan > maxBoundary) { loan = maxBoundary; el.value = Math.floor(loan); } let roiInEmi = loan * roiRate; let roiInDp = loan * roiRateDP;  
-            let dpE = effectivePrice - loan + ((loan/d.tenure) * d.advEmi) + (loan * dbdRate) + d.pf + totalFees + roiInDp; let dpR = Math.ceil(dpE / 10) * 10;
+            dpE = effectivePrice - loan + ((loan/d.tenure) * d.advEmi) + (loan * dbdRate) + d.pf + totalFees + roiInDp; dpR = Math.ceil(dpE / 10) * 10;
             let inst = d.tenure - d.advEmi; if(inst < 1) inst = 1; let insTotal = (parseFloat(inp.gtl)||0)+(parseFloat(inp.rfc)||0)+(parseFloat(inp.exw)||0); let emi = (loan / d.tenure) + (insTotal / inst) + roiInEmi;
             d.loan = loan; d.dp = dpR; d.emi = emi;
         }
         d.extra = effectivePrice > 0 ? (((d.emi * d.inst) + d.dp) - effectivePrice) : 0; d.dbdAmt = loan * dbdRate; d.roiAmt = (loan * roiRateDP) + (loan * roiRate * d.inst);
+        
+        let marginMoney = parseFloat(inp.margin) || 0;
+        let roundupAdj = (dpR > dpE) ? (dpR - dpE) : 0;
+        d.netDisb = effectivePrice > 0 ? (effectivePrice - dpR - marginMoney - roundupAdj) : 0;
+
         document.getElementById(`dp_${pIdx}_${dIdx}`).innerText = "₹" + Math.round(d.dp).toLocaleString(); document.getElementById(`emi_${pIdx}_${dIdx}`).innerText = "₹" + Math.round(d.emi).toLocaleString();
         
+        let ndCell = document.getElementById(`nd_${pIdx}_${dIdx}`);
+        if(ndCell) ndCell.innerText = "₹" + Math.round(d.netDisb).toLocaleString();
+
         d.curLTV = d.currentTenure > 0 ? ((d.currentTenure - d.advEmi) / d.currentTenure) * 100 : 0; let ltvCell = document.getElementById(`ltv_${pIdx}_${dIdx}`); if(ltvCell) ltvCell.innerText = Math.round(d.curLTV) + "%";
         let extraCell = document.getElementById(`extra_${pIdx}_${dIdx}`); if(extraCell) extraCell.innerText = "₹" + Math.round(d.extra).toLocaleString();
         
@@ -1817,7 +1806,7 @@
         let c = customerQueue[activeCustomerIndex]; let cappingLine = (c.cap && c.cap !== "") ? `\nEMI CAPPING- ${c.cap}` : "";
         let custDetails = `CUSTOMER NAME- ${c.name}\nNUMBER- ${c.mobile || ''}\nLIMIT- ${c.limit}\nLTV- ${c.ltv}${cappingLine}\n\n`;
 
-        let textToCopy = `${custDetails}📱 *${prod.name}*\n${invAmt > 0 ? `*INVOICE AMOUNT:* ₹${invAmt}\n\n` : "" }✅ *Scheme:* ${d.currentTenure}/${d.advEmi}\n💰 *DP:* ₹${Math.round(d.dp).toLocaleString()}\n🗓️ *EMI:* ₹${Math.round(d.emi).toLocaleString()} x ${d.inst}\n✨ *Daily EMI:* ₹${Math.round(d.daily).toLocaleString()}`;
+        let textToCopy = `${custDetails}📱 *${prod.name}*\n${invAmt > 0 ? `*INVOICE AMOUNT:* ₹${invAmt}\n\n` : "" }✅ *Scheme:* ${d.currentTenure}/${d.advEmi}\n💰 *DP:* ₹${Math.round(d.dp).toLocaleString()}\n🏦 *Net Disb:* ₹${Math.round(d.netDisb).toLocaleString()}\n🗓️ *EMI:* ₹${Math.round(d.emi).toLocaleString()} x ${d.inst}\n✨ *Daily EMI:* ₹${Math.round(d.daily).toLocaleString()}`;
         function showSuccess() { let originalText = btnElement.innerText; btnElement.innerText = "COPIED!"; btnElement.style.background = "var(--success)"; setTimeout(() => { btnElement.innerText = originalText; btnElement.style.background = "var(--primary)"; }, 2000); }
         if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(textToCopy).then(showSuccess).catch(() => fallbackCopy(textToCopy, showSuccess)); } else { fallbackCopy(textToCopy, showSuccess); }
     }
