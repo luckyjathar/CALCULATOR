@@ -559,6 +559,24 @@
     window.isFestiveMode = false;
     let currentModalCategory = ""; // Global variable for active category check
 
+    // --- MASTER RFC SLAB CALCULATOR ---
+    function getRfcSlabValue(val) {
+        let amount = parseFloat(val) || 0;
+        if (amount < 8000) return 0;
+        if (amount <= 10000) return 1109;
+        if (amount <= 15000) return 1631;
+        if (amount <= 20000) return 2147;
+        if (amount <= 25000) return 2695;
+        if (amount <= 30000) return 3215;
+        if (amount <= 35000) return 3648;
+        if (amount <= 40000) return 4219;
+        if (amount <= 50000) return 5720;
+        if (amount <= 60000) return 8686;
+        if (amount <= 100000) return 11438;
+        if (amount <= 200000) return 16677;
+        return 0;
+    }
+
     // --- FESTIVAL THEME LOGIC ---
     function applyFestivalTheme() {
         const now = new Date();
@@ -890,17 +908,7 @@
         let gtl = inv > 100000 ? 2398 : (inv > 50000 ? 1799 : (inv > 30000 ? 1499 : (inv > 10000 ? 1199 : (inv > 0 ? 699 : 0))));
         document.getElementById('fcGtl').value = gtl;
         
-        let rfcSlab = 0;
-        if(inv > 100000) rfcSlab = 11438;
-        else if(inv > 60000) rfcSlab = 8686;
-        else if(inv > 50000) rfcSlab = 5720;
-        else if(inv > 40000) rfcSlab = 4219;
-        else if(inv > 30000) rfcSlab = 3648;
-        else if(inv > 25000) rfcSlab = 3215;
-        else if(inv > 20000) rfcSlab = 2695;
-        else if(inv > 15000) rfcSlab = 2147;
-        else if(inv > 10000) rfcSlab = 1631;
-        else if(inv > 0) rfcSlab = 1109;
+        let rfcSlab = getRfcSlabValue(inv);
 
         let rfcOpt = document.getElementById('fcRfcOpt');
         if(rfcOpt) {
@@ -1381,8 +1389,7 @@
         let gtl = mrp > 100000 ? 2398 : (mrp > 50000 ? 1799 : (mrp > 30000 ? 1499 : (mrp > 10000 ? 1199 : (mrp > 0 ? 699 : 0))));
         document.getElementById('compGtl').value = gtl;
         
-        let rfcSlab = 0;
-        if(mrp > 100000) rfcSlab = 11438; else if(mrp > 60000) rfcSlab = 8686; else if(mrp > 50000) rfcSlab = 5720; else if(mrp > 40000) rfcSlab = 4219; else if(mrp > 30000) rfcSlab = 3648; else if(mrp > 25000) rfcSlab = 3215; else if(mrp > 20000) rfcSlab = 2695; else if(mrp > 15000) rfcSlab = 2147; else if(mrp > 10000) rfcSlab = 1631; else if(mrp > 0) rfcSlab = 1109;
+        let rfcSlab = getRfcSlabValue(mrp);
         
         let rfcOpt = document.getElementById('compRfcOpt');
         if(rfcOpt) { rfcOpt.value = rfcSlab; rfcOpt.innerText = rfcSlab; }
@@ -1428,8 +1435,8 @@
 
         let currentMrp = baseMrp !== "" ? baseMrp : (c.components?.mrp || ''); document.getElementById('compMrp').value = currentMrp;
         
-        let mrpForRfc = parseFloat(currentMrp) || 0; let rfcSlab = 0;
-        if(mrpForRfc > 100000) rfcSlab = 11438; else if(mrpForRfc > 60000) rfcSlab = 8686; else if(mrpForRfc > 50000) rfcSlab = 5720; else if(mrpForRfc > 40000) rfcSlab = 4219; else if(mrpForRfc > 30000) rfcSlab = 3648; else if(mrpForRfc > 25000) rfcSlab = 3215; else if(mrpForRfc > 20000) rfcSlab = 2695; else if(mrpForRfc > 15000) rfcSlab = 2147; else if(mrpForRfc > 10000) rfcSlab = 1631; else if(mrpForRfc > 0) rfcSlab = 1109;
+        let mrpForRfc = parseFloat(currentMrp) || 0;
+        let rfcSlab = getRfcSlabValue(mrpForRfc);
 
         let rfcOpt = document.getElementById('compRfcOpt'); if(rfcOpt) { rfcOpt.value = rfcSlab; rfcOpt.innerText = rfcSlab; }
         
@@ -1540,8 +1547,8 @@
             if (!isPhoneWebMobile) prod.inputs.rfc = 0; // Enforce zero if not phone
             if (isPhoneWebMobile) prod.inputs.exw = 0; // Enforce zero if phone
 
-            let rfcSlab = 0; let mVal = parseFloat(prod.inputs.mrp) || 0;
-            if(mVal > 100000) rfcSlab = 11438; else if(mVal > 60000) rfcSlab = 8686; else if(mVal > 50000) rfcSlab = 5720; else if(mVal > 40000) rfcSlab = 4219; else if(mVal > 30000) rfcSlab = 3648; else if(mVal > 25000) rfcSlab = 3215; else if(mVal > 20000) rfcSlab = 2695; else if(mVal > 15000) rfcSlab = 2147; else if(mVal > 10000) rfcSlab = 1631; else if(mVal > 0) rfcSlab = 1109;
+            let mVal = parseFloat(prod.inputs.mrp) || 0;
+            let rfcSlab = getRfcSlabValue(mVal);
 
             div.innerHTML = `
                 <div style="font-weight:900; color:var(--indigo); border-bottom:1px solid #ccc; padding-bottom:4px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
@@ -1612,7 +1619,7 @@
         let isPhoneWebMobile = (prod.category === 'PHONE(WEB-MOBILE)');
         
         let gtl = baseLoanVal > 100000 ? 2398 : (baseLoanVal > 50000 ? 1799 : (baseLoanVal > 30000 ? 1499 : (baseLoanVal > 10000 ? 1199 : (baseLoanVal > 0 ? 699 : 0))));
-        let rfcSlab = 0; if(mrpVal > 100000) rfcSlab = 11438; else if(mrpVal > 60000) rfcSlab = 8686; else if(mrpVal > 50000) rfcSlab = 5720; else if(mrpVal > 40000) rfcSlab = 4219; else if(mrpVal > 30000) rfcSlab = 3648; else if(mrpVal > 25000) rfcSlab = 3215; else if(mrpVal > 20000) rfcSlab = 2695; else if(mrpVal > 15000) rfcSlab = 2147; else if(mrpVal > 10000) rfcSlab = 1631; else if(mrpVal > 0) rfcSlab = 1109;
+        let rfcSlab = getRfcSlabValue(mrpVal);
         
         let inp = prod.inputs;
         if(triggerType === 'MRP' || triggerType === 'INV') { 
