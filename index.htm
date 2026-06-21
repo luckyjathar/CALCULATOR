@@ -543,8 +543,8 @@
             <div style="text-align:center; font-weight:900; color:#aaa; margin-bottom:12px; font-size:11px;">─── FETCH ON YOUR 2ND DEVICE ───</div>
 
             <div style="background:#fff9e6; padding:12px; border-radius:6px; border:1px solid #ffeaa7; text-align:center;">
-                <label style="color:#d35400; font-size:11px !important;">📥 ENTER 6-DIGIT SYNC CODE</label>
-                <input type="text" id="pullCodeInput" placeholder="XXXXXX" maxlength="6" style="text-align:center; font-size:18px !important; font-weight:950; letter-spacing:4px; text-transform:uppercase; margin-bottom:10px;">
+                <label style="color:#d35400; font-size:11px !important;">📥 ENTER 12-CHAR SYNC CODE</label>
+                <input type="text" id="pullCodeInput" placeholder="XXXXXX-XXXXXX" maxlength="13" style="text-align:center; font-size:18px !important; font-weight:950; letter-spacing:3px; text-transform:uppercase; margin-bottom:10px;">
                 <button onclick="pullDataFromCloud()" style="width:100%; background:var(--success); color:white; font-size:12px !important; padding:10px;">⬇️ DECRYPT & SYNC</button>
             </div>
             
@@ -2011,16 +2011,14 @@
     }
 
     // =========================================================================
-    // 🔒 ZERO-TRUST E2EE SYNC ENGINE (CryptoJS AES-256 + Dweet.io Network)
+    // 🔒 NPOINT.IO "HEAVYWEIGHT" E2EE SYNC ENGINE (20MB Capacity + Open CORS)
     // =========================================================================
-    const DWEET_NAMESPACE = "persistent_e2e_v765_";
 
     function openSyncModal() {
         document.getElementById('syncStatusMsg').style.display = 'none';
         document.getElementById('pullCodeInput').value = '';
         document.getElementById('syncCodeDisplay').innerText = '------';
         
-        // Auto-load previously saved PIN into input box
         let savedPin = localStorage.getItem('portal_user_pin') || "";
         document.getElementById('userSyncPin').value = savedPin;
         
@@ -2031,9 +2029,7 @@
     function saveSyncPin(val) {
         let onlyNums = val.replace(/[^0-9]/g, '');
         document.getElementById('userSyncPin').value = onlyNums;
-        if(onlyNums.length === 4) {
-            localStorage.setItem('portal_user_pin', onlyNums);
-        }
+        if(onlyNums.length === 4) localStorage.setItem('portal_user_pin', onlyNums);
     }
 
     function getAgentPin() {
@@ -2050,108 +2046,148 @@
         box.innerText = text;
         box.style.background = isError ? '#ffe6e6' : '#e8f5e9';
         box.style.color = isError ? 'var(--danger)' : 'var(--success)';
+        box.style.border = `1px solid ${isError ? 'var(--danger)' : 'var(--success)'}`;
         box.style.display = 'block';
     }
 
-    // 1. PUSH (Encrypting data with User's PIN)
+    // 1. PUSH TO NPOINT CLOUD VAULT
     async function generateAndPushCode() {
+        if (typeof CryptoJS === 'undefined') {
+            alert("⛔ Technical Alert: CryptoJS security library load zali nahiye. Kripya PC var internet chaloo ahe ka te check kara kiva browser cha Ad-blocker band kara.");
+            document.getElementById('syncCodeDisplay').innerText = "ERR:LIB";
+            return;
+        }
+
         let pin = getAgentPin();
         if(!pin) return;
 
         if (customerQueue.length === 0) { 
-            alert("⚠️ Saved Queue madhye kamit-kami 1 customer hava!"); return; 
+            alert("⚠️ Saved Queue madhye cloud var push karnyasaathi kamit-kami 1 customer asayla hava!"); return; 
         }
 
         let codeBox = document.getElementById('syncCodeDisplay');
-        codeBox.innerText = "🔒 LOCKING...";
+        codeBox.innerText = "⏳ LOCKING...";
 
-        let rawPayload = {
+        // STRIPPING HEAVY CALCULATED ARRAYS TO KEEP PAYLOAD TINY (<3 KB)
+        let compactQueue = customerQueue.map(c => ({
+            name: c.name, mobile: c.mobile, limit: c.limit, ltv: c.ltv, type: c.type, cap: c.cap, timestamp: c.timestamp,
+            components: c.components || {},
+            products: (c.products || []).map(p => ({
+                name: p.name, category: p.category, isNonTieup: p.isNonTieup, inputs: p.inputs,
+                schemes: p.schemes || []
+            }))
+        }));
+
+        let securePayload = {
+            ver: "76.5",
             activeIdx: activeCustomerIndex,
-            queue: customerQueue,
-            timestamp: new Date().getTime()
+            queue: compactQueue,
+            time: new Date().toISOString()
         };
 
-        // AES-256 Military Grade Encryption using PIN as the passphrase
-        let encryptedString = CryptoJS.AES.encrypt(JSON.stringify(rawPayload), pin).toString();
-
-        let uniqueCode = generateTypoFreeCode(6);
-        let channel = DWEET_NAMESPACE + uniqueCode;
+        // Military Grade AES-256 Lock
+        let encryptedString = CryptoJS.AES.encrypt(JSON.stringify(securePayload), pin).toString();
 
         try {
-            let res = await fetch(`https://dweet.io/dweet/for/${channel}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ secure_blob: encryptedString })
+            codeBox.innerText = "☁️ UPLOADING...";
+            
+            let response = await fetch("https://api.npoint.io/", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ secureBlob: encryptedString })
             });
 
-            if(!res.ok) throw new Error("Cloud rejection");
+            if (!response.ok) throw new Error("Cloud rejected connection");
 
-            codeBox.innerText = uniqueCode;
-            showSyncMsg(`✅ DATA SECURED! Code: [ ${uniqueCode} ] (Valid for 24 hours)`);
+            let data = await response.json();
+            
+            // Format 12-char hex code nicely: "4B829A-28190C"
+            let cleanId = data.id.toUpperCase();
+            let formattedCode = cleanId.slice(0, 6) + "-" + cleanId.slice(6);
+
+            codeBox.innerText = formattedCode;
+            showSyncMsg(`✅ SECURE PUSH SUCCESS! Dusrya mobile var [ ${formattedCode} ] code taka.`);
 
         } catch(err) {
+            console.error("Cloud Push Failed:", err);
             codeBox.innerText = "FAIL";
-            showSyncMsg("⚠️ Internet connection drop zale ahe.", true);
+            showSyncMsg("⚠️ Server busy ahe kiva Internet band padle ahe.", true);
         }
     }
 
-    // 2. PULL (Attempting to Decrypt data with current device's PIN)
+    // 2. PULL & NATIVE RE-HYDRATION
     async function pullDataFromCloud() {
+        if (typeof CryptoJS === 'undefined') {
+            alert("⛔ Technical Alert: CryptoJS library loaded nahi."); return;
+        }
+
         let pin = getAgentPin();
         if(!pin) return;
 
-        let inputCode = document.getElementById('pullCodeInput').value.trim().toUpperCase();
-        if(inputCode.length !== 6) { showSyncMsg("⚠️ 6 akshari barobar code type kara.", true); return; }
+        let rawInputCode = document.getElementById('pullCodeInput').value.replace(/[^A-Z0-9]/gi, '').toLowerCase();
 
-        showSyncMsg("📥 Downloading encrypted package...", false);
-        let channel = DWEET_NAMESPACE + inputCode;
+        if (rawInputCode.length < 10) { 
+            showSyncMsg("⚠️ Kripya purna activation code type kara (e.g. 4B829A-28190C)", true); return; 
+        }
+
+        showSyncMsg("📥 Fetching encrypted vault from Cloud...", false);
 
         try {
-            let res = await fetch(`https://dweet.io/get/latest/dweet/for/${channel}`);
-            let json = await res.json();
-
-            if(json.this === "failed" || !json.with || !json.with[0]) {
-                showSyncMsg(`⚠️ Code [ ${inputCode} ] cha kontahi live data sapadla nahi.`, true);
-                return;
+            let response = await fetch(`https://api.npoint.io/${rawInputCode}`);
+            
+            if (response.status === 404) {
+                showSyncMsg(`⚠️ Code [ ${rawInputCode.toUpperCase()} ] cha kontahi data cloud var sapadla nahi.`, true); return;
             }
+            if (!response.ok) throw new Error("Connection drop");
 
-            let encryptedBlob = json.with[0].content.secure_blob;
-            if(!encryptedBlob) throw new Error("Corrupted package");
+            let cloudData = await response.json();
+            let encryptedPackage = cloudData.secureBlob;
+
+            if (!encryptedPackage) throw new Error("Corrupted package");
 
             let decryptedText;
             try {
-                let bytes = CryptoJS.AES.decrypt(encryptedBlob, pin);
+                let bytes = CryptoJS.AES.decrypt(encryptedPackage, pin);
                 decryptedText = bytes.toString(CryptoJS.enc.Utf8);
-                if(!decryptedText) throw new Error("Passcode Mismatch");
-            } catch(cryptoErr) {
-                showSyncMsg("⛔ ACCESS DENIED: Ha data dusrya user cha ahe (Secret PIN chukla).", true);
+                if (!decryptedText) throw new Error("Passcode Mismatch");
+            } catch(cryptoError) {
+                showSyncMsg("⛔ ACCESS DENIED: Ha data dusrya agent cha ahe (Tumcha 4-Digit PIN chukla).", true);
                 return;
             }
 
-            let finalData = JSON.parse(decryptedText);
+            let unzippedVault = JSON.parse(decryptedText);
 
             if (customerQueue.length > 0) {
                 recycleBin.push(...customerQueue);
                 await saveToDB('persistent_recycle', recycleBin);
             }
 
-            customerQueue = finalData.queue;
-            activeCustomerIndex = finalData.activeIdx ?? -1;
+            customerQueue = unzippedVault.queue;
+            activeCustomerIndex = unzippedVault.activeIdx ?? -1;
 
             await saveQueueToLocal();
-            renderCustomerQueue(); updateUniversalActionButtons();
+            renderCustomerQueue(); 
+            updateUniversalActionButtons();
 
-            showSyncMsg("🎉 DATA SUCCESSFULLY UNLOCKED & MIRRORED!", false);
-            setTimeout(() => { closeSyncModal(); if(activeCustomerIndex !== -1) goToFinalPage(); }, 750);
+            showSyncMsg("🎉 DATA SUCCESSFULLY UNLOCKED & RESTORED!", false);
+
+            setTimeout(() => { 
+                closeSyncModal(); 
+                if (activeCustomerIndex !== -1) {
+                    goToFinalPage();
+                    // AUTO RE-CALCULATE ROWS ON THE TARGET DEVICE
+                    if (current_products && current_products.length > 0) {
+                        current_products.forEach((_, pIdx) => recalcModel(pIdx));
+                    }
+                } else {
+                    alert("✅ Portal synced successfully from remote vault.");
+                }
+            }, 750);
 
         } catch(err) {
-            showSyncMsg("⚠️ Data fetch fail. Code expire zala asel.", true);
+            console.error("Cloud Pull Failed:", err);
+            showSyncMsg("⚠️ Internet drop zale ahe kiva code expire zala ahe.", true);
         }
-    }
-
-    function generateTypoFreeCode(len) {
-        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; 
-        return Array.from({length: len}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
     }
 </script>
 </body>
