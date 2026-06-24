@@ -126,8 +126,8 @@
             <span id="icon_fc">🧮</span> FAST CALC
         </button>
         <button onclick="openSyncModal()" tabindex="-1" style="opacity: 0; cursor: default; background: transparent; border: none; box-shadow: none;">
-    🔄 CLOUD SYNC
-</button>
+            🔄 CLOUD SYNC
+        </button>
     </div>
     <h1>🚀 Persistent Portal Master</h1>
 </header>
@@ -471,6 +471,7 @@
                     <select id="fcCat" onchange="fcCatChanged();">
                         <option value="OTHER">OTHER</option>
                         <option value="PHONE(WEB-MOBILE)">PHONE(WEB-MOBILE)</option>
+                        <option value="Phone , Tablet, Smart Watch">Phone, Tablet, Smart Watch</option>
                     </select>
                 </div>
                 <div><label>GTL (₹)</label>
@@ -588,6 +589,18 @@
 <script>
     window.isFestiveMode = false;
     let currentModalCategory = ""; 
+
+    // ==========================================
+    // 📱 UNIVERSAL MOBILE CATEGORY DETECTOR
+    // ==========================================
+    function isMobileDeviceCat(cat) {
+        if (!cat) return false;
+        let c = String(cat).toUpperCase().replace(/\s+/g, '').trim();
+        return c === 'PHONE(WEB-MOBILE)' || 
+               c === 'PHONE,TABLET,SMARTWATCH' || 
+               c.includes('TABLET,SMART') || 
+               c.includes('PHONE,TABLET');
+    }
 
     function getRfcSlabValue(val) {
         let amount = parseFloat(val) || 0;
@@ -889,7 +902,7 @@
     }
 
     function fcCatChanged() {
-        let isPhone = document.getElementById('fcCat').value === 'PHONE(WEB-MOBILE)';
+        let isPhone = isMobileDeviceCat(document.getElementById('fcCat').value);
         let rSelect = document.getElementById('fcRfc');
         let exwInput = document.getElementById('fcExw');
 
@@ -920,7 +933,7 @@
 
     function fcInvChanged() {
         let inv = parseFloat(document.getElementById('fcInv').value) || 0;
-        let isPhone = document.getElementById('fcCat').value === 'PHONE(WEB-MOBILE)';
+        let isPhone = isMobileDeviceCat(document.getElementById('fcCat').value);
         
         let gtl = inv > 100000 ? 2398 : (inv > 50000 ? 1799 : (inv > 30000 ? 1499 : (inv > 10000 ? 1199 : (inv > 0 ? 699 : 0))));
         document.getElementById('fcGtl').value = gtl;
@@ -1040,7 +1053,7 @@
         let type = document.getElementById('cqType').value;
         let cap = parseFloat(document.getElementById('cqCap').value) || "";
 
-        if(!limit || limit <= 0) { alert("⚠️ Please enter a valid NBFC LIMIT to add customer!"); return; }
+        if(!limit || limit <= 0) { alert("⚠️ Customer add karne ke liye pehle ek valid NBFC LIMIT enter karein!"); return; }
 
         let now = new Date();
         let ts = now.toLocaleDateString('en-GB', {day:'2-digit', month:'short'}) + ' ' + now.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
@@ -1167,7 +1180,7 @@
     }
 
     async function emptyRecycleBin() {
-        if(recycleBin.length === 0) { alert("Recycle bin aadhi pasunch empty aahe."); return; }
+        if(recycleBin.length === 0) { alert("⚠️ Recycle bin pehle se hi empty hai!"); return; }
         if (confirm("Are you sure you want to permanently delete all items in the Recycle Bin?")) {
             recycleBin = []; await saveToDB('persistent_recycle', recycleBin); openRecycleBin(); alert("Recycle Bin completely emptied!");
         }
@@ -1206,7 +1219,7 @@
     }
 
     async function setActiveCustomer(idx) { 
-        if(db_records.length === 0) { alert('⚠️ Master Stream deployment empty.'); return; }
+        if(db_records.length === 0) { alert('⚠️ Master Stream se data fetch nahi hua hai. Kripya apna internet connection check karein!'); return; }
         activeCustomerIndex = idx; await saveQueueToLocal(); document.getElementById('queueSearch').value = ''; goToFinalPage();
     }
     
@@ -1300,7 +1313,7 @@
 
     async function processMultiStack() {
         let modelName = document.getElementById('multiStackModelName').value.trim().toUpperCase();
-        if (!modelName) return alert("⚠️ Kripya Model Name enter karein!");
+        if (!modelName) return alert("⚠️ Kripya Product Model Name zaroor enter karein!");
         let validSchemes = [];
         for(let i=1; i<=10; i++) {
             let ten = parseInt(document.getElementById(`msTen_${i}`).value) || 0; let fix = parseInt(document.getElementById(`msFix_${i}`).value) || 0;
@@ -1319,7 +1332,7 @@
             sortConfigs.push({ key: 'dp', dir: 'asc' }); 
             customerQueue[activeCustomerIndex].products = current_products; customerQueue[activeCustomerIndex].sortConfigs = sortConfigs;
             await saveQueueToLocal(); closeMultiStackModal(); renderMatrix(); 
-        } else { alert("⚠️ At least ek Scheme ki details fill karein!"); }
+        } else { alert("⚠️ Kripya kam se kam ek Scheme ki details zaroor fill karein!"); }
     }
 
     function findValLocal(row, targets) { let key = Object.keys(row).find(k => targets.includes(k.toUpperCase().replace(/\s/g, ''))); return key ? row[key] : null; }
@@ -1386,7 +1399,7 @@
     }
 
     function quickNonTieup() { 
-        if (!isLimitValid()) return; if(db_records.length === 0) return alert("⚠️ Database Error!");
+        if (!isLimitValid()) return; if(db_records.length === 0) return alert("⚠️ Master database fetch me error hai!");
         document.getElementById('addProductModal').style.display = 'none'; 
         let tieup = db_records.filter(r => r.model === SPECIAL_MODEL); let cats = [...new Set(tieup.map(r => r.category))].sort(); 
         document.getElementById('categoryGrid').innerHTML = cats.map(c => `<div style="background:var(--indigo);color:white;padding:12px;border-radius:4px;cursor:pointer;font-weight:900;text-align:center;" onclick="selectCategory('${c}')">${c}</div>`).join(''); 
@@ -1411,7 +1424,7 @@
         let rfcOpt = document.getElementById('compRfcOpt');
         if(rfcOpt) { rfcOpt.value = rfcSlab; rfcOpt.innerText = rfcSlab; }
         
-        if (currentModalCategory === 'PHONE(WEB-MOBILE)') {
+        if (isMobileDeviceCat(currentModalCategory)) {
             document.getElementById('compRfc').value = rfcSlab;
         } else {
             document.getElementById('compRfc').value = "0";
@@ -1424,7 +1437,9 @@
         let rfcSelect = document.getElementById('compRfc');
         let exwInput = document.getElementById('compExw');
 
-        if (currentModalCategory === 'PHONE(WEB-MOBILE)') {
+        let isMobileCat = isMobileDeviceCat(currentModalCategory);
+
+        if (isMobileCat) {
             rfcSelect.disabled = false;
             rfcSelect.style.background = '#fff';
             rfcSelect.style.cursor = 'default';
@@ -1456,7 +1471,7 @@
         } else { 
             document.getElementById('compInv').value = c.components?.inv || ''; 
             document.getElementById('compGtl').value = c.components?.gtl || 0; 
-            if (currentModalCategory === 'PHONE(WEB-MOBILE)') {
+            if (isMobileCat) {
                 document.getElementById('compRfc').value = c.components?.rfc || 0; 
             }
         }
@@ -1464,7 +1479,7 @@
         document.getElementById('compCap').value = c.components?.cap || c.cap || ''; 
         document.getElementById('compTarget').value = c.components?.target || '';
         
-        if (currentModalCategory !== 'PHONE(WEB-MOBILE)') {
+        if (!isMobileCat) {
             document.getElementById('compExw').value = c.components?.exw || '';
         }
         
@@ -1480,8 +1495,9 @@
         customerQueue[idx].components.cap = parseFloat(document.getElementById('compCap').value) || 0; customerQueue[idx].components.target = parseFloat(document.getElementById('compTarget').value) || 0;
         customerQueue[idx].components.gtl = parseFloat(document.getElementById('compGtl').value) || 0; 
         
-        customerQueue[idx].components.rfc = currentModalCategory === 'PHONE(WEB-MOBILE)' ? (parseFloat(document.getElementById('compRfc').value) || 0) : 0;
-        customerQueue[idx].components.exw = currentModalCategory === 'PHONE(WEB-MOBILE)' ? 0 : (parseFloat(document.getElementById('compExw').value) || 0);
+        let isMobileCat = isMobileDeviceCat(currentModalCategory);
+        customerQueue[idx].components.rfc = isMobileCat ? (parseFloat(document.getElementById('compRfc').value) || 0) : 0;
+        customerQueue[idx].components.exw = isMobileCat ? 0 : (parseFloat(document.getElementById('compExw').value) || 0);
         
         customerQueue[idx].components.margin = parseFloat(document.getElementById('compMargin').value) || 0;
         customerQueue[idx].components.dealer = parseFloat(document.getElementById('compDealer').value) || 0;
@@ -1553,7 +1569,7 @@
             let isCollapsed = (current_products.length > 1 && pIdx < current_products.length - 1);
             let displayStyle = isCollapsed ? 'none' : 'block'; let gridStyle = isCollapsed ? 'none' : 'grid'; let toggleIcon = isCollapsed ? '▶' : '▼';
 
-            let isPhoneWebMobile = (prod.category === 'PHONE(WEB-MOBILE)');
+            let isPhoneWebMobile = isMobileDeviceCat(prod.category);
             if (!isPhoneWebMobile) prod.inputs.rfc = 0; 
             if (isPhoneWebMobile) prod.inputs.exw = 0; 
 
@@ -1627,7 +1643,7 @@
 
     function syncInsurance(pIdx, mrpVal, baseLoanVal, triggerType = 'NONE') {
         let prod = current_products[pIdx];
-        let isPhoneWebMobile = (prod.category === 'PHONE(WEB-MOBILE)');
+        let isPhoneWebMobile = isMobileDeviceCat(prod.category);
         
         let gtl = baseLoanVal > 100000 ? 2398 : (baseLoanVal > 50000 ? 1799 : (baseLoanVal > 30000 ? 1499 : (baseLoanVal > 10000 ? 1199 : (baseLoanVal > 0 ? 699 : 0))));
         let rfcSlab = getRfcSlabValue(mrpVal);
@@ -1951,7 +1967,7 @@
             html += `</tbody></table></div>`;
         });
         
-        if(!hasV) { alert("⚠️ Download ke liye koi active/eligible scheme nahi hai!"); return; }
+        if(!hasV) { alert("⚠️ Image me dikhane ke liye koi active ya eligible scheme bachi hi nahi hai!"); return; }
         html += `<div style="text-align:center; margin-top: 20px; color:#888; font-size: 14px; font-weight: bold;">Generated via Persistent Portal</div>`;
         quoteDiv.innerHTML = html; document.body.appendChild(quoteDiv);
         
