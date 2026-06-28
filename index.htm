@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Persistent Portal V76.17 - Bug Fix & Stability Edition</title>
+    <title>Persistent Portal V76.18 - Ultimate Filter Edition</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
@@ -215,8 +215,10 @@
                     <div><label>ADVANCE EMI</label><input type="number" id="fcAdv" placeholder="0" oninput="calculateFastData();"></div>
                     <div><label>DBD (%)</label><input type="number" id="fcDbd" placeholder="0" step="0.01" oninput="calculateFastData();"></div>
                     
-                    <div><label>ROI (%)</label><input type="number" id="fcRoi" placeholder="0" step="0.01" oninput="calculateFastData();"></div>
+                    <!-- REORDERED PF AND ROI AS REQUESTED -->
                     <div><label>PF (₹)</label><input type="number" id="fcPf" placeholder="0" oninput="calculateFastData();"></div>
+                    <div><label>ROI (%)</label><input type="number" id="fcRoi" placeholder="0" step="0.01" oninput="calculateFastData();"></div>
+                    
                     <div><label>CUSTOMER TYPE</label>
                         <select id="fcCustType" onchange="calculateFastData();">
                             <option value="NEW">NEW</option>
@@ -310,7 +312,7 @@
 
     <!-- DICTIONARY MODAL -->
     <div id="dictionarySearchModal" class="modal">
-        <div class="modal-content" style="max-width: 480px; padding: 18px;">
+        <div class="modal-content" style="max-width: 550px; padding: 18px;">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--indigo); padding-bottom: 8px; margin-bottom: 12px;">
                 <h3 style="margin:0; color:var(--indigo); font-size: 16px !important;">🔍 SEARCH SCHEMES DICTIONARY</h3>
                 <button onclick="closeDictionaryModal()" style="background:none; border:none; color:var(--danger); font-weight:bold; cursor:pointer; font-size:18px; padding:0;">✖</button>
@@ -377,7 +379,7 @@
             <h3 style="margin-top:0; color:var(--bajaj-blue); border-bottom: 2px solid #ddd; padding-bottom: 6px;">🔍 ADD NEW PRODUCT</h3>
             <div style="position:relative; margin-bottom: 12px;">
                 <label style="color:var(--indigo); margin-bottom:4px; display:block;">SEARCH MODEL</label>
-                <input type="search" id="modalMatrixSearch" oninput="doSearch('modalMatrixSearch', 'modalMatrixSearchDropdown')" placeholder="Type model name..." style="width:100%;">
+                <input type="search" id="modalMatrixSearch" oninput="doSearch('modalMatrixSearch', 'modalMatrixSearchDropdown')" placeholder="Type model, brand or category..." style="width:100%;">
                 <div id="modalMatrixSearchDropdown" style="position: absolute; width: 100%; background: #fff; z-index: 1000; border: 1px solid #ddd; display: none; box-shadow: 0 10px 20px rgba(0,0,0,0.15); border-radius: 4px; max-height: 200px; overflow-y: auto;"></div>
             </div>
             <div style="display:flex; gap:8px;">
@@ -621,19 +623,48 @@
         return c === 'PHONE(WEB-MOBILE)' || 
                c === 'PHONE,TABLET,SMARTWATCH' || 
                c.includes('TABLET,SMART') || 
-               c.includes('PHONE,TABLET');
+               c.includes('PHONE,TABLET') ||
+               c === 'SMARTPHONES' || 
+               c === 'MOBILE';
     }
 
+    // --- ADDED: STRICT CATEGORY STANDARDIZATION ---
     function standardizeCategoryName(cat) {
         if (!cat) return "OTHER";
-        let c = String(cat).toUpperCase().replace(/\s+/g, '').trim();
-        if (c === 'PHONE(WEB-MOBILE)' || 
-            c === 'PHONE,TABLET,SMARTWATCH' || 
-            c.includes('TABLET,SMART') || 
-            c.includes('PHONE,TABLET')) {
+        let c = String(cat).toUpperCase().trim();
+        let cNoSpace = c.replace(/\s+/g, '');
+
+        if (cNoSpace === 'PHONE(WEB-MOBILE)' || 
+            cNoSpace === 'PHONE,TABLET,SMARTWATCH' || 
+            cNoSpace.includes('TABLET,SMART') || 
+            cNoSpace.includes('PHONE,TABLET') ||
+            cNoSpace === 'SMARTPHONES' || 
+            cNoSpace === 'MOBILE') {
             return "PHONE(WEB-MOBILE)";
         }
-        return String(cat).trim().toUpperCase();
+        if (cNoSpace === 'AIRCONDITIONERS' || cNoSpace === 'AIRCONDITIONER' || cNoSpace === 'AC') {
+            return "AC";
+        }
+        if (cNoSpace === 'BATTERIES' || cNoSpace === 'BATTERY') {
+            return "BATTERY";
+        }
+        if (cNoSpace === 'AIRCOOLERS' || cNoSpace === 'AIRCOOLER' || cNoSpace === 'COOLER') {
+            return "AIR COOLER";
+        }
+        if (cNoSpace === 'TELEVISIONS' || cNoSpace === 'TELEVISION' || cNoSpace === 'TV' || cNoSpace === 'LED' || cNoSpace === 'LEDTV') {
+            return "LED TV";
+        }
+        if (cNoSpace === 'WASHINGMACHINES' || cNoSpace === 'WASHINGMACHINE' || cNoSpace === 'WM') {
+            return "WASHING MACHINE";
+        }
+        if (cNoSpace === 'REFRIGERATORS' || cNoSpace === 'REFRIGERATOR' || cNoSpace === 'FRIDGE' || cNoSpace === 'REF') {
+            return "REFRIGERATOR";
+        }
+        if (cNoSpace === 'WATERPURIFIERS' || cNoSpace === 'WATERPURIFIER' || cNoSpace === 'RO') {
+            return "WATER PURIFIER";
+        }
+        
+        return c;
     }
 
     function getRfcSlabValue(val) {
@@ -1356,6 +1387,7 @@
         return true;
     }
 
+    // --- ADDED: BRAND-BASED SEARCH LOGIC ---
     function doGlobalSearch() {
         let q = document.getElementById('globalModelSearch').value.toUpperCase().trim(); 
         let dd = document.getElementById('globalModelDropdown'); 
@@ -1363,11 +1395,14 @@
         
         let validRecords = db_records.filter(r => r.model !== SPECIAL_MODEL);
         
-        let brandMatches = validRecords.filter(r => r.model.includes(q)).map(r => r.model);
-        
-        let catMatches = validRecords.filter(r => (r.category || '').toUpperCase().includes(q)).map(r => r.model);
-        
-        let matches = [...new Set([...brandMatches, ...catMatches])].slice(0, 20);
+        let matches = validRecords.filter(r => {
+            let m = r.model || "";
+            let b = r.brand || "";
+            let c = r.category || "";
+            return m.includes(q) || b.includes(q) || c.includes(q);
+        }).map(r => r.model);
+
+        matches = [...new Set(matches)].slice(0, 30); // Showing up to 30 matches for broader search
         
         if (matches.length === 0) {
             dd.innerHTML = `<div style="padding:10px; color:#d35400; font-weight:bold; text-align:center;">No matching models found.</div>`;
@@ -1378,7 +1413,11 @@
         dd.innerHTML = matches.map(m => {
             let rec = validRecords.find(x => x.model === m);
             let catTag = rec && rec.category ? `<span style="font-size:10px; background:#e0e0e0; color:#333; padding:2px 6px; border-radius:4px; float:right;">📁 ${rec.category}</span>` : '';
-            return `<div style="padding:10px; border-bottom:1px solid #eee; cursor:pointer; font-weight:800; color:var(--dark); overflow:hidden;" onmouseover="this.style.background='#e3f2fd'" onmouseout="this.style.background='#fff'" onclick="viewGlobalModel('${m}')">📱 ${m} ${catTag}</div>`;
+            let brandTag = rec && rec.brand ? `<span style="font-size:10px; color:#0984e3; font-weight:900; margin-right:5px;">[${rec.brand}]</span>` : '';
+            return `<div style="padding:10px; border-bottom:1px solid #eee; cursor:pointer; font-weight:800; color:var(--dark); display:flex; justify-content:space-between; align-items:center;" onmouseover="this.style.background='#e3f2fd'" onmouseout="this.style.background='#fff'" onclick="viewGlobalModel('${m}')">
+                <span style="flex:1;">${brandTag}📱 ${m}</span>
+                ${catTag}
+            </div>`;
         }).join('');
         
         dd.style.display = 'block';
@@ -1499,6 +1538,7 @@
 
         return { 
             model: type === SPECIAL_MODEL ? SPECIAL_MODEL : String(findValLocal(row,['MODEL','BRANDMODEL'])||"").toUpperCase(), 
+            brand: String(findValLocal(row, ['BRAND', 'MAKE', 'MANUFACTURER'])||"").toUpperCase(), // FETCHES BRAND FOR SEARCH
             mrp: parseFloat(findValLocal(row, ['MRP', 'PRICE', 'M.R.P'])) || 0, 
             tenure: parseInt(findValLocal(row, ['TOTALTENURE', 'TENURE', 'TA'])) || 0, 
             advEmi: parseInt(findValLocal(row, ['ADVANCEEMI', 'ADV'])) || 0, 
@@ -1549,11 +1589,35 @@
         closeEditSchemeModal(); recalcModel(pIdx);
     }
 
+    // --- ADDED: UPDATED MODAL PRODUCT SEARCH TO INCLUDE BRAND/CAT ---
     function doSearch(id, ddId) {
-        let q = document.getElementById(id).value.toUpperCase(); let dd = document.getElementById(ddId); if(!q) { dd.style.display='none'; return; }
-        let matches = [...new Set(db_records.filter(r => r.model !== SPECIAL_MODEL).map(r => r.model))].filter(m => m.includes(q)).slice(0,10);
-        dd.innerHTML = matches.map(m => `<div style="padding:10px; border-bottom:1px solid #eee; cursor:pointer; font-weight:800;" onclick="selectModel('${m}')">${m}</div>`).join('');
-        dd.style.display = matches.length ? 'block' : 'none';
+        let q = document.getElementById(id).value.toUpperCase().trim(); 
+        let dd = document.getElementById(ddId); 
+        if(!q) { dd.style.display='none'; return; }
+        
+        let validRecords = db_records.filter(r => r.model !== SPECIAL_MODEL);
+        let matches = validRecords.filter(r => {
+            let m = r.model || "";
+            let b = r.brand || "";
+            let c = r.category || "";
+            return m.includes(q) || b.includes(q) || c.includes(q);
+        }).map(r => r.model);
+
+        matches = [...new Set(matches)].slice(0, 15);
+        
+        if (matches.length === 0) {
+            dd.innerHTML = `<div style="padding:10px; color:#d35400; font-weight:bold; text-align:center;">No matching models found.</div>`;
+            dd.style.display = 'block';
+            return;
+        }
+        
+        dd.innerHTML = matches.map(m => {
+            let rec = validRecords.find(x => x.model === m);
+            let brandTag = rec && rec.brand ? `<span style="font-size:10px; color:#0984e3; font-weight:900; margin-right:5px;">[${rec.brand}]</span>` : '';
+            return `<div style="padding:10px; border-bottom:1px solid #eee; cursor:pointer; font-weight:800;" onclick="selectModel('${m}')">${brandTag}${m}</div>`;
+        }).join('');
+        
+        dd.style.display = 'block';
     }
 
     function selectModel(name) {
@@ -1924,7 +1988,7 @@
                 if(parseFloat(inp.target) > 0 && effectivePrice > 0) { let advRate = s.advEmi / s.tenure; let numerator = parseFloat(inp.target) - effectivePrice - s.pf - totalFees; let denominator = advRate + dbdRate + roiRateDP - 1; let solvedLoan = numerator / denominator; loan = Math.min(loan, Math.max(0, Math.floor(solvedLoan))); }
                 inst = s.tenure - s.advEmi; if(inst < 1) inst = 1; let insTotal = (parseFloat(inp.gtl)||0)+(parseFloat(inp.rfc)||0)+(parseFloat(inp.exw)||0); let roiInEmi = loan * roiRate; emi = (loan / s.tenure) + (insTotal / inst) + roiInEmi;
                 if(emi > parseFloat(inp.cap) && parseFloat(inp.cap) > 0) { loan = (parseFloat(inp.cap) - (insTotal/inst)) / ( (1/s.tenure) + roiRate ); roiInEmi = loan * roiRate; emi = (loan / s.tenure) + (insTotal / inst) + roiInEmi; }
-                let roiInDp = loan * roiRateDP; dpExact = effectivePrice - loan + ((loan/s.tenure) * s.advEmi) + (loan * dbdRate) + s.pf + totalFees + roiInDp; // FIXED BUG HERE
+                let roiInDp = loan * roiRateDP; dpExact = effectivePrice - loan + ((loan/s.tenure) * s.advEmi) + (loan * dbdRate) + s.pf + totalFees + roiInDp;
             }
             if(dpExact > 0) dpRounded = Math.ceil(dpExact / 10) * 10; else dpRounded = dpExact;
             let extraVal = effectivePrice > 0 ? (((emi * inst) + dpRounded) - effectivePrice) : 0; let dbdAmt = loan * dbdRate; let roiAmt = (loan * roiRateDP) + (loan * roiRate * inst);
@@ -2016,7 +2080,7 @@
             let nbfcMaxL = (currentLimit * d.tenure) / (d.tenure - d.advEmi || 1); 
             let maxBoundary = Math.min(loanCapPrice > 0 ? loanCapPrice : 999999, nbfcMaxL, prod.isNonTieup ? d.maxLoan : 9999999);
             if(loan > maxBoundary) { loan = maxBoundary; el.value = Math.floor(loan); } let roiInEmi = loan * roiRate; let roiInDp = loan * roiRateDP;  
-            dpE = effectivePrice - loan + ((loan/d.tenure) * d.advEmi) + (loan * dbdRate) + d.pf + totalFees + roiInDp; dpR = Math.ceil(dpE / 10) * 10; // FIXED BUG HERE
+            dpE = effectivePrice - loan + ((loan/d.tenure) * d.advEmi) + (loan * dbdRate) + d.pf + totalFees + roiInDp; dpR = Math.ceil(dpE / 10) * 10;
             let inst = d.tenure - d.advEmi; if(inst < 1) inst = 1; let insTotal = (parseFloat(inp.gtl)||0)+(parseFloat(inp.rfc)||0)+(parseFloat(inp.exw)||0); let emi = (loan / d.tenure) + (insTotal / inst) + roiInEmi;
             d.loan = loan; d.dp = dpR; d.emi = emi;
         }
@@ -2336,7 +2400,7 @@
         }));
 
         let securePayload = {
-            ver: "76.17",
+            ver: "76.18",
             activeIdx: activeCustomerIndex,
             queue: compactQueue,
             time: new Date().toISOString()
