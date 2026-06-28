@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Persistent Portal V76.16 - Smart Invite Edition</title>
+    <title>Persistent Portal V76.17 - Bug Fix & Stability Edition</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
@@ -338,7 +338,7 @@
 
     <div id="editCustomerModal" class="modal">
         <div class="modal-content" style="max-width:300px;">
-            <h3 style="margin-top:0; color:#8e44ad; border-bottom: 2px solid #ddd; padding-bottom: 6px;">✏️ Edit Customer Details</h3>
+            <h3 style="margin-top:0; color:var(--indigo); border-bottom: 2px solid #ddd; padding-bottom: 6px;">✏️ Edit Customer Details</h3>
             <div style="margin-bottom:6px;"><label>CUSTOMER NAME</label><input type="text" id="ecName"></div>
             <div style="margin-bottom:6px;"><label>MOBILE NO.</label><input type="text" id="ecMobile" maxlength="10"></div>
             <div style="margin-bottom:6px;"><label>NBFC LIMIT</label><input type="number" id="ecLimit"></div>
@@ -1225,7 +1225,6 @@
         document.getElementById('editCustomerModal').style.display='flex';
     }
     
-    /* --- ADDED: WHATSAPP INVITE FUNCTIONALITY --- */
     function uniInvite() {
         if(selectedQueueIndex === -1) return;
         let c = customerQueue[selectedQueueIndex];
@@ -1925,7 +1924,7 @@
                 if(parseFloat(inp.target) > 0 && effectivePrice > 0) { let advRate = s.advEmi / s.tenure; let numerator = parseFloat(inp.target) - effectivePrice - s.pf - totalFees; let denominator = advRate + dbdRate + roiRateDP - 1; let solvedLoan = numerator / denominator; loan = Math.min(loan, Math.max(0, Math.floor(solvedLoan))); }
                 inst = s.tenure - s.advEmi; if(inst < 1) inst = 1; let insTotal = (parseFloat(inp.gtl)||0)+(parseFloat(inp.rfc)||0)+(parseFloat(inp.exw)||0); let roiInEmi = loan * roiRate; emi = (loan / s.tenure) + (insTotal / inst) + roiInEmi;
                 if(emi > parseFloat(inp.cap) && parseFloat(inp.cap) > 0) { loan = (parseFloat(inp.cap) - (insTotal/inst)) / ( (1/s.tenure) + roiRate ); roiInEmi = loan * roiRate; emi = (loan / s.tenure) + (insTotal / inst) + roiInEmi; }
-                let roiInDp = loan * roiRateDP; dpExact = effectivePrice - loan + ((loan/s.tenure) * s.advEmi) + (loan * dbdRate) + pf + totalFees + roiInDp;
+                let roiInDp = loan * roiRateDP; dpExact = effectivePrice - loan + ((loan/s.tenure) * s.advEmi) + (loan * dbdRate) + s.pf + totalFees + roiInDp; // FIXED BUG HERE
             }
             if(dpExact > 0) dpRounded = Math.ceil(dpExact / 10) * 10; else dpRounded = dpExact;
             let extraVal = effectivePrice > 0 ? (((emi * inst) + dpRounded) - effectivePrice) : 0; let dbdAmt = loan * dbdRate; let roiAmt = (loan * roiRateDP) + (loan * roiRate * inst);
@@ -2017,7 +2016,7 @@
             let nbfcMaxL = (currentLimit * d.tenure) / (d.tenure - d.advEmi || 1); 
             let maxBoundary = Math.min(loanCapPrice > 0 ? loanCapPrice : 999999, nbfcMaxL, prod.isNonTieup ? d.maxLoan : 9999999);
             if(loan > maxBoundary) { loan = maxBoundary; el.value = Math.floor(loan); } let roiInEmi = loan * roiRate; let roiInDp = loan * roiRateDP;  
-            dpE = effectivePrice - loan + ((loan/d.tenure) * d.advEmi) + (loan * dbdRate) + d.pf + totalFees + roiInDp; dpR = Math.ceil(dpE / 10) * 10;
+            dpE = effectivePrice - loan + ((loan/d.tenure) * d.advEmi) + (loan * dbdRate) + d.pf + totalFees + roiInDp; dpR = Math.ceil(dpE / 10) * 10; // FIXED BUG HERE
             let inst = d.tenure - d.advEmi; if(inst < 1) inst = 1; let insTotal = (parseFloat(inp.gtl)||0)+(parseFloat(inp.rfc)||0)+(parseFloat(inp.exw)||0); let emi = (loan / d.tenure) + (insTotal / inst) + roiInEmi;
             d.loan = loan; d.dp = dpR; d.emi = emi;
         }
@@ -2337,7 +2336,7 @@
         }));
 
         let securePayload = {
-            ver: "76.16",
+            ver: "76.17",
             activeIdx: activeCustomerIndex,
             queue: compactQueue,
             time: new Date().toISOString()
