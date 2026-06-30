@@ -20,9 +20,10 @@
             --indigo: #2C3E50; 
             --bajaj-blue: #0059A3; 
             --bajaj-green: #00A34F; 
+            --bg-pattern: none;
         }
         
-        body { font-family: 'Segoe UI', sans-serif; margin: 0 auto; max-width: 1200px; padding: 4px; background-color: var(--bg); background-attachment: fixed; font-size: 14px; display: flex; flex-direction: column; min-height: 98vh; scroll-behavior: smooth; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0 auto; max-width: 1200px; padding: 4px; background-color: var(--bg); background-image: var(--bg-pattern); background-attachment: fixed; font-size: 14px; display: flex; flex-direction: column; min-height: 98vh; scroll-behavior: smooth; }
         
         header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; border-bottom: 3px solid var(--primary); margin-bottom: 6px; padding: 8px 12px; background: #fff; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         header h1 { margin: 0; font-size: 1.4rem; color: var(--primary); font-weight: 900; text-align: right; letter-spacing: 0.5px; }
@@ -105,6 +106,20 @@
 
         .forms-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; align-items: stretch; }
 
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 5px var(--warning); }
+            50% { box-shadow: 0 0 15px var(--warning); transform: scale(1.02); }
+            100% { box-shadow: 0 0 5px var(--warning); }
+        }
+        @keyframes offerFlash {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .festive-glow { animation: pulseGlow 2s infinite; border: 1px solid #fff; }
+        .festive-banner { text-align: center; font-weight: 900; color: #fff; padding: 6px; border-radius: 4px; margin-bottom: 8px; font-size: 14px; letter-spacing: 0.5px; display: none; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .cf-hidden-scheme { display: none; }
+
         @media (max-width: 768px) {
             .forms-row { flex-direction: column; }
             .form-container { width: 100%; margin-bottom: 8px; flex: none !important; }
@@ -125,6 +140,9 @@
         <div id="gitStatusBadge" style="font-weight: 950; font-size: 11px; background: rgba(39, 174, 96, 0.15); color: var(--success); padding: 5px 10px; border-radius: 4px; border: 1px solid var(--success); letter-spacing: 0.5px; transition: all 0.3s ease; display: inline-block;">
             ⚙️ GITHUB INTERFACE CONNECTED
         </div>
+        <button onclick="openFlyerGenModal()" style="background: var(--warning); color: #000; font-weight: 900; box-shadow: 0 2px 4px rgba(243, 156, 18, 0.4); padding: 8px 15px; font-size: 14px !important;">
+            📱 CREATE FLYER LINK
+        </button>
         <button onclick="openDealerSearchModal()" style="background: var(--bajaj-blue); color: white;">
             🔗 DEALER LINKS
         </button>
@@ -139,6 +157,7 @@
 </header>
 
 <main>
+    <div id="festiveBanner" class="festive-banner"></div>
     <div id="unifiedHome">
         <div class="forms-row">
             
@@ -215,7 +234,6 @@
                     <div><label>ADVANCE EMI</label><input type="number" id="fcAdv" placeholder="0" oninput="calculateFastData();"></div>
                     <div><label>DBD (%)</label><input type="number" id="fcDbd" placeholder="0" step="0.01" oninput="calculateFastData();"></div>
                     
-                    <!-- REORDERED PF AND ROI AS REQUESTED -->
                     <div><label>PF (₹)</label><input type="number" id="fcPf" placeholder="0" oninput="calculateFastData();"></div>
                     <div><label>ROI (%)</label><input type="number" id="fcRoi" placeholder="0" step="0.01" oninput="calculateFastData();"></div>
                     
@@ -292,6 +310,61 @@
             </div>
 
             <div id="importedDataSummary" class="custom-scroll" style="display:none; margin-top:8px; background:#fff; border:2px solid var(--success); border-radius:6px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); max-height: 350px; overflow-y: auto; position: relative; padding: 0;">
+            </div>
+        </div>
+    </div>
+
+    <!-- FLYER GENERATION MODAL -->
+    <div id="flyerGenModal" class="modal">
+        <div class="modal-content" style="max-width:440px; padding: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--bajaj-blue); padding-bottom: 8px; margin-bottom: 15px;">
+                <h3 style="margin:0; color:var(--bajaj-blue);">🔗 Generate Flyer Link</h3>
+                <button onclick="document.getElementById('flyerGenModal').style.display='none'" style="background:none; border:none; color:var(--danger); font-weight:bold; cursor:pointer; font-size:16px;">✖</button>
+            </div>
+            
+            <div style="margin-bottom:10px;">
+                <label>Salesman Name (Required)</label>
+                <input type="text" id="fgSalesName" placeholder="Lakshya">
+            </div>
+            <div style="margin-bottom:10px;">
+                <label>WhatsApp Number (Required)</label>
+                <input type="text" id="fgSalesMobile" placeholder="10 Digit Mobile Number" maxlength="10">
+            </div>
+            
+            <!-- DEALER SEARCH BOX (SILENT BITLY CAPTURE) -->
+            <div style="margin-bottom:10px; background: #f8f9fa; padding: 10px; border: 1.5px solid var(--bajaj-blue); border-radius: 6px;">
+                <label style="color:var(--bajaj-blue);">🏪 Select Dealer Shop (Compulsory)</label>
+                <input type="text" id="fgDealerSearch" placeholder="Search Dealer Name, City or Code..." oninput="searchFgDealer()">
+                <div id="fgDealerList" class="custom-scroll" style="max-height:120px; overflow-y:auto; margin-top:5px;"></div>
+                <div id="fgSelectedDealerBox" style="display:none; margin-top:8px; padding:8px; background:#e8f4f8; border:1px solid var(--primary); border-radius:4px; font-weight:bold; color:var(--bajaj-blue);"></div>
+            </div>
+
+            <div style="margin-bottom:10px; background: #fff3e0; padding: 10px; border: 1.5px solid var(--warning); border-radius: 6px;">
+                <label style="color:#d35400;">🎁 Add Promotional Offer (Optional)</label>
+                <select id="fgOfferType" onchange="toggleFgOfferInput()" style="margin-bottom:6px; color:#d35400;">
+                    <option value="NONE">NO OFFER</option>
+                    <option value="CASHBACK">CASHBACK (UPTO AMOUNT)</option>
+                    <option value="DISCOUNT">DISCOUNT (UPTO AMOUNT)</option>
+                    <option value="FREEBIE">FREEBIE GIFT</option>
+                </select>
+                <div id="fgOfferValBox" style="display:none;">
+                    <label id="fgOfferValLabel" style="color:#d35400;">ENTER UPTO AMOUNT (₹)</label>
+                    <input type="text" id="fgOfferValue" placeholder="E.g. 2000 or Earbuds">
+                </div>
+            </div>
+
+            <div style="margin-bottom:15px; background: #f0f4c3; padding: 10px; border: 1px solid #9e9d24; border-radius: 6px;">
+                <label style="color:#827717;">📱 Lock Specific Model Offer (Optional)</label>
+                <input type="text" id="fgModelSearch" placeholder="Search Specific Model..." oninput="searchFgModel()">
+                <div id="fgModelList" class="custom-scroll" style="max-height:100px; overflow-y:auto; margin-top:5px;"></div>
+                <div id="fgSelectedModelBox" style="display:none; margin-top:8px; padding:8px; background:#fff; border:1px solid #9e9d24; border-radius:4px; font-weight:bold; color:#827717;"></div>
+            </div>
+
+            <button onclick="generateFlyer()" style="width:100%; background:var(--primary); color:white; padding:10px; font-size:14px !important; margin-bottom:8px;">GENERATE & VIEW LINK</button>
+            
+            <div id="flyerGeneratedLinkBox" style="display:none; text-align:center;">
+                <textarea id="fgGeneratedLinkText" readonly style="width:100%; height:60px; padding:8px; font-size:12px; border:2px dashed var(--success); background:#f4fcf6; border-radius:4px; resize:none;"></textarea>
+                <button onclick="copyFlyerLink()" style="width:100%; background:var(--success); color:white; margin-top:5px; padding:8px;">📋 COPY LINK</button>
             </div>
         </div>
     </div>
@@ -614,8 +687,125 @@
     </div>
 </footer>
 
+<!-- CUSTOMER FLYER VIEW -->
+<div id="customerFlyerView" style="display:none; padding:15px; max-width:600px; margin:0 auto; background:#f4f7f6; min-height:100vh; box-sizing: border-box;">
+    <div style="background:#fff; border-radius:10px; padding:20px; box-shadow:0 4px 15px rgba(0,0,0,0.05); border: 2px solid var(--bajaj-blue);">
+        
+        <div id="cfOfferBanner" style="display:none; background: linear-gradient(135deg, #ff0055 0%, #000066 100%); color:white; padding:16px; border-radius:10px; text-align:center; margin-bottom:18px; border:2px solid #ffcc00; box-shadow: 0 6px 20px rgba(255, 0, 85, 0.4); animation: offerFlash 3s ease infinite;">
+            <div style="font-size:11px; color:#ffcc00; font-weight:900; letter-spacing:1.5px; margin-bottom:4px;">🔥 HURRY! EXCLUSIVE DEALER FLASH SALE 🔥</div>
+            <div id="cfOfferText" style="font-size:18px; font-weight:950; letter-spacing:0.5px; text-transform:uppercase; text-shadow: 1px 1px 2px #000;"></div>
+            <div style="font-size:12px; background:rgba(0,0,0,0.45); display:inline-block; padding:4px 14px; border-radius:20px; margin-top:8px; font-weight:bold; border:1px solid #ffcc00;">
+                ⏳ CLAIM OFFER BEFORE: <span id="cfCountdown" style="color:#fff; font-family:monospace; font-size:14px;">02:14:59</span>
+            </div>
+        </div>
+
+        <h2 style="color:var(--bajaj-blue); text-align:center; margin-top:0; border-bottom:2px dashed #eee; padding-bottom:10px;">✨ Device Selection & Lead Request</h2>
+        
+        <div id="cfSelfActionBox" style="display:none; margin-bottom:15px;"></div>
+
+        <div id="cfDealerSection" style="margin-bottom:15px;">
+            <label style="font-weight:bold; color:var(--indigo); margin-bottom:5px; display:block;">🏪 Search Dealer Shop</label>
+            <input type="text" id="cfDealerSearch" placeholder="Type Dealer Name or ID..." oninput="searchCfDealer()" style="width:100%; padding:10px; border:2px solid var(--primary); border-radius:6px;">
+            <div id="cfDealerList" class="custom-scroll" style="max-height:200px; overflow-y:auto; margin-top:5px; border-radius:6px;"></div>
+        </div>
+        
+        <div id="cfModelSection" style="margin-bottom:15px; display:none;">
+            <label style="font-weight:bold; color:var(--indigo); margin-bottom:5px; display:block;">📱 Search Device Model</label>
+            <input type="text" id="cfModelSearch" placeholder="Type Model Name..." oninput="searchCfModel()" style="width:100%; padding:10px; border:2px solid var(--primary); border-radius:6px;">
+            <div id="cfModelList" class="custom-scroll" style="max-height:200px; overflow-y:auto; margin-top:5px; border-radius:6px;"></div>
+        </div>
+        
+        <div id="cfSchemeSection" style="margin-bottom:20px; display:none;">
+            <label style="font-weight:bold; color:var(--indigo); margin-bottom:5px; display:block;">💳 Select Scheme</label>
+            <div id="cfSchemeList" style="display:flex; flex-direction:column; gap:10px;"></div>
+        </div>
+        
+        <div id="cfFormSection" style="margin-bottom:15px; display:none; background:#e8f4f8; padding:15px; border-radius:8px; border:1px solid var(--primary);">
+            <h4 style="margin-top:0; color:var(--primary);">👤 Your Details</h4>
+            
+            <div style="margin-bottom:12px;">
+                <label>Preferred Language / भाषा</label>
+                <select id="cfLang" style="background:#fff; font-weight:bold; color:var(--indigo);">
+                    <option value="mr" selected>Marathi (मराठी)</option>
+                    <option value="hi">Hindi (हिंदी)</option>
+                    <option value="en">English</option>
+                </select>
+            </div>
+
+            <div style="margin-bottom:10px;">
+                <label>Your Full Name</label>
+                <input type="text" id="cfCustName" placeholder="Enter Name" style="background:#fff;">
+            </div>
+            <div style="margin-bottom:15px;">
+                <label>Your Mobile Number</label>
+                <input type="text" id="cfCustMobile" placeholder="10 Digits" maxlength="10" style="background:#fff;">
+            </div>
+            
+            <div style="display:flex; align-items:flex-start; gap:8px; margin-bottom:14px; padding: 10px; background:#fff9e6; border-radius:6px; border:1.5px solid #f39c12;">
+                <input type="checkbox" id="cfAgreeCheck" style="width:20px !important; height:20px !important; margin-top:1px; cursor:pointer; flex-shrink:0;">
+                <label for="cfAgreeCheck" style="font-size:12px !important; color:#d35400; font-weight:bold; line-height:1.4; text-transform:none; cursor:pointer;">
+                    मी हे मान्य करतो/करते की, प्रत्यक्ष दुकानात आल्यावर फायनल प्रोसेस करताना सिस्टीमनुसार जे काही डाऊनपेमेंट आणि EMI (कमी किंवा जास्त) येईल, ते मला मान्य असेल.
+                </label>
+            </div>
+            
+            <button onclick="submitCfLead()" style="width:100%; background:#25D366; color:white; font-size:15px !important; padding:12px; border-radius:6px; box-shadow: 0 4px 6px rgba(37, 211, 102, 0.3);">🟢 Send Inquiry To Dealer (WhatsApp)</button>
+        </div>
+    </div>
+</div>
+
 <script>
+    window.isFestiveMode = false;
     let currentModalCategory = ""; 
+
+    let tempFgDealerId = "";
+    let tempFgDealerName = "";
+    let tempFgModel = ""; 
+    let tempFgBitly = ""; 
+    let cfSelectedDealer = "";
+    let cfSelectedModel = "";
+    let cfSelectedScheme = "";
+    let offerTimerInterval;
+
+    function cleanPureShopName(raw) {
+        if(!raw) return "";
+        return raw.split('#')[0].split('|')[0].split('(')[0].trim().toUpperCase();
+    }
+
+    function parseDealerObj(d) {
+        if (!d) return { code: '', name: '', city: '', bitly: '' };
+        
+        let keys = Object.keys(d);
+        let rawName = '', code = '', city = '', bitly = '';
+
+        for (let k of keys) {
+            let val = String(d[k]).trim();
+            if (val.startsWith('http://') || val.startsWith('https://') || val.includes('bit.ly')) {
+                bitly = val; break;
+            }
+        }
+
+        let nameKey = keys.find(k => ['DEALER NAME', 'SHOP NAME', 'NAME', 'SHOP', 'DEALER'].includes(k.toUpperCase().trim()));
+        rawName = nameKey ? String(d[nameKey]).trim() : '';
+
+        let codeKey = keys.find(k => ['DEALERID', 'DEALER CODE', 'CODE', 'ID', 'BPES RCD', 'DEALER_ID'].includes(k.toUpperCase().trim()));
+        code = codeKey ? String(d[codeKey]).trim() : '';
+
+        let cityKey = keys.find(k => ['CITY', 'LOCATION', 'TOWN', 'DISTRICT'].includes(k.toUpperCase().trim()));
+        city = cityKey ? String(d[cityKey]).trim() : '';
+
+        if (rawName.includes('#')) {
+            let parts = rawName.split('#'); let shopPart = parts[0].trim();
+            if (!city && parts.length > 1) city = parts[1].split('|')[0].replace(/\(.*?\)/g, '').trim();
+            if (!code && parts.length > 2) {
+                for (let p of parts) if (/\d{5,}/.test(p)) { code = p.match(/\d{5,}/)[0]; break; }
+            }
+            rawName = shopPart;
+        }
+
+        if (bitly && !bitly.startsWith('http')) bitly = 'https://' + bitly;
+
+        return { code: code || '-', name: cleanPureShopName(rawName) || 'SHOP', city: city || '', bitly: bitly };
+    }
 
     function isMobileDeviceCat(cat) {
         if (!cat) return false;
@@ -628,7 +818,6 @@
                c === 'MOBILE';
     }
 
-    // --- ADDED: STRICT CATEGORY STANDARDIZATION ---
     function standardizeCategoryName(cat) {
         if (!cat) return "OTHER";
         let c = String(cat).toUpperCase().trim();
@@ -682,6 +871,16 @@
         if (amount <= 100000) return 11438;
         if (amount <= 200000) return 16677;
         return 0;
+    }
+
+    function applyFestivalTheme() {
+        const now = new Date(); const month = now.getMonth() + 1; const root = document.documentElement; const banner = document.getElementById('festiveBanner');
+        let emojiAdd = '📝', emojiQueue = '👥', emojiBtn = '➕', emojiFc = '🧮';
+        if (month === 1) { root.style.setProperty('--primary', '#e67e22'); root.style.setProperty('--bajaj-blue', '#d35400'); root.style.setProperty('--bajaj-green', '#27ae60'); root.style.setProperty('--bg-pattern', 'radial-gradient(circle, rgba(230,126,34,0.05) 0%, rgba(244,247,246,1) 100%)'); banner.innerText = "🪁 Makar Sankrantichya Hardik Shubhechha! Navya Varshat Navya Schemes!"; banner.style.background = "linear-gradient(90deg, #d35400, #e67e22)"; window.isFestiveMode = true; emojiAdd = '🪁'; emojiQueue = '☀️'; emojiBtn = '✨'; emojiFc = '📊'; } 
+        else if (month === 3) { root.style.setProperty('--primary', '#e84393'); root.style.setProperty('--bajaj-blue', '#8e44ad'); root.style.setProperty('--bajaj-green', '#00b894'); root.style.setProperty('--bg-pattern', 'radial-gradient(circle, rgba(232,67,147,0.05) 0%, rgba(244,247,246,1) 100%)'); banner.innerText = "🎨 Rangapanchamichya Rangit Shubhechha!"; banner.style.background = "linear-gradient(90deg, #8e44ad, #e84393)"; window.isFestiveMode = true; emojiAdd = '🎨'; emojiQueue = '🤝'; emojiBtn = '✨'; emojiFc = '🎯'; } 
+        else if (month === 8 || month === 9) { root.style.setProperty('--primary', '#c0392b'); root.style.setProperty('--bajaj-blue', '#d35400'); root.style.setProperty('--bajaj-green', '#f39c12'); root.style.setProperty('--warning', '#f1c40f'); root.style.setProperty('--bg-pattern', 'radial-gradient(circle, rgba(243,156,18,0.1) 0%, rgba(244,247,246,1) 100%)'); banner.innerText = "🌺 Ganpati Bappa Morya! Vighnaharta tumchya targets purna karo!"; banner.style.background = "linear-gradient(90deg, #c0392b, #f39c12)"; window.isFestiveMode = true; emojiAdd = '🌺'; emojiQueue = '🙏'; emojiBtn = '🕉️'; emojiFc = '🥥'; } 
+        else if (month === 10 || month === 11) { root.style.setProperty('--primary', '#8e44ad'); root.style.setProperty('--bajaj-blue', '#f39c12'); root.style.setProperty('--bajaj-green', '#e67e22'); root.style.setProperty('--dark', '#2c3e50'); root.style.setProperty('--bg-pattern', 'radial-gradient(circle, rgba(142,68,173,0.05) 0%, rgba(244,247,246,1) 100%)'); banner.innerText = "🪔 Diwali Dhamaka! Festive Offers Ani Navya Schemes Check Kara!"; banner.style.background = "linear-gradient(90deg, #2c3e50, #8e44ad)"; window.isFestiveMode = true; emojiAdd = '🪔'; emojiQueue = '✨'; emojiBtn = '🎆'; emojiFc = '🎁'; }
+        if (window.isFestiveMode && banner) { banner.style.display = 'block'; let addBtn = document.getElementById('addToQueueBtn'); if(addBtn) addBtn.classList.add('festive-glow'); let genBtn = document.getElementById('genQuoteBtn'); if(genBtn) genBtn.classList.add('festive-glow'); let iAdd = document.getElementById('icon_add'); if(iAdd) iAdd.innerText = emojiAdd; let iQueue = document.getElementById('icon_queue'); if(iQueue) iQueue.innerText = emojiQueue; let iBtn = document.getElementById('icon_btn_add'); if(iBtn) iBtn.innerText = emojiBtn; let iFc = document.getElementById('icon_fc'); if(iFc) iFc.innerText = emojiFc; }
     }
 
     const GITHUB_RAW_URL = "https://raw.githubusercontent.com/luckyjathar/CALCULATOR/main/master_data.xlsx";
@@ -829,6 +1028,7 @@
                     statusBadge.style.borderColor = 'var(--success)';
                     statusBadge.style.background = 'rgba(39, 174, 96, 0.15)';
                 }
+                setupCustomerFlyerIfNeeded();
                 return; 
             }
 
@@ -877,6 +1077,14 @@
                 statusBadge.style.borderColor = 'var(--success)';
                 statusBadge.style.background = 'rgba(39, 174, 96, 0.15)';
             }
+            
+            let params = new URLSearchParams(window.location.search);
+            if (params.get('flyer') === '1' && params.get('did') && !params.get('bl')) {
+                let dObj = dealer_records.find(d => parseDealerObj(d).code == params.get('did'));
+                if (dObj) showDynamicBitlyButton(parseDealerObj(dObj).bitly);
+            }
+
+            setupCustomerFlyerIfNeeded();
         } catch(err) {
             console.error("Smart Version Check Error: ", err);
             if(statusBadge) {
@@ -885,11 +1093,41 @@
                 statusBadge.style.borderColor = 'var(--danger)';
                 statusBadge.style.background = 'rgba(214, 48, 49, 0.15)';
             }
+            setupCustomerFlyerIfNeeded();
         }
     }
 
     window.onload = async function() {
-        generateStackCards(); 
+        let params = new URLSearchParams(window.location.search);
+        if (params.get('master') === 'bajaj') {
+            localStorage.setItem('persistent_admin_v76', 'true');
+            window.history.replaceState(null, null, window.location.pathname); 
+        }
+
+        let isAdmin = localStorage.getItem('persistent_admin_v76') === 'true';
+        let isFlyer = params.get('flyer') === '1';
+
+        if (!isAdmin && !isFlyer) {
+            let lastValidFlyer = sessionStorage.getItem('last_valid_flyer_url');
+            if (lastValidFlyer) {
+                window.location.href = window.location.pathname + lastValidFlyer; return;
+            } else {
+                document.body.innerHTML = "<div style='text-align:center; padding:50px; font-family:sans-serif;'><h1 style='color:var(--danger);'>🚫 Access Restricted</h1><p style='font-weight:bold; font-size:16px;'>You do not have permission to view the Persistent Portal.</p></div>";
+                return;
+            }
+        }
+
+        if(isFlyer) {
+            sessionStorage.setItem('last_valid_flyer_url', window.location.search);
+            document.body.style.background = "#fff"; 
+            document.querySelector('header').style.display = 'none'; 
+            document.querySelector('main').style.display = 'none'; 
+            document.querySelector('footer').style.display = 'none'; 
+            document.getElementById('customerFlyerView').style.display = 'block';
+            setupCustomerFlyerIfNeeded();
+        } else { 
+            applyFestivalTheme(); generateStackCards(); 
+        }
         
         try {
             await initDB(); 
@@ -897,7 +1135,7 @@
             let savedDB = await getFromDB("persistent_db");
             if (savedDB && savedDB.length > 0) {
                 db_records = savedDB; 
-                renderImportSummary();
+                if(!isFlyer) renderImportSummary();
             }
             
             let savedDealers = await getFromDB("persistent_dealers");
@@ -905,32 +1143,272 @@
                 dealer_records = savedDealers;
             }
 
-            fetchFromMasterStream();
+            await fetchFromMasterStream();
             
-            let savedQ = await getFromDB('persistent_queue');
-            if (savedQ) {
-                customerQueue = savedQ.map(c => ({
-                    ...c,
-                    components: c.components || {},
-                    products: c.products || [],
-                    sortConfigs: c.sortConfigs || []
-                }));
-            }
-            
-            let savedRecycle = await getFromDB('persistent_recycle');
-            if (savedRecycle) recycleBin = savedRecycle;
+            if(!isFlyer) {
+                let savedQ = await getFromDB('persistent_queue');
+                if (savedQ) {
+                    customerQueue = savedQ.map(c => ({
+                        ...c,
+                        components: c.components || {},
+                        products: c.products || [],
+                        sortConfigs: c.sortConfigs || []
+                    }));
+                }
+                
+                let savedRecycle = await getFromDB('persistent_recycle');
+                if (savedRecycle) recycleBin = savedRecycle;
 
-            let savedIdx = await getFromDB('persistent_active_idx');
-            if (savedIdx !== null && savedIdx !== undefined) activeCustomerIndex = parseInt(savedIdx);
-            if(activeCustomerIndex >= customerQueue.length) activeCustomerIndex = -1;
+                let savedIdx = await getFromDB('persistent_active_idx');
+                if (savedIdx !== null && savedIdx !== undefined) activeCustomerIndex = parseInt(savedIdx);
+                if(activeCustomerIndex >= customerQueue.length) activeCustomerIndex = -1;
+                
+                renderCustomerQueue();
+                updateUniversalActionButtons();
+            }
 
         } catch(e) { 
             console.error("Local Data Initialization Failure", e); 
         }
-        
-        renderCustomerQueue();
-        updateUniversalActionButtons();
     };
+
+    function openFlyerGenModal() {
+        document.getElementById('fgSalesName').value = ''; document.getElementById('fgSalesMobile').value = '';
+        document.getElementById('fgDealerSearch').value = ''; document.getElementById('fgDealerList').innerHTML = '';
+        tempFgDealerId = ""; tempFgDealerName = ""; tempFgBitly = ""; clearFgModel();
+        document.getElementById('fgOfferType').value = 'NONE'; toggleFgOfferInput();
+        document.getElementById('fgSelectedDealerBox').style.display = 'none'; document.getElementById('flyerGeneratedLinkBox').style.display = 'none';
+        document.getElementById('flyerGenModal').style.display = 'flex';
+    }
+
+    function toggleFgOfferInput() {
+        let type = document.getElementById('fgOfferType').value;
+        let box = document.getElementById('fgOfferValBox');
+        let label = document.getElementById('fgOfferValLabel');
+        let inp = document.getElementById('fgOfferValue');
+
+        if(type === "NONE") { box.style.display = 'none'; inp.value = ''; } 
+        else if(type === "FREEBIE") { box.style.display = 'block'; label.innerText = "ENTER GIFT NAME"; inp.placeholder = "E.g. Earbuds / Smartwatch"; } 
+        else { box.style.display = 'block'; label.innerText = "ENTER UPTO AMOUNT (₹)"; inp.placeholder = "E.g. 2500"; }
+    }
+
+    function searchFgDealer() {
+        let q = document.getElementById('fgDealerSearch').value.toLowerCase().trim(); let list = document.getElementById('fgDealerList'); if(!q) { list.innerHTML = ''; return; }
+        let matches = dealer_records.map(d => parseDealerObj(d)).filter(p => p.name.toLowerCase().includes(q) || p.code.toLowerCase().includes(q) || p.city.toLowerCase().includes(q)).slice(0, 10);
+        list.innerHTML = matches.map(p => {
+            let displayStr = `${p.name}${p.city ? ' - ' + p.city : ''} (${p.code})`;
+            return `<div onclick="selectFgDealer('${p.code}', '${p.name.replace(/'/g, "\\'")}', '${p.city.replace(/'/g, "\\'")}', '${encodeURIComponent(p.bitly||'')}')" style="padding:8px; border-bottom:1px solid #eee; cursor:pointer; background:#fff; font-size:12px; font-weight:bold; color:var(--bajaj-blue);">🏪 ${displayStr}</div>`;
+        }).join('');
+    }
+    
+    function selectFgDealer(code, name, city, bitlyEnc) {
+        tempFgDealerId = code; tempFgDealerName = `${name}${city ? ' - ' + city : ''}`;
+        tempFgBitly = decodeURIComponent(bitlyEnc);
+        document.getElementById('fgDealerSearch').value = ''; document.getElementById('fgDealerList').innerHTML = '';
+        document.getElementById('fgSelectedDealerBox').innerHTML = `✅ ${tempFgDealerName} [Code: ${code}] <span onclick="clearFgDealer()" style="color:red; cursor:pointer; float:right;">✖</span>`;
+        document.getElementById('fgSelectedDealerBox').style.display = 'block';
+    }
+    function clearFgDealer() { tempFgDealerId = ""; tempFgDealerName = ""; tempFgBitly = ""; document.getElementById('fgSelectedDealerBox').style.display = 'none'; }
+
+    function searchFgModel() {
+        let q = document.getElementById('fgModelSearch').value.toUpperCase().trim(); let list = document.getElementById('fgModelList'); if(!q) { list.innerHTML = ''; return; }
+        let matches = [...new Set(db_records.filter(r => r.model !== SPECIAL_MODEL).map(r => r.model))].filter(m => m.includes(q)).slice(0,8);
+        list.innerHTML = matches.map(m => `<div onclick="selectFgModel('${m.replace(/'/g, "\\'")}')" style="padding:8px; border-bottom:1px solid #eee; cursor:pointer; background:#fff; font-size:12px;">📱 ${m}</div>`).join('');
+    }
+    function selectFgModel(name) { tempFgModel = name; document.getElementById('fgModelSearch').value = ''; document.getElementById('fgModelList').innerHTML = ''; document.getElementById('fgSelectedModelBox').innerHTML = `📱 Locked: ${name} <span onclick="clearFgModel()" style="color:red; cursor:pointer; float:right;">✖</span>`; document.getElementById('fgSelectedModelBox').style.display = 'block'; }
+    function clearFgModel() { tempFgModel = ""; document.getElementById('fgSelectedModelBox').style.display = 'none'; }
+
+    function generateFlyer() {
+        let sName = document.getElementById('fgSalesName').value.trim(); let sMob = document.getElementById('fgSalesMobile').value.trim();
+        let oType = document.getElementById('fgOfferType').value; let oVal = document.getElementById('fgOfferValue').value.trim();
+
+        if(!sName || !sMob || sMob.length !== 10) { alert("⚠️ Kripya Salesman Name ani 10-Digit Mobile Number barobar taka!"); return; }
+        if(!tempFgDealerId) { alert("⚠️ कडक नियम: डीलर शॉप सिलेक्ट करणे Compulsory (अनिवार्य) आहे!"); return; }
+        if(!tempFgBitly) { alert("⚠️ या डीलरची Bitly Link मास्टर डेटामध्ये सापडली नाही! कृपया तुमची एक्सेल फाईल तपासा."); return; }
+        if(oType !== "NONE" && !oVal) { alert("⚠️ Offer select केली आहे तर Amount किंवा Gift चे नाव टाका!"); return; }
+
+        let baseUrl = window.location.href.split('?')[0];
+        let url = `${baseUrl}?flyer=1&sn=${encodeURIComponent(sName)}&sm=${sMob}&did=${encodeURIComponent(tempFgDealerId)}&dn=${encodeURIComponent(tempFgDealerName)}&bl=${encodeURIComponent(tempFgBitly)}`;
+        
+        if(oType !== "NONE") url += `&ot=${encodeURIComponent(oType)}&ov=${encodeURIComponent(oVal)}`;
+        if(tempFgModel) url += `&fm=${encodeURIComponent(tempFgModel)}`;
+
+        document.getElementById('flyerGeneratedLinkBox').style.display = 'block';
+        document.getElementById('fgGeneratedLinkText').value = url;
+    }
+
+    function copyFlyerLink() {
+        let copyText = document.getElementById('fgGeneratedLinkText'); copyText.select(); copyText.setSelectionRange(0, 99999); document.execCommand("copy");
+        alert("✅ Link Copied! तुम्ही ही लिंक Customer ला WhatsApp वर पाठवू शकता.");
+    }
+
+    function showDynamicBitlyButton(linkUrl) {
+        let bBox = document.getElementById('cfSelfActionBox');
+        if (linkUrl && linkUrl.startsWith('http')) {
+            bBox.style.display = 'block';
+            bBox.innerHTML = `<a href="${linkUrl}" target="_blank" style="display:block; text-align:center; background:linear-gradient(135deg, #00A34F, #0059A3); color:#fff; padding:14px; border-radius:8px; font-weight:950; text-decoration:none; box-shadow:0 4px 12px rgba(0,0,0,0.25); font-size:14px; letter-spacing:0.5px; border:2px solid #fff;">💳 CHECK YOUR BAJAJ LIMIT / SELF BOOK ORDER 🚀</a>`;
+        } else { bBox.style.display = 'none'; }
+    }
+
+    function setupCustomerFlyerIfNeeded() {
+        let params = new URLSearchParams(window.location.search); if(params.get('flyer') !== '1') return;
+        let did = params.get('did'), dn = params.get('dn'), ot = params.get('ot'), ov = params.get('ov'), fm = params.get('fm'), bl = params.get('bl');
+
+        if (ot && ov) {
+            let bannerTextEl = document.getElementById('cfOfferText');
+            if(ot === "FREEBIE") bannerTextEl.innerText = `🎁 LIMITED PERIOD OFFER: FREE "${ov}" GIFT!`;
+            else bannerTextEl.innerText = `🔥 LIMITED PERIOD OFFER: UPTO ₹${ov} ${ot}!`;
+            document.getElementById('cfOfferBanner').style.display = 'block';
+            startOfferCountdownTimer();
+        }
+
+        if(bl) showDynamicBitlyButton(decodeURIComponent(bl));
+
+        if(did && dn) {
+            cfSelectedDealer = cleanPureShopName(decodeURIComponent(dn));
+            document.getElementById('cfDealerSection').innerHTML = `<div style="padding:12px; background:#e8f4f8; border-radius:6px; font-weight:bold; color:var(--bajaj-blue); border:1px solid var(--primary);">🏪 Dealer Shop: ${cfSelectedDealer}</div>`;
+            document.getElementById('cfModelSection').style.display = 'block';
+            if (!bl && dealer_records.length > 0) {
+                let dObj = dealer_records.find(d => parseDealerObj(d).code == did);
+                if (dObj) showDynamicBitlyButton(parseDealerObj(dObj).bitly);
+            }
+        } else { searchCfDealer(); }
+
+        if(fm) {
+            let modelName = decodeURIComponent(fm);
+            cfSelectedModel = modelName;
+            document.getElementById('cfModelSection').style.display = 'block';
+            document.getElementById('cfModelSection').innerHTML = `<div style="padding:12px; background:#fff9e6; border-radius:6px; font-weight:bold; color:#d35400; border:1px solid #f39c12;">📱 Exclusive Offer Model: ${modelName}</div>`;
+            document.getElementById('cfSchemeSection').style.display = 'block';
+            renderCfSchemes(modelName);
+        }
+    }
+
+    function startOfferCountdownTimer() {
+        let timeInSec = 3 * 3600 + 14 * 60 + 59; 
+        let timerEl = document.getElementById('cfCountdown');
+        if(offerTimerInterval) clearInterval(offerTimerInterval);
+        offerTimerInterval = setInterval(() => {
+            let h = Math.floor(timeInSec / 3600), m = Math.floor((timeInSec % 3600) / 60), s = timeInSec % 60;
+            timerEl.innerText = `${h < 10 ? '0'+h : h}:${m < 10 ? '0'+m : m}:${s < 10 ? '0'+s : s}`;
+            if(--timeInSec < 0) { clearInterval(offerTimerInterval); timerEl.innerText = "EXPIRED"; }
+        }, 1000);
+    }
+
+    function searchCfDealer() {
+        let q = document.getElementById('cfDealerSearch').value.toLowerCase().trim(); let list = document.getElementById('cfDealerList'); if(!q) { list.innerHTML = ''; return; }
+        if(dealer_records.length === 0) { list.innerHTML = '<div style="color:var(--danger);">Loading dealers...</div>'; return; }
+        let matches = dealer_records.map(d => parseDealerObj(d)).filter(p => p.name.toLowerCase().includes(q) || p.code.toLowerCase().includes(q) || p.city.toLowerCase().includes(q)).slice(0, 15);
+        list.innerHTML = matches.map(p => {
+            let displayStr = `${p.name}${p.city ? ' - ' + p.city : ''}`;
+            return `<div onclick="selectCfDealer('${p.code}', '${p.name.replace(/'/g, "\\'")}', '${p.city.replace(/'/g, "\\'")}', '${encodeURIComponent(p.bitly||'')}')" style="padding:12px; border-bottom:1px solid #ddd; cursor:pointer; background:#fff; font-weight:bold; color:var(--indigo);">🏪 ${displayStr} <br><span style="font-size:11px; color:#777;">Code: ${p.code}</span></div>`;
+        }).join('');
+    }
+    function selectCfDealer(code, name, city, bitlyEnc) {
+        cfSelectedDealer = `${cleanPureShopName(name)}${city ? ' - ' + city : ''}`;
+        document.getElementById('cfDealerSection').innerHTML = `<div style="padding:12px; background:#e8f4f8; border-radius:6px; font-weight:bold; color:var(--bajaj-blue); border:1px solid var(--primary);">✅ Shop: ${cfSelectedDealer} <span onclick="resetCfDealer()" style="float:right; cursor:pointer; color:var(--danger);">✎ Edit</span></div>`;
+        document.getElementById('cfModelSection').style.display = 'block';
+        showDynamicBitlyButton(decodeURIComponent(bitlyEnc));
+    }
+    function resetCfDealer() { cfSelectedDealer = ""; document.getElementById('cfDealerSection').innerHTML = `<label style="font-weight:bold; color:var(--indigo); margin-bottom:5px; display:block;">🏪 Search Dealer Shop</label><input type="text" id="cfDealerSearch" placeholder="Type Dealer Name or ID..." oninput="searchCfDealer()" style="width:100%; padding:10px; border:2px solid var(--primary); border-radius:6px;"><div id="cfDealerList" class="custom-scroll" style="max-height:200px; overflow-y:auto; margin-top:5px; border-radius:6px;"></div>`; document.getElementById('cfModelSection').style.display = 'none'; document.getElementById('cfSchemeSection').style.display = 'none'; document.getElementById('cfFormSection').style.display = 'none'; document.getElementById('cfSelfActionBox').style.display = 'none'; }
+
+    function searchCfModel() {
+        let q = document.getElementById('cfModelSearch').value.toUpperCase().trim(); let list = document.getElementById('cfModelList'); if(!q) { list.innerHTML = ''; return; }
+        let matches = [...new Set(db_records.filter(r => r.model !== SPECIAL_MODEL).map(r => r.model))].filter(m => m.includes(q)).slice(0,10);
+        list.innerHTML = matches.map(m => `<div onclick="selectCfModel('${m.replace(/'/g, "\\'")}')" style="padding:12px; border-bottom:1px solid #eee; cursor:pointer; background:#fff; font-weight:bold; color:var(--dark);">📱 ${m}</div>`).join('');
+    }
+    function selectCfModel(mName) { cfSelectedModel = mName; document.getElementById('cfModelSearch').value = mName; document.getElementById('cfModelList').innerHTML = ''; document.getElementById('cfSchemeSection').style.display = 'block'; renderCfSchemes(mName); }
+
+    function renderCfSchemes(modelName) {
+        let schemes = db_records.filter(r => r.model === modelName && (r.tenure > 0 || r.fixedEmi > 0)); let list = document.getElementById('cfSchemeList');
+        if(schemes.length === 0) { list.innerHTML = `<div style="padding:10px; color:var(--danger); font-weight:bold; text-align:center;">No schemes available for this model yet.</div>`; return; }
+
+        let uniqueMap = new Map(); schemes.forEach(s => { let key = `${s.tenure}_${s.advEmi}_${s.fixedEmi}`; if(!uniqueMap.has(key)) uniqueMap.set(key, s); });
+        let uniqueS = Array.from(uniqueMap.values()); let top4 = []; let remaining = [...uniqueS];
+
+        function extractScheme(sortFn, tag) { if (remaining.length === 0) return; remaining.sort(sortFn); let sel = remaining.shift(); sel.customTag = tag; top4.push(sel); }
+
+        extractScheme((a,b) => (a.advEmi - b.advEmi) || (b.tenure - a.tenure), "🔥 LOWEST DP");
+        extractScheme((a,b) => (b.advEmi - a.advEmi) || (b.tenure - a.tenure), "⭐ LOWEST EMI");
+        extractScheme((a,b) => (b.advEmi - a.advEmi) || (a.tenure - b.tenure), "⚡ FAST CLEARANCE");
+        extractScheme((a,b) => (a.advEmi * a.tenure) - (b.advEmi * b.tenure), "🚀 LOW DP FAST CLEARANCE");
+
+        remaining.sort((a, b) => (a.advEmi - b.advEmi) || (a.tenure - b.tenure));
+        let allRenderedSchemes = [...top4, ...remaining]; let html = "";
+
+        window.renderedCustomerSchemesList = allRenderedSchemes;
+
+        allRenderedSchemes.forEach((s, index) => {
+            let displayEmiHtml = `<span style="background:#e3f2fd; color:var(--primary); padding:4px 8px; border-radius:4px; font-size:12px; font-weight:bold;">EMI: किमतीनुसार</span>`;
+            let displayDpHtml = `<span style="background:#e8f5e9; color:var(--success); padding:4px 8px; border-radius:4px; font-size:12px; font-weight:bold;">Est. DP: ~ ${s.advEmi} EMI + Charges</span>`;
+
+            if (s.mrp > 0 && s.tenure > 0) { let calcEmi = Math.round(s.mrp / s.tenure); displayEmiHtml = `<span style="background:#e3f2fd; color:var(--primary); padding:4px 8px; border-radius:4px; font-size:12px; font-weight:bold;">EMI: ~ ₹${calcEmi}</span>`; let estDp = Math.round((calcEmi*s.advEmi)+(s.mrp*((s.dbd||0)*1.18/100))+(s.pf||0)); displayDpHtml = `<span style="background:#e8f5e9; color:var(--success); padding:4px 8px; border-radius:4px; font-size:12px; font-weight:bold;">Est. DP: ~ ₹${estDp.toLocaleString('en-IN')}</span>`; } 
+            else if (s.fixedEmi > 0) { displayEmiHtml = `<span style="background:#e3f2fd; color:var(--primary); padding:4px 8px; border-radius:4px; font-size:12px; font-weight:bold;">EMI: ₹${s.fixedEmi}</span>`; displayDpHtml = `<span style="background:#e8f5e9; color:var(--success); padding:4px 8px; border-radius:4px; font-size:12px; font-weight:bold;">Fixed Advance Scheme</span>`; }
+
+            let isTop = index < top4.length; let displayStyle = isTop ? 'block' : 'none';
+            let extraBadge = s.customTag ? `<span style="background:var(--warning); color:#000; font-size:10px; padding:2px 6px; border-radius:10px; float:right; font-weight:900;">${s.customTag}</span>` : ``;
+
+            html += `<div onclick="selectCfSchemeByIndex(${index}, this)" class="cf-scheme-card ${isTop?'':'cf-hidden-scheme'}" style="display:${displayStyle}; padding:15px; border:2px solid #ccc; border-radius:8px; cursor:pointer; background:#fff; transition:0.3s;"><div style="font-weight:900; color:var(--bajaj-blue); font-size:14px; margin-bottom:8px;">💳 Scheme: ${s.tenure} Months / ${s.advEmi} Advance ${extraBadge}</div><div style="display:flex; gap:8px; flex-wrap:wrap;">${displayEmiHtml}${displayDpHtml}</div></div>`;
+        });
+
+        if (remaining.length > 0) html += `<button id="cfShowMoreSchemesBtn" onclick="toggleCfSchemes()" style="background:#f1f2f6; color:var(--primary); border:1px dashed var(--primary); padding:10px; width:100%; border-radius:6px; font-weight:bold; cursor:pointer; margin-top:5px;">⬇️ View ${remaining.length} More Schemes</button>`;
+        list.innerHTML = html;
+    }
+
+    function toggleCfSchemes() { let hiddenEls = document.querySelectorAll('.cf-hidden-scheme'); let btn = document.getElementById('cfShowMoreSchemesBtn'); if(!hiddenEls.length) return; let isHidden = hiddenEls[0].style.display === 'none'; hiddenEls.forEach(el => el.style.display = isHidden ? 'block' : 'none'); btn.innerHTML = isHidden ? `⬆️ Hide Extra Schemes` : `⬇️ View ${hiddenEls.length} More Schemes`; }
+    
+    function selectCfSchemeByIndex(idx, el) {
+        let s = window.renderedCustomerSchemesList[idx];
+        let emiPlain = "किमतीनुसार"; let dpPlain = `${s.advEmi} EMI`;
+
+        if (s.mrp > 0 && s.tenure > 0) {
+            let calcEmi = Math.round(s.mrp / s.tenure); emiPlain = `₹${calcEmi}/mo`;
+            let estDp = Math.round((calcEmi*s.advEmi)+(s.mrp*((s.dbd||0)*1.18/100))+(s.pf||0)); dpPlain = `₹${estDp.toLocaleString('en-IN')}`;
+        } else if (s.fixedEmi > 0) { emiPlain = `₹${s.fixedEmi}/mo`; dpPlain = `Fixed Advance Scheme`; }
+
+        cfSelectedScheme = `\n💳 *निवडलेली स्कीम:* ${s.tenure} Months | Advance: ${s.advEmi}\n💰 *अंदाजे DP:* ${dpPlain} | *अंदाजे EMI:* ${emiPlain}`;
+        
+        document.querySelectorAll('.cf-scheme-card').forEach(x => { x.style.borderColor = '#ccc'; x.style.background = '#fff'; }); 
+        el.style.borderColor = 'var(--success)'; el.style.background = '#e8f5e9'; 
+        document.getElementById('cfFormSection').style.display = 'block'; 
+        setTimeout(() => document.getElementById('cfFormSection').scrollIntoView({behavior:'smooth'}), 150);
+    }
+
+    const langTemplates = {
+        mr: { header: "⚡ *PERSISTENT PORTAL: नवीन लीड (LEAD)* ⚡\n\nनमस्कार *{SNAME}*,\nमला Persistent Portal द्वारे खालील फोन फायनान्सवर घेण्यास रस आहे:\n\n", name: "👤 *ग्राहक नाव:*", mobile: "📞 *मोबाईल:*", dealer: "🏪 *निवडलेले दुकान:*", model: "📱 *मॉडेल:*", footer: "\n*(टीप: प्रत्यक्ष दुकानात आल्यावर सिस्टीमनुसार जी फायनल प्रोसेस आकडेवारी येईल, ती मला मान्य असेल.)*\n\n*कृपया मला प्रोसेस सांगण्यासाठी संपर्क करावा.*" },
+        hi: { header: "⚡ *PERSISTENT PORTAL: नई लीड (LEAD)* ⚡\n\nनमस्ते *{SNAME}*,\nमैं Persistent Portal के जरिए नीचे दिए गए फोन को फाइनेंस पर लेना चाहता हूँ:\n\n", name: "👤 *ग्राहक का नाम:*", mobile: "📞 *मोबाइल:*", dealer: "🏪 *चुनी गई दुकान:*", model: "📱 *मॉडल:*", footer: "\n*(नोट: दुकान पर आने के बाद सिस्टम द्वारा तय अंतिम डाउनपेमेंट व EMI मुझे मान्य होगी।)*\n\n*कृपया आगे की प्रोसेस के लिए संपर्क करें।* " },
+        en: { header: "⚡ *PERSISTENT PORTAL: NEW LEAD* ⚡\n\nHello *{SNAME}*,\nI generated a finance request via Persistent Portal. Details below:\n\n", name: "👤 *Customer:*", mobile: "📞 *Mobile:*", dealer: "🏪 *Dealer Shop:*", model: "📱 *Model:*", footer: "\n*(Note: Final system-generated DP & EMI finalized at the shop counter will be binding/accepted.)*\n\n*Please connect to share the next steps.*" }
+    };
+
+    function submitCfLead() {
+        if(!document.getElementById('cfAgreeCheck').checked) {
+            alert("⚠️ कृपया डाऊनपेमेंट आणि EMI संदर्भातील 'अटी व नियम' मान्य असल्याच्या बॉक्सवर (Tick) क्लिक करा!"); return;
+        }
+
+        let cName = document.getElementById('cfCustName').value.trim(), cMob = document.getElementById('cfCustMobile').value.trim();
+        if(!cName || !cMob || cMob.length !== 10) { alert("⚠️ कृपया तुमचे पूर्ण नाव आणि 10-अंकी मोबाईल नंबर बरोबर टाका!"); return; }
+
+        let params = new URLSearchParams(window.location.search);
+        let sNum = params.get('sm'), sName = decodeURIComponent(params.get('sn') || 'Salesman');
+        let ot = params.get('ot'), ov = params.get('ov');
+        let bLink = params.get('bl') ? decodeURIComponent(params.get('bl')) : '';
+
+        let t = langTemplates[document.getElementById('cfLang').value] || langTemplates['mr'];
+        let msg = t.header.replace('{SNAME}', sName);
+        
+        if(ot && ov) {
+            let offTxt = ot === "FREEBIE" ? `FREE ${ov.toUpperCase()} GIFT` : `UPTO ₹${ov} ${ot}`;
+            msg += `🎁 *APPLIED FLASH OFFER:* [ ${offTxt} ]\n_*(Customer requested to claim this offer)*_\n\n`;
+        }
+
+        let bitlySectionString = "";
+        if (bLink) {
+            bitlySectionString = `\n🔗 *डीलर ऑनलाईन अर्ज/लिमिट लिंक (Limit Check Portal):*\n${bLink}\n*(टीप: या लिंकवरून ग्राहकाची तात्काळ कर्जमर्यादा तपासता येईल)*\n`;
+        }
+
+        msg += `${t.name} ${cName}\n${t.mobile} ${cMob}\n\n${t.dealer} ${cfSelectedDealer}\n${t.model} ${cfSelectedModel}\n${cfSelectedScheme}${bitlySectionString}\n${t.footer}`;
+        window.open(`https://wa.me/91${sNum}?text=${encodeURIComponent(msg)}`, '_blank');
+    }
 
     function openDictionaryModal() {
         if(!db_records || db_records.length === 0) {
@@ -1387,7 +1865,6 @@
         return true;
     }
 
-    // --- ADDED: BRAND-BASED SEARCH LOGIC ---
     function doGlobalSearch() {
         let q = document.getElementById('globalModelSearch').value.toUpperCase().trim(); 
         let dd = document.getElementById('globalModelDropdown'); 
@@ -1402,7 +1879,7 @@
             return m.includes(q) || b.includes(q) || c.includes(q);
         }).map(r => r.model);
 
-        matches = [...new Set(matches)].slice(0, 30); // Showing up to 30 matches for broader search
+        matches = [...new Set(matches)].slice(0, 30); 
         
         if (matches.length === 0) {
             dd.innerHTML = `<div style="padding:10px; color:#d35400; font-weight:bold; text-align:center;">No matching models found.</div>`;
@@ -1538,7 +2015,7 @@
 
         return { 
             model: type === SPECIAL_MODEL ? SPECIAL_MODEL : String(findValLocal(row,['MODEL','BRANDMODEL'])||"").toUpperCase(), 
-            brand: String(findValLocal(row, ['BRAND', 'MAKE', 'MANUFACTURER'])||"").toUpperCase(), // FETCHES BRAND FOR SEARCH
+            brand: String(findValLocal(row, ['BRAND', 'MAKE', 'MANUFACTURER'])||"").toUpperCase(), 
             mrp: parseFloat(findValLocal(row, ['MRP', 'PRICE', 'M.R.P'])) || 0, 
             tenure: parseInt(findValLocal(row, ['TOTALTENURE', 'TENURE', 'TA'])) || 0, 
             advEmi: parseInt(findValLocal(row, ['ADVANCEEMI', 'ADV'])) || 0, 
@@ -1589,7 +2066,6 @@
         closeEditSchemeModal(); recalcModel(pIdx);
     }
 
-    // --- ADDED: UPDATED MODAL PRODUCT SEARCH TO INCLUDE BRAND/CAT ---
     function doSearch(id, ddId) {
         let q = document.getElementById(id).value.toUpperCase().trim(); 
         let dd = document.getElementById(ddId); 
