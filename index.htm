@@ -1028,7 +1028,12 @@
                     statusBadge.style.borderColor = 'var(--success)';
                     statusBadge.style.background = 'rgba(39, 174, 96, 0.15)';
                 }
-                setupCustomerFlyerIfNeeded();
+                
+                let params = new URLSearchParams(window.location.search);
+                if (params.get('flyer') === '1' && params.get('did') && !params.get('bl')) {
+                    let dObj = dealer_records.find(d => parseDealerObj(d).code == params.get('did'));
+                    if (dObj) showDynamicBitlyButton(parseDealerObj(dObj).bitly);
+                }
                 return; 
             }
 
@@ -1083,8 +1088,6 @@
                 let dObj = dealer_records.find(d => parseDealerObj(d).code == params.get('did'));
                 if (dObj) showDynamicBitlyButton(parseDealerObj(dObj).bitly);
             }
-
-            setupCustomerFlyerIfNeeded();
         } catch(err) {
             console.error("Smart Version Check Error: ", err);
             if(statusBadge) {
@@ -1093,30 +1096,14 @@
                 statusBadge.style.borderColor = 'var(--danger)';
                 statusBadge.style.background = 'rgba(214, 48, 49, 0.15)';
             }
-            setupCustomerFlyerIfNeeded();
         }
     }
 
     window.onload = async function() {
         let params = new URLSearchParams(window.location.search);
-        if (params.get('master') === 'bajaj') {
-            localStorage.setItem('persistent_admin_v76', 'true');
-            window.history.replaceState(null, null, window.location.pathname); 
-        }
-
-        let isAdmin = localStorage.getItem('persistent_admin_v76') === 'true';
         let isFlyer = params.get('flyer') === '1';
 
-        if (!isAdmin && !isFlyer) {
-            let lastValidFlyer = sessionStorage.getItem('last_valid_flyer_url');
-            if (lastValidFlyer) {
-                window.location.href = window.location.pathname + lastValidFlyer; return;
-            } else {
-                document.body.innerHTML = "<div style='text-align:center; padding:50px; font-family:sans-serif;'><h1 style='color:var(--danger);'>🚫 Access Restricted</h1><p style='font-weight:bold; font-size:16px;'>You do not have permission to view the Persistent Portal.</p></div>";
-                return;
-            }
-        }
-
+        // जर कस्टमरची लिंक असेल (?flyer=1), तर कस्टमर व्ह्यू दाखवा
         if(isFlyer) {
             sessionStorage.setItem('last_valid_flyer_url', window.location.search);
             document.body.style.background = "#fff"; 
@@ -1126,6 +1113,7 @@
             document.getElementById('customerFlyerView').style.display = 'block';
             setupCustomerFlyerIfNeeded();
         } else { 
+            // साधी लिंक असेल तर थेट मुख्य पोर्टल (डीलर व्ह्यू) दाखवा
             applyFestivalTheme(); generateStackCards(); 
         }
         
@@ -1145,6 +1133,7 @@
 
             await fetchFromMasterStream();
             
+            // फक्त डीलर व्ह्यू मध्येच Queue आणि बाकीचा डेटा लोड करा
             if(!isFlyer) {
                 let savedQ = await getFromDB('persistent_queue');
                 if (savedQ) {
@@ -2464,7 +2453,7 @@
                 if(parseFloat(inp.target) > 0 && effectivePrice > 0) { let advRate = s.advEmi / s.tenure; let numerator = parseFloat(inp.target) - effectivePrice - s.pf - totalFees; let denominator = advRate + dbdRate + roiRateDP - 1; let solvedLoan = numerator / denominator; loan = Math.min(loan, Math.max(0, Math.floor(solvedLoan))); }
                 inst = s.tenure - s.advEmi; if(inst < 1) inst = 1; let insTotal = (parseFloat(inp.gtl)||0)+(parseFloat(inp.rfc)||0)+(parseFloat(inp.exw)||0); let roiInEmi = loan * roiRate; emi = (loan / s.tenure) + (insTotal / inst) + roiInEmi;
                 if(emi > parseFloat(inp.cap) && parseFloat(inp.cap) > 0) { loan = (parseFloat(inp.cap) - (insTotal/inst)) / ( (1/s.tenure) + roiRate ); roiInEmi = loan * roiRate; emi = (loan / s.tenure) + (insTotal / inst) + roiInEmi; }
-                let roiInDp = loan * roiRateDP; dpExact = effectivePrice - loan + ((loan/s.tenure) * s.advEmi) + (loan * dbdRate) + s.pf + totalFees + roiInDp;
+                let roiInDp = loan * roiRateDP; dpExact = effectivePrice - loan + ((loan/s.tenure) * s.advEmi) + (loan * dbdRate) + pf + totalFees + roiInDp;
             }
             if(dpExact > 0) dpRounded = Math.ceil(dpExact / 10) * 10; else dpRounded = dpExact;
             let extraVal = effectivePrice > 0 ? (((emi * inst) + dpRounded) - effectivePrice) : 0; let dbdAmt = loan * dbdRate; let roiAmt = (loan * roiRateDP) + (loan * roiRate * inst);
