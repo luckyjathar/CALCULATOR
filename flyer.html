@@ -109,10 +109,23 @@
     let cfSelectedScheme = "";
     let offerTimerInterval;
 
+    // Emojis Unicode Variables (He kuthlyahi editor madhye corrupt honar nahit)
+    const e_bolt = "\u26A1";
+    const e_user = "\uD83D\uDC64";
+    const e_call = "\uD83D\uDCDE";
+    const e_shop = "\uD83C\uDFEA";
+    const e_mob = "\uD83D\uDCF1";
+    const e_chk = "\u2705";
+    const e_money = "\uD83D\uDCB0";
+    const e_cal = "\uD83D\uDDD3";
+    const e_star = "\u2728";
+    const e_link = "\uD83D\uDD17";
+    const e_gift = "\uD83C\uDF81";
+
     const langTemplates = {
-        mr: { header: "⚡\n\nनमस्कार *{SNAME}*,\nमला खालील प्रॉडक्ट फायनान्सवर घ्यायचा आहे:\n\n", name: "👤 *Customer Name:*", mobile: "📞 *Number:*", dealer: "🏪 *Dealer Shop:*", model: "📱 *Model:*", footer: "\n\n*(टीप: प्रत्यक्ष दुकानात आल्यावर सिस्टीमनुसार जी फायनल प्रोसेस आकडेवारी येईल, ती मला मान्य असेल.)*\n*कृपया मला प्रोसेस सांगण्यासाठी संपर्क करावा.*" },
-        hi: { header: "⚡\n\nनमस्ते *{SNAME}*,\nमैं नीचे दिए गए प्रोडक्ट को फाइनेंस पर लेना चाहता हूँ:\n\n", name: "👤 *Customer Name:*", mobile: "📞 *Number:*", dealer: "🏪 *Dealer Shop:*", model: "📱 *Model:*", footer: "\n\n*(नोट: दुकान पर आने के बाद सिस्टम द्वारा तय अंतिम डाउनपेमेंट व EMI मुझे मान्य होगी।)*\n*कृपया आगे की प्रोसेस के लिए संपर्क करें।* " },
-        en: { header: "⚡\n\nHello *{SNAME}*,\nI am interested in financing the product below:\n\n", name: "👤 *Customer Name:*", mobile: "📞 *Number:*", dealer: "🏪 *Dealer Shop:*", model: "📱 *Model:*", footer: "\n\n*(Note: Final system-generated DP & EMI finalized at the shop counter will be binding/accepted.)*\n*Please connect to share the next steps.*" }
+        mr: { header: e_bolt + " *PERSISTENT PORTAL: नवीन लीड (LEAD)* " + e_bolt + "\n\nनमस्कार *{SNAME}*,\nमला खालील प्रॉडक्ट फायनान्सवर घ्यायचा आहे:\n\n", name: e_user + " *Customer Name:*", mobile: e_call + " *Number:*", dealer: e_shop + " *Dealer Shop:*", model: e_mob + " *Model:*", footer: "\n\n*(टीप: प्रत्यक्ष दुकानात आल्यावर सिस्टीमनुसार जी फायनल प्रोसेस आकडेवारी येईल, ती मला मान्य असेल.)*\n*कृपया मला प्रोसेस सांगण्यासाठी संपर्क करावा.*" },
+        hi: { header: e_bolt + " *PERSISTENT PORTAL: नई लीड (LEAD)* " + e_bolt + "\n\nनमस्ते *{SNAME}*,\nमैं नीचे दिए गए प्रोडक्ट को फाइनेंस पर लेना चाहता हूँ:\n\n", name: e_user + " *Customer Name:*", mobile: e_call + " *Number:*", dealer: e_shop + " *Dealer Shop:*", model: e_mob + " *Model:*", footer: "\n\n*(नोट: दुकान पर आने के बाद सिस्टम द्वारा तय अंतिम डाउनपेमेंट व EMI मुझे मान्य होगी।)*\n*कृपया आगे की प्रोसेस के लिए संपर्क करें।* " },
+        en: { header: e_bolt + " *PERSISTENT PORTAL: NEW LEAD* " + e_bolt + "\n\nHello *{SNAME}*,\nI am interested in financing the product below:\n\n", name: e_user + " *Customer Name:*", mobile: e_call + " *Number:*", dealer: e_shop + " *Dealer Shop:*", model: e_mob + " *Model:*", footer: "\n\n*(Note: Final system-generated DP & EMI finalized at the shop counter will be binding/accepted.)*\n*Please connect to share the next steps.*" }
     };
 
     function cleanPureShopName(raw) {
@@ -320,7 +333,8 @@
             dailyPlain = `₹${Math.round(s.fixedEmi/30).toLocaleString('en-IN')}`;
         }
 
-        cfSelectedScheme = `\n✅ *Scheme:* ${s.tenure}/${s.advEmi}\n💰 *DP:* ${dpPlain}\n🗓️ *EMI:* ${emiPlain}\n✨ *Daily EMI:* ${dailyPlain}`;
+        // इथे Unicode Variables वापरले आहेत
+        cfSelectedScheme = `\n${e_chk} *Scheme:* ${s.tenure}/${s.advEmi}\n${e_money} *DP:* ${dpPlain}\n${e_cal} *EMI:* ${emiPlain}\n${e_star} *Daily EMI:* ${dailyPlain}`;
         
         document.querySelectorAll('.cf-scheme-card').forEach(x => { x.style.borderColor = '#ccc'; x.style.background = '#fff'; }); 
         el.style.borderColor = 'var(--success)'; el.style.background = '#e8f5e9'; 
@@ -345,12 +359,13 @@
         
         if(ot && ov) {
             let offTxt = ot === "FREEBIE" ? `FREE ${ov.toUpperCase()} GIFT` : `UPTO ₹${ov} ${ot}`;
-            msg += `🎁 *APPLIED FLASH OFFER:* [ ${offTxt} ]\n_*(Customer requested to claim this offer)*_\n\n`;
+            msg += `${e_gift} *APPLIED FLASH OFFER:* [ ${offTxt} ]\n_*(Customer requested to claim this offer)*_\n\n`;
         }
 
         let bitlySectionString = "";
         if (bLink) {
-            bitlySectionString = `\n🔗 *डीलर ऑनलाईन अर्ज/लिमिट लिंक (Limit Check Portal):*\n${bLink}\n*(टीप: या लिंकवरून ग्राहकाची तात्काळ कर्जमर्यादा तपासता येईल)*\n`;
+            // इथे e_link वापरला आहे
+            bitlySectionString = `\n${e_link} *डीलर ऑनलाईन अर्ज/लिमिट लिंक (Limit Check Portal):*\n${bLink}\n*(टीप: या लिंकवरून ग्राहकाची तात्काळ कर्जमर्यादा तपासता येईल)*\n`;
         }
 
         msg += `${t.name} ${cName}\n${t.mobile} ${cMob}\n\n${t.dealer} ${cfSelectedDealer}\n${t.model} ${cfSelectedModel}\n${cfSelectedScheme}${bitlySectionString}\n${t.footer}`;
