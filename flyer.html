@@ -305,7 +305,6 @@
         let dpPlain = `${s.advEmi} EMI`;
         let dailyPlain = "-";
         
-        // उर्वरित हप्ते (M) काढण्यासाठी
         let inst = s.tenure - s.advEmi;
         if(inst < 1) inst = 1;
 
@@ -321,7 +320,6 @@
             dailyPlain = `₹${Math.round(s.fixedEmi/30).toLocaleString('en-IN')}`;
         }
 
-        // WhatsApp वर दिसणारा मेसेज फॉरमॅट (Emojis सोबत)
         cfSelectedScheme = `\n✅ *Scheme:* ${s.tenure}/${s.advEmi}\n💰 *DP:* ${dpPlain}\n🗓️ *EMI:* ${emiPlain}\n✨ *Daily EMI:* ${dailyPlain}`;
         
         document.querySelectorAll('.cf-scheme-card').forEach(x => { x.style.borderColor = '#ccc'; x.style.background = '#fff'; }); 
