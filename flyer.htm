@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exclusive Offers - Finance</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root { 
+            --primary: #1976D2; --success: #27ae60; --danger: #d63031; 
+            --warning: #f39c12; --dark: #1E293B; --indigo: #2C3E50; 
+            --bajaj-blue: #0059A3; --bajaj-green: #00A34F;
+        }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f4f7f6; font-size: 14px; }
+        input, select { width: 100%; padding: 10px; border: 1.5px solid #ccc; border-radius: 4px; font-weight: 600; font-size: 14px !important; box-sizing: border-box; }
+        input:focus, select:focus { border-color: var(--primary); outline: none; }
+        label { font-weight: 900; font-size: 12px; color: #555; margin-bottom: 5px; display: block; }
+        button { border: none; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .custom-scroll::-webkit-scrollbar { width: 5px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+        .cf-hidden-scheme { display: none; }
+        
+        @keyframes offerFlash {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        #loadingScreen { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.9); display:flex; flex-direction:column; justify-content:center; align-items:center; z-index:9999; }
+    </style>
+</head>
+<body>
+
+<div id="loadingScreen">
+    <h2 style="color:var(--bajaj-blue);">🔄 Loading Latest Offers...</h2>
+    <p style="color:#555; font-weight:bold;">Please wait a moment.</p>
+</div>
+
+<!-- CUSTOMER FLYER VIEW -->
+<div id="customerFlyerView" style="display:none; padding:15px; max-width:600px; margin:0 auto; background:#f4f7f6; min-height:100vh; box-sizing: border-box;">
+    <div style="background:#fff; border-radius:10px; padding:20px; box-shadow:0 4px 15px rgba(0,0,0,0.05); border: 2px solid var(--bajaj-blue);">
+        
+        <div id="cfOfferBanner" style="display:none; background: linear-gradient(135deg, #ff0055 0%, #000066 100%); color:white; padding:16px; border-radius:10px; text-align:center; margin-bottom:18px; border:2px solid #ffcc00; box-shadow: 0 6px 20px rgba(255, 0, 85, 0.4); animation: offerFlash 3s ease infinite;">
+            <div style="font-size:11px; color:#ffcc00; font-weight:900; letter-spacing:1.5px; margin-bottom:4px;">🔥 HURRY! EXCLUSIVE DEALER FLASH SALE 🔥</div>
+            <div id="cfOfferText" style="font-size:18px; font-weight:950; letter-spacing:0.5px; text-transform:uppercase; text-shadow: 1px 1px 2px #000;"></div>
+            <div style="font-size:12px; background:rgba(0,0,0,0.45); display:inline-block; padding:4px 14px; border-radius:20px; margin-top:8px; font-weight:bold; border:1px solid #ffcc00;">
+                ⏳ CLAIM OFFER BEFORE: <span id="cfCountdown" style="color:#fff; font-family:monospace; font-size:14px;">02:14:59</span>
+            </div>
+        </div>
+
+        <h2 style="color:var(--bajaj-blue); text-align:center; margin-top:0; border-bottom:2px dashed #eee; padding-bottom:10px;">✨ Device Selection & Lead Request</h2>
+        
+        <div id="cfSelfActionBox" style="display:none; margin-bottom:15px;"></div>
+
+        <div id="cfDealerSection" style="margin-bottom:15px;">
+            <label style="font-weight:bold; color:var(--indigo); margin-bottom:5px; display:block;">🏪 Search Dealer Shop</label>
+            <input type="text" id="cfDealerSearch" placeholder="Type Dealer Name or ID..." oninput="searchCfDealer()" style="width:100%; padding:10px; border:2px solid var(--primary); border-radius:6px;">
+            <div id="cfDealerList" class="custom-scroll" style="max-height:200px; overflow-y:auto; margin-top:5px; border-radius:6px;"></div>
+        </div>
+        
+        <div id="cfModelSection" style="margin-bottom:15px; display:none;">
+            <label style="font-weight:bold; color:var(--indigo); margin-bottom:5px; display:block;">📱 Search Device Model</label>
+            <input type="text" id="cfModelSearch" placeholder="Type Model Name..." oninput="searchCfModel()" style="width:100%; padding:10px; border:2px solid var(--primary); border-radius:6px;">
+            <div id="cfModelList" class="custom-scroll" style="max-height:200px; overflow-y:auto; margin-top:5px; border-radius:6px;"></div>
+        </div>
+        
+        <div id="cfSchemeSection" style="margin-bottom:20px; display:none;">
+            <label style="font-weight:bold; color:var(--indigo); margin-bottom:5px; display:block;">💳 Select Scheme</label>
+            <div id="cfSchemeList" style="display:flex; flex-direction:column; gap:10px;"></div>
+        </div>
+        
+        <div id="cfFormSection" style="margin-bottom:15px; display:none; background:#e8f4f8; padding:15px; border-radius:8px; border:1px solid var(--primary);">
+            <h4 style="margin-top:0; color:var(--primary);">👤 Your Details</h4>
+            
+            <div style="margin-bottom:12px;">
+                <label>Preferred Language / भाषा</label>
+                <select id="cfLang" style="background:#fff; font-weight:bold; color:var(--indigo);">
+                    <option value="mr" selected>Marathi (मराठी)</option>
+                    <option value="hi">Hindi (हिंदी)</option>
+                    <option value="en">English</option>
+                </select>
+            </div>
+
+            <div style="margin-bottom:10px;">
+                <label>Your Full Name</label>
+                <input type="text" id="cfCustName" placeholder="Enter Name" style="background:#fff;">
+            </div>
+            <div style="margin-bottom:15px;">
+                <label>Your Mobile Number</label>
+                <input type="text" id="cfCustMobile" placeholder="10 Digits" maxlength="10" style="background:#fff;">
+            </div>
+            
+            <div style="display:flex; align-items:flex-start; gap:8px; margin-bottom:14px; padding: 10px; background:#fff9e6; border-radius:6px; border:1.5px solid #f39c12;">
+                <input type="checkbox" id="cfAgreeCheck" style="width:20px !important; height:20px !important; margin-top:1px; cursor:pointer; flex-shrink:0;">
+                <label for="cfAgreeCheck" style="font-size:12px !important; color:#d35400; font-weight:bold; line-height:1.4; text-transform:none; cursor:pointer;">
+                    मी हे मान्य करतो/करते की, प्रत्यक्ष दुकानात आल्यावर फायनल प्रोसेस करताना सिस्टीमनुसार जे काही डाऊनपेमेंट आणि EMI (कमी किंवा जास्त) येईल, ते मला मान्य असेल.
+                </label>
+            </div>
+            
+            <button onclick="submitCfLead()" style="width:100%; background:#25D366; color:white; font-size:15px !important; padding:12px; border-radius:6px; box-shadow: 0 4px 6px rgba(37, 211, 102, 0.3);">🟢 Send Inquiry To Dealer (WhatsApp)</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let db_records = [];
+    let dealer_records = [];
+    let cfSelectedDealer = "";
+    let cfSelectedModel = "";
+    let cfSelectedScheme = "";
+    let offerTimerInterval;
+
+    const langTemplates = {
+        mr: { header: "⚡ *PERSISTENT PORTAL: नवीन लीड (LEAD)* ⚡\n\nनमस्कार *{SNAME}*,\nमला Persistent Portal द्वारे खालील फोन फायनान्सवर घेण्यास रस आहे:\n\n", name: "👤 *ग्राहक नाव:*", mobile: "📞 *मोबाईल:*", dealer: "🏪 *निवडलेले दुकान:*", model: "📱 *मॉडेल:*", footer: "\n*(टीप: प्रत्यक्ष दुकानात आल्यावर सिस्टीमनुसार जी फायनल प्रोसेस आकडेवारी येईल, ती मला मान्य असेल.)*\n\n*कृपया मला प्रोसेस सांगण्यासाठी संपर्क करावा.*" },
+        hi: { header: "⚡ *PERSISTENT PORTAL: नई लीड (LEAD)* ⚡\n\nनमस्ते *{SNAME}*,\nमैं Persistent Portal के जरिए नीचे दिए गए फोन को फाइनेंस पर लेना चाहता हूँ:\n\n", name: "👤 *ग्राहक का नाम:*", mobile: "📞 *मोबाइल:*", dealer: "🏪 *चुनी गई दुकान:*", model: "📱 *मॉडल:*", footer: "\n*(नोट: दुकान पर आने के बाद सिस्टम द्वारा तय अंतिम डाउनपेमेंट व EMI मुझे मान्य होगी।)*\n\n*कृपया आगे की प्रोसेस के लिए संपर्क करें।* " },
+        en: { header: "⚡ *PERSISTENT PORTAL: NEW LEAD* ⚡\n\nHello *{SNAME}*,\nI generated a finance request via Persistent Portal. Details below:\n\n", name: "👤 *Customer:*", mobile: "📞 *Mobile:*", dealer: "🏪 *Dealer Shop:*", model: "📱 *Model:*", footer: "\n*(Note: Final system-generated DP & EMI finalized at the shop counter will be binding/accepted.)*\n\n*Please connect to share the next steps.*" }
+    };
+
+    function cleanPureShopName(raw) {
+        if(!raw) return "";
+        return raw.split('#')[0].split('|')[0].split('(')[0].trim().toUpperCase();
+    }
+
+    function parseDealerObj(d) {
+        if (!d) return { code: '', name: '', city: '', bitly: '' };
+        let keys = Object.keys(d);
+        let rawName = '', code = '', city = '', bitly = '';
+        for (let k of keys) {
+            let val = String(d[k]).trim();
+            if (val.startsWith('http://') || val.startsWith('https://') || val.includes('bit.ly')) { bitly = val; break; }
+        }
+        let nameKey = keys.find(k => ['DEALER NAME', 'SHOP NAME', 'NAME', 'SHOP', 'DEALER'].includes(k.toUpperCase().trim()));
+        rawName = nameKey ? String(d[nameKey]).trim() : '';
+        let codeKey = keys.find(k => ['DEALERID', 'DEALER CODE', 'CODE', 'ID', 'BPES RCD', 'DEALER_ID'].includes(k.toUpperCase().trim()));
+        code = codeKey ? String(d[codeKey]).trim() : '';
+        let cityKey = keys.find(k => ['CITY', 'LOCATION', 'TOWN', 'DISTRICT'].includes(k.toUpperCase().trim()));
+        city = cityKey ? String(d[cityKey]).trim() : '';
+        if (rawName.includes('#')) {
+            let parts = rawName.split('#'); let shopPart = parts[0].trim();
+            if (!city && parts.length > 1) city = parts[1].split('|')[0].replace(/\(.*?\)/g, '').trim();
+            if (!code && parts.length > 2) { for (let p of parts) if (/\d{5,}/.test(p)) { code = p.match(/\d{5,}/)[0]; break; } }
+            rawName = shopPart;
+        }
+        if (bitly && !bitly.startsWith('http')) bitly = 'https://' + bitly;
+        return { code: code || '-', name: cleanPureShopName(rawName) || 'SHOP', city: city || '', bitly: bitly };
+    }
+
+    function findValLocal(row, targets) { let key = Object.keys(row).find(k => targets.includes(k.toUpperCase().replace(/\s/g, ''))); return key ? row[key] : null; }
+    
+    function mapDataForFlyer(row) { 
+        if(!row) return null;
+        return { 
+            model: String(findValLocal(row,['MODEL','BRANDMODEL'])||"").toUpperCase(), 
+            mrp: parseFloat(findValLocal(row, ['MRP', 'PRICE', 'M.R.P'])) || 0, 
+            tenure: parseInt(findValLocal(row, ['TOTALTENURE', 'TENURE', 'TA'])) || 0, 
+            advEmi: parseInt(findValLocal(row, ['ADVANCEEMI', 'ADV'])) || 0, 
+            dbd: parseFloat(findValLocal(row,['DBD','DBD%'])||0), 
+            pf: parseInt(findValLocal(row,['PF','PROCESSINGFEE'])||0), 
+            fixedEmi: parseFloat(findValLocal(row,['FIXEDEMI', 'FIXED'])||0)
+        }; 
+    }
+
+    window.onload = async function() {
+        try {
+            const GITHUB_RAW_URL = "https://raw.githubusercontent.com/luckyjathar/CALCULATOR/main/master_data.xlsx";
+            let res = await fetch(GITHUB_RAW_URL + '?t=' + Date.now());
+            let dataBuffer = await res.arrayBuffer();
+            let wb = XLSX.read(new Uint8Array(dataBuffer), { type: 'array' });
+            
+            let tempSheet1 = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { raw: false, defval: "" });
+            db_records = tempSheet1.map(mapDataForFlyer).filter(m => m && m.model && m.model.trim() !== "");
+            
+            if (wb.SheetNames.length > 2) {
+                dealer_records = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[2]], { raw: false, defval: "" });
+            }
+
+            document.getElementById('loadingScreen').style.display = 'none';
+            document.getElementById('customerFlyerView').style.display = 'block';
+            setupCustomerFlyerIfNeeded();
+        } catch(err) {
+            document.getElementById('loadingScreen').innerHTML = `<h2 style="color:red;">⚠️ Error Loading Data</h2><p>Please check your internet connection and refresh.</p>`;
+        }
+    };
+
+    function showDynamicBitlyButton(linkUrl) {
+        let bBox = document.getElementById('cfSelfActionBox');
+        if (linkUrl && linkUrl.startsWith('http')) {
+            bBox.style.display = 'block';
+            bBox.innerHTML = `<a href="${linkUrl}" target="_blank" style="display:block; text-align:center; background:linear-gradient(135deg, #00A34F, #0059A3); color:#fff; padding:14px; border-radius:8px; font-weight:950; text-decoration:none; box-shadow:0 4px 12px rgba(0,0,0,0.25); font-size:14px; letter-spacing:0.5px; border:2px solid #fff;">💳 CHECK YOUR BAJAJ LIMIT / SELF BOOK ORDER 🚀</a>`;
+        } else { bBox.style.display = 'none'; }
+    }
+
+    function setupCustomerFlyerIfNeeded() {
+        let params = new URLSearchParams(window.location.search);
+        let did = params.get('did'), dn = params.get('dn'), ot = params.get('ot'), ov = params.get('ov'), fm = params.get('fm'), bl = params.get('bl');
+
+        if (ot && ov) {
+            let bannerTextEl = document.getElementById('cfOfferText');
+            if(ot === "FREEBIE") bannerTextEl.innerText = `🎁 LIMITED PERIOD OFFER: FREE "${ov}" GIFT!`;
+            else bannerTextEl.innerText = `🔥 LIMITED PERIOD OFFER: UPTO ₹${ov} ${ot}!`;
+            document.getElementById('cfOfferBanner').style.display = 'block';
+            startOfferCountdownTimer();
+        }
+
+        if(bl) showDynamicBitlyButton(decodeURIComponent(bl));
+
+        if(did && dn) {
+            cfSelectedDealer = cleanPureShopName(decodeURIComponent(dn));
+            document.getElementById('cfDealerSection').innerHTML = `<div style="padding:12px; background:#e8f4f8; border-radius:6px; font-weight:bold; color:var(--bajaj-blue); border:1px solid var(--primary);">🏪 Dealer Shop: ${cfSelectedDealer}</div>`;
+            document.getElementById('cfModelSection').style.display = 'block';
+            if (!bl && dealer_records.length > 0) {
+                let dObj = dealer_records.find(d => parseDealerObj(d).code == did);
+                if (dObj) showDynamicBitlyButton(parseDealerObj(dObj).bitly);
+            }
+        } else { searchCfDealer(); }
+
+        if(fm) {
+            let modelName = decodeURIComponent(fm);
+            cfSelectedModel = modelName;
+            document.getElementById('cfModelSection').style.display = 'block';
+            document.getElementById('cfModelSection').innerHTML = `<div style="padding:12px; background:#fff9e6; border-radius:6px; font-weight:bold; color:#d35400; border:1px solid #f39c12;">📱 Exclusive Offer Model: ${modelName}</div>`;
+            document.getElementById('cfSchemeSection').style.display = 'block';
+            renderCfSchemes(modelName);
+        }
+    }
+
+    function startOfferCountdownTimer() {
+        let timeInSec = 3 * 3600 + 14 * 60 + 59; 
+        let timerEl = document.getElementById('cfCountdown');
+        if(offerTimerInterval) clearInterval(offerTimerInterval);
+        offerTimerInterval = setInterval(() => {
+            let h = Math.floor(timeInSec / 3600), m = Math.floor((timeInSec % 3600) / 60), s = timeInSec % 60;
+            timerEl.innerText = `${h < 10 ? '0'+h : h}:${m < 10 ? '0'+m : m}:${s < 10 ? '0'+s : s}`;
+            if(--timeInSec < 0) { clearInterval(offerTimerInterval); timerEl.innerText = "EXPIRED"; }
+        }, 1000);
+    }
+
+    function searchCfDealer() {
+        let q = document.getElementById('cfDealerSearch').value.toLowerCase().trim(); let list = document.getElementById('cfDealerList'); if(!q) { list.innerHTML = ''; return; }
+        if(dealer_records.length === 0) { list.innerHTML = '<div style="color:var(--danger);">Loading dealers...</div>'; return; }
+        let matches = dealer_records.map(d => parseDealerObj(d)).filter(p => p.name.toLowerCase().includes(q) || p.code.toLowerCase().includes(q) || p.city.toLowerCase().includes(q)).slice(0, 15);
+        list.innerHTML = matches.map(p => {
+            let displayStr = `${p.name}${p.city ? ' - ' + p.city : ''}`;
+            return `<div onclick="selectCfDealer('${p.code}', '${p.name.replace(/'/g, "\\'")}', '${p.city.replace(/'/g, "\\'")}', '${encodeURIComponent(p.bitly||'')}')" style="padding:12px; border-bottom:1px solid #ddd; cursor:pointer; background:#fff; font-weight:bold; color:var(--indigo);">🏪 ${displayStr} <br><span style="font-size:11px; color:#777;">Code: ${p.code}</span></div>`;
+        }).join('');
+    }
+
+    function selectCfDealer(code, name, city, bitlyEnc) {
+        cfSelectedDealer = `${cleanPureShopName(name)}${city ? ' - ' + city : ''}`;
+        document.getElementById('cfDealerSection').innerHTML = `<div style="padding:12px; background:#e8f4f8; border-radius:6px; font-weight:bold; color:var(--bajaj-blue); border:1px solid var(--primary);">✅ Shop: ${cfSelectedDealer} <span onclick="resetCfDealer()" style="float:right; cursor:pointer; color:var(--danger);">✎ Edit</span></div>`;
+        document.getElementById('cfModelSection').style.display = 'block';
+        showDynamicBitlyButton(decodeURIComponent(bitlyEnc));
+    }
+
+    function resetCfDealer() { cfSelectedDealer = ""; document.getElementById('cfDealerSection').innerHTML = `<label style="font-weight:bold; color:var(--indigo); margin-bottom:5px; display:block;">🏪 Search Dealer Shop</label><input type="text" id="cfDealerSearch" placeholder="Type Dealer Name or ID..." oninput="searchCfDealer()" style="width:100%; padding:10px; border:2px solid var(--primary); border-radius:6px;"><div id="cfDealerList" class="custom-scroll" style="max-height:200px; overflow-y:auto; margin-top:5px; border-radius:6px;"></div>`; document.getElementById('cfModelSection').style.display = 'none'; document.getElementById('cfSchemeSection').style.display = 'none'; document.getElementById('cfFormSection').style.display = 'none'; document.getElementById('cfSelfActionBox').style.display = 'none'; }
+
+    function searchCfModel() {
+        let q = document.getElementById('cfModelSearch').value.toUpperCase().trim(); let list = document.getElementById('cfModelList'); if(!q) { list.innerHTML = ''; return; }
+        let matches = [...new Set(db_records.map(r => r.model))].filter(m => m.includes(q)).slice(0,10);
+        list.innerHTML = matches.map(m => `<div onclick="selectCfModel('${m.replace(/'/g, "\\'")}')" style="padding:12px; border-bottom:1px solid #eee; cursor:pointer; background:#fff; font-weight:bold; color:var(--dark);">📱 ${m}</div>`).join('');
+    }
+
+    function selectCfModel(mName) { cfSelectedModel = mName; document.getElementById('cfModelSearch').value = mName; document.getElementById('cfModelList').innerHTML = ''; document.getElementById('cfSchemeSection').style.display = 'block'; renderCfSchemes(mName); }
+
+    function renderCfSchemes(modelName) {
+        let schemes = db_records.filter(r => r.model === modelName && (r.tenure > 0 || r.fixedEmi > 0)); let list = document.getElementById('cfSchemeList');
+        if(schemes.length === 0) { list.innerHTML = `<div style="padding:10px; color:var(--danger); font-weight:bold; text-align:center;">No schemes available for this model yet.</div>`; return; }
+
+        let uniqueMap = new Map(); schemes.forEach(s => { let key = `${s.tenure}_${s.advEmi}_${s.fixedEmi}`; if(!uniqueMap.has(key)) uniqueMap.set(key, s); });
+        let uniqueS = Array.from(uniqueMap.values()); let top4 = []; let remaining = [...uniqueS];
+
+        function extractScheme(sortFn, tag) { if (remaining.length === 0) return; remaining.sort(sortFn); let sel = remaining.shift(); sel.customTag = tag; top4.push(sel); }
+
+        extractScheme((a,b) => (a.advEmi - b.advEmi) || (b.tenure - a.tenure), "🔥 LOWEST DP");
+        extractScheme((a,b) => (b.advEmi - a.advEmi) || (b.tenure - a.tenure), "⭐ LOWEST EMI");
+        extractScheme((a,b) => (b.advEmi - a.advEmi) || (a.tenure - b.tenure), "⚡ FAST CLEARANCE");
+        extractScheme((a,b) => (a.advEmi * a.tenure) - (b.advEmi * b.tenure), "🚀 LOW DP FAST CLEARANCE");
+
+        remaining.sort((a, b) => (a.advEmi - b.advEmi) || (a.tenure - b.tenure));
+        let allRenderedSchemes = [...top4, ...remaining]; let html = "";
+
+        window.renderedCustomerSchemesList = allRenderedSchemes;
+
+        allRenderedSchemes.forEach((s, index) => {
+            let displayEmiHtml = `<span style="background:#e3f2fd; color:var(--primary); padding:4px 8px; border-radius:4px; font-size:12px; font-weight:bold;">EMI: किमतीनुसार</span>`;
+            let displayDpHtml = `<span style="background:#e8f5e9; color:var(--success); padding:4px 8px; border-radius:4px; font-size:12px; font-weight:bold;">Est. DP: ~ ${s.advEmi} EMI + Charges</span>`;
+
+            if (s.mrp > 0 && s.tenure > 0) { let calcEmi = Math.round(s.mrp / s.tenure); displayEmiHtml = `<span style="background:#e3f2fd; color:var(--primary); padding:4px 8px; border-radius:4px; font-size:12px; font-weight:bold;">EMI: ~ ₹${calcEmi}</span>`; let estDp = Math.round((calcEmi*s.advEmi)+(s.mrp*((s.dbd||0)*1.18/100))+(s.pf||0)); displayDpHtml = `<span style="background:#e8f5e9; color:var(--success); padding:4px 8px; border-radius:4px; font-size:12px; font-weight:bold;">Est. DP: ~ ₹${estDp.toLocaleString('en-IN')}</span>`; } 
+            else if (s.fixedEmi > 0) { displayEmiHtml = `<span style="background:#e3f2fd; color:var(--primary); padding:4px 8px; border-radius:4px; font-size:12px; font-weight:bold;">EMI: ₹${s.fixedEmi}</span>`; displayDpHtml = `<span style="background:#e8f5e9; color:var(--success); padding:4px 8px; border-radius:4px; font-size:12px; font-weight:bold;">Fixed Advance Scheme</span>`; }
+
+            let isTop = index < top4.length; let displayStyle = isTop ? 'block' : 'none';
+            let extraBadge = s.customTag ? `<span style="background:var(--warning); color:#000; font-size:10px; padding:2px 6px; border-radius:10px; float:right; font-weight:900;">${s.customTag}</span>` : ``;
+
+            html += `<div onclick="selectCfSchemeByIndex(${index}, this)" class="cf-scheme-card ${isTop?'':'cf-hidden-scheme'}" style="display:${displayStyle}; padding:15px; border:2px solid #ccc; border-radius:8px; cursor:pointer; background:#fff; transition:0.3s;"><div style="font-weight:900; color:var(--bajaj-blue); font-size:14px; margin-bottom:8px;">💳 Scheme: ${s.tenure} Months / ${s.advEmi} Advance ${extraBadge}</div><div style="display:flex; gap:8px; flex-wrap:wrap;">${displayEmiHtml}${displayDpHtml}</div></div>`;
+        });
+
+        if (remaining.length > 0) html += `<button id="cfShowMoreSchemesBtn" onclick="toggleCfSchemes()" style="background:#f1f2f6; color:var(--primary); border:1px dashed var(--primary); padding:10px; width:100%; border-radius:6px; font-weight:bold; cursor:pointer; margin-top:5px;">⬇️ View ${remaining.length} More Schemes</button>`;
+        list.innerHTML = html;
+    }
+
+    function toggleCfSchemes() { let hiddenEls = document.querySelectorAll('.cf-hidden-scheme'); let btn = document.getElementById('cfShowMoreSchemesBtn'); if(!hiddenEls.length) return; let isHidden = hiddenEls[0].style.display === 'none'; hiddenEls.forEach(el => el.style.display = isHidden ? 'block' : 'none'); btn.innerHTML = isHidden ? `⬆️ Hide Extra Schemes` : `⬇️ View ${hiddenEls.length} More Schemes`; }
+    
+    function selectCfSchemeByIndex(idx, el) {
+        let s = window.renderedCustomerSchemesList[idx];
+        let emiPlain = "किमतीनुसार"; let dpPlain = `${s.advEmi} EMI`;
+
+        if (s.mrp > 0 && s.tenure > 0) {
+            let calcEmi = Math.round(s.mrp / s.tenure); emiPlain = `₹${calcEmi}/mo`;
+            let estDp = Math.round((calcEmi*s.advEmi)+(s.mrp*((s.dbd||0)*1.18/100))+(s.pf||0)); dpPlain = `₹${estDp.toLocaleString('en-IN')}`;
+        } else if (s.fixedEmi > 0) { emiPlain = `₹${s.fixedEmi}/mo`; dpPlain = `Fixed Advance Scheme`; }
+
+        cfSelectedScheme = `\n💳 *निवडलेली स्कीम:* ${s.tenure} Months | Advance: ${s.advEmi}\n💰 *अंदाजे DP:* ${dpPlain} | *अंदाजे EMI:* ${emiPlain}`;
+        
+        document.querySelectorAll('.cf-scheme-card').forEach(x => { x.style.borderColor = '#ccc'; x.style.background = '#fff'; }); 
+        el.style.borderColor = 'var(--success)'; el.style.background = '#e8f5e9'; 
+        document.getElementById('cfFormSection').style.display = 'block'; 
+        setTimeout(() => document.getElementById('cfFormSection').scrollIntoView({behavior:'smooth'}), 150);
+    }
+
+    function submitCfLead() {
+        if(!document.getElementById('cfAgreeCheck').checked) {
+            alert("⚠️ कृपया डाऊनपेमेंट आणि EMI संदर्भातील 'अटी व नियम' मान्य असल्याच्या बॉक्सवर (Tick) क्लिक करा!"); return;
+        }
+
+        let cName = document.getElementById('cfCustName').value.trim(), cMob = document.getElementById('cfCustMobile').value.trim();
+        if(!cName || !cMob || cMob.length !== 10) { alert("⚠️ कृपया तुमचे पूर्ण नाव आणि 10-अंकी मोबाईल नंबर बरोबर टाका!"); return; }
+
+        let params = new URLSearchParams(window.location.search);
+        let sNum = params.get('sm'), sName = decodeURIComponent(params.get('sn') || 'Salesman');
+        let ot = params.get('ot'), ov = params.get('ov');
+        let bLink = params.get('bl') ? decodeURIComponent(params.get('bl')) : '';
+
+        let t = langTemplates[document.getElementById('cfLang').value] || langTemplates['mr'];
+        let msg = t.header.replace('{SNAME}', sName);
+        
+        if(ot && ov) {
+            let offTxt = ot === "FREEBIE" ? `FREE ${ov.toUpperCase()} GIFT` : `UPTO ₹${ov} ${ot}`;
+            msg += `🎁 *APPLIED FLASH OFFER:* [ ${offTxt} ]\n_*(Customer requested to claim this offer)*_\n\n`;
+        }
+
+        let bitlySectionString = "";
+        if (bLink) {
+            bitlySectionString = `\n🔗 *डीलर ऑनलाईन अर्ज/लिमिट लिंक (Limit Check Portal):*\n${bLink}\n*(टीप: या लिंकवरून ग्राहकाची तात्काळ कर्जमर्यादा तपासता येईल)*\n`;
+        }
+
+        msg += `${t.name} ${cName}\n${t.mobile} ${cMob}\n\n${t.dealer} ${cfSelectedDealer}\n${t.model} ${cfSelectedModel}\n${cfSelectedScheme}${bitlySectionString}\n${t.footer}`;
+        window.open(`https://wa.me/91${sNum}?text=${encodeURIComponent(msg)}`, '_blank');
+    }
+</script>
+</body>
+</html>
