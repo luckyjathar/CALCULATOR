@@ -110,9 +110,9 @@
     let offerTimerInterval;
 
     const langTemplates = {
-        mr: { header: "⚡ *PERSISTENT PORTAL: नवीन लीड (LEAD)* ⚡\n\nनमस्कार *{SNAME}*,\nमला खालील प्रॉडक्ट फायनान्सवर घेण्यास रस आहे:\n\n", name: "👤 *Customer Name:*", mobile: "📞 *Number:*", dealer: "🏪 *Dealer Shop:*", model: "📱 *Model:*", footer: "\n\n*(टीप: प्रत्यक्ष दुकानात आल्यावर सिस्टीमनुसार जी फायनल प्रोसेस आकडेवारी येईल, ती मला मान्य असेल.)*\n*कृपया मला प्रोसेस सांगण्यासाठी संपर्क करावा.*" },
-        hi: { header: "⚡ *PERSISTENT PORTAL: नई लीड (LEAD)* ⚡\n\nनमस्ते *{SNAME}*,\nमैं नीचे दिए गए प्रोडक्ट को फाइनेंस पर लेना चाहता हूँ:\n\n", name: "👤 *Customer Name:*", mobile: "📞 *Number:*", dealer: "🏪 *Dealer Shop:*", model: "📱 *Model:*", footer: "\n\n*(नोट: दुकान पर आने के बाद सिस्टम द्वारा तय अंतिम डाउनपेमेंट व EMI मुझे मान्य होगी।)*\n*कृपया आगे की प्रोसेस के लिए संपर्क करें।* " },
-        en: { header: "⚡ *PERSISTENT PORTAL: NEW LEAD* ⚡\n\nHello *{SNAME}*,\nI am interested in financing the product below:\n\n", name: "👤 *Customer Name:*", mobile: "📞 *Number:*", dealer: "🏪 *Dealer Shop:*", model: "📱 *Model:*", footer: "\n\n*(Note: Final system-generated DP & EMI finalized at the shop counter will be binding/accepted.)*\n*Please connect to share the next steps.*" }
+        mr: { header: "⚡\n\nनमस्कार *{SNAME}*,\nमला खालील प्रॉडक्ट फायनान्सवर घ्यायचा आहे:\n\n", name: "👤 *Customer Name:*", mobile: "📞 *Number:*", dealer: "🏪 *Dealer Shop:*", model: "📱 *Model:*", footer: "\n\n*(टीप: प्रत्यक्ष दुकानात आल्यावर सिस्टीमनुसार जी फायनल प्रोसेस आकडेवारी येईल, ती मला मान्य असेल.)*\n*कृपया मला प्रोसेस सांगण्यासाठी संपर्क करावा.*" },
+        hi: { header: "⚡\n\nनमस्ते *{SNAME}*,\nमैं नीचे दिए गए प्रोडक्ट को फाइनेंस पर लेना चाहता हूँ:\n\n", name: "👤 *Customer Name:*", mobile: "📞 *Number:*", dealer: "🏪 *Dealer Shop:*", model: "📱 *Model:*", footer: "\n\n*(नोट: दुकान पर आने के बाद सिस्टम द्वारा तय अंतिम डाउनपेमेंट व EMI मुझे मान्य होगी।)*\n*कृपया आगे की प्रोसेस के लिए संपर्क करें।* " },
+        en: { header: "⚡\n\nHello *{SNAME}*,\nI am interested in financing the product below:\n\n", name: "👤 *Customer Name:*", mobile: "📞 *Number:*", dealer: "🏪 *Dealer Shop:*", model: "📱 *Model:*", footer: "\n\n*(Note: Final system-generated DP & EMI finalized at the shop counter will be binding/accepted.)*\n*Please connect to share the next steps.*" }
     };
 
     function cleanPureShopName(raw) {
