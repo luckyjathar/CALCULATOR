@@ -302,9 +302,6 @@
                     <button onclick="copyFastCalcResult(this)" style="width:100%; margin-top:10px; background:var(--primary); color:white; padding:8px; border-radius:4px; box-shadow: 0 2px 4px rgba(9, 132, 227, 0.3);">📋 COPY CALCULATION</button>
                 </div>
             </div>
-
-            <div id="importedDataSummary" class="custom-scroll" style="display:none; margin-top:8px; background:#fff; border:2px solid var(--success); border-radius:6px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); max-height: 350px; overflow-y: auto; position: relative; padding: 0;">
-            </div>
         </div>
     </div>
 
@@ -365,7 +362,7 @@
     <div id="inviteModal" class="modal">
         <div class="modal-content" style="max-width: 320px;">
             <h3 style="margin-top:0; color:#25D366; border-bottom: 2px solid #ddd; padding-bottom: 6px;">💬 Send Invitation</h3>
-            <p style="font-size:12px; color:#555; margin-bottom:12px;">कस्टमरला WhatsApp वरून खरेदीसाठी आमंत्रित करा.</p>
+            <p style="font-size:12px; color:#555; margin-bottom:12px;">Customer ko WhatsApp se kharidari ke liye invite karein.</p>
             <div style="margin-bottom:6px;"><label>YOUR NAME (SALESPERSON)</label><input type="text" id="invSenderName" placeholder="E.g. Lakshya"></div>
             <div style="margin-bottom:15px;"><label>YOUR MOBILE NO.</label><input type="text" id="invSenderMobile" placeholder="10 Digits" maxlength="10"></div>
             <div style="display:flex; gap:8px;">
@@ -385,7 +382,7 @@
                 <input type="search" id="globalModelSearch" oninput="doGlobalSearch()" placeholder="Type Brand, Category or Model Name..." style="width:100%; border:2px solid var(--indigo); padding: 8px; font-size: 14px !important; outline: none; border-radius: 4px;">
                 <div id="globalModelDropdown" class="custom-scroll" style="position: absolute; width: 100%; background: #fff; z-index: 1000; border: 1px solid #ddd; display: none; box-shadow: 0 10px 25px rgba(0,0,0,0.2); border-radius: 4px; max-height: 250px; overflow-y: auto; margin-top: 4px;"></div>
             </div>
-            <div style="font-size:11px; color:#666; margin-top:8px; text-align:center;">💡 टीप: ब्रँडचे नाव (उदा. Apple, Samsung), कॅटेगरी (उदा. Phone, LED) किंवा मॉडेलचे नाव टाईप करा.</div>
+            <div style="font-size:11px; color:#666; margin-top:8px; text-align:center;">💡 Tip: Brand ka naam (e.g. Apple, Samsung), Category (e.g. Phone, LED) ya Model ka naam type karein.</div>
         </div>
     </div>
 
@@ -455,19 +452,19 @@
     </div>
 
     <div id="globalSchemeViewerModal" class="modal">
-        <div class="modal-content" style="max-width:600px; width:95%; max-height:85vh; display:flex; flex-direction:column;">
+        <div class="modal-content" style="max-width:650px; width:95%; max-height:85vh; display:flex; flex-direction:column;">
             <h3 id="globalViewerTitle" style="margin-top:0; color:var(--bajaj-blue); border-bottom:2px solid #ccc; padding-bottom:6px;">Model Schemes</h3>
             <div class="table-wrapper" style="flex:1; overflow-y:auto; margin-bottom:10px;">
                 <table style="width:100%;">
                     <thead>
                         <tr>
                             <th style="background:#e3f2fd;">T/A</th>
+                            <th style="background:#e3f2fd;">LTV%</th>
                             <th style="background:#e3f2fd;">FIXED EMI</th>
                             <th style="background:#e3f2fd;">DBD%</th>
                             <th style="background:#e3f2fd;">ROI%</th>
                             <th style="background:#e3f2fd;">PF</th>
-                            <th style="background:#e3f2fd;">MIN L</th>
-                            <th style="background:#e3f2fd;">MAX L</th>
+                            <th style="background:#e3f2fd;">EXPIRY</th>
                         </tr>
                     </thead>
                     <tbody id="globalViewerBody"></tbody>
@@ -620,8 +617,8 @@
             
             <div style="background:#e8f4f8; padding:8px 12px; border-radius:6px; margin-bottom:14px; border:1px solid var(--primary); display:flex; align-items:center; justify-content:space-between;">
                 <div>
-                    <label style="color:var(--primary); font-size:10px !important; margin:0;">🔑 TUMCHA SECRET PIN (4-Digits)</label>
-                    <span style="font-size:10px; color:#666;">Ekda theva, browser dhyanat thevel</span>
+                    <label style="color:var(--primary); font-size:10px !important; margin:0;">🔑 AAPKA SECRET PIN (4-Digits)</label>
+                    <span style="font-size:10px; color:#666;">Ek baar set karein, browser yaad rakhega</span>
                 </div>
                 <input type="password" id="userSyncPin" maxlength="4" placeholder="PIN" oninput="saveSyncPin(this.value)" style="width:70px; text-align:center; font-weight:bold; font-size:16px !important; letter-spacing:2px; border:1.5px solid var(--primary);">
             </div>
@@ -797,10 +794,10 @@
     function applyFestivalTheme() {
         const now = new Date(); const month = now.getMonth() + 1; const root = document.documentElement; const banner = document.getElementById('festiveBanner');
         let emojiAdd = '📝', emojiQueue = '👥', emojiBtn = '➕', emojiFc = '🧮';
-        if (month === 1) { root.style.setProperty('--primary', '#e67e22'); root.style.setProperty('--bajaj-blue', '#d35400'); root.style.setProperty('--bajaj-green', '#27ae60'); root.style.setProperty('--bg-pattern', 'radial-gradient(circle, rgba(230,126,34,0.05) 0%, rgba(244,247,246,1) 100%)'); banner.innerText = "🪁 Makar Sankrantichya Hardik Shubhechha! Navya Varshat Navya Schemes!"; banner.style.background = "linear-gradient(90deg, #d35400, #e67e22)"; window.isFestiveMode = true; emojiAdd = '🪁'; emojiQueue = '☀️'; emojiBtn = '✨'; emojiFc = '📊'; } 
-        else if (month === 3) { root.style.setProperty('--primary', '#e84393'); root.style.setProperty('--bajaj-blue', '#8e44ad'); root.style.setProperty('--bajaj-green', '#00b894'); root.style.setProperty('--bg-pattern', 'radial-gradient(circle, rgba(232,67,147,0.05) 0%, rgba(244,247,246,1) 100%)'); banner.innerText = "🎨 Rangapanchamichya Rangit Shubhechha!"; banner.style.background = "linear-gradient(90deg, #8e44ad, #e84393)"; window.isFestiveMode = true; emojiAdd = '🎨'; emojiQueue = '🤝'; emojiBtn = '✨'; emojiFc = '🎯'; } 
-        else if (month === 8 || month === 9) { root.style.setProperty('--primary', '#c0392b'); root.style.setProperty('--bajaj-blue', '#d35400'); root.style.setProperty('--bajaj-green', '#f39c12'); root.style.setProperty('--warning', '#f1c40f'); root.style.setProperty('--bg-pattern', 'radial-gradient(circle, rgba(243,156,18,0.1) 0%, rgba(244,247,246,1) 100%)'); banner.innerText = "🌺 Ganpati Bappa Morya! Vighnaharta tumchya targets purna karo!"; banner.style.background = "linear-gradient(90deg, #c0392b, #f39c12)"; window.isFestiveMode = true; emojiAdd = '🌺'; emojiQueue = '🙏'; emojiBtn = '🕉️'; emojiFc = '🥥'; } 
-        else if (month === 10 || month === 11) { root.style.setProperty('--primary', '#8e44ad'); root.style.setProperty('--bajaj-blue', '#f39c12'); root.style.setProperty('--bajaj-green', '#e67e22'); root.style.setProperty('--dark', '#2c3e50'); root.style.setProperty('--bg-pattern', 'radial-gradient(circle, rgba(142,68,173,0.05) 0%, rgba(244,247,246,1) 100%)'); banner.innerText = "🪔 Diwali Dhamaka! Festive Offers Ani Navya Schemes Check Kara!"; banner.style.background = "linear-gradient(90deg, #2c3e50, #8e44ad)"; window.isFestiveMode = true; emojiAdd = '🪔'; emojiQueue = '✨'; emojiBtn = '🎆'; emojiFc = '🎁'; }
+        if (month === 1) { root.style.setProperty('--primary', '#e67e22'); root.style.setProperty('--bajaj-blue', '#d35400'); root.style.setProperty('--bajaj-green', '#27ae60'); root.style.setProperty('--bg-pattern', 'radial-gradient(circle, rgba(230,126,34,0.05) 0%, rgba(244,247,246,1) 100%)'); banner.innerText = "🪁 Makar Sankranti Ki Hardik Shubhkamnayein! Naye Saal Mein Nayi Schemes!"; banner.style.background = "linear-gradient(90deg, #d35400, #e67e22)"; window.isFestiveMode = true; emojiAdd = '🪁'; emojiQueue = '☀️'; emojiBtn = '✨'; emojiFc = '📊'; } 
+        else if (month === 3) { root.style.setProperty('--primary', '#e84393'); root.style.setProperty('--bajaj-blue', '#8e44ad'); root.style.setProperty('--bajaj-green', '#00b894'); root.style.setProperty('--bg-pattern', 'radial-gradient(circle, rgba(232,67,147,0.05) 0%, rgba(244,247,246,1) 100%)'); banner.innerText = "🎨 Rangapanchami Ki Rangbhari Shubhkamnayein!"; banner.style.background = "linear-gradient(90deg, #8e44ad, #e84393)"; window.isFestiveMode = true; emojiAdd = '🎨'; emojiQueue = '🤝'; emojiBtn = '✨'; emojiFc = '🎯'; } 
+        else if (month === 8 || month === 9) { root.style.setProperty('--primary', '#c0392b'); root.style.setProperty('--bajaj-blue', '#d35400'); root.style.setProperty('--bajaj-green', '#f39c12'); root.style.setProperty('--warning', '#f1c40f'); root.style.setProperty('--bg-pattern', 'radial-gradient(circle, rgba(243,156,18,0.1) 0%, rgba(244,247,246,1) 100%)'); banner.innerText = "🌺 Ganpati Bappa Morya! Vighnaharta aapke targets pure karein!"; banner.style.background = "linear-gradient(90deg, #c0392b, #f39c12)"; window.isFestiveMode = true; emojiAdd = '🌺'; emojiQueue = '🙏'; emojiBtn = '🕉️'; emojiFc = '🥥'; } 
+        else if (month === 10 || month === 11) { root.style.setProperty('--primary', '#8e44ad'); root.style.setProperty('--bajaj-blue', '#f39c12'); root.style.setProperty('--bajaj-green', '#e67e22'); root.style.setProperty('--dark', '#2c3e50'); root.style.setProperty('--bg-pattern', 'radial-gradient(circle, rgba(142,68,173,0.05) 0%, rgba(244,247,246,1) 100%)'); banner.innerText = "🪔 Diwali Dhamaka! Festive Offers Aur Nayi Schemes Check Karein!"; banner.style.background = "linear-gradient(90deg, #2c3e50, #8e44ad)"; window.isFestiveMode = true; emojiAdd = '🪔'; emojiQueue = '✨'; emojiBtn = '🎆'; emojiFc = '🎁'; }
         if (window.isFestiveMode && banner) { banner.style.display = 'block'; let addBtn = document.getElementById('addToQueueBtn'); if(addBtn) addBtn.classList.add('festive-glow'); let genBtn = document.getElementById('genQuoteBtn'); if(genBtn) genBtn.classList.add('festive-glow'); let iAdd = document.getElementById('icon_add'); if(iAdd) iAdd.innerText = emojiAdd; let iQueue = document.getElementById('icon_queue'); if(iQueue) iQueue.innerText = emojiQueue; let iBtn = document.getElementById('icon_btn_add'); if(iBtn) iBtn.innerText = emojiBtn; let iFc = document.getElementById('icon_fc'); if(iFc) iFc.innerText = emojiFc; }
     }
 
@@ -983,8 +980,6 @@
                 await saveToDB("persistent_db", db_records); 
                 localStorage.setItem('persistent_master_sha', latestSha);
                 
-                renderImportSummary();
-                
                 if (activeCustomerIndex !== -1) {
                     loadCurrentProducts();
                     renderMatrix();
@@ -1017,7 +1012,6 @@
             let savedDB = await getFromDB("persistent_db");
             if (savedDB && savedDB.length > 0) {
                 db_records = savedDB; 
-                renderImportSummary();
             }
             
             let savedDealers = await getFromDB("persistent_dealers");
@@ -1102,10 +1096,10 @@
         let sName = document.getElementById('fgSalesName').value.trim(); let sMob = document.getElementById('fgSalesMobile').value.trim();
         let oType = document.getElementById('fgOfferType').value; let oVal = document.getElementById('fgOfferValue').value.trim();
 
-        if(!sName || !sMob || sMob.length !== 10) { alert("⚠️ Kripya Salesman Name ani 10-Digit Mobile Number barobar taka!"); return; }
-        if(!tempFgDealerId) { alert("⚠️ कडक नियम: डीलर शॉप सिलेक्ट करणे Compulsory (अनिवार्य) आहे!"); return; }
-        if(!tempFgBitly) { alert("⚠️ या डीलरची Bitly Link मास्टर डेटामध्ये सापडली नाही! कृपया तुमची एक्सेल फाईल तपासा."); return; }
-        if(oType !== "NONE" && !oVal) { alert("⚠️ Offer select केली आहे तर Amount किंवा Gift चे नाव टाका!"); return; }
+        if(!sName || !sMob || sMob.length !== 10) { alert("⚠️ Kripya Salesman Name aur 10-Digit Mobile Number barabar dalein!"); return; }
+        if(!tempFgDealerId) { alert("⚠️ Kadak Niyam: Dealer Shop select karna Compulsory hai!"); return; }
+        if(!tempFgBitly) { alert("⚠️ Is Dealer ki Bitly Link master data mein nahi mili! Kripya apni Excel file check karein."); return; }
+        if(oType !== "NONE" && !oVal) { alert("⚠️ Agar Offer select ki hai toh Amount ya Gift ka naam dalein!"); return; }
 
         let baseUrl = window.location.href.split('?')[0];
         baseUrl = baseUrl.replace(/index\.html?$/i, '');
@@ -1122,17 +1116,17 @@
 
     function copyFlyerLink() {
         let copyText = document.getElementById('fgGeneratedLinkText'); copyText.select(); copyText.setSelectionRange(0, 99999); document.execCommand("copy");
-        alert("✅ Link Copied! तुम्ही ही लिंक Customer ला WhatsApp वर पाठवू शकता.");
+        alert("✅ Link Copied! Aap yeh link Customer ko WhatsApp par bhej sakte hain.");
     }
 
     function shareOnWhatsAppStatus() {
         let generatedLink = document.getElementById('fgGeneratedLinkText').value;
         if (!generatedLink) {
-            alert("⚠️ आधी लिंक जनरेट करा!");
+            alert("⚠️ Pehle link generate karein!");
             return;
         }
 
-        let statusMessage = "🔥 *Festival Special Offers!* 🔥\n\nनवीन मोबाईल, लॅपटॉप किंवा टीव्ही घेण्याचा विचार करताय? शून्य टक्के व्याजावर (0% EMI) खरेदी करा!\n\nआजच तुमची एलिजिबिलिटी (Limit) चेक करा आणि आकर्षक ऑफर्स मिळवा. खालील लिंकवर क्लिक करा 👇\n\n" + generatedLink;
+        let statusMessage = "🔥 *Festival Special Offers!* 🔥\n\nNaya Mobile, Laptop ya TV lene ka soch rahe ho? Zero percent interest (0% EMI) par kharidi karein!\n\nAaj hi apni eligibility (Limit) check karein aur attractive offers payein. Neeche di gayi link par click karein 👇\n\n" + generatedLink;
         
         let encodedMessage = encodeURIComponent(statusMessage);
         
@@ -1141,7 +1135,7 @@
 
     function openDictionaryModal() {
         if(!db_records || db_records.length === 0) {
-            alert("⚠️ Schemes Dictionary मागून लोड होत आहे, कृपया 2 सेकंद थांबा...");
+            alert("⚠️ Schemes Dictionary background se load ho rahi hai, kripya 2 second wait karein...");
             return;
         }
         document.getElementById('globalModelSearch').value = '';
@@ -1467,7 +1461,7 @@
         if(selectedQueueIndex === -1) return;
         let c = customerQueue[selectedQueueIndex];
         if(!c.mobile || c.mobile.length < 10) {
-            alert("⚠️ Customer cha valid 10 digit mobile number aadhi update kara!");
+            alert("⚠️ Kripya pehle Customer ka valid 10 digit mobile number update karein!");
             return;
         }
         document.getElementById('invSenderName').value = localStorage.getItem('portal_sales_name') || "";
@@ -1480,7 +1474,7 @@
         let sMobile = document.getElementById('invSenderMobile').value.trim();
         
         if(!sName || !sMobile) {
-            alert("⚠️ Kripya tumcha Naav ani Number dya!");
+            alert("⚠️ Kripya apna Naam aur Number dalein!");
             return;
         }
 
@@ -1489,7 +1483,7 @@
 
         let c = customerQueue[selectedQueueIndex];
         
-        let msg = `नमस्कार ${c.name} साहेब/मॅडम! 🎉\n\nतुमची बजाज फायनान्सची *₹${c.limit}* ची लिमिट मंजूर झाली आहे! 🥳\n\nआता वाट कसली बघताय? आजच तुमच्या आवडीची वस्तू (मोबाईल, टीव्ही, लॅपटॉप इ.) खरेदी करण्यासाठी दुकानात नक्की भेट द्या. 🛍️✨\n\nकाहीही अडचण किंवा माहिती हवी असल्यास मला खालील नंबरवर संपर्क करा:\n\n👤 *${sName}*\n📞 ${sMobile}\n\nतुमच्या आगमनाची आम्ही वाट पाहत आहोत! 🙏`;
+        let msg = `Namaskar ${c.name} sir/madam! 🎉\n\nAapki Bajaj Finance ki *₹${c.limit}* ki limit approve ho gayi hai! 🥳\n\nAb intezaar kis baat ka? Aaj hi apni pasand ki cheez (Mobile, TV, Laptop etc.) kharidne ke liye dukan par zaroor visit karein. 🛍️✨\n\nKoi bhi dikkat ya jankari chahiye toh mujhe is number par contact karein:\n\n👤 *${sName}*\n📞 ${sMobile}\n\nAapke aane ka hum intezaar kar rahe hain! 🙏`;
 
         let encMsg = encodeURIComponent(msg);
         window.open(`https://wa.me/91${c.mobile}?text=${encMsg}`, '_blank');
@@ -1640,6 +1634,12 @@
         let tbody = document.getElementById('globalViewerBody');
 
         let validSchemes = schemes.filter(s => s.tenure > 0 || s.fixedEmi > 0);
+        
+        // Calculate LTV for sorting (Descending order)
+        validSchemes.forEach(s => {
+            s.calcLTV = s.tenure > 0 ? ((s.tenure - s.advEmi)/s.tenure)*100 : 0;
+        });
+        validSchemes.sort((a,b) => b.calcLTV - a.calcLTV);
 
         if (validSchemes.length === 0) {
             tbody.innerHTML = `<tr><td colspan="7" style="color:var(--danger); font-weight:bold; padding: 25px 10px !important; text-align:center; font-size:15px !important; border:1px solid #ddd; background:#fff9e6;">⚠️ Please Add Schemes Manually</td></tr>`;
@@ -1647,40 +1647,16 @@
             tbody.innerHTML = validSchemes.map(s => `
                 <tr>
                     <td style="font-weight:900; color:var(--indigo); border:1px solid #ddd;">${s.tenure}/${s.advEmi}</td>
+                    <td style="font-weight:bold; color:var(--bajaj-blue); border:1px solid #ddd;">${Math.round(s.calcLTV)}%</td>
                     <td style="font-weight:900; color:var(--primary); border:1px solid #ddd;">${s.fixedEmi > 0 ? '₹'+s.fixedEmi : 'N/A'}</td>
                     <td style="border:1px solid #ddd;">${+parseFloat(s.dbd).toFixed(3)}%</td>
                     <td style="border:1px solid #ddd;">${+parseFloat(s.roi).toFixed(2)}%</td>
                     <td style="border:1px solid #ddd;">₹${s.pf}</td>
-                    <td style="border:1px solid #ddd;">${s.minLoan > 0 ? '₹'+s.minLoan : '0'}</td>
-                    <td style="border:1px solid #ddd;">${s.maxLoan < 9999999 ? '₹'+s.maxLoan : 'NO LMT'}</td>
+                    <td style="font-size:11px; font-weight:bold; color:${s.isExpired ? '#d35400' : '#555'}; border:1px solid #ddd;">${s.expiryDateStr || '-'}</td>
                 </tr>
             `).join('');
         }
         document.getElementById('globalSchemeViewerModal').style.display = 'flex';
-    }
-
-    function renderImportSummary() {
-        let summaryDiv = document.getElementById('importedDataSummary');
-        if (!summaryDiv) return;
-        if (!db_records || db_records.length === 0) { summaryDiv.style.display = 'none'; return; }
-        
-        let totalSchemes = db_records.length; let stats = {};
-        db_records.forEach(r => {
-            let cat = (r.category || 'OTHER').toString().trim().toUpperCase(); let mod = (r.model || 'UNKNOWN').toString().trim().toUpperCase();
-            if (!stats[cat]) stats[cat] = { total: 0, brands: {} }; stats[cat].total++;
-            if (!stats[cat].brands[mod]) stats[cat].brands[mod] = 0; stats[cat].brands[mod]++;
-        });
-        
-        let html = `<div style="padding: 10px;">`;
-        
-        let sortedCats = Object.keys(stats).sort();
-        sortedCats.forEach(cat => {
-            let catData = stats[cat]; let brandHtml = ''; let sortedBrands = Object.keys(catData.brands).sort();
-            sortedBrands.forEach(b => { brandHtml += `<div style="display:flex; justify-content:space-between; padding: 6px 10px; border-bottom: 1px solid #eee;"><span style="color:#555; font-weight:700;">🏷️ ${b}</span> <span style="color:var(--primary); font-weight:900; background:#e3f2fd; padding:2px 6px; border-radius:3px;">${catData.brands[b]}</span></div>`; });
-            html += `<details style="margin-bottom:6px; background:#f8f9fa; border:1px solid #ddd; border-radius:4px; overflow:hidden;"><summary style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; font-weight:900; color:var(--indigo); padding:10px; list-style:none; outline:none; background:#e3f2fd;"><span>📁 ${cat}</span><span style="background:var(--primary); color:#fff; padding:4px 10px; border-radius:10px;">${catData.total} Schemes ▼</span></summary><div style="background:#fff; color:#333; padding:4px 0;">${brandHtml}</div></details>`;
-        });
-        html += `</div>`;
-        summaryDiv.innerHTML = html; summaryDiv.style.display = 'block';
     }
 
     function generateStackCards() {
@@ -1710,7 +1686,7 @@
         for(let i=1; i<=10; i++) {
             let ten = parseInt(document.getElementById(`msTen_${i}`).value) || 0; let fix = parseInt(document.getElementById(`msFix_${i}`).value) || 0;
             if(ten > 0 || fix > 0) {
-                validSchemes.push({ tenure: ten, advEmi: parseInt(document.getElementById(`msAdv_${i}`).value) || 0, dbd: parseFloat(document.getElementById(`msDbd_${i}`).value) || 0, pf: parseInt(document.getElementById(`msPf_${i}`).value) || 0, roi: parseFloat(document.getElementById(`msRoi_${i}`).value) || 0, fixedEmi: fix, minLoan: 0, maxLoan: 9999999, category: "MANUAL", inactive: false, isExpired: false });
+                validSchemes.push({ tenure: ten, advEmi: parseInt(document.getElementById(`msAdv_${i}`).value) || 0, dbd: parseFloat(document.getElementById(`msDbd_${i}`).value) || 0, pf: parseInt(document.getElementById(`msPf_${i}`).value) || 0, roi: parseFloat(document.getElementById(`msRoi_${i}`).value) || 0, fixedEmi: fix, minLoan: 0, maxLoan: 9999999, category: "MANUAL", inactive: false, isExpired: false, expiryDateStr: "" });
             }
         }
         if(validSchemes.length > 0) {
@@ -1735,11 +1711,17 @@
         let expVal = findValLocal(row, ['EXPIRY', 'EXPIRYDATE', 'VALIDTILL', 'SCHEMEEXPIRY', 'ENDDATE']);
         let expDate = parseExcelDate(expVal);
         let isExp = false;
+        let expiryDateStr = "";
         
         if(expDate) {
             let today = new Date(); 
             today.setHours(0,0,0,0);
             if(expDate < today) isExp = true;
+            
+            let dd = String(expDate.getDate()).padStart(2, '0');
+            let mm = String(expDate.getMonth() + 1).padStart(2, '0');
+            let yyyy = expDate.getFullYear();
+            expiryDateStr = `${dd}/${mm}/${yyyy}`;
         }
 
         return { 
@@ -1756,6 +1738,7 @@
             minLoan: parseFloat(findValLocal(row, ['MINLOAN', 'MINL'])) || 0, 
             maxLoan: parseFloat(findValLocal(row, ['MAXLOAN', 'MAXL'])) || 9999999, 
             isExpired: isExp,
+            expiryDateStr: expiryDateStr,
             inactive: false 
         }; 
     }
@@ -2203,7 +2186,7 @@
             let roundupAdj = (dpRounded > dpExact) ? (dpRounded - dpExact) : 0;
             let netDisb = effectivePrice > 0 ? (effectivePrice - dpRounded - marginMoney - roundupAdj) : 0;
 
-            return { ...s, currentTenure, nbfcMaxL, loan, dp: dpRounded, emi, inst, daily: emi/30, dIdx, isFixed, curLTV, extra: extraVal, dbdAmt, roiAmt, netDisb, inactive: s.inactive || false };
+            return { ...s, currentTenure, nbfcMaxL, loan, dp: dpRounded, emi, inst, daily: emi/30, dIdx, isFixed, curLTV, extra: extraVal, dbdAmt, roiAmt, netDisb, inactive: s.inactive || false, expiryDateStr: s.expiryDateStr };
         });
         renderRows(pIdx);
     }
@@ -2221,6 +2204,9 @@
             let rowClass = (d.isFixed ? "fixed-row " : "") + (isLtvB || isBoundB ? "ltv-breach " : "") + (d.isExpired && !isInactive ? "expired-row " : "") + (isInactive ? "inactive-row " : "");
             
             let toggleBtnHTML = isInactive ? `<button class="action-btn" style="background:var(--success);" onclick="toggleInactive(${pIdx}, ${d.dIdx})">ADD</button>` : `<button class="action-btn" style="background:var(--danger);" onclick="toggleInactive(${pIdx}, ${d.dIdx})">DISABLE</button>`;
+            
+            let expInfo = d.expiryDateStr ? `<div style="font-size:10px; color:#555; margin-top:2px; font-weight:bold;">Exp: ${d.expiryDateStr}</div>` : '';
+            let expiredWarning = d.isExpired ? `<div style="color:#d35400; font-size:9px; font-weight:900; margin-top:3px; line-height:1.2; background:#ffeaa7; padding:2px; border-radius:3px;">⚠️ EXPIRED<br>Check Live</div>` : '';
 
             return `<tr id="row_${pIdx}_${d.dIdx}" class="${rowClass}">
                 <td class="hidden-col">${d.category}</td>
@@ -2236,7 +2222,8 @@
                 
                 <td id="ta_${pIdx}_${d.dIdx}" style="font-weight:900;">
                     ${d.currentTenure}/${d.advEmi}
-                    ${d.isExpired ? `<div style="color:#d35400; font-size:9px; font-weight:900; margin-top:3px; line-height:1.2; background:#ffeaa7; padding:2px; border-radius:3px;">⚠️ EXPIRED<br>Check Live</div>` : ''}
+                    ${expInfo}
+                    ${expiredWarning}
                 </td>
                 
                 <td id="dp_${pIdx}_${d.dIdx}" style="color:var(--success); font-weight:950;">₹${Math.round(d.dp).toLocaleString()}</td>
@@ -2276,9 +2263,10 @@
             dpE = effectivePrice - loan + (d.fixedEmi * d.advEmi) + (loan * dbdRate) + d.pf + totalFees + roiInDp; dpR = Math.ceil(dpE / 10) * 10; let inst = calcTenure - d.advEmi; if(inst < 1) inst = 1;
             let emi = d.fixedEmi + (((parseFloat(inp.gtl)||0) + (parseFloat(inp.rfc)||0) + (parseFloat(inp.exw)||0)) / inst) + roiInEmi;
             
+            let expInfo = d.expiryDateStr ? `<div style="font-size:10px; color:#555; margin-top:2px; font-weight:bold;">Exp: ${d.expiryDateStr}</div>` : '';
             let expBadge = d.isExpired ? `<div style="color:#d35400; font-size:9px; font-weight:900; margin-top:3px; line-height:1.2; background:#ffeaa7; padding:2px; border-radius:3px;">⚠️ EXPIRED<br>Check Live</div>` : '';
             
-            document.getElementById(`ta_${pIdx}_${dIdx}`).innerHTML = `${calcTenure}/${d.advEmi}${expBadge}`; 
+            document.getElementById(`ta_${pIdx}_${dIdx}`).innerHTML = `${calcTenure}/${d.advEmi}${expInfo}${expBadge}`; 
             document.getElementById(`inst_${pIdx}_${dIdx}`).innerText = inst;
             d.loan = loan; d.currentTenure = calcTenure; d.dp = dpR; d.inst = inst; d.emi = emi;
         } else {
@@ -2360,7 +2348,8 @@
             maxLoan: 9999999, 
             category: "MANUAL", 
             inactive: false,
-            isExpired: false 
+            isExpired: false,
+            expiryDateStr: ""
         };
         
         let cCap = customerQueue[activeCustomerIndex]?.cap || "";
@@ -2482,7 +2471,7 @@
             html += `</tbody></table></div>`;
         });
         
-        if(!hasV) { alert("⚠️ Eligibility नुसार या कस्टमरसाठी या मॉडेलमध्ये कोणतीही Scheme बसत नाही (Due to Limit, LTV, or Constraints)!"); return; }
+        if(!hasV) { alert("⚠️ Eligibility ke anusar is customer ke liye is model mein koi bhi Scheme nahi baith rahi hai (Due to Limit, LTV, or Constraints)!"); return; }
         
         html += `<div style="text-align:center; margin-top: 15px; color:#aaa; font-size: 14px; font-weight: bold; border-top: 1px dashed #ddd; padding-top: 15px;">Generated securely via Persistent Portal</div>`;
         quoteDiv.innerHTML = html; document.body.appendChild(quoteDiv);
@@ -2523,7 +2512,7 @@
     function searchDealer() {
         let q = document.getElementById('dealerSearchInput').value.toLowerCase().trim(); let resultsDiv = document.getElementById('dealerSearchResults');
         if (!q) { resultsDiv.innerHTML = '<div style="text-align:center; color:#888;">Type ID or Name to search...</div>'; return; }
-        if (dealer_records.length === 0) { resultsDiv.innerHTML = '<div style="text-align:center; color:var(--danger);">⚠️ Dealer data ajun load zala nahi kiva sheet missing ahe.</div>'; return; }
+        if (dealer_records.length === 0) { resultsDiv.innerHTML = '<div style="text-align:center; color:var(--danger);">⚠️ Dealer data abhi load nahi hua hai ya sheet missing hai.</div>'; return; }
 
         let matches = dealer_records.filter(d => { let dId = String(d['DealerId'] || d['dealerid'] || '').toLowerCase(); let dName = String(d['Dealer Name'] || d['dealer name'] || '').toLowerCase(); return dId.includes(q) || dName.includes(q); }).slice(0, 15);
         if (matches.length === 0) { resultsDiv.innerHTML = '<div style="text-align:center; color:#d35400;">No dealers found.</div>'; return; }
@@ -2539,7 +2528,7 @@
     }
 
     function openBitlyLink(url) {
-        if (url && url !== '#' && url.trim() !== '') { if (!url.startsWith('http://') && !url.startsWith('https://')) { url = 'https://' + url; } window.open(url, '_blank'); closeDealerSearchModal(); } else { alert('⚠️ Ya dealer sathi Bitly link available nahi ahe!'); }
+        if (url && url !== '#' && url.trim() !== '') { if (!url.startsWith('http://') && !url.startsWith('https://')) { url = 'https://' + url; } window.open(url, '_blank'); closeDealerSearchModal(); } else { alert('⚠️ Is dealer ke liye Bitly link available nahi hai!'); }
     }
 
     function openSyncModal() {
@@ -2563,7 +2552,7 @@
     function getAgentPin() {
         let pin = localStorage.getItem('portal_user_pin');
         if(!pin || pin.length !== 4) {
-            alert("⚠️ Kripya varti 4-Digit 'SECRET PIN' set kara. Tyashivay data lock honar nahi!");
+            alert("⚠️ Kripya upar 4-Digit 'SECRET PIN' set karein. Uske bina data lock nahi hoga!");
             return null;
         }
         return pin;
@@ -2580,7 +2569,7 @@
 
     async function generateAndPushCode() {
         if (typeof CryptoJS === 'undefined') {
-            alert("⛔ Technical Alert: CryptoJS security library load zali nahiye. Kripya PC var internet chaloo ahe ka te check kara kiva browser cha Ad-blocker band kara.");
+            alert("⛔ Technical Alert: CryptoJS security library load nahi hui hai. Kripya PC par internet chalu hai ya nahi check karein ya browser ka Ad-blocker band karein.");
             document.getElementById('syncCodeDisplay').innerText = "ERR:LIB";
             return;
         }
@@ -2659,7 +2648,7 @@
             let response = await fetch(`https://api.npoint.io/${rawInputCode}`);
             
             if (response.status === 404) {
-                showSyncMsg(`⚠️ Code [ ${rawInputCode.toUpperCase()} ] cha kontahi data cloud var sapadla nahi.`, true); return;
+                showSyncMsg(`⚠️ Code [ ${rawInputCode.toUpperCase()} ] ka koi bhi data cloud par nahi mila.`, true); return;
             }
             if (!response.ok) throw new Error("Connection drop");
 
@@ -2674,7 +2663,7 @@
                 decryptedText = bytes.toString(CryptoJS.enc.Utf8);
                 if (!decryptedText) throw new Error("Passcode Mismatch");
             } catch(cryptoError) {
-                showSyncMsg("⛔ ACCESS DENIED: Ha data dusrya agent cha ahe (Tumcha 4-Digit PIN chukla).", true);
+                showSyncMsg("⛔ ACCESS DENIED: Yeh data dusre agent ka hai (Aapka 4-Digit PIN galat hai).", true);
                 return;
             }
 
