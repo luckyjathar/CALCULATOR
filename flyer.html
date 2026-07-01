@@ -110,9 +110,9 @@
     let offerTimerInterval;
 
     const langTemplates = {
-        mr: { header: "⚡ *PERSISTENT PORTAL: नवीन लीड (LEAD)* ⚡\n\nनमस्कार *{SNAME}*,\nमला Persistent Portal द्वारे खालील फोन फायनान्सवर घेण्यास रस आहे:\n\n", name: "👤 *ग्राहक नाव:*", mobile: "📞 *मोबाईल:*", dealer: "🏪 *निवडलेले दुकान:*", model: "📱 *मॉडेल:*", footer: "\n*(टीप: प्रत्यक्ष दुकानात आल्यावर सिस्टीमनुसार जी फायनल प्रोसेस आकडेवारी येईल, ती मला मान्य असेल.)*\n\n*कृपया मला प्रोसेस सांगण्यासाठी संपर्क करावा.*" },
-        hi: { header: "⚡ *PERSISTENT PORTAL: नई लीड (LEAD)* ⚡\n\nनमस्ते *{SNAME}*,\nमैं Persistent Portal के जरिए नीचे दिए गए फोन को फाइनेंस पर लेना चाहता हूँ:\n\n", name: "👤 *ग्राहक का नाम:*", mobile: "📞 *मोबाइल:*", dealer: "🏪 *चुनी गई दुकान:*", model: "📱 *मॉडल:*", footer: "\n*(नोट: दुकान पर आने के बाद सिस्टम द्वारा तय अंतिम डाउनपेमेंट व EMI मुझे मान्य होगी।)*\n\n*कृपया आगे की प्रोसेस के लिए संपर्क करें।* " },
-        en: { header: "⚡ *PERSISTENT PORTAL: NEW LEAD* ⚡\n\nHello *{SNAME}*,\nI generated a finance request via Persistent Portal. Details below:\n\n", name: "👤 *Customer:*", mobile: "📞 *Mobile:*", dealer: "🏪 *Dealer Shop:*", model: "📱 *Model:*", footer: "\n*(Note: Final system-generated DP & EMI finalized at the shop counter will be binding/accepted.)*\n\n*Please connect to share the next steps.*" }
+        mr: { header: "⚡ *PERSISTENT PORTAL: नवीन लीड (LEAD)* ⚡\n\nनमस्कार *{SNAME}*,\nमला खालील प्रॉडक्ट फायनान्सवर घेण्यास रस आहे:\n\n", name: "👤 *Customer Name:*", mobile: "📞 *Number:*", dealer: "🏪 *Dealer Shop:*", model: "📱 *Model:*", footer: "\n\n*(टीप: प्रत्यक्ष दुकानात आल्यावर सिस्टीमनुसार जी फायनल प्रोसेस आकडेवारी येईल, ती मला मान्य असेल.)*\n*कृपया मला प्रोसेस सांगण्यासाठी संपर्क करावा.*" },
+        hi: { header: "⚡ *PERSISTENT PORTAL: नई लीड (LEAD)* ⚡\n\nनमस्ते *{SNAME}*,\nमैं नीचे दिए गए प्रोडक्ट को फाइनेंस पर लेना चाहता हूँ:\n\n", name: "👤 *Customer Name:*", mobile: "📞 *Number:*", dealer: "🏪 *Dealer Shop:*", model: "📱 *Model:*", footer: "\n\n*(नोट: दुकान पर आने के बाद सिस्टम द्वारा तय अंतिम डाउनपेमेंट व EMI मुझे मान्य होगी।)*\n*कृपया आगे की प्रोसेस के लिए संपर्क करें।* " },
+        en: { header: "⚡ *PERSISTENT PORTAL: NEW LEAD* ⚡\n\nHello *{SNAME}*,\nI am interested in financing the product below:\n\n", name: "👤 *Customer Name:*", mobile: "📞 *Number:*", dealer: "🏪 *Dealer Shop:*", model: "📱 *Model:*", footer: "\n\n*(Note: Final system-generated DP & EMI finalized at the shop counter will be binding/accepted.)*\n*Please connect to share the next steps.*" }
     };
 
     function cleanPureShopName(raw) {
@@ -301,21 +301,34 @@
     
     function selectCfSchemeByIndex(idx, el) {
         let s = window.renderedCustomerSchemesList[idx];
-        let emiPlain = "किमतीनुसार"; let dpPlain = `${s.advEmi} EMI`;
+        let emiPlain = "किमतीनुसार"; 
+        let dpPlain = `${s.advEmi} EMI`;
+        let dailyPlain = "-";
+        
+        // उर्वरित हप्ते (M) काढण्यासाठी
+        let inst = s.tenure - s.advEmi;
+        if(inst < 1) inst = 1;
 
         if (s.mrp > 0 && s.tenure > 0) {
-            let calcEmi = Math.round(s.mrp / s.tenure); emiPlain = `₹${calcEmi}/mo`;
-            let estDp = Math.round((calcEmi*s.advEmi)+(s.mrp*((s.dbd||0)*1.18/100))+(s.pf||0)); dpPlain = `₹${estDp.toLocaleString('en-IN')}`;
-        } else if (s.fixedEmi > 0) { emiPlain = `₹${s.fixedEmi}/mo`; dpPlain = `Fixed Advance Scheme`; }
+            let calcEmi = Math.round(s.mrp / s.tenure); 
+            emiPlain = `₹${calcEmi.toLocaleString('en-IN')} x ${inst}`;
+            let estDp = Math.round((calcEmi*s.advEmi)+(s.mrp*((s.dbd||0)*1.18/100))+(s.pf||0)); 
+            dpPlain = `₹${estDp.toLocaleString('en-IN')}`;
+            dailyPlain = `₹${Math.round(calcEmi/30).toLocaleString('en-IN')}`;
+        } else if (s.fixedEmi > 0) { 
+            emiPlain = `₹${s.fixedEmi.toLocaleString('en-IN')} x ${inst}`; 
+            dpPlain = `Fixed Advance Scheme`; 
+            dailyPlain = `₹${Math.round(s.fixedEmi/30).toLocaleString('en-IN')}`;
+        }
 
-        cfSelectedScheme = `\n💳 *निवडलेली स्कीम:* ${s.tenure} Months | Advance: ${s.advEmi}\n💰 *अंदाजे DP:* ${dpPlain} | *अंदाजे EMI:* ${emiPlain}`;
+        // WhatsApp वर दिसणारा मेसेज फॉरमॅट (Emojis सोबत)
+        cfSelectedScheme = `\n✅ *Scheme:* ${s.tenure}/${s.advEmi}\n💰 *DP:* ${dpPlain}\n🗓️ *EMI:* ${emiPlain}\n✨ *Daily EMI:* ${dailyPlain}`;
         
         document.querySelectorAll('.cf-scheme-card').forEach(x => { x.style.borderColor = '#ccc'; x.style.background = '#fff'; }); 
         el.style.borderColor = 'var(--success)'; el.style.background = '#e8f5e9'; 
         document.getElementById('cfFormSection').style.display = 'block'; 
         setTimeout(() => document.getElementById('cfFormSection').scrollIntoView({behavior:'smooth'}), 150);
     }
-
     function submitCfLead() {
         if(!document.getElementById('cfAgreeCheck').checked) {
             alert("⚠️ कृपया डाऊनपेमेंट आणि EMI संदर्भातील 'अटी व नियम' मान्य असल्याच्या बॉक्सवर (Tick) क्लिक करा!"); return;
