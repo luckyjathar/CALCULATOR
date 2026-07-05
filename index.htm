@@ -7,6 +7,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <!-- PDF.js Library Added for Customer Message Generator -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 
     <style>
         /* PRO FINTECH BLUE THEME VARIABLES */
@@ -21,12 +23,27 @@
             --bajaj-blue: #0059A3; 
             --bajaj-green: #00A34F; 
             --bg-pattern: none;
+            --sidebar-width: 270px;
         }
         
         body { font-family: 'Segoe UI', sans-serif; margin: 0 auto; max-width: 1200px; padding: 4px; background-color: var(--bg); background-image: var(--bg-pattern); background-attachment: fixed; font-size: 14px; display: flex; flex-direction: column; min-height: 98vh; scroll-behavior: smooth; }
         
+        /* SIDEBAR STYLES */
+        .sidebar { position: fixed; top: 0; left: -300px; width: var(--sidebar-width); height: 100vh; background: var(--dark); color: white; z-index: 3000; box-shadow: 4px 0 15px rgba(0,0,0,0.3); transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; }
+        .sidebar.open { left: 0; }
+        .sidebar-header { padding: 15px; background: #0f172a; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--primary); }
+        .sidebar-header h2 { margin: 0; font-size: 1.1rem; color: #fff; letter-spacing: 0.5px; }
+        .close-sidebar-btn { background: transparent; border: none; color: #fff; font-size: 20px; cursor: pointer; font-weight: bold; padding: 0 5px; }
+        .sidebar-content { padding: 15px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; flex: 1; }
+        .sidebar-btn { width: 100%; text-align: left; padding: 12px; border-radius: 6px; font-weight: 800; font-size: 13px !important; display: flex; align-items: center; gap: 10px; transition: transform 0.2s, filter 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .sidebar-btn:hover { transform: translateX(4px); filter: brightness(1.1); }
+        .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2999; display: none; backdrop-filter: blur(2px); }
+        .sidebar-overlay.show { display: block; }
+
+        /* HEADER STYLES */
         header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; border-bottom: 3px solid var(--primary); margin-bottom: 6px; padding: 8px 12px; background: #fff; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        header h1 { margin: 0; font-size: 1.4rem; color: var(--primary); font-weight: 900; text-align: right; letter-spacing: 0.5px; }
+        header h1 { margin: 0; font-size: 1.4rem; color: var(--primary); font-weight: 900; letter-spacing: 0.5px; }
+        .menu-toggle-btn { background: var(--primary); color: white; border: none; padding: 8px 12px; border-radius: 4px; font-size: 16px !important; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: bold; }
 
         main { flex: 1; } 
 
@@ -44,17 +61,17 @@
 
         .top-nav-box { display: flex; gap: 5px; margin-bottom: 6px; position: sticky; top: 0; z-index: 100; background: var(--bg); padding: 4px 0; align-items: center; }
         
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.85); display: none; justify-content: center; align-items: flex-start; padding-top: 10px; z-index: 2000; overflow-y: auto; box-sizing: border-box; backdrop-filter: blur(3px); }
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.85); display: none; justify-content: center; align-items: flex-start; padding-top: 10px; z-index: 4000; overflow-y: auto; box-sizing: border-box; backdrop-filter: blur(3px); }
         .modal-content { background: white; padding: 15px; border-radius: 8px; width: 90%; max-width: 400px; position: relative; margin-bottom: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
         
-        #multiStackModal .modal-content, #globalSchemeViewerModal .modal-content { max-width: 900px; width: 95%; padding: 15px; }
+        #multiStackModal .modal-content, #globalSchemeViewerModal .modal-content, #customerMessageGenModal .modal-content { max-width: 900px; width: 95%; padding: 15px; }
         .stack-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px; margin-top: 8px; }
         .stack-card { border: 1px solid #ddd; padding: 10px; border-radius: 6px; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .stack-card .inner-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px; }
 
         #imageViewerModal { align-items: center; justify-content: center; padding: 20px; flex-direction: column; }
         #generatedImage { max-width: 100%; max-height: 80vh; width: auto; height: auto; object-fit: contain; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: block; margin: 10px auto; }
-        .close-img-btn { position: fixed; top: 10px; right: 15px; background: var(--danger); color: white; border: none; border-radius: 50%; width: 35px; height: 35px; font-size: 16px; cursor: pointer; font-weight: bold; z-index: 2100; }
+        .close-img-btn { position: fixed; top: 10px; right: 15px; background: var(--danger); color: white; border: none; border-radius: 50%; width: 35px; height: 35px; font-size: 16px; cursor: pointer; font-weight: bold; z-index: 4100; }
         
         .table-wrapper { overflow-x: auto; background: white; border-radius: 4px; border: 1px solid #eee; transition: max-height 0.3s ease; }
         table { width: 100%; border-collapse: collapse; font-size: 13px !important; white-space: nowrap; }
@@ -106,6 +123,14 @@
 
         .forms-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; align-items: stretch; }
 
+        /* Embedded Customer Message Gen Styles */
+        .msg-section-title { font-size: 15px; color: #444; margin-bottom: 8px; margin-top: 15px; font-weight: bold; }
+        .msg-upload-box { border: 2px dashed var(--bajaj-blue); background: #eef6ff; padding: 15px; text-align: center; border-radius: 8px; margin-bottom: 10px; cursor: pointer; }
+        .msg-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+        .msg-form-group { display: flex; flex-direction: column; }
+        .msg-lang-selector { background: #fff3cd; padding: 10px; border-radius: 6px; border: 1px solid #ffeeba; margin-top: 12px; }
+        #finalMessage { width: 100%; height: 350px; padding: 12px; border: 1px solid #bbb; border-radius: 6px; font-size: 13px; line-height: 1.5; box-sizing: border-box; background-color: #fafafa; resize: vertical; }
+
         @keyframes pulseGlow {
             0% { box-shadow: 0 0 5px var(--warning); }
             50% { box-shadow: 0 0 15px var(--warning); transform: scale(1.02); }
@@ -130,25 +155,48 @@
 </head>
 <body>
 
-<header>
-    <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-        <div id="gitStatusBadge" style="font-weight: 950; font-size: 11px; background: rgba(39, 174, 96, 0.15); color: var(--success); padding: 5px 10px; border-radius: 4px; border: 1px solid var(--success); letter-spacing: 0.5px; transition: all 0.3s ease; display: inline-block;">
+<!-- SIDEBAR OVERLAY -->
+<div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+<!-- HIDEABLE LEFT SIDEBAR -->
+<aside id="appSidebar" class="sidebar">
+    <div class="sidebar-header">
+        <h2>🛠️ PORTAL TOOLS</h2>
+        <button class="close-sidebar-btn" onclick="toggleSidebar()">✖</button>
+    </div>
+    <div class="sidebar-content custom-scroll">
+        <div id="gitStatusBadge" style="font-weight: 950; font-size: 11px; background: rgba(39, 174, 96, 0.15); color: var(--success); padding: 8px 10px; border-radius: 6px; border: 1px solid var(--success); letter-spacing: 0.5px; text-align: center; margin-bottom: 6px;">
             ⚙️ GITHUB INTERFACE CONNECTED
         </div>
-        <button onclick="openFlyerGenModal()" style="background: var(--warning); color: #000; font-weight: 900; box-shadow: 0 2px 4px rgba(243, 156, 18, 0.4); padding: 8px 15px; font-size: 14px !important;">
-    📱 CREATE FLYER LINK
-</button>
-        <button onclick="openDealerSearchModal()" style="background: var(--bajaj-blue); color: white;">
-            🔗 DEALER LINKS
+
+        <button onclick="toggleSidebar(); openFlyerGenModal()" class="sidebar-btn" style="background: var(--warning); color: #000;">
+            <span>📱</span> CREATE FLYER LINK
         </button>
-        <button onclick="openDictionaryModal()" style="background: var(--indigo); color: white; font-weight: bold;">
-            🔍 SCHEMES DICTIONARY
+        <!-- NEW FEATURE ADDED HERE -->
+        <button onclick="toggleSidebar(); openCustomerMessageModal()" class="sidebar-btn" style="background: #27ae60; color: white;">
+            <span>💬</span> Send EMI Details
         </button>
-        <button onclick="openSyncModal()" tabindex="-1" style="opacity: 0; cursor: default; background: transparent; border: none; box-shadow: none;">
-            🔄 CLOUD SYNC
+        <button onclick="toggleSidebar(); openDealerSearchModal()" class="sidebar-btn" style="background: var(--bajaj-blue); color: white;">
+            <span>🔗</span> DEALER LINKS
+        </button>
+        <button onclick="toggleSidebar(); openDictionaryModal()" class="sidebar-btn" style="background: var(--indigo); color: white;">
+            <span>🔍</span> SCHEMES DICTIONARY
+        </button>
+        
+        <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 8px 0;">
+
+        <button onclick="toggleSidebar(); openSyncModal()" class="sidebar-btn" style="background: #34495e; color: #ecf0f1;">
+            <span>🔄</span> CLOUD SYNC
         </button>
     </div>
-    <h1>🚀 Persistent Portal Master</h1>
+</aside>
+
+<!-- MAIN APP HEADER -->
+<header>
+    <div style="display: flex; align-items: center; gap: 10px;">
+        <button class="menu-toggle-btn" onclick="toggleSidebar()">☰ MENU</button>
+        <h1>🚀 Persistent Portal Master</h1>
+    </div>
 </header>
 
 <main>
@@ -301,6 +349,87 @@
                     
                     <button onclick="copyFastCalcResult(this)" style="width:100%; margin-top:10px; background:var(--primary); color:white; padding:8px; border-radius:4px; box-shadow: 0 2px 4px rgba(9, 132, 227, 0.3);">📋 COPY CALCULATION</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CUSTOMER MESSAGE GENERATOR MODAL (NEW FEATURE) -->
+    <div id="customerMessageGenModal" class="modal">
+        <div class="modal-content" style="max-width: 850px; padding: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--bajaj-blue); padding-bottom: 8px; margin-bottom: 10px;">
+                <h3 style="margin:0; color:var(--bajaj-blue);">💬 Customer Message Generator (Delivery Order PDF to WhatsApp)</h3>
+                <button onclick="closeCustomerMessageModal()" style="background:none; border:none; color:var(--danger); font-weight:bold; cursor:pointer; font-size:18px;">✖</button>
+            </div>
+
+            <!-- 1. PDF Upload Section -->
+            <div class="msg-section-title">1. Upload Delivery Order (PDF File):</div>
+            <div class="msg-upload-box" onclick="document.getElementById('pdfInput').click()">
+                <strong style="color:var(--bajaj-blue);">📁 Click here to upload Delivery Order PDF</strong>
+                <p style="margin: 5px 0 0; font-size: 11px; color: #666;">(Dealer Name, Asset Category, and Customer Details will be auto-populated)</p>
+                <input type="file" id="pdfInput" accept="application/pdf">
+            </div>
+            <div id="pdfStatus" style="font-size: 12px; font-weight: bold; margin-bottom: 10px;"></div>
+
+            <!-- 2. Customer Details Section -->
+            <div class="msg-section-title">2. Customer Details (Verify & Edit if required):</div>
+            <div class="msg-grid">
+                <div class="msg-form-group">
+                    <label>Dealer / Shop Name:</label>
+                    <input type="text" id="msgShopName" value="CELL CITY - RATNAGIRI" oninput="generateMessage()">
+                </div>
+                <div class="msg-form-group">
+                    <label>Asset Category:</label>
+                    <input type="text" id="msgAssetCategory" value="PHONE(WEB-MOBILE)" oninput="generateMessage()">
+                </div>
+                <div class="msg-form-group">
+                    <label>Customer Name:</label>
+                    <input type="text" id="msgCustName" value="Sundar Dattaram Bane" oninput="generateMessage()">
+                </div>
+                <div class="msg-form-group">
+                    <label>Mobile Number:</label>
+                    <input type="text" id="msgCustMobile" value="9881176437" maxlength="10" oninput="generateMessage()">
+                </div>
+                <div class="msg-form-group">
+                    <label>Monthly EMI Amount (₹):</label>
+                    <input type="number" id="msgCustEMI" value="3044" oninput="generateMessage()">
+                </div>
+                <div class="msg-form-group">
+                    <label>Total Tenure (Months):</label>
+                    <input type="number" id="msgCustTenure" value="18" oninput="generateMessage()">
+                </div>
+                <div class="msg-form-group">
+                    <label>Loan Approval Date:</label>
+                    <input type="date" id="msgLoanDate" value="2026-07-03" onchange="calculateDates()">
+                </div>
+                <div class="msg-form-group">
+                    <label>EMI Start Date:</label>
+                    <input type="text" id="msgStartDate" readonly style="background:#e9ecef; font-weight:bold;">
+                </div>
+                <div class="msg-form-group">
+                    <label>EMI End Date:</label>
+                    <input type="text" id="msgEndDate" readonly style="background:#e9ecef; font-weight:bold;">
+                </div>
+            </div>
+
+            <!-- Language Selector -->
+            <div class="msg-lang-selector">
+                <div class="msg-form-group">
+                    <label style="color: #856404; font-size: 13px;">🌐 Select WhatsApp Message Language:</label>
+                    <select id="msgLang" onchange="calculateDates()" style="font-weight: bold;">
+                        <option value="mr">Marathi (मराठी)</option>
+                        <option value="hi">Hindi (हिंदी)</option>
+                        <option value="en">English</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 3. Generated Message Output -->
+            <div class="msg-section-title">3. Generated Customer Message (With all 12 T&C points):</div>
+            <textarea id="finalMessage"></textarea>
+            
+            <div style="display:flex; gap:10px; margin-top:12px;">
+                <button onclick="copyMsgText()" style="flex:1; background:var(--primary); color:white; padding:10px;">📋 COPY MESSAGE</button>
+                <button onclick="sendMsgWhatsApp()" style="flex:1; background:#25D366; color:white; padding:10px;">💬 SEND VIA WHATSAPP</button>
             </div>
         </div>
     </div>
@@ -676,6 +805,175 @@
 
 
 <script>
+    /* PDF.js Initialization */
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+    /* SIDEBAR CONTROLLER */
+    function toggleSidebar() {
+        const sidebar = document.getElementById('appSidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        sidebar.classList.toggle('open');
+        overlay.classList.toggle('show');
+    }
+
+    /* CUSTOMER MESSAGE GENERATOR FUNCTIONS (PDF TO WHATSAPP) */
+    function openCustomerMessageModal() {
+        document.getElementById('customerMessageGenModal').style.display = 'flex';
+        calculateDates();
+    }
+    
+    function closeCustomerMessageModal() {
+        document.getElementById('customerMessageGenModal').style.display = 'none';
+    }
+
+    document.getElementById('pdfInput').addEventListener('change', async function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        let statusEl = document.getElementById('pdfStatus');
+        statusEl.style.color = 'var(--primary)';
+        statusEl.innerText = '⏳ Reading PDF data, please wait...';
+
+        const fileReader = new FileReader();
+        fileReader.onload = async function() {
+            const typedarray = new Uint8Array(this.result);
+            try {
+                const pdf = await pdfjsLib.getDocument(typedarray).promise;
+                let fullText = "";
+
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const textContent = await page.getTextContent();
+                    const pageText = textContent.items.map(item => item.str).join(" ");
+                    fullText += " " + pageText;
+                }
+                
+                parsePDFText(fullText);
+                statusEl.style.color = 'var(--success)';
+                statusEl.innerText = '✔ PDF data extracted successfully!';
+            } catch (error) {
+                console.error(error);
+                statusEl.style.color = 'var(--danger)';
+                statusEl.innerText = '⚠️ Error reading PDF. Please verify details manually.';
+            }
+        };
+        fileReader.readAsArrayBuffer(file);
+    });
+
+    function parsePDFText(text) {
+        const dealerMatch = text.match(/Dear\s+(.*?)\s*Customer ID:/i);
+        if (dealerMatch) {
+            let rawDealer = dealerMatch[1].replace(/Bajaj Finance Limited/gi, '').replace(/DELIVERY ORDER/gi, '').trim();
+            let parts = rawDealer.split('#').map(p => p.trim()).filter(p => p !== '');
+            let cleanShop = parts.slice(0, 2).join(' - ');
+            document.getElementById('msgShopName').value = cleanShop || rawDealer;
+        }
+
+        const assetMatch = text.match(/Asset Category\s*(?:\|\s*)*([A-Z0-9\(\)\-\s]+?)\s*(?:\||\s*OEM)/i);
+        if (assetMatch) document.getElementById('msgAssetCategory').value = assetMatch[1].trim();
+
+        const nameMatch = text.match(/application of Mr\/Miss\/Mrs\.\s*([A-Za-z\s]+?)\s*has been approved/i);
+        if (nameMatch) document.getElementById('msgCustName').value = nameMatch[1].trim();
+
+        const mobileMatch = text.match(/Mobile Number:\s*(\d{10})/i);
+        if (mobileMatch) document.getElementById('msgCustMobile').value = mobileMatch[1];
+
+        const emiMatch = text.match(/Total EMI\s*["',\s]*([\d,]+)/i);
+        if (emiMatch) document.getElementById('msgCustEMI').value = emiMatch[1].replace(/,/g, '');
+
+        const tenureMatch = text.match(/Scheme Code.*?\((\d+)\/\d+\)/i) || text.match(/\((\d+)\/\d+\)/);
+        if (tenureMatch) document.getElementById('msgCustTenure').value = tenureMatch[1];
+
+        const dateMatch = text.match(/Date:\s*(\d{2})\/(\d{2})\/(\d{4})/i);
+        if (dateMatch) {
+            document.getElementById('msgLoanDate').value = `${dateMatch[3]}-${dateMatch[2]}-${dateMatch[1]}`;
+        }
+
+        calculateDates();
+    }
+
+    function calculateDates() {
+        const loanDateVal = document.getElementById('msgLoanDate').value;
+        const tenure = parseInt(document.getElementById('msgCustTenure').value) || 0;
+        const lang = document.getElementById('msgLang').value;
+
+        if (!loanDateVal) return;
+
+        const dateParts = loanDateVal.split('-');
+        let year = parseInt(dateParts[0]);
+        let month = parseInt(dateParts[1]) - 1;
+        let day = parseInt(dateParts[2]);
+
+        let startMonth = month + 1;
+        let startYear = year;
+
+        if (day > 25) { startMonth = month + 2; }
+
+        let startDateObj = new Date(startYear, startMonth, 2);
+        let endDateObj = new Date(startYear, startMonth + tenure - 1, 2);
+
+        document.getElementById('msgStartDate').value = formatDate(startDateObj, lang);
+        document.getElementById('msgEndDate').value = formatDate(endDateObj, lang);
+
+        generateMessage();
+    }
+
+    function formatDate(dateObj, lang) {
+        const mrMonths = ["जानेवारी", "फेब्रुवारी", "मार्च", "एप्रिल", "मे", "जून", "जुलै", "ऑगस्ट", "सप्टेंबर", "ऑक्टोबर", "नोव्हेंबर", "डिसेंबर"];
+        const hiMonths = ["जनवरी", "फरवरी", "मार्च", "अप्रैल", "मई", "जून", "जुलाई", "अगस्त", "सितंबर", "अक्टूबर", "नवंबर", "दिसंबर"];
+        const enMonths = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+        const day = String(dateObj.getDate()).padStart(2, '0');
+        const year = dateObj.getFullYear();
+
+        if (lang === 'mr') return `०२ ${mrMonths[dateObj.getMonth()]} ${year}`;
+        if (lang === 'hi') return `${day} ${hiMonths[dateObj.getMonth()]} ${year}`;
+        return `${day} ${enMonths[dateObj.getMonth()]} ${year}`;
+    }
+
+    function generateMessage() {
+        const shop = document.getElementById('msgShopName').value;
+        const asset = document.getElementById('msgAssetCategory').value;
+        const name = document.getElementById('msgCustName').value;
+        const emi = document.getElementById('msgCustEMI').value;
+        const tenure = document.getElementById('msgCustTenure').value;
+        const startDate = document.getElementById('msgStartDate').value;
+        const endDate = document.getElementById('msgEndDate').value;
+        const lang = document.getElementById('msgLang').value;
+
+        let msg = "";
+
+        if (lang === 'mr') {
+            msg = `सस्नेह नमस्कार, ${name}! 🙏\n\nबजाज फायनान्समध्ये आपले स्वागत आहे. आपण खरेदी केलेल्या वस्तूच्या कर्जाची (Loan) सविस्तर माहिती खालीलप्रमाणे आहे:\n\n🏬 दुकानावचे नाव (Dealer/Shop): ${shop}\n📱 वस्तूचा प्रकार (Asset): ${asset}\n📌 मासिक हप्ता (EMI): ₹${emi}/-\n📌 एकूण हप्ते (Months): ${tenure} महिने\n📅 पहिला हप्ता सुरू होण्याची तारीख: ${startDate}\n📅 शेवटचा हप्ता संपण्याची तारीख: ${endDate}\n\n⚠️ बजाज फायनान्सचे नियम व अटी:\n१) आपण घेतलेल्या वस्तूचा हप्ता दर महिन्याच्या २ तारखेला आपण दिलेल्या बँक खात्यातून (Account) कट होतो.\n२) जर कर्ज प्रक्रिया (Finance) महिन्याच्या २५ तारखेपर्यंत पूर्ण झाली असेल, तर पहिला हप्ता पुढील महिन्याच्या २ तारखेला सुरू होतो.\n३) आपण ECS / NACH फॉर्मवर केलेली सही आपल्या बँकेमार्फत तपासली जाते.\n४) जर बँकेला सहीमध्ये काही तफावत (फरक) आढळल्यास, आपल्याला त्याबाबत SMS किंवा Call मार्फत पूर्वकल्पना दिली जाते.\n५) अशा वेळी, आपल्याला बजाज फायनान्सच्या कार्यालयात जाऊन योग्य सहीची पूर्तता करणे आवश्यक असते.\n६) सही न जुळल्यास बँक खात्यातून हप्ता कट होत नाही आणि बँकेच्या नियमानुसार आपल्याला 'बाऊन्स चार्ज' (दंड) आकारला जातो. हे शुल्क थेट बँकेकडे जमा होते, बजाज फायनान्सकडे नाही. या प्रक्रियेत बजाज फायनान्सचे कर्मचारी जबाबदार नसतात, याची कृपया सर्व ग्राहकांनी नोंद घ्यावी.\n७) हप्ता बाऊन्स झाल्यास बजाज फायनान्सकडून ₹५००/- बाऊन्स शुल्क (Penalty) आकारले जाते. तसेच, थकीत हप्ता जमा होईपर्यंत दररोज विलंब शुल्क (Late Fees) वाढत जाते.\n८) आपल्या बँक खात्यामध्ये लागणारी किमान शिल्लक (Minimum Balance) आणि हप्त्याची रक्कम, हप्त्याच्या तारखेच्या किमान २ दिवस आधी जमा ठेवावी.\n९) हप्ता बँक खात्यातून कट झाला की नाही हे पाहण्यासाठी मोबाईलमध्ये 'Bajaj Finserv' ॲप तपासावे. हप्ता जमा झाल्यावर आपल्या बँक खात्यात, बँक ॲपमध्ये किंवा पासबुकवर त्याची त्वरित नोंद होते व बँकेकडून SMS देखील प्राप्त होतो.\n१०) बजाज फायनान्स कार्यालय: आदिनाथ पॅराडाईज, हॉटेल शालिमारजवळ, मजगाव रोड, रत्नागिरी.\n११) महत्त्वाची सेवा माहिती: तुमच्या नोंदणीकृत मोबाईल नंबरवरून 9227564444 या नंबरवर खालील कीवर्ड (KEYWORD) SMS करून माहिती मिळवू शकता (मानक SMS शुल्क लागू):\n• मोबाईल ॲप लिंक मिळवण्यासाठी: APP\n• कस्टमर पोर्टल (Experia) युझरनेम/पासवर्डसाठी: EXPERIA\n• ४-अंकी EMI कार्ड पिन जाणून घेण्यासाठी: PIN\n• खाते विवरण (Statement - SOA) मिळवण्यासाठी: SOA\n• कर्ज बंद झाल्यावर ना हरकत प्रमाणपत्र (NOC) मिळवण्यासाठी: NOC\n१२) मुदतीपूर्वी कर्ज बंद (Loan Foreclosure) करायचे असल्यास, पुढील हप्त्याच्या किमान १० दिवस आधी बजाज फायनान्स कार्यालयात किंवा ॲपद्वारे उर्वरित रक्कम भरून कर्ज बंद करता येते.\n\nकाही अडचण असल्यास नक्की संपर्क करा. धन्यवाद! ✨`;
+        } 
+        else if (lang === 'hi') {
+            msg = `नमस्ते, ${name}! 🙏\n\nबजाज फाइनेंस में आपका स्वागत है। आपके द्वारा खरीदे गए उत्पाद के लोन (Loan) का विवरण नीचे दिया गया है:\n\n🏬 डीलर / दुकान का नाम (Dealer/Shop): ${shop}\n📱 उत्पाद का प्रकार (Asset): ${asset}\n📌 मासिक किस्त (EMI): ₹${emi}/-\n📌 कुल किस्तें (Months): ${tenure} महीने\n📅 पहली किस्त शुरू होने की तारीख: ${startDate}\n📅 अंतिम किस्त समाप्त होने की तारीख: ${endDate}\n\n⚠️ बजाज फाइनेंस के नियम व शर्तें:\n१) आपके उत्पाद की किस्त हर महीने की 2 तारीख को आपके दिए गए बैंक खाते से कटती है।\n२) यदि लोन प्रक्रिया महीने की 25 तारीख तक पूरी हो जाती है, तो पहली किस्त अगले महीने की 2 तारीख से शुरू होती है।\n३) ECS / NACH फॉर्म पर आपके द्वारा किए गए हस्ताक्षर आपके बैंक द्वारा जांचे जाते हैं।\n४) यदि बैंक को हस्ताक्षर में कोई अंतर मिलता है, तो आपको SMS या Call के माध्यम से सूचित किया जाता है।\n५) ऐसी स्थिति में, आपको बजाज फाइनेंस कार्यालय जाकर सही हस्ताक्षर की प्रक्रिया पूरी करनी होगी।\n६) हस्ताक्षर गलत होने पर बैंक खाते से किस्त नहीं कटती है और बैंक के नियमानुसार बाउंस चार्ज (जुर्माना) लगाया जाता है। यह शुल्क सीधे बैंक के खाते में जाता है, बजाज फाइनेंस के नहीं। इस प्रक्रिया में बजाज फाइनेंस के कर्मचारी जिम्मेदार नहीं होते हैं, कृपया सभी ग्राहक ध्यान दें।\n७) किस्त बाउंस होने पर बजाज फाइनेंस की ओर से ₹500/- बाउंस शुल्क (Penalty) लगाया जाता है। साथ ही, बकाया किस्त जमा होने तक प्रतिदिन विलंब शुल्क (Late Fees) बढ़ता जाता है।\n८) अपने बैंक खाते में आवश्यक न्यूनतम राशि (Minimum Balance) के अलावा किस्त की राशि नियत तारीख से कम से कम 2 दिन पहले जमा रखें।\n९) किस्त कटी या नहीं, यह जानने के लिए अपने मोबाइल में 'Bajaj Finserv' ऐप चेक करें। किस्त प्राप्त होने पर आपके बैंक खाते या पासबुक में तुरंत दर्ज हो जाती है और बैंक SMS द्वारा भी सूचित करता है।\n१०) बजाज फाइनेंस कार्यालय: आदिनाथ पैराडाइज, होटल शालीमार के पास, मजगांव रोड, रत्नागिरी।\n११) महत्वपूर्ण सेवा जानकारी: अपने पंजीकृत मोबाइल नंबर से 9227564444 पर निम्नलिखित कीवर्ड (KEYWORD) SMS करके जानकारी प्राप्त कर सकते हैं (मानक SMS शुल्क लागू):\n• मोबाइल ऐप लिंक प्राप्त करने के लिए: APP\n• कस्टमर पोर्टल (Experia) यूजरनेम/पासवर्ड के लिए: EXPERIA\n• 4-अंकीय EMI कार्ड पिन जानने के लिए: PIN\n• खाता विवरण (Statement - SOA) प्राप्त करने के लिए: SOA\n• लोन बंद होने पर अनापत्ति प्रमाण पत्र (NOC) प्राप्त करने के लिए: NOC\n१२) समय से पहले लोन बंद (Foreclosure) करना चाहते हैं, तो अगली किस्त से कम से कम 10 दिन पहले बजाज फाइनेंस कार्यालय में या ऐप के माध्यम से शेष राशि का भुगतान करके लोन बंद कर सकते हैं।\n\nकिसी भी सहायता के लिए संपर्क करें। धन्यवाद! ✨`;
+        } 
+        else {
+            msg = `Dear ${name}, 🙏\n\nWelcome to Bajaj Finance! Here are the complete details of your recent product loan:\n\n🏬 Dealer / Shop Name: ${shop}\n📱 Asset Category: ${asset}\n📌 Monthly EMI: ₹${emi}/-\n📌 Total Tenure: ${tenure} Months\n📅 First EMI Start Date: ${startDate}\n📅 Last EMI End Date: ${endDate}\n\n⚠️ Important Bajaj Finance Terms & Conditions:\n1) Your loan EMI will be auto-debited on the 2nd of every month from your registered bank account.\n2) If the loan processing is completed on or before the 25th of the month, the first EMI will start on the 2nd of the upcoming month.\n3) Your signature on the ECS / NACH mandate form is verified by your bank.\n4) If the bank detects any mismatch in your signature, you will be notified via SMS or Call.\n5) In such cases, you must visit the Bajaj Finance office to complete the correct signature verification formalities.\n6) If the signature mismatches, the EMI will not be debited, and your bank will levy a bounce penalty as per their rules. These charges go directly to your bank, not Bajaj Finance. Bajaj Finance staff will not be responsible for bank-levied charges.\n7) Additionally, Bajaj Finance levies a bounce penalty of ₹500/- for missed EMIs. Daily late payment charges will also accrue until the pending EMI is cleared.\n8) Please maintain the required EMI amount along with the Minimum Account Balance in your bank account at least 2 days prior to the due date.\n9) Please use the 'Bajaj Finserv' mobile app to track your EMI deductions. Once received, the credit reflects in your bank account/passbook immediately, and you will receive a confirmation SMS from your bank.\n10) Bajaj Finance Office Address: Adinath Paradise, Near Hotel Shalimar, Mazgaon Road, Ratnagiri.\n11) Quick SMS Services: Send the following KEYWORDs from your registered mobile number to 9227564444 (Standard SMS rates apply):\n• For Mobile App Download Link: APP\n• For Customer Portal (Experia) credentials: EXPERIA\n• To know your 4-digit EMI Card PIN: PIN\n• For Statement of Account (SOA): SOA\n• For No Objection Certificate (NOC) after closure: NOC\n12) If you wish to foreclose/close your loan ahead of time, please pay the outstanding amount at our office or via the app at least 10 days before your next EMI due date.\n\nPlease feel free to reach out if you have any questions. Thank you! ✨`;
+        }
+
+        document.getElementById('finalMessage').value = msg;
+    }
+
+    function copyMsgText() {
+        const textarea = document.getElementById('finalMessage');
+        textarea.select();
+        document.execCommand('copy');
+        alert('Message copied to clipboard! You can paste it directly into WhatsApp.');
+    }
+
+    function sendMsgWhatsApp() {
+        const mobile = document.getElementById('msgCustMobile').value;
+        const text = encodeURIComponent(document.getElementById('finalMessage').value);
+        let url = `https://api.whatsapp.com/send?text=${text}`;
+        if (mobile && mobile.length === 10) {
+            url = `https://api.whatsapp.com/send?phone=91${mobile}&text=${text}`;
+        }
+        window.open(url, '_blank');
+    }
+
+    /* REST OF CORE PORTAL SCRIPT */
     window.isFestiveMode = false;
     let currentModalCategory = ""; 
 
@@ -1635,7 +1933,6 @@
 
         let validSchemes = schemes.filter(s => s.tenure > 0 || s.fixedEmi > 0);
         
-        // Calculate LTV for sorting (Descending order)
         validSchemes.forEach(s => {
             s.calcLTV = s.tenure > 0 ? ((s.tenure - s.advEmi)/s.tenure)*100 : 0;
         });
