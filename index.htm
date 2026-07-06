@@ -3,11 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Persistent Portal V76.18 - Ultimate Filter Edition</title>
+    <title>Persistent Portal V76.22 - Pro Master Edition</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
-    <!-- PDF.js Library Added for Customer Message Generator -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 
     <style>
@@ -131,6 +129,24 @@
         .msg-lang-selector { background: #fff3cd; padding: 10px; border-radius: 6px; border: 1px solid #ffeeba; margin-top: 12px; }
         #finalMessage { width: 100%; height: 350px; padding: 12px; border: 1px solid #bbb; border-radius: 6px; font-size: 13px; line-height: 1.5; box-sizing: border-box; background-color: #fafafa; resize: vertical; }
 
+        /* PERSISTENT TOAST ALERT STYLES */
+        #toastContainer {
+            position: fixed; bottom: 20px; right: 20px; z-index: 9999;
+            display: flex; flex-direction: column; gap: 8px; max-width: 360px; width: 90%;
+        }
+        .toast-box {
+            background: #fff; border-left: 6px solid var(--danger);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.25); padding: 12px 14px; border-radius: 6px;
+            display: flex; flex-direction: column; border: 1px solid #ffccd5; border-left-width: 6px;
+            animation: slideInToast 0.3s ease forwards;
+        }
+        .toast-box .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+        .toast-box .title { color: var(--danger); font-weight: 900; font-size: 13px; display: flex; align-items: center; gap: 6px; }
+        .toast-box .close-toast { background: none; border: none; font-size: 16px; color: #999; cursor: pointer; font-weight: bold; padding: 0 4px; }
+        .toast-box .close-toast:hover { color: var(--danger); }
+        .toast-box .desc { color: var(--dark); font-size: 12px; line-height: 1.4; font-weight: 600; }
+        @keyframes slideInToast { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
         @keyframes pulseGlow {
             0% { box-shadow: 0 0 5px var(--warning); }
             50% { box-shadow: 0 0 15px var(--warning); transform: scale(1.02); }
@@ -155,10 +171,10 @@
 </head>
 <body>
 
-<!-- SIDEBAR OVERLAY -->
+<div id="toastContainer"></div>
+
 <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
 
-<!-- HIDEABLE LEFT SIDEBAR -->
 <aside id="appSidebar" class="sidebar">
     <div class="sidebar-header">
         <h2>🛠️ PORTAL TOOLS</h2>
@@ -181,16 +197,9 @@
         <button onclick="toggleSidebar(); openDictionaryModal()" class="sidebar-btn" style="background: var(--indigo); color: white;">
             <span>🔍</span> SCHEMES DICTIONARY
         </button>
-        
-        <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 8px 0;">
-
-        <button onclick="toggleSidebar(); openSyncModal()" class="sidebar-btn" style="background: #34495e; color: #ecf0f1;">
-            <span>🔄</span> CLOUD SYNC
-        </button>
     </div>
 </aside>
 
-<!-- MAIN APP HEADER -->
 <header>
     <div style="display: flex; align-items: center; gap: 10px;">
         <button class="menu-toggle-btn" onclick="toggleSidebar()">☰ MENU</button>
@@ -263,23 +272,23 @@
                     <div style="grid-column: span 3; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom:4px;">
                         <div>
                             <label style="color:var(--primary);">INVOICE AMOUNT / MRP (₹)</label>
-                            <input type="number" id="fcInv" placeholder="Enter Amount" style="border-color:var(--primary);" oninput="fcInvChanged();">
+                            <input type="number" id="fcInv" placeholder="Enter Amount" style="border-color:var(--primary);" oninput="onFastCalcInput('inv')">
                         </div>
                         <div>
                             <label style="color:var(--primary);">LOAN AMOUNT (₹)</label>
-                            <input type="number" id="fcLoanInput" placeholder="Optional Custom Loan" style="border-color:var(--primary);" oninput="calculateFastData();">
+                            <input type="number" id="fcLoanInput" placeholder="Optional Custom Loan" style="border-color:var(--primary);" oninput="onFastCalcInput('loan')">
                         </div>
                     </div>
 
-                    <div><label>TENURE (Max)</label><input type="number" id="fcTenure" placeholder="0" oninput="calculateFastData();"></div>
-                    <div><label>ADVANCE EMI</label><input type="number" id="fcAdv" placeholder="0" oninput="calculateFastData();"></div>
-                    <div><label>DBD (%)</label><input type="number" id="fcDbd" placeholder="0" step="0.01" oninput="calculateFastData();"></div>
+                    <div><label>TENURE (Max)</label><input type="number" id="fcTenure" placeholder="0" oninput="onFastCalcInput('tenure')"></div>
+                    <div><label>ADVANCE EMI</label><input type="number" id="fcAdv" placeholder="0" oninput="onFastCalcInput('adv')"></div>
+                    <div><label>DBD (%)</label><input type="number" id="fcDbd" placeholder="0" step="0.01" oninput="onFastCalcInput('dbd')"></div>
                     
-                    <div><label>PF (₹)</label><input type="number" id="fcPf" placeholder="0" oninput="calculateFastData();"></div>
-                    <div><label>ROI (%)</label><input type="number" id="fcRoi" placeholder="0" step="0.01" oninput="calculateFastData();"></div>
+                    <div><label>PF (₹)</label><input type="number" id="fcPf" placeholder="0" oninput="onFastCalcInput('pf')"></div>
+                    <div><label>ROI (%)</label><input type="number" id="fcRoi" placeholder="0" step="0.01" oninput="onFastCalcInput('roi')"></div>
                     
                     <div><label>CUSTOMER TYPE</label>
-                        <select id="fcCustType" onchange="calculateFastData();">
+                        <select id="fcCustType" onchange="onFastCalcInput('type')">
                             <option value="NEW">NEW</option>
                             <option value="EMI CARD">EMI CARD</option>
                             <option value="VIRTUAL">VIRTUAL</option>
@@ -289,9 +298,9 @@
 
                     <div style="grid-column: span 3; border-top: 1px dashed #ccc; margin-top:4px; padding-top:6px;"></div>
                     
-                    <div><label>FIXED EMI (₹)</label><input type="number" id="fcFixed" placeholder="Optional" oninput="calculateFastData();"></div>
-                    <div><label>EMI CAPPING</label><input type="number" id="fcCap" placeholder="MAX" oninput="calculateFastData();"></div>
-                    <div><label>TARGET DP (₹)</label><input type="number" id="fcTarget" placeholder="Reverse Calc" oninput="calculateFastData();"></div>
+                    <div><label>FIXED EMI (₹)</label><input type="number" id="fcFixed" placeholder="Optional" oninput="onFastCalcInput('fixed')"></div>
+                    <div><label>EMI CAPPING</label><input type="number" id="fcCap" placeholder="MAX" oninput="onFastCalcInput('cap')"></div>
+                    <div><label>TARGET DP (₹)</label><input type="number" id="fcTarget" placeholder="Reverse Calc" oninput="onFastCalcInput('target')"></div>
 
                     <div style="grid-column: span 3; border-top: 1px dashed #ccc; margin-top:4px; padding-top:6px;">
                         <label style="color:var(--indigo);">🛡️ INSURANCE & COMPONENTS</label>
@@ -305,7 +314,7 @@
                         </select>
                     </div>
                     <div><label>GTL (₹)</label>
-                        <select id="fcGtl" onchange="calculateFastData();">
+                        <select id="fcGtl" onchange="onFastCalcInput('gtl')">
                             <option value="0">0</option>
                             <option value="699">699</option>
                             <option value="1099">1099</option>
@@ -316,35 +325,42 @@
                         </select>
                     </div>
                     <div><label>RFC (₹)</label>
-                        <select id="fcRfc" onchange="calculateFastData();" disabled style="background:#e9ecef; cursor:not-allowed;">
+                        <select id="fcRfc" onchange="onFastCalcInput('rfc')" disabled style="background:#e9ecef; cursor:not-allowed;">
                             <option value="0">0</option>
                             <option id="fcRfcOpt" value="0">0</option>
                         </select>
                     </div>
-                    <div><label>EXW (₹)</label><input type="number" id="fcExw" placeholder="0" oninput="calculateFastData();"></div>
+                    <div><label>EXW (₹)</label><input type="number" id="fcExw" placeholder="0" oninput="onFastCalcInput('exw')"></div>
                     
-                    <div><label>MARGIN (₹)</label><input type="number" id="fcMargin" placeholder="0" oninput="calculateFastData();"></div>
-                    <div><label>DEALER (₹)</label><input type="number" id="fcDealer" placeholder="0" oninput="calculateFastData();"></div>
+                    <div><label>MARGIN (₹)</label><input type="number" id="fcMargin" placeholder="0" oninput="onFastCalcInput('margin')"></div>
+                    <div><label>DEALER (₹)</label><input type="number" id="fcDealer" placeholder="0" oninput="onFastCalcInput('dealer')"></div>
                 </div>
                 
-                <div id="fcResult" style="display:none; margin-top:12px; background:#fff; border:2px solid var(--primary); padding:10px; border-radius:6px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+                <div id="fcResult" style="display:none; margin-top:12px; background:#fff; border:2px solid var(--primary); padding:12px; border-radius:6px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
                     <div style="display:flex; justify-content:space-between; margin-bottom:6px; border-bottom:1px solid #eee; padding-bottom:4px;">
                         <span style="font-weight:900; color:#555;">LOAN AMOUNT:</span> 
                         <span id="fcResLoan" style="color:var(--dark); font-weight:900;">₹0</span>
                     </div>
                     <div style="display:flex; justify-content:space-between; margin-bottom:6px; border-bottom:1px solid #eee; padding-bottom:4px;">
+                        <span style="font-weight:900; color:#555;">SCHEME:</span> 
+                        <span id="fcResScheme" style="color:var(--indigo); font-weight:900;">0/0</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:6px; border-bottom:1px solid #eee; padding-bottom:4px;">
                         <span style="font-weight:900; color:#555;">NET DP:</span> 
                         <span id="fcResDp" style="color:var(--success); font-weight:900;">₹0</span>
                     </div>
-                    <div style="display:flex; justify-content:space-between; margin-bottom:6px; border-bottom:1px solid #eee; padding-bottom:4px;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
                         <span style="font-weight:900; color:var(--primary);">MONTHLY EMI:</span> 
                         <span id="fcResEmi" style="color:var(--primary); font-weight:900;">₹0</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:6px; border-bottom:1px solid #eee; padding-bottom:4px; font-size:12px;">
+                        <span style="font-weight:700; color:#777;">&nbsp;&nbsp;↳ EMI MONTHS (M):</span> 
+                        <span id="fcResMonths" style="color:#555; font-weight:900;">0 Months</span>
                     </div>
                     <div style="display:flex; justify-content:space-between;">
                         <span style="font-weight:900; color:#555;">DAILY EMI:</span> 
                         <span id="fcResDaily" style="color:#d35400; font-weight:900;">₹0</span>
                     </div>
-                    <div id="fcResTa" style="text-align:center; font-weight:bold; color:var(--indigo); margin-top:6px;">T/A: 0/0 | M: 0</div>
                     
                     <button onclick="copyFastCalcResult(this)" style="width:100%; margin-top:10px; background:var(--primary); color:white; padding:8px; border-radius:4px; box-shadow: 0 2px 4px rgba(9, 132, 227, 0.3);">📋 COPY CALCULATION</button>
                 </div>
@@ -352,7 +368,6 @@
         </div>
     </div>
 
-    <!-- CUSTOMER MESSAGE GENERATOR MODAL -->
     <div id="customerMessageGenModal" class="modal">
         <div class="modal-content" style="max-width: 850px; padding: 20px;">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--bajaj-blue); padding-bottom: 8px; margin-bottom: 10px;">
@@ -360,7 +375,6 @@
                 <button onclick="closeCustomerMessageModal()" style="background:none; border:none; color:var(--danger); font-weight:bold; cursor:pointer; font-size:18px;">✖</button>
             </div>
 
-            <!-- 1. PDF Upload Section -->
             <div class="msg-section-title">1. Upload Delivery Order (PDF File):</div>
             <div class="msg-upload-box" onclick="document.getElementById('pdfInput').click()">
                 <strong style="color:var(--bajaj-blue);">📁 Click here to upload Delivery Order PDF</strong>
@@ -369,7 +383,6 @@
             </div>
             <div id="pdfStatus" style="font-size: 12px; font-weight: bold; margin-bottom: 10px;"></div>
 
-            <!-- 2. Customer Details Section -->
             <div class="msg-section-title">2. Customer Details (Verify & Edit if required):</div>
             <div class="msg-grid">
                 <div class="msg-form-group">
@@ -410,7 +423,6 @@
                 </div>
             </div>
 
-            <!-- Language Selector -->
             <div class="msg-lang-selector">
                 <div class="msg-form-group">
                     <label style="color: #856404; font-size: 13px;">🌐 Select WhatsApp Message Language:</label>
@@ -422,7 +434,6 @@
                 </div>
             </div>
 
-            <!-- 3. Generated Message Output -->
             <div class="msg-section-title">3. Generated Customer Message (With all 12 T&C points):</div>
             <textarea id="finalMessage"></textarea>
             
@@ -736,39 +747,6 @@
         </div>
     </div>
 
-    <div id="cloudSyncModal" class="modal">
-        <div class="modal-content" style="max-width: 380px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--indigo); padding-bottom: 8px; margin-bottom: 12px;">
-                <h3 style="margin:0; color:var(--indigo);">🔒 ZERO-TRUST PORTAL SYNC</h3>
-                <button onclick="closeSyncModal()" style="background:none; border:none; color:var(--danger); font-weight:bold; cursor:pointer; font-size:16px;">✖</button>
-            </div>
-            
-            <div style="background:#e8f4f8; padding:8px 12px; border-radius:6px; margin-bottom:14px; border:1px solid var(--primary); display:flex; align-items:center; justify-content:space-between;">
-                <div>
-                    <label style="color:var(--primary); font-size:10px !important; margin:0;">🔑 AAPKA SECRET PIN (4-Digits)</label>
-                    <span style="font-size:10px; color:#666;">Ek baar set karein, browser yaad rakhega</span>
-                </div>
-                <input type="password" id="userSyncPin" maxlength="4" placeholder="PIN" oninput="saveSyncPin(this.value)" style="width:70px; text-align:center; font-weight:bold; font-size:16px !important; letter-spacing:2px; border:1.5px solid var(--primary);">
-            </div>
-
-            <div style="background:#f4f7f6; padding:12px; border-radius:6px; margin-bottom:12px; border:1px solid #ddd; text-align:center;">
-                <label style="color:var(--dark); font-size:11px !important;">📤 ENCRYPT & PUSH TO CLOUD</label>
-                <div style="margin:8px 0; font-size:24px; font-weight:950; letter-spacing:5px; color:var(--indigo); background:#fff; padding:8px; border-radius:4px; border:2px dashed var(--indigo);" id="syncCodeDisplay">------</div>
-                <button onclick="generateAndPushCode()" style="width:100%; background:var(--indigo); color:white; font-size:12px !important; padding:10px;">🔒 LOCK DATA & GET CODE</button>
-            </div>
-
-            <div style="text-align:center; font-weight:900; color:#aaa; margin-bottom:12px; font-size:11px;">─── FETCH ON YOUR 2ND DEVICE ───</div>
-
-            <div style="background:#fff9e6; padding:12px; border-radius:6px; border:1px solid #ffeaa7; text-align:center;">
-                <label style="color:#d35400; font-size:11px !important;">📥 ENTER 12-CHAR SYNC CODE</label>
-                <input type="text" id="pullCodeInput" placeholder="XXXXXX-XXXXXX" maxlength="13" style="text-align:center; font-size:18px !important; font-weight:950; letter-spacing:3px; text-transform:uppercase; margin-bottom:10px;">
-                <button onclick="pullDataFromCloud()" style="width:100%; background:var(--success); color:white; font-size:12px !important; padding:10px;">⬇️ DECRYPT & SYNC</button>
-            </div>
-            
-            <div id="syncStatusMsg" style="margin-top:10px; font-weight:bold; text-align:center; font-size:12px; display:none; padding:6px; border-radius:4px;"></div>
-        </div>
-    </div>
-
     <div id="finalEligibleArea">
         <div class="top-nav-box" style="margin-top: 4px; border-top: 2px dashed #ccc; padding-top: 8px;">
             <button id="genQuoteBtn" onclick="openQuoteSelectionModal()" style="flex:1; background:var(--bajaj-blue); color:white;">GEN QUOTE</button>
@@ -804,6 +782,32 @@
 
 
 <script>
+    /* PERSISTENT TOAST NOTIFICATION UTILITY */
+    function showPersistentToast(title, desc) {
+        let container = document.getElementById('toastContainer');
+        if (container.children.length > 0) return; 
+        let toast = document.createElement('div');
+        toast.className = 'toast-box';
+        toast.id = 'activeErrorToast';
+        toast.innerHTML = `
+            <div class="header">
+                <div class="title">⚠️ ${title}</div>
+                <button class="close-toast" onclick="clearActiveToast()">✖</button>
+            </div>
+            <div class="desc">${desc}</div>
+        `;
+        container.appendChild(toast);
+    }
+
+    function clearActiveToast() {
+        let toast = document.getElementById('activeErrorToast');
+        if (toast) {
+            toast.style.opacity = '0';
+            toast.style.transition = 'opacity 0.3s ease';
+            setTimeout(() => toast.remove(), 300);
+        }
+    }
+
     /* PDF.js Initialization */
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
@@ -1099,7 +1103,6 @@
         return 0;
     }
 
-    /* --- NEW FUNCTION: NON TIEUP PF SLAB LOGIC --- */
     function getNonTieupPfValue(category, amount) {
         let cat = String(category || "").toUpperCase().replace(/\s+/g, '').trim();
         let val = parseFloat(amount) || 0;
@@ -1125,7 +1128,6 @@
 
         return null;
     }
-    /* ----------------------------------------------- */
 
     function applyFestivalTheme() {
         const now = new Date(); const month = now.getMonth() + 1; const root = document.documentElement; const banner = document.getElementById('festiveBanner');
@@ -1485,6 +1487,7 @@
     }
 
     function resetFastCalc() {
+        clearActiveToast();
         let fields = ['fcInv', 'fcLoanInput', 'fcTenure', 'fcAdv', 'fcDbd', 'fcRoi', 'fcPf', 'fcFixed', 'fcCap', 'fcTarget', 'fcExw', 'fcMargin', 'fcDealer'];
         fields.forEach(id => document.getElementById(id).value = '');
         document.getElementById('fcGtl').value = '0';
@@ -1499,14 +1502,15 @@
     function copyFastCalcResult(btn) {
         let inv = document.getElementById('fcInv').value || 0;
         let loan = document.getElementById('fcResLoan').innerText;
+        let scheme = document.getElementById('fcResScheme').innerText;
         let dp = document.getElementById('fcResDp').innerText;
         let emi = document.getElementById('fcResEmi').innerText;
+        let months = document.getElementById('fcResMonths').innerText;
         let daily = document.getElementById('fcResDaily').innerText;
-        let ta = document.getElementById('fcResTa').innerText; 
         
         let text = `⚡ *Zatpat Calculation*\n`;
         if (inv > 0) text += `*Invoice:* ₹${inv}\n\n`;
-        text += `*Loan:* ${loan}\n*DP:* ${dp}\n*EMI:* ${emi}\n*Daily:* ${daily}\n*Details:* ${ta}`;
+        text += `*Loan:* ${loan}\n*Scheme:* ${scheme}\n*Net DP:* ${dp}\n*Monthly EMI:* ${emi} (${months})\n*Daily EMI:* ${daily}`;
         
         let orig = btn.innerText;
         btn.innerText = "COPIED!";
@@ -1541,7 +1545,7 @@
             exwInput.style.background = '#e9ecef';
             exwInput.style.cursor = 'not-allowed';
 
-            fcInvChanged(); 
+            onFastCalcInput('cat'); 
         } else {
             rSelect.value = "0";
             rSelect.disabled = true;
@@ -1552,31 +1556,59 @@
             exwInput.style.background = '#fff';
             exwInput.style.cursor = 'text';
 
-            calculateFastData();
+            onFastCalcInput('cat');
         }
     }
 
-    function fcInvChanged() {
+    /* --- EXACT FIXED EMI RULE IMPLEMENTED HERE --- */
+    function onFastCalcInput(triggerField) {
         let inv = parseFloat(document.getElementById('fcInv').value) || 0;
-        let isPhone = isMobileDeviceCat(document.getElementById('fcCat').value);
-        
-        let gtl = inv > 100000 ? 2398 : (inv > 50000 ? 1799 : (inv > 30000 ? 1499 : (inv > 10000 ? 1199 : (inv > 0 ? 699 : 0))));
-        document.getElementById('fcGtl').value = gtl;
-        
-        let rfcSlab = getRfcSlabValue(inv);
+        let loan = parseFloat(document.getElementById('fcLoanInput').value) || 0;
+        let tenure = parseInt(document.getElementById('fcTenure').value) || 0;
+        let fixedEmi = parseFloat(document.getElementById('fcFixed').value) || 0;
 
-        let rfcOpt = document.getElementById('fcRfcOpt');
-        if(rfcOpt) {
-            rfcOpt.value = rfcSlab;
-            rfcOpt.innerText = rfcSlab;
+        // FIXED EMI RULE:
+        // जर Fixed EMI आणि Invoice Amount दोन्ही असतील,
+        // तर Total Tenure = Math.floor(Invoice / Fixed EMI) आणि Loan Amount = Tenure * Fixed EMI
+        if ((triggerField === 'fixed' || triggerField === 'inv') && fixedEmi > 0 && inv > 0) {
+            let autoTenure = Math.floor(inv / fixedEmi);
+            if (autoTenure > 0) {
+                tenure = autoTenure;
+                loan = tenure * fixedEmi;
+                document.getElementById('fcTenure').value = tenure;
+                document.getElementById('fcLoanInput').value = loan;
+            }
         }
-        
-        if (isPhone) {
-            document.getElementById('fcRfc').value = rfcSlab;
-        } else {
-            document.getElementById('fcRfc').value = "0";
+        // जर युजरने मॅन्युअली Tenure बदलले आणि Fixed EMI चालू असेल:
+        else if (triggerField === 'tenure' && fixedEmi > 0 && tenure > 0) {
+            loan = tenure * fixedEmi;
+            if (inv > 0 && loan > inv) {
+                tenure = Math.floor(inv / fixedEmi);
+                loan = tenure * fixedEmi;
+                document.getElementById('fcTenure').value = tenure;
+            }
+            document.getElementById('fcLoanInput').value = loan;
         }
-        
+
+        // Strict Rule: कर्जाची रक्कम कधीही इन्व्हॉइस किमतीपेक्षा जास्त असणार नाही
+        if (inv > 0 && loan > inv) {
+            loan = inv;
+            document.getElementById('fcLoanInput').value = loan;
+        }
+
+        // Insurance Auto Sync when Invoice changes
+        if (triggerField === 'inv') {
+            let isPhone = isMobileDeviceCat(document.getElementById('fcCat').value);
+            let gtl = inv > 100000 ? 2398 : (inv > 50000 ? 1799 : (inv > 30000 ? 1499 : (inv > 10000 ? 1199 : (inv > 0 ? 699 : 0))));
+            document.getElementById('fcGtl').value = gtl;
+            
+            let rfcSlab = getRfcSlabValue(inv);
+            let rfcOpt = document.getElementById('fcRfcOpt');
+            if(rfcOpt) { rfcOpt.value = rfcSlab; rfcOpt.innerText = rfcSlab; }
+            if (isPhone) document.getElementById('fcRfc').value = rfcSlab;
+            else document.getElementById('fcRfc').value = "0";
+        }
+
         calculateFastData();
     }
 
@@ -1600,9 +1632,19 @@
         let margin = parseFloat(document.getElementById('fcMargin').value) || 0;
         let dealer = parseFloat(document.getElementById('fcDealer').value) || 0;
 
-        if (inv <= 0 && loanInput <= 0) {
+        if (inv <= 0 && loanInput <= 0 && fixedEmi <= 0) {
+            document.getElementById('fcResult').style.display = 'none';
+            clearActiveToast();
+            return;
+        }
+
+        // PERSISTENT VALIDATION TOAST LOGIC
+        if (adv >= tenure && tenure > 0) {
+            showPersistentToast("Advance EMI Error!", "ॲडव्हान्स हप्ते हे एकूण हप्त्यांपेक्षा (Tenure) कमी असायला हवेत. कृपया दुरुस्त करा.");
             document.getElementById('fcResult').style.display = 'none';
             return;
+        } else {
+            clearActiveToast();
         }
 
         let fee = (custType === 'EMI CARD') ? 270 : (custType === 'W/O CARD' ? 320 : 850);
@@ -1617,16 +1659,22 @@
         let emi = 0; let dpRounded = 0; let inst = 0; let finalTenure = tenure;
 
         if (fixedEmi > 0) {
-            finalTenure = Math.floor(loan / fixedEmi) || 1;
+            if (inv > 0 && loanInput === 0) {
+                finalTenure = Math.floor(inv / fixedEmi) || 1;
+                loan = finalTenure * fixedEmi;
+            } else if (loanInput > 0) {
+                finalTenure = Math.floor(loanInput / fixedEmi) || 1;
+                loan = finalTenure * fixedEmi;
+            }
+
             if (target > 0) {
                 let numerator = target - inv - (fixedEmi * adv) - pf - totalFees; 
                 let denominator = dbdRate + roiRateDP - 1; 
                 let solvedLoan = numerator / denominator;
                 let solvedTenure = Math.floor(solvedLoan / fixedEmi);
                 loan = Math.max(0, solvedTenure * fixedEmi); 
+                if (inv > 0 && loan > inv) loan = inv;
                 finalTenure = Math.floor(loan / fixedEmi) || 1;
-            } else {
-                if (loanInput === 0) loan = finalTenure * fixedEmi;
             }
 
             inst = finalTenure - adv; if (inst < 1) inst = 1;
@@ -1651,6 +1699,7 @@
 
             if (cap > 0 && emi > cap) {
                 loan = (cap - (insTotal / inst)) / ((1 / tenure) + roiRate);
+                if (inv > 0 && loan > inv) loan = inv;
                 roiInEmi = loan * roiRate;
                 emi = (loan / tenure) + (insTotal / inst) + roiInEmi;
             }
@@ -1662,10 +1711,11 @@
 
         let dailyEmi = emi / 30;
         document.getElementById('fcResLoan').innerText = "₹" + Math.floor(loan).toLocaleString();
+        document.getElementById('fcResScheme').innerText = `${finalTenure}/${adv}`;
         document.getElementById('fcResDp').innerText = "₹" + Math.round(dpRounded).toLocaleString();
         document.getElementById('fcResEmi').innerText = "₹" + Math.round(emi).toLocaleString();
+        document.getElementById('fcResMonths').innerText = `${inst} Months`;
         document.getElementById('fcResDaily').innerText = "₹" + Math.round(dailyEmi).toLocaleString();
-        document.getElementById('fcResTa').innerText = `T/A: ${finalTenure}/${adv} | M: ${inst}`;
         
         document.getElementById('fcResult').style.display = 'block';
     }
@@ -2472,7 +2522,6 @@
         customerQueue[activeCustomerIndex].products = current_products; saveQueueToLocal();
     }
 
-    /* --- RECALC MODEL UPDATED WITH NON-TIEUP PF SLABS --- */
     function recalcModel(pIdx) {
         if(!current_products[pIdx]) return;
         let prod = current_products[pIdx], limit = customerQueue[activeCustomerIndex]?.limit || 0, type = customerQueue[activeCustomerIndex]?.type || 'NEW';
@@ -2489,7 +2538,6 @@
             nbfcMaxL = (currentLimit * s.tenure) / (s.tenure - s.advEmi || 1);
             let dbdRate = (s.dbd * 1.18 / 100); let roiRate = s.roi / 1200; let roiRateDP = roiRate * s.advEmi; 
             
-            // --- DYNAMIC NON-TIEUP PF SLAB LOGIC ---
             let dynamicPf = s.pf;
             if (prod.isNonTieup) {
                 let checkAmount = effectivePrice > 0 ? effectivePrice : (currentLimit < 9999999 ? currentLimit : 0);
@@ -2498,7 +2546,6 @@
                     dynamicPf = slabPf;
                 }
             }
-            // ----------------------------------------
 
             if (isFixed) {
                 let maxRemainingEmis = Math.floor(currentLimit / s.fixedEmi); let maxTotalTenure = maxRemainingEmis + s.advEmi; nbfcMaxL = maxTotalTenure * s.fixedEmi; 
@@ -2590,7 +2637,6 @@
 
     function step(pIdx, dIdx, amt) { let el = document.getElementById(`l_${pIdx}_${dIdx}`); el.value = Math.max(0, parseInt(el.value) + amt); manual(pIdx, dIdx); }
 
-    /* --- MANUAL FUNCTION UPDATED WITH NON-TIEUP PF CHECK --- */
     function manual(pIdx, dIdx) {
         let el = document.getElementById(`l_${pIdx}_${dIdx}`), loan = parseFloat(el.value) || 0, prod = current_products[pIdx], d = prod.calculatedData.find(x => x.dIdx === dIdx), inp = prod.inputs, type = customerQueue[activeCustomerIndex]?.type || 'NEW';
         
@@ -2601,7 +2647,6 @@
 
         syncInsurance(pIdx, inputMrp, loan, 'LOAN'); 
         
-        // --- DYNAMIC NON-TIEUP PF CHECK IN MANUAL STEPPING ---
         let appliedPf = d.pf;
         if (prod.isNonTieup) {
             let checkAmount = effectivePrice > 0 ? effectivePrice : loan;
@@ -2611,7 +2656,6 @@
             let pfCell = document.querySelector(`#row_${pIdx}_${dIdx} td:nth-child(3)`);
             if(pfCell) pfCell.innerText = `₹${appliedPf}`;
         }
-        // ------------------------------------------------------
 
         let dbdRate = (d.dbd * 1.18 / 100); let roiRate = d.roi / 1200; let roiRateDP = roiRate * d.advEmi; 
         let dpE = 0; let dpR = 0;
@@ -2890,176 +2934,6 @@
 
     function openBitlyLink(url) {
         if (url && url !== '#' && url.trim() !== '') { if (!url.startsWith('http://') && !url.startsWith('https://')) { url = 'https://' + url; } window.open(url, '_blank'); closeDealerSearchModal(); } else { alert('⚠️ Is dealer ke liye Bitly link available nahi hai!'); }
-    }
-
-    function openSyncModal() {
-        document.getElementById('syncStatusMsg').style.display = 'none';
-        document.getElementById('pullCodeInput').value = '';
-        document.getElementById('syncCodeDisplay').innerText = '------';
-        
-        let savedPin = localStorage.getItem('portal_user_pin') || "";
-        document.getElementById('userSyncPin').value = savedPin;
-        
-        document.getElementById('cloudSyncModal').style.display = 'flex';
-    }
-    function closeSyncModal() { document.getElementById('cloudSyncModal').style.display = 'none'; }
-
-    function saveSyncPin(val) {
-        let onlyNums = val.replace(/[^0-9]/g, '');
-        document.getElementById('userSyncPin').value = onlyNums;
-        if(onlyNums.length === 4) localStorage.setItem('portal_user_pin', onlyNums);
-    }
-
-    function getAgentPin() {
-        let pin = localStorage.getItem('portal_user_pin');
-        if(!pin || pin.length !== 4) {
-            alert("⚠️ Kripya upar 4-Digit 'SECRET PIN' set karein. Uske bina data lock nahi hoga!");
-            return null;
-        }
-        return pin;
-    }
-
-    function showSyncMsg(text, isError = false) {
-        let box = document.getElementById('syncStatusMsg');
-        box.innerText = text;
-        box.style.background = isError ? '#ffe6e6' : '#e8f5e9';
-        box.style.color = isError ? 'var(--danger)' : 'var(--success)';
-        box.style.border = `1px solid ${isError ? 'var(--danger)' : 'var(--success)'}`;
-        box.style.display = 'block';
-    }
-
-    async function generateAndPushCode() {
-        if (typeof CryptoJS === 'undefined') {
-            alert("⛔ Technical Alert: CryptoJS security library load nahi hui hai. Kripya PC par internet chalu hai ya nahi check karein ya browser ka Ad-blocker band karein.");
-            document.getElementById('syncCodeDisplay').innerText = "ERR:LIB";
-            return;
-        }
-
-        let pin = getAgentPin();
-        if(!pin) return;
-
-        if (customerQueue.length === 0) { 
-            alert("⚠️ Saved Queue madhye cloud var push karnyasaathi kamit-kami 1 customer asayla hava!"); return; 
-        }
-
-        let codeBox = document.getElementById('syncCodeDisplay');
-        codeBox.innerText = "⏳ LOCKING...";
-
-        let compactQueue = customerQueue.map(c => ({
-            name: c.name, mobile: c.mobile, limit: c.limit, ltv: c.ltv, type: c.type, cap: c.cap, timestamp: c.timestamp,
-            components: c.components || {},
-            products: (c.products || []).map(p => ({
-                name: p.name, category: p.category, isNonTieup: p.isNonTieup, inputs: p.inputs,
-                schemes: p.schemes || []
-            }))
-        }));
-
-        let securePayload = {
-            ver: "76.18",
-            activeIdx: activeCustomerIndex,
-            queue: compactQueue,
-            time: new Date().toISOString()
-        };
-
-        let encryptedString = CryptoJS.AES.encrypt(JSON.stringify(securePayload), pin).toString();
-
-        try {
-            codeBox.innerText = "☁️ UPLOADING...";
-            
-            let response = await fetch("https://api.npoint.io/", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ secureBlob: encryptedString })
-            });
-
-            if (!response.ok) throw new Error("Cloud rejected connection");
-
-            let data = await response.json();
-            
-            let cleanId = data.id.toUpperCase();
-            let formattedCode = cleanId.slice(0, 6) + "-" + cleanId.slice(6);
-
-            codeBox.innerText = formattedCode;
-            showSyncMsg(`✅ SECURE PUSH SUCCESS! Dusrya mobile var [ ${formattedCode} ] code taka.`);
-
-        } catch(err) {
-            console.error("Cloud Push Failed:", err);
-            codeBox.innerText = "FAIL";
-            showSyncMsg("⚠️ Server busy ahe kiva Internet band padle ahe.", true);
-        }
-    }
-
-    async function pullDataFromCloud() {
-        if (typeof CryptoJS === 'undefined') {
-            alert("⛔ Technical Alert: CryptoJS library loaded nahi."); return;
-        }
-
-        let pin = getAgentPin();
-        if(!pin) return;
-
-        let rawInputCode = document.getElementById('pullCodeInput').value.replace(/[^A-Z0-9]/gi, '').toLowerCase();
-
-        if (rawInputCode.length < 10) { 
-            showSyncMsg("⚠️ Kripya purna activation code type kara (e.g. 4B829A-28190C)", true); return; 
-        }
-
-        showSyncMsg("📥 Fetching encrypted vault from Cloud...", false);
-
-        try {
-            let response = await fetch(`https://api.npoint.io/${rawInputCode}`);
-            
-            if (response.status === 404) {
-                showSyncMsg(`⚠️ Code [ ${rawInputCode.toUpperCase()} ] ka koi bhi data cloud par nahi mila.`, true); return;
-            }
-            if (!response.ok) throw new Error("Connection drop");
-
-            let cloudData = await response.json();
-            let encryptedPackage = cloudData.secureBlob;
-
-            if (!encryptedPackage) throw new Error("Corrupted package");
-
-            let decryptedText;
-            try {
-                let bytes = CryptoJS.AES.decrypt(encryptedPackage, pin);
-                decryptedText = bytes.toString(CryptoJS.enc.Utf8);
-                if (!decryptedText) throw new Error("Passcode Mismatch");
-            } catch(cryptoError) {
-                showSyncMsg("⛔ ACCESS DENIED: Yeh data dusre agent ka hai (Aapka 4-Digit PIN galat hai).", true);
-                return;
-            }
-
-            let unzippedVault = JSON.parse(decryptedText);
-
-            if (customerQueue.length > 0) {
-                recycleBin.push(...customerQueue);
-                await saveToDB('persistent_recycle', recycleBin);
-            }
-
-            customerQueue = unzippedVault.queue;
-            activeCustomerIndex = unzippedVault.activeIdx ?? -1;
-
-            await saveQueueToLocal();
-            renderCustomerQueue(); 
-            updateUniversalActionButtons();
-
-            showSyncMsg("🎉 DATA SUCCESSFULLY UNLOCKED & RESTORED!", false);
-
-            setTimeout(() => { 
-                closeSyncModal(); 
-                if (activeCustomerIndex !== -1) {
-                    goToFinalPage();
-                    if (current_products && current_products.length > 0) {
-                        current_products.forEach((_, pIdx) => recalcModel(pIdx));
-                    }
-                } else {
-                    alert("✅ Portal synced successfully from remote vault.");
-                }
-            }, 750);
-
-        } catch(err) {
-            console.error("Cloud Pull Failed:", err);
-            showSyncMsg("⚠️ Internet drop zale ahe kiva code expire zala ahe.", true);
-        }
     }
 </script>
 </body>
