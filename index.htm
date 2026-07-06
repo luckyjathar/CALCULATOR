@@ -352,7 +352,7 @@
         </div>
     </div>
 
-    <!-- CUSTOMER MESSAGE GENERATOR MODAL (UPDATED: BY DEFAULT BLANK) -->
+    <!-- CUSTOMER MESSAGE GENERATOR MODAL -->
     <div id="customerMessageGenModal" class="modal">
         <div class="modal-content" style="max-width: 850px; padding: 20px;">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--bajaj-blue); padding-bottom: 8px; margin-bottom: 10px;">
@@ -369,7 +369,7 @@
             </div>
             <div id="pdfStatus" style="font-size: 12px; font-weight: bold; margin-bottom: 10px;"></div>
 
-            <!-- 2. Customer Details Section (All values set to blank/empty by default) -->
+            <!-- 2. Customer Details Section -->
             <div class="msg-section-title">2. Customer Details (Verify & Edit if required):</div>
             <div class="msg-grid">
                 <div class="msg-form-group">
@@ -880,14 +880,12 @@
         const emiMatch = text.match(/Total EMI\s*["',\s]*([\d,]+)/i);
         if (emiMatch) document.getElementById('msgCustEMI').value = emiMatch[1].replace(/,/g, '');
 
-        // Gross Tenure (GT) आणि Advance EMI (AE) दोन्ही वेगळे काढून वास्तविक हप्ते (GT - AE) कॅल्क्युलेट करणे
         const tenureMatch = text.match(/Scheme Code.*?\((\d+)\s*\/\s*(\d+)\)/i) || text.match(/\((\d+)\s*\/\s*(\d+)\)/);
         if (tenureMatch) {
         let grossTenure = parseInt(tenureMatch[1], 10) || 0;
         let advanceEmi = parseInt(tenureMatch[2], 10) || 0;
         let netTenure = grossTenure - advanceEmi;
     
-        // जर 21/1 असेल तर (21 - 1 = 20) सेट होईल
         document.getElementById('msgCustTenure').value = netTenure > 0 ? netTenure : grossTenure;
         }
 
@@ -1100,6 +1098,34 @@
         if (amount <= 200000) return 16677;
         return 0;
     }
+
+    /* --- NEW FUNCTION: NON TIEUP PF SLAB LOGIC --- */
+    function getNonTieupPfValue(category, amount) {
+        let cat = String(category || "").toUpperCase().replace(/\s+/g, '').trim();
+        let val = parseFloat(amount) || 0;
+
+        if (cat.includes('DESKTOP') || cat.includes('LAPTOP')) {
+            return 699;
+        }
+
+        if (
+            cat === 'PHONE(WEB-MOBILE)' || 
+            cat.includes('PHONE') || 
+            cat.includes('TABLET') || 
+            cat.includes('WATCH') || 
+            cat.includes('PRINTER') || 
+            cat.includes('HEADPHONE') ||
+            cat === 'SMARTPHONES' || 
+            cat === 'MOBILE'
+        ) {
+            if (val <= 30000) return 499;       
+            if (val <= 50000) return 599;       
+            return 699;                         
+        }
+
+        return null;
+    }
+    /* ----------------------------------------------- */
 
     function applyFestivalTheme() {
         const now = new Date(); const month = now.getMonth() + 1; const root = document.documentElement; const banner = document.getElementById('festiveBanner');
@@ -2446,6 +2472,7 @@
         customerQueue[activeCustomerIndex].products = current_products; saveQueueToLocal();
     }
 
+    /* --- RECALC MODEL UPDATED WITH NON-TIEUP PF SLABS --- */
     function recalcModel(pIdx) {
         if(!current_products[pIdx]) return;
         let prod = current_products[pIdx], limit = customerQueue[activeCustomerIndex]?.limit || 0, type = customerQueue[activeCustomerIndex]?.type || 'NEW';
@@ -2462,17 +2489,28 @@
             nbfcMaxL = (currentLimit * s.tenure) / (s.tenure - s.advEmi || 1);
             let dbdRate = (s.dbd * 1.18 / 100); let roiRate = s.roi / 1200; let roiRateDP = roiRate * s.advEmi; 
             
+            // --- DYNAMIC NON-TIEUP PF SLAB LOGIC ---
+            let dynamicPf = s.pf;
+            if (prod.isNonTieup) {
+                let checkAmount = effectivePrice > 0 ? effectivePrice : (currentLimit < 9999999 ? currentLimit : 0);
+                let slabPf = getNonTieupPfValue(prod.category, checkAmount);
+                if (slabPf !== null) {
+                    dynamicPf = slabPf;
+                }
+            }
+            // ----------------------------------------
+
             if (isFixed) {
                 let maxRemainingEmis = Math.floor(currentLimit / s.fixedEmi); let maxTotalTenure = maxRemainingEmis + s.advEmi; nbfcMaxL = maxTotalTenure * s.fixedEmi; 
                 if (effectivePrice > 0) {
                     currentTenure = Math.floor(effectivePrice / s.fixedEmi); if (currentTenure > maxTotalTenure) currentTenure = maxTotalTenure; if (currentTenure < 1) currentTenure = 1;
                     loan = currentTenure * s.fixedEmi; if (loan > loanCapPrice) loan = loanCapPrice; 
                     if (parseFloat(inp.target) > 0) {
-                        let numerator = parseFloat(inp.target) - effectivePrice - (s.fixedEmi * s.advEmi) - s.pf - totalFees; let denominator = dbdRate + roiRateDP - 1; let solvedLoan = numerator / denominator;
+                        let numerator = parseFloat(inp.target) - effectivePrice - (s.fixedEmi * s.advEmi) - dynamicPf - totalFees; let denominator = dbdRate + roiRateDP - 1; let solvedLoan = numerator / denominator;
                         let solvedTenure = Math.floor(solvedLoan / s.fixedEmi); if (solvedTenure > maxTotalTenure) solvedTenure = maxTotalTenure;
                         loan = Math.max(0, solvedTenure * s.fixedEmi); if (loan > loanCapPrice) loan = loanCapPrice; currentTenure = Math.floor(loan / s.fixedEmi) || 1;
                     }
-                    let roiInDp = loan * roiRateDP; dpExact = effectivePrice - loan + (s.fixedEmi * s.advEmi) + (loan * dbdRate) + s.pf + totalFees + roiInDp;
+                    let roiInDp = loan * roiRateDP; dpExact = effectivePrice - loan + (s.fixedEmi * s.advEmi) + (loan * dbdRate) + dynamicPf + totalFees + roiInDp;
                 } else { currentTenure = s.tenure || 1; if (currentTenure > maxTotalTenure) currentTenure = maxTotalTenure; loan = currentTenure * s.fixedEmi; }
                 inst = currentTenure - s.advEmi; if(inst < 1) inst = 1;
                 let insTotal = (parseFloat(inp.gtl)||0) + (parseFloat(inp.rfc)||0) + (parseFloat(inp.exw)||0); let roiInEmi = loan * roiRate; emi = s.fixedEmi + (insTotal / inst) + roiInEmi;
@@ -2482,10 +2520,10 @@
                 if (prod.isNonTieup) { if (s.maxLoan < 9999999) absoluteMax = Math.min(absoluteMax, s.maxLoan); }
                 
                 loan = absoluteMax;
-                if(parseFloat(inp.target) > 0 && effectivePrice > 0) { let advRate = s.advEmi / s.tenure; let numerator = parseFloat(inp.target) - effectivePrice - s.pf - totalFees; let denominator = advRate + dbdRate + roiRateDP - 1; let solvedLoan = numerator / denominator; loan = Math.min(loan, Math.max(0, Math.floor(solvedLoan))); }
+                if(parseFloat(inp.target) > 0 && effectivePrice > 0) { let advRate = s.advEmi / s.tenure; let numerator = parseFloat(inp.target) - effectivePrice - dynamicPf - totalFees; let denominator = advRate + dbdRate + roiRateDP - 1; let solvedLoan = numerator / denominator; loan = Math.min(loan, Math.max(0, Math.floor(solvedLoan))); }
                 inst = s.tenure - s.advEmi; if(inst < 1) inst = 1; let insTotal = (parseFloat(inp.gtl)||0)+(parseFloat(inp.rfc)||0)+(parseFloat(inp.exw)||0); let roiInEmi = loan * roiRate; emi = (loan / s.tenure) + (insTotal / inst) + roiInEmi;
                 if(emi > parseFloat(inp.cap) && parseFloat(inp.cap) > 0) { loan = (parseFloat(inp.cap) - (insTotal/inst)) / ( (1/s.tenure) + roiRate ); roiInEmi = loan * roiRate; emi = (loan / s.tenure) + (insTotal / inst) + roiInEmi; }
-                let roiInDp = loan * roiRateDP; dpExact = effectivePrice - loan + ((loan / s.tenure) * s.advEmi) + (loan * dbdRate) + s.pf + totalFees + roiInDp;
+                let roiInDp = loan * roiRateDP; dpExact = effectivePrice - loan + ((loan / s.tenure) * s.advEmi) + (loan * dbdRate) + dynamicPf + totalFees + roiInDp;
             }
             if(dpExact > 0) dpRounded = Math.ceil(dpExact / 10) * 10; else dpRounded = dpExact;
             let extraVal = effectivePrice > 0 ? (((emi * inst) + dpRounded) - effectivePrice) : 0; let dbdAmt = loan * dbdRate; let roiAmt = (loan * roiRateDP) + (loan * roiRate * inst);
@@ -2495,7 +2533,7 @@
             let roundupAdj = (dpRounded > dpExact) ? (dpRounded - dpExact) : 0;
             let netDisb = effectivePrice > 0 ? (effectivePrice - dpRounded - marginMoney - roundupAdj) : 0;
 
-            return { ...s, currentTenure, nbfcMaxL, loan, dp: dpRounded, emi, inst, daily: emi/30, dIdx, isFixed, curLTV, extra: extraVal, dbdAmt, roiAmt, netDisb, inactive: s.inactive || false, expiryDateStr: s.expiryDateStr };
+            return { ...s, pf: dynamicPf, currentTenure, nbfcMaxL, loan, dp: dpRounded, emi, inst, daily: emi/30, dIdx, isFixed, curLTV, extra: extraVal, dbdAmt, roiAmt, netDisb, inactive: s.inactive || false, expiryDateStr: s.expiryDateStr };
         });
         renderRows(pIdx);
     }
@@ -2552,6 +2590,7 @@
 
     function step(pIdx, dIdx, amt) { let el = document.getElementById(`l_${pIdx}_${dIdx}`); el.value = Math.max(0, parseInt(el.value) + amt); manual(pIdx, dIdx); }
 
+    /* --- MANUAL FUNCTION UPDATED WITH NON-TIEUP PF CHECK --- */
     function manual(pIdx, dIdx) {
         let el = document.getElementById(`l_${pIdx}_${dIdx}`), loan = parseFloat(el.value) || 0, prod = current_products[pIdx], d = prod.calculatedData.find(x => x.dIdx === dIdx), inp = prod.inputs, type = customerQueue[activeCustomerIndex]?.type || 'NEW';
         
@@ -2561,6 +2600,19 @@
         let effectivePrice = inputInv > 0 ? inputInv : (inputMrp > 0 ? inputMrp : 0); let loanCapPrice = (inputMrp > 0 && inputInv > 0) ? Math.min(inputMrp, inputInv) : effectivePrice;
 
         syncInsurance(pIdx, inputMrp, loan, 'LOAN'); 
+        
+        // --- DYNAMIC NON-TIEUP PF CHECK IN MANUAL STEPPING ---
+        let appliedPf = d.pf;
+        if (prod.isNonTieup) {
+            let checkAmount = effectivePrice > 0 ? effectivePrice : loan;
+            let slabPf = getNonTieupPfValue(prod.category, checkAmount);
+            if (slabPf !== null) appliedPf = slabPf;
+            d.pf = appliedPf;
+            let pfCell = document.querySelector(`#row_${pIdx}_${dIdx} td:nth-child(3)`);
+            if(pfCell) pfCell.innerText = `₹${appliedPf}`;
+        }
+        // ------------------------------------------------------
+
         let dbdRate = (d.dbd * 1.18 / 100); let roiRate = d.roi / 1200; let roiRateDP = roiRate * d.advEmi; 
         let dpE = 0; let dpR = 0;
         
@@ -2569,7 +2621,7 @@
             let calcTenure = Math.floor(loan / d.fixedEmi) || 1; let maxBoundary = Math.min(d.nbfcMaxL, prod.isNonTieup ? d.maxLoan : 9999999, loanCapPrice > 0 ? loanCapPrice : 9999999);
             if (loan > maxBoundary) { loan = Math.floor(maxBoundary / d.fixedEmi) * d.fixedEmi; calcTenure = Math.floor(loan / d.fixedEmi) || 1; } el.value = loan;
             let roiInEmi = loan * roiRate; let roiInDp = loan * roiRateDP;  
-            dpE = effectivePrice - loan + (d.fixedEmi * d.advEmi) + (loan * dbdRate) + d.pf + totalFees + roiInDp; dpR = Math.ceil(dpE / 10) * 10; let inst = calcTenure - d.advEmi; if(inst < 1) inst = 1;
+            dpE = effectivePrice - loan + (d.fixedEmi * d.advEmi) + (loan * dbdRate) + appliedPf + totalFees + roiInDp; dpR = Math.ceil(dpE / 10) * 10; let inst = calcTenure - d.advEmi; if(inst < 1) inst = 1;
             let emi = d.fixedEmi + (((parseFloat(inp.gtl)||0) + (parseFloat(inp.rfc)||0) + (parseFloat(inp.exw)||0)) / inst) + roiInEmi;
             
             let expInfo = d.expiryDateStr ? `<div style="font-size:10px; color:#555; margin-top:2px; font-weight:bold;">Exp: ${d.expiryDateStr}</div>` : '';
@@ -2582,7 +2634,7 @@
             let nbfcMaxL = (currentLimit * d.tenure) / (d.tenure - d.advEmi || 1); 
             let maxBoundary = Math.min(loanCapPrice > 0 ? loanCapPrice : 999999, nbfcMaxL, prod.isNonTieup ? d.maxLoan : 9999999);
             if(loan > maxBoundary) { loan = maxBoundary; el.value = Math.floor(loan); } let roiInEmi = loan * roiRate; let roiInDp = loan * roiRateDP;  
-            dpE = effectivePrice - loan + ((loan/d.tenure) * d.advEmi) + (loan * dbdRate) + d.pf + totalFees + roiInDp; dpR = Math.ceil(dpE / 10) * 10;
+            dpE = effectivePrice - loan + ((loan/d.tenure) * d.advEmi) + (loan * dbdRate) + appliedPf + totalFees + roiInDp; dpR = Math.ceil(dpE / 10) * 10;
             let inst = d.tenure - d.advEmi; if(inst < 1) inst = 1; let insTotal = (parseFloat(inp.gtl)||0)+(parseFloat(inp.rfc)||0)+(parseFloat(inp.exw)||0); let emi = (loan / d.tenure) + (insTotal / inst) + roiInEmi;
             d.loan = loan; d.dp = dpR; d.emi = emi;
         }
