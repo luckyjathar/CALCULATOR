@@ -880,8 +880,16 @@
         const emiMatch = text.match(/Total EMI\s*["',\s]*([\d,]+)/i);
         if (emiMatch) document.getElementById('msgCustEMI').value = emiMatch[1].replace(/,/g, '');
 
-        const tenureMatch = text.match(/Scheme Code.*?\((\d+)\/\d+\)/i) || text.match(/\((\d+)\/\d+\)/);
-        if (tenureMatch) document.getElementById('msgCustTenure').value = tenureMatch[1];
+        // Gross Tenure (GT) आणि Advance EMI (AE) दोन्ही वेगळे काढून वास्तविक हप्ते (GT - AE) कॅल्क्युलेट करणे
+        const tenureMatch = text.match(/Scheme Code.*?\((\d+)\s*\/\s*(\d+)\)/i) || text.match(/\((\d+)\s*\/\s*(\d+)\)/);
+        if (tenureMatch) {
+        let grossTenure = parseInt(tenureMatch[1], 10) || 0;
+        let advanceEmi = parseInt(tenureMatch[2], 10) || 0;
+        let netTenure = grossTenure - advanceEmi;
+    
+        // जर 21/1 असेल तर (21 - 1 = 20) सेट होईल
+        document.getElementById('msgCustTenure').value = netTenure > 0 ? netTenure : grossTenure;
+        }
 
         const dateMatch = text.match(/Date:\s*(\d{2})\/(\d{2})\/(\d{4})/i);
         if (dateMatch) {
