@@ -40,7 +40,6 @@
         .sidebar-overlay.show { display: block; }
 
         /* HEADER STYLES */
-        
         header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; border-bottom: 3px solid var(--primary); margin-bottom: 6px; padding: 8px 12px; background: #fff; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         header h1 { margin: 0; font-size: 1.4rem; color: var(--primary); font-weight: 900; letter-spacing: 0.5px; }
         .menu-toggle-btn { background: var(--primary); color: white; border: none; padding: 8px 12px; border-radius: 4px; font-size: 16px !important; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: bold; }
@@ -64,7 +63,7 @@
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.85); display: none; justify-content: center; align-items: flex-start; padding-top: 10px; z-index: 4000; overflow-y: auto; box-sizing: border-box; backdrop-filter: blur(3px); }
         .modal-content { background: white; padding: 15px; border-radius: 8px; width: 90%; max-width: 400px; position: relative; margin-bottom: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
         
-        #multiStackModal .modal-content, #globalSchemeViewerModal .modal-content, #customerMessageGenModal .modal-content { max-width: 900px; width: 95%; padding: 15px; }
+        #multiStackModal .modal-content, #globalSchemeViewerModal .modal-content, #customerMessageGenModal .modal-content, #draftsModal .modal-content { max-width: 900px; width: 95%; padding: 15px; }
         .stack-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px; margin-top: 8px; }
         .stack-card { border: 1px solid #ddd; padding: 10px; border-radius: 6px; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .stack-card .inner-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px; }
@@ -181,6 +180,11 @@
              data-logo_alignment="left"
              style="margin-bottom: 10px; width: 100%;">
         </div>
+
+        <!-- NEW: Manual Force Sync Button (Visible after Login) -->
+        <button onclick="forceCloudSync()" class="sidebar-btn" id="syncBtn" style="background: #3498db; color: white; display: none;">
+            <span>🔄</span> FORCE CLOUD SYNC
+        </button>
 
         <button onclick="toggleSidebar(); openFlyerGenModal()" class="sidebar-btn" style="background: var(--warning); color: #000;">
             <span>📱</span> CREATE FLYER LINK
@@ -358,11 +362,19 @@
         </div>
     </div>
 
+    <!-- MAIN SEND EMI DETAILS MODAL -->
     <div id="customerMessageGenModal" class="modal">
         <div class="modal-content" style="max-width: 850px; padding: 20px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--bajaj-blue); padding-bottom: 8px; margin-bottom: 10px;">
-                <h3 style="margin:0; color:var(--bajaj-blue);">💬 Send EMI Details</h3>
-                <button onclick="closeCustomerMessageModal()" style="background:none; border:none; color:var(--danger); font-weight:bold; cursor:pointer; font-size:18px;">✖</button>
+            <div style="display: flex; align-items: center; border-bottom: 2px solid var(--bajaj-blue); padding-bottom: 8px; margin-bottom: 10px; position: relative;">
+                
+                <!-- TOP LEFT DRAFT BUTTON -->
+                <button onclick="openDraftsModal()" style="background:var(--warning); color:#000; border:none; padding:6px 12px; border-radius:4px; font-weight:bold; cursor:pointer; display:flex; align-items:center; gap:6px; z-index: 10;">
+                    📥 DRAFTS <span id="draftBadge" style="background:var(--danger); color:white; border-radius:10px; padding:2px 6px; font-size:11px; line-height:1; min-width:12px; text-align:center;">0</span>
+                </button>
+                
+                <h3 style="margin:0; color:var(--bajaj-blue); text-align:center; flex:1; position: absolute; width: 100%; left: 0; pointer-events: none;">💬 Send EMI Details</h3>
+                
+                <button onclick="closeCustomerMessageModal()" style="background:none; border:none; color:var(--danger); font-weight:bold; cursor:pointer; font-size:18px; margin-left: auto; z-index: 10;">✖</button>
             </div>
 
             <div class="msg-section-title">1. Upload Delivery Order (PDF File):</div>
@@ -427,9 +439,24 @@
             <div class="msg-section-title">3. Generated Customer Message (With all 12 T&C points):</div>
             <textarea id="finalMessage"></textarea>
             
-            <div style="display:flex; gap:10px; margin-top:12px;">
-                <button onclick="copyMsgText()" style="flex:1; background:var(--primary); color:white; padding:10px;">📋 COPY MESSAGE</button>
-                <button onclick="sendMsgWhatsApp()" style="flex:1; background:#25D366; color:white; padding:10px;">💬 SEND VIA WHATSAPP</button>
+            <div style="display:flex; gap:10px; margin-top:12px; flex-wrap: wrap;">
+                <button onclick="copyMsgText()" style="flex:1; background:var(--primary); color:white; padding:10px; min-width: 140px;">📋 COPY MESSAGE</button>
+                <button onclick="sendMsgWhatsApp()" style="flex:1; background:#25D366; color:white; padding:10px; min-width: 140px;">💬 SEND VIA WHATSAPP</button>
+                <button onclick="saveEmiDraft()" style="flex:1; background:var(--warning); color:#000; padding:10px; font-weight:bold; min-width: 140px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">💾 SAVE AS DRAFT</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SEPARATE DRAFTS MODAL -->
+    <div id="draftsModal" class="modal">
+        <div class="modal-content" style="max-width: 500px; padding: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--warning); padding-bottom: 8px; margin-bottom: 15px;">
+                <h3 style="margin:0; color:var(--warning); text-shadow: 0 1px 1px rgba(0,0,0,0.1);">📥 Saved Drafts</h3>
+                <button onclick="closeDraftsModal()" style="background:none; border:none; color:var(--danger); font-weight:bold; cursor:pointer; font-size:18px;">✖</button>
+            </div>
+            
+            <div id="draftsContainer" style="display:flex; flex-direction:column; gap:10px; max-height: 400px; overflow-y:auto; padding-right: 5px;" class="custom-scroll">
+                <!-- Draft items will be shown here -->
             </div>
         </div>
     </div>
@@ -794,6 +821,8 @@
             statusBadge.style.background = 'rgba(243, 156, 18, 0.15)';
             statusBadge.style.color = '#f39c12';
         }
+        
+        document.getElementById('syncBtn').style.display = 'flex';
 
         try {
             // Google Sheet kadun data ghene
@@ -801,15 +830,29 @@
             let cloudData = await res.json();
             
             if(cloudData && cloudData.length > 0) {
-                // Cloud var data bhetla! To portal madhye load kara
-                customerQueue = cloudData;
-                await saveToDB('persistent_queue', customerQueue);
-                activeCustomerIndex = -1; // Reset active customer
-                renderCustomerQueue();
-                updateUniversalActionButtons();
-                alert("✅ Welcome " + userData.name + "! Tumcha Cloud Data successfully load zala ahe.");
+                if(customerQueue.length > 0) {
+                    if(confirm("☁️ Cloud var aadhi pasun data ahe. Tumhala Cloud varun data Download karaycha ahe (OK) ki Local data Cloud var Upload karaycha ahe (Cancel)?")) {
+                        customerQueue = cloudData;
+                        await saveQueueToLocal();
+                        activeCustomerIndex = -1;
+                        renderCustomerQueue();
+                        updateUniversalActionButtons();
+                        alert("✅ Cloud data successfully Downloaded!");
+                    } else {
+                        await saveQueueToLocal();
+                        alert("✅ Local data Cloud var Upload zala!");
+                    }
+                } else {
+                    customerQueue = cloudData;
+                    await saveQueueToLocal();
+                    activeCustomerIndex = -1;
+                    renderCustomerQueue();
+                    updateUniversalActionButtons();
+                    alert("✅ Welcome " + userData.name + "! Cloud Data successfully load zala.");
+                }
             } else {
-                alert("🆕 Welcome " + userData.name + "! Tumcha navin blank database start zala ahe.");
+                alert("🆕 Welcome " + userData.name + "! Cloud var data nahi. Tumcha Local data Cloud var save hot ahe...");
+                await saveQueueToLocal();
             }
 
             if(statusBadge) {
@@ -823,6 +866,23 @@
         }
 
         toggleSidebar();
+    }
+
+    async function forceCloudSync() {
+        if(!loggedInUserEmail) {
+            alert("⚠️ कृपया आधी Google Sign In करा!");
+            return;
+        }
+        let btn = document.getElementById('syncBtn');
+        let originalText = btn.innerHTML;
+        btn.innerHTML = '<span>⏳</span> SYNCING...';
+        
+        await saveQueueToLocal();
+        
+        setTimeout(() => {
+            btn.innerHTML = '<span>✅</span> SYNC COMPLETE';
+            setTimeout(() => { btn.innerHTML = originalText; }, 2000);
+        }, 1500);
     }
 
     /* PDF.js Initialization */
@@ -840,6 +900,7 @@
     function openCustomerMessageModal() {
         document.getElementById('customerMessageGenModal').style.display = 'flex';
         calculateDates();
+        updateDraftBadgeCount(); // Update badge on load
     }
     
     function closeCustomerMessageModal() {
@@ -938,7 +999,8 @@
         let startMonth = month + 1;
         let startYear = year;
 
-        if (day > 25) { startMonth = month + 2; }
+        // CHANGED: Cut-off date is now >= 24
+        if (day >= 24) { startMonth = month + 2; }
 
         let startDateObj = new Date(startYear, startMonth, 2);
         let endDateObj = new Date(startYear, startMonth + tenure - 1, 2);
@@ -975,13 +1037,13 @@
         let msg = "";
 
         if (lang === 'mr') {
-            msg = `सस्नेह नमस्कार, ${name}! 🙏\n\nबजाज फायनान्समध्ये आपले स्वागत आहे. आपण खरेदी केलेल्या वस्तूच्या कर्जाची (Loan) सविस्तर माहिती खालीलप्रमाणे आहे:\n\n🏬 दुकानाचे नाव (Dealer/Shop): ${shop}\n📱 वस्तूचा प्रकार (Asset): ${asset}\n📌 मासिक हप्ता (EMI): ₹${emi}/-\n📌 एकूण हप्ते (Months): ${tenure} महिने\n📅 पहिला हप्ता सुरू होण्याची तारीख: ${startDate}\n📅 शेवटचा हप्ता संपण्याची तारीख: ${endDate}\n\n⚠️ बजाज फायनान्सचे नियम व अटी:\n१) आपण घेतलेल्या वस्तूचा हप्ता दर महिन्याच्या २ तारखेला आपण दिलेल्या बँक खात्यातून (Account) कट होतो.\n२) जर कर्ज प्रक्रिया (Finance) महिन्याच्या २५ तारखेपर्यंत पूर्ण झाली असेल, तर पहिला हप्ता पुढील महिन्याच्या २ तारखेला सुरू होतो.\n३) आपण ECS / NACH फॉर्मवर केलेली सही आपल्या बँकेमार्फत तपासली जाते.\n४) जर बँकेला सहीमध्ये काही तफावत (फरक) आढळल्यास, आपल्याला त्याबाबत SMS किंवा Call मार्फत पूर्वकल्पना दिली जाते.\n५) अशा वेळी, आपल्याला बजाज फायनान्सच्या कार्यालयात जाऊन योग्य सहीची पूर्तता करणे आवश्यक असते.\n६) सही न जुळल्यास बँक खात्यातून हप्ता कट होत नाही आणि बँकेच्या नियमानुसार आपल्याला 'बाऊन्स चार्ज' (दंड) आकारला जातो. हे शुल्क थेट बँकेकडे जमा होते, बजाज फायनान्सकडे नाही. या प्रक्रियेत बजाज फायनान्सचे कर्मचारी जबाबदार नसतात, याची कृपया सर्व ग्राहकांनी नोंद घ्यावी.\n७) हप्ता बाऊन्स झाल्यास बजाज फायनान्सकडून ₹५००/- बाऊन्स शुल्क (Penalty) आकारले जाते. तसेच, थकीत हप्ता जमा होईपर्यंत दररोज विलंब शुल्क (Late Fees) वाढत जाते.\n८) आपल्या बँक खात्यामध्ये लागणारी किमान शिल्लक (Minimum Balance) आणि हप्त्याची रक्कम, हप्त्याच्या तारखेच्या किमान २ दिवस आधी जमा ठेवावी.\n९) हप्ता बँक खात्यातून कट झाला की नाही हे पाहण्यासाठी मोबाईलमध्ये 'Bajaj Finserv' ॲप तपासावे. हप्ता जमा झाल्यावर आपल्या बँक खात्यात, बँक ॲपमध्ये किंवा पासबुकवर त्याची त्वरित नोंद होते व बँकेकडून SMS देखील प्राप्त होतो.\n१०) बजाज फायनान्स कार्यालय: आदिनाथ पॅराडाईज, हॉटेल शालिमारजवळ, मजगाव रोड, रत्नागिरी.\n११) महत्त्वाची सेवा माहिती: तुमच्या नोंदणीकृत मोबाईल नंबरवरून 8698010101 या नंबरवर कॉल करून तुम्ही खालील माहिती मिळवू शकता (मानक कॉल शुल्क लागू)\n१२) मुदतीपूर्वी कर्ज बंद (Loan Foreclosure) करायचे असल्यास, पुढील हप्त्याच्या किमान १० दिवस आधी बजाज फायनान्स कार्यालयात किंवा ॲपद्वारे उर्वरित रक्कम भरून कर्ज बंद करता येते.\n\nकाही अडचण असल्यास नक्की संपर्क करा. धन्यवाद! ✨`;
+            msg = `सस्नेह नमस्कार, ${name}! 🙏\n\nबजाज फायनान्समध्ये आपले स्वागत आहे. आपण खरेदी केलेल्या वस्तूच्या कर्जाची (Loan) सविस्तर माहिती खालीलप्रमाणे आहे:\n\n🏬 दुकानाचे नाव (Dealer/Shop): ${shop}\n📱 वस्तूचा प्रकार (Asset): ${asset}\n📌 मासिक हप्ता (EMI): ₹${emi}/-\n📌 एकूण हप्ते (Months): ${tenure} महिने\n📅 पहिला हप्ता सुरू होण्याची तारीख: ${startDate}\n📅 शेवटचा हप्ता संपण्याची तारीख: ${endDate}\n\n⚠️ बजाज फायनान्सचे नियम व अटी:\n१) आपण घेतलेल्या वस्तूचा हप्ता दर महिन्याच्या २ तारखेला आपण दिलेल्या बँक खात्यातून (Account) कट होतो.\n२) जर कर्ज प्रक्रिया (Finance) महिन्याच्या २३ तारखेपर्यंत पूर्ण झाली असेल, तर पहिला हप्ता पुढील महिन्याच्या २ तारखेला सुरू होतो.\n३) आपण ECS / NACH फॉर्मवर केलेली सही आपल्या बँकेमार्फत तपासली जाते.\n४) जर बँकेला सहीमध्ये काही तफावत (फरक) आढळल्यास, आपल्याला त्याबाबत SMS किंवा Call मार्फत पूर्वकल्पना दिली जाते.\n५) अशा वेळी, आपल्याला बजाज फायनान्सच्या कार्यालयात जाऊन योग्य सहीची पूर्तता करणे आवश्यक असते.\n६) सही न जुळल्यास बँक खात्यातून हप्ता कट होत नाही आणि बँकेच्या नियमानुसार आपल्याला 'बाऊन्स चार्ज' (दंड) आकारला जातो. हे शुल्क थेट बँकेकडे जमा होते, बजाज फायनान्सकडे नाही. या प्रक्रियेत बजाज फायनान्सचे कर्मचारी जबाबदार नसतात, याची कृपया सर्व ग्राहकांनी नोंद घ्यावी.\n७) हप्ता बाऊन्स झाल्यास बजाज फायनान्सकडून ₹५००/- बाऊन्स शुल्क (Penalty) आकारले जाते. तसेच, थकीत हप्ता जमा होईपर्यंत दररोज विलंब शुल्क (Late Fees) वाढत जाते.\n८) आपल्या बँक खात्यामध्ये लागणारी किमान शिल्लक (Minimum Balance) आणि हप्त्याची रक्कम, हप्त्याच्या तारखेच्या किमान २ दिवस आधी जमा ठेवावी.\n९) हप्ता बँक खात्यातून कट झाला की नाही हे पाहण्यासाठी मोबाईलमध्ये 'Bajaj Finserv' ॲप तपासावे. हप्ता जमा झाल्यावर आपल्या बँक खात्यात, बँक ॲपमध्ये किंवा पासबुकवर त्याची त्वरित नोंद होते व बँकेकडून SMS देखील प्राप्त होतो.\n१०) बजाज फायनान्स कार्यालय: आदिनाथ पॅराडाईज, हॉटेल शालिमारजवळ, मजगाव रोड, रत्नागिरी.\n११) महत्त्वाची सेवा माहिती: तुमच्या नोंदणीकृत मोबाईल नंबरवरून 8698010101 या नंबरवर कॉल करून तुम्ही खालील माहिती मिळवू शकता (मानक कॉल शुल्क लागू)\n१२) मुदतीपूर्वी कर्ज बंद (Loan Foreclosure) करायचे असल्यास, पुढील हप्त्याच्या किमान १० दिवस आधी बजाज फायनान्स कार्यालयात किंवा ॲपद्वारे उर्वरित रक्कम भरून कर्ज बंद करता येते.\n\nकाही अडचण असल्यास नक्की संपर्क करा. धन्यवाद! ✨`;
         } 
         else if (lang === 'hi') {
-            msg = `नमस्ते, ${name}! 🙏\n\nबजाज फाइनेंस में आपका स्वागत है। आपके द्वारा खरीदे गए उत्पाद के लोन (Loan) का विवरण नीचे दिया गया है:\n\n🏬 डीलर / दुकान का नाम (Dealer/Shop): ${shop}\n📱 उत्पाद का प्रकार (Asset): ${asset}\n📌 मासिक किस्त (EMI): ₹${emi}/-\n📌 कुल किस्तें (Months): ${tenure} महीने\n📅 पहली किस्त शुरू होने की तारीख: ${startDate}\n📅 अंतिम किस्त समाप्त होने की तारीख: ${endDate}\n\n⚠️ बजाज फाइनेंस के नियम व शर्तें:\n१) आपके उत्पाद की किस्त हर महीने की 2 तारीख को आपके दिए गए बैंक खाते से कटती है।\n२) यदि लोन प्रक्रिया महीने की 25 तारीख तक पूरी हो जाती है, तो पहली किस्त अगले महीने की 2 तारीख से शुरू होती है।\n३) ECS / NACH फॉर्म पर आपके द्वारा किए गए हस्ताक्षर आपके बैंक द्वारा जांचे जाते हैं।\n४) यदि बैंक को हस्ताक्षर में कोई अंतर मिलता है, तो आपको SMS या Call के माध्यम से सूचित किया जाता है।\n५) ऐसी स्थिति में, आपको बजाज फाइनेंस कार्यालय जाकर सही हस्ताक्षर की प्रक्रिया पूरी करनी होगी।\n६) हस्ताक्षर गलत होने पर बैंक खाते से किस्त नहीं कटती है और बैंक के नियमानुसार बाउंस चार्ज (जुर्माना) लगाया जाता है। यह शुल्क सीधे बैंक के खाते में जाता है, बजाज फाइनेंस के नहीं। इस प्रक्रिया में बजाज फाइनेंस के कर्मचारी जिम्मेदार नहीं होते हैं, कृपया सभी ग्राहक ध्यान दें।\n७) किस्त बाउंस होने पर बजाज फाइनेंस की ओर से ₹500/- बाउंस शुल्क (Penalty) लगाया जाता है। साथ ही, बकाया किस्त जमा होने तक प्रतिदिन विलंब शुल्क (Late Fees) बढ़ता जाता है।\n८) अपने बैंक खाते में आवश्यक न्यूनतम राशि (Minimum Balance) के अलावा किस्त की राशि नियत तारीख से कम से कम 2 दिन पहले जमा रखें।\n९) किस्त कटी या नहीं, यह जानने के लिए अपने मोबाइल में 'Bajaj Finserv' ऐप चेक करें। किस्त प्राप्त होने पर आपके बैंक खाते या पासबुक में तुरंत दर्ज हो जाती है और बैंक SMS द्वारा भी सूचित करता है।\n१०) बजाज फाइनेंस कार्यालय: आदिनाथ पैराडाइज, होटल शालीमार के पास, मजगांव रोड, रत्नागिरी।\n११) महत्वपूर्ण सेवा जानकारी: अपने पंजीकृत मोबाइल नंबर से 8698010101 पर कॉल करके आप निम्नलिखित जानकारी प्राप्त कर सकते हैं (मानक कॉल शुल्क लागू)\n१२) समय से पहले लोन बंद (Foreclosure) करना चाहते हैं, तो अगली किस्त से कम से कम 10 दिन पहले बजाज फाइनेंस कार्यालय में या ऐप के माध्यम से शेष राशि का भुगतान करके लोन बंद कर सकते हैं।\n\nकिसी भी सहायता के लिए संपर्क करें। धन्यवाद! ✨`;
+            msg = `नमस्ते, ${name}! 🙏\n\nबजाज फाइनेंस में आपका स्वागत है। आपके द्वारा खरीदे गए उत्पाद के लोन (Loan) का विवरण नीचे दिया गया है:\n\n🏬 डीलर / दुकान का नाम (Dealer/Shop): ${shop}\n📱 उत्पाद का प्रकार (Asset): ${asset}\n📌 मासिक किस्त (EMI): ₹${emi}/-\n📌 कुल किस्तें (Months): ${tenure} महीने\n📅 पहली किस्त शुरू होने की तारीख: ${startDate}\n📅 अंतिम किस्त समाप्त होने की तारीख: ${endDate}\n\n⚠️ बजाज फाइनेंस के नियम व शर्तें:\n१) आपके उत्पाद की किस्त हर महीने की 2 तारीख को आपके दिए गए बैंक खाते से कटती है।\n२) यदि लोन प्रक्रिया महीने की 23 तारीख तक पूरी हो जाती है, तो पहली किस्त अगले महीने की 2 तारीख से शुरू होती है।\n३) ECS / NACH फॉर्म पर आपके द्वारा किए गए हस्ताक्षर आपके बैंक द्वारा जांचे जाते हैं।\n४) यदि बैंक को हस्ताक्षर में कोई अंतर मिलता है, तो आपको SMS या Call के माध्यम से सूचित किया जाता है।\n५) ऐसी स्थिति में, आपको बजाज फाइनेंस कार्यालय जाकर सही हस्ताक्षर की प्रक्रिया पूरी करनी होगी।\n६) हस्ताक्षर गलत होने पर बैंक खाते से किस्त नहीं कटती है और बैंक के नियमानुसार बाउंस चार्ज (जुर्माना) लगाया जाता है। यह शुल्क सीधे बैंक के खाते में जाता है, बजाज फाइनेंस के नहीं। इस प्रक्रिया में बजाज फाइनेंस के कर्मचारी जिम्मेदार नहीं होते हैं, कृपया सभी ग्राहक ध्यान दें।\n७) किस्त बाउंस होने पर बजाज फाइनेंस की ओर से ₹500/- बाउंस शुल्क (Penalty) लगाया जाता है। साथ ही, बकाया किस्त जमा होने तक प्रतिदिन विलंब शुल्क (Late Fees) बढ़ता जाता है।\n८) अपने बैंक खाते में आवश्यक न्यूनतम राशि (Minimum Balance) के अलावा किस्त की राशि नियत तारीख से कम से कम 2 दिन पहले जमा रखें।\n९) किस्त कटी या नहीं, यह जानने के लिए अपने मोबाइल में 'Bajaj Finserv' ऐप चेक करें। किस्त प्राप्त होने पर आपके बैंक खाते या पासबुक में तुरंत दर्ज हो जाती है और बैंक SMS द्वारा भी सूचित करता है।\n१०) बजाज फाइनेंस कार्यालय: आदिनाथ पैराडाइज, होटल शालीमार के पास, मजगांव रोड, रत्नागिरी।\n११) महत्वपूर्ण सेवा जानकारी: अपने पंजीकृत मोबाइल नंबर से 8698010101 पर कॉल करके आप निम्नलिखित जानकारी प्राप्त कर सकते हैं (मानक कॉल शुल्क लागू)\n१२) समय से पहले लोन बंद (Foreclosure) करना चाहते हैं, तो अगली किस्त से कम से कम 10 दिन पहले बजाज फाइनेंस कार्यालय में या ऐप के माध्यम से शेष राशि का भुगतान करके लोन बंद कर सकते हैं।\n\nकिसी भी सहायता के लिए संपर्क करें। धन्यवाद! ✨`;
         } 
         else {
-            msg = `Dear ${name}, 🙏\n\nWelcome to Bajaj Finance! Here are the complete details of your recent product loan:\n\n🏬 Dealer / Shop Name: ${shop}\n📱 Asset Category: ${asset}\n📌 Monthly EMI: ₹${emi}/-\n📌 Total Tenure: ${tenure} Months\n📅 First EMI Start Date: ${startDate}\n📅 Last EMI End Date: ${endDate}\n\n⚠️ Important Bajaj Finance Terms & Conditions:\n1) Your loan EMI will be auto-debited on the 2nd of every month from your registered bank account.\n2) If the loan processing is completed on or before the 25th of the month, the first EMI will start on the 2nd of the upcoming month.\n3) Your signature on the ECS / NACH mandate form is verified by your bank.\n4) If the bank detects any mismatch in your signature, you will be notified via SMS or Call.\n5) In such cases, you must visit the Bajaj Finance office to complete the correct signature verification formalities.\n6) If the signature mismatches, the EMI will not be debited, and your bank will levy a bounce penalty as per their rules. These charges go directly to your bank, not Bajaj Finance. Bajaj Finance staff will not be responsible for bank-levied charges.\n7) Additionally, Bajaj Finance levies a bounce penalty of ₹500/- for missed EMIs. Daily late payment charges will also accrue until the pending EMI is cleared.\n8) Please maintain the required EMI amount along with the Minimum Account Balance in your bank account at least 2 days prior to the due date.\n9) Please use the 'Bajaj Finserv' mobile app to track your EMI deductions. Once received, the credit reflects in your bank account/passbook immediately, and you will receive a confirmation SMS from your bank.\n10) Bajaj Finance Office Address: Adinath Paradise, Near Hotel Shalimar, Mazgaon Road, Ratnagiri.\n11) Important Service Information: You can obtain the following information by calling 8698010101 from your registered mobile number (standard call charges apply)\n12) If you wish to foreclose/close your loan ahead of time, please pay the outstanding amount at our office or via the app at least 10 days before your next EMI due date.\n\nPlease feel free to reach out if you have any questions. Thank you! ✨`;
+            msg = `Dear ${name}, 🙏\n\nWelcome to Bajaj Finance! Here are the complete details of your recent product loan:\n\n🏬 Dealer / Shop Name: ${shop}\n📱 Asset Category: ${asset}\n📌 Monthly EMI: ₹${emi}/-\n📌 Total Tenure: ${tenure} Months\n📅 First EMI Start Date: ${startDate}\n📅 Last EMI End Date: ${endDate}\n\n⚠️ Important Bajaj Finance Terms & Conditions:\n1) Your loan EMI will be auto-debited on the 2nd of every month from your registered bank account.\n2) If the loan processing is completed on or before the 23rd of the month, the first EMI will start on the 2nd of the upcoming month.\n3) Your signature on the ECS / NACH mandate form is verified by your bank.\n4) If the bank detects any mismatch in your signature, you will be notified via SMS or Call.\n5) In such cases, you must visit the Bajaj Finance office to complete the correct signature verification formalities.\n6) If the signature mismatches, the EMI will not be debited, and your bank will levy a bounce penalty as per their rules. These charges go directly to your bank, not Bajaj Finance. Bajaj Finance staff will not be responsible for bank-levied charges.\n7) Additionally, Bajaj Finance levies a bounce penalty of ₹500/- for missed EMIs. Daily late payment charges will also accrue until the pending EMI is cleared.\n8) Please maintain the required EMI amount along with the Minimum Account Balance in your bank account at least 2 days prior to the due date.\n9) Please use the 'Bajaj Finserv' mobile app to track your EMI deductions. Once received, the credit reflects in your bank account/passbook immediately, and you will receive a confirmation SMS from your bank.\n10) Bajaj Finance Office Address: Adinath Paradise, Near Hotel Shalimar, Mazgaon Road, Ratnagiri.\n11) Important Service Information: You can obtain the following information by calling 8698010101 from your registered mobile number (standard call charges apply)\n12) If you wish to foreclose/close your loan ahead of time, please pay the outstanding amount at our office or via the app at least 10 days before your next EMI due date.\n\nPlease feel free to reach out if you have any questions. Thank you! ✨`;
         }
 
         document.getElementById('finalMessage').value = msg;
@@ -1002,6 +1064,186 @@
             url = `https://api.whatsapp.com/send?phone=91${mobile}&text=${text}`;
         }
         window.open(url, '_blank');
+    }
+
+    // ==========================================
+    // EMI MESSAGE DRAFT SYSTEM (PERSISTENT & ACCORDION)
+    // ==========================================
+
+    function updateDraftBadgeCount() {
+        let drafts = JSON.parse(localStorage.getItem('persistent_emi_drafts') || '[]');
+        let badge = document.getElementById('draftBadge');
+        if (badge) {
+            badge.innerText = drafts.length;
+            if (drafts.length > 0) {
+                badge.style.animation = "pulseGlow 1.5s infinite";
+            } else {
+                badge.style.animation = "none";
+            }
+        }
+    }
+
+    function openDraftsModal() {
+        renderEmiDrafts(); 
+        document.getElementById('draftsModal').style.display = 'flex';
+    }
+
+    function closeDraftsModal() {
+        document.getElementById('draftsModal').style.display = 'none';
+    }
+
+    function saveEmiDraft() {
+        const name = document.getElementById('msgCustName').value.trim();
+        const mobile = document.getElementById('msgCustMobile').value.trim();
+        const shop = document.getElementById('msgShopName').value.trim();
+        
+        const finalMsg = document.getElementById('finalMessage').value; 
+        const startDate = document.getElementById('msgStartDate').value;
+        const endDate = document.getElementById('msgEndDate').value;
+        
+        if (!name) {
+            alert("⚠️ कृपया कस्टमरचे नाव (Name) एंटर करा!");
+            return;
+        }
+
+        // Create a draft object
+        const draftObj = {
+            id: Date.now(),
+            shop: shop,
+            asset: document.getElementById('msgAssetCategory').value,
+            name: name,
+            mobile: mobile,
+            emi: document.getElementById('msgCustEMI').value,
+            tenure: document.getElementById('msgCustTenure').value,
+            loanDate: document.getElementById('msgLoanDate').value,
+            startDate: startDate, 
+            endDate: endDate,
+            lang: document.getElementById('msgLang').value,
+            finalMessage: finalMsg, 
+            timestamp: new Date().toLocaleString()
+        };
+
+        // Get existing drafts from LocalStorage
+        let drafts = JSON.parse(localStorage.getItem('persistent_emi_drafts') || '[]');
+        drafts.unshift(draftObj); 
+        
+        // Save permanently to LocalStorage
+        localStorage.setItem('persistent_emi_drafts', JSON.stringify(drafts));
+        
+        updateDraftBadgeCount(); // Update badge instantly
+        alert("✅ Draft Successfully Saved! (PC रिस्टार्ट केल्यावर सुद्धा हा ड्राफ्ट राहील)");
+        
+        // Optional: Clear form after saving
+        document.getElementById('msgCustName').value = '';
+        document.getElementById('msgCustMobile').value = '';
+        document.getElementById('msgCustEMI').value = '';
+        document.getElementById('finalMessage').value = '';
+    }
+
+    function renderEmiDrafts() {
+        updateDraftBadgeCount();
+        const draftsContainer = document.getElementById('draftsContainer');
+        if(!draftsContainer) return; 
+        let drafts = JSON.parse(localStorage.getItem('persistent_emi_drafts') || '[]');
+        
+        if (drafts.length === 0) {
+            draftsContainer.innerHTML = '<div style="text-align:center; color:#888; font-style:italic; padding: 20px;">एकही सेव्ह केलेला ड्राफ्ट नाही.</div>';
+            return;
+        }
+
+        draftsContainer.innerHTML = drafts.map((d, index) => `
+            <div style="background:#f8f9fa; border:1px solid #ccc; border-radius:6px; padding:10px; display:flex; flex-direction:column; gap:8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                
+                <!-- Clickable Header -->
+                <div onclick="toggleDraftDetails(${index})" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none; padding-bottom: 2px;">
+                    <strong style="color:var(--bajaj-blue); font-size:14px;">
+                        👤 ${d.name} <span style="color:#555;">(${d.mobile || 'No Number'})</span> 
+                        <span id="toggleIcon_${index}" style="color:#888; font-size:11px; margin-left:4px;">▼</span>
+                    </strong>
+                    <span style="font-size:11px; color:#666;">${d.timestamp}</span>
+                </div>
+                
+                <!-- Hidden Details (Shows on Click) -->
+                <div id="draftDetails_${index}" style="display:none; font-size:12px; color:#444; background:#fff; padding:10px; border-radius:4px; border:1px dashed #aaa; line-height:1.6; margin-top:4px;">
+                    🏬 दुकानाचे नाव (Dealer/Shop): <b style="color:var(--indigo);">${d.shop || '-'}</b><br>
+                    📱 वस्तूचा प्रकार (Asset): <b style="color:var(--indigo);">${d.asset || '-'}</b><br>
+                    📌 मासिक हप्ता (EMI): <b style="color:var(--primary);">₹${d.emi || '0'}</b><br>
+                    📌 एकूण हप्ते (Months): <b style="color:var(--primary);">${d.tenure || '0'}</b><br>
+                    📅 पहिला हप्ता सुरू होण्याची तारीख: <b style="color:#d35400;">${d.startDate || '-'}</b><br>
+                    📅 शेवटचा हप्ता संपण्याची तारीख: <b style="color:#d35400;">${d.endDate || '-'}</b>
+
+                    <!-- Action Buttons -->
+                    <div style="display:flex; gap:6px; margin-top:10px; border-top:1px solid #eee; padding-top:10px;">
+                        <button onclick="loadEmiDraft(${index})" style="flex:1; background:var(--indigo); color:white; padding:8px; border-radius:4px; border:none; cursor:pointer; font-weight:bold; font-size: 11px;">✏️ LOAD</button>
+                        <button onclick="sendDraftNow(${index})" style="flex:1.2; background:#25D366; color:white; padding:8px; border-radius:4px; border:none; cursor:pointer; font-weight:bold; font-size: 11px;">💬 SEND NOW</button>
+                        <button onclick="markDraftAsSent(${index})" style="flex:0.8; background:var(--danger); color:white; padding:8px; border-radius:4px; border:none; cursor:pointer; font-weight:bold; font-size: 11px;">🗑️ DELETE</button>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function toggleDraftDetails(index) {
+        const detailsDiv = document.getElementById(`draftDetails_${index}`);
+        const icon = document.getElementById(`toggleIcon_${index}`);
+        if (detailsDiv.style.display === 'none') {
+            detailsDiv.style.display = 'block';
+            icon.innerText = '▲';
+        } else {
+            detailsDiv.style.display = 'none';
+            icon.innerText = '▼';
+        }
+    }
+
+    function sendDraftNow(index) {
+        let drafts = JSON.parse(localStorage.getItem('persistent_emi_drafts') || '[]');
+        let d = drafts[index];
+        if (!d) return;
+
+        let mobile = d.mobile || '';
+        let text = encodeURIComponent(d.finalMessage || ''); 
+        
+        if(!text) {
+            alert("⚠️ हा जुना ड्राफ्ट आहे. कृपया आधी 'LOAD' वर क्लिक करा आणि मग मेसेज पाठवा.");
+            return;
+        }
+
+        let url = `https://api.whatsapp.com/send?text=${text}`;
+        if (mobile && mobile.length === 10) {
+            url = `https://api.whatsapp.com/send?phone=91${mobile}&text=${text}`;
+        }
+        window.open(url, '_blank');
+        
+        // Optional: Auto mark as sent after opening WhatsApp
+        // markDraftAsSent(index); 
+    }
+
+    function loadEmiDraft(index) {
+        let drafts = JSON.parse(localStorage.getItem('persistent_emi_drafts') || '[]');
+        let d = drafts[index];
+        if (!d) return;
+
+        // Populate data back into the form
+        document.getElementById('msgShopName').value = d.shop || '';
+        document.getElementById('msgAssetCategory').value = d.asset || '';
+        document.getElementById('msgCustName').value = d.name || '';
+        document.getElementById('msgCustMobile').value = d.mobile || '';
+        document.getElementById('msgCustEMI').value = d.emi || '';
+        document.getElementById('msgCustTenure').value = d.tenure || '';
+        document.getElementById('msgLoanDate').value = d.loanDate || '';
+        document.getElementById('msgLang').value = d.lang || 'en';
+
+        calculateDates(); // Recalculate and generate message
+        closeDraftsModal(); // Close drafts window and return to main form
+    }
+
+    function markDraftAsSent(index) {
+        if(confirm("हा ड्राफ्ट लिस्ट मधून कायमचा डिलीट होईल. पुढे जायचे?")) {
+            let drafts = JSON.parse(localStorage.getItem('persistent_emi_drafts') || '[]');
+            drafts.splice(index, 1); 
+            localStorage.setItem('persistent_emi_drafts', JSON.stringify(drafts)); 
+            renderEmiDrafts(); // Updates modal and badge automatically
+        }
     }
 
     /* REST OF CORE PORTAL SCRIPT */
@@ -1269,15 +1511,22 @@
                 return { ...c, products: cp };
             });
             
-            // Local PC var save karne
+            // --- 1. LOCALSTORAGE 100% BACKUP (PC RESTART FIX) ---
+            localStorage.setItem('persistent_queue_backup', JSON.stringify(compactQueue));
+            localStorage.setItem('persistent_active_idx_backup', activeCustomerIndex);
+
+            // --- 2. INDEXEDDB ---
             await saveToDB('persistent_queue', compactQueue);
             await saveToDB('persistent_active_idx', activeCustomerIndex);
             
-            // === AUTO SYNC TO GOOGLE SHEETS ===
-            // Jar user login asel tar background madhye data sheet var pathva
+            // --- 3. GOOGLE CLOUD SYNC (CROSS-DEVICE CORS FIX) ---
             if(loggedInUserEmail) {
                 fetch(APPS_SCRIPT_URL, {
                     method: 'POST',
+                    mode: 'no-cors', // <-- THIS Bypasses Google Apps Script Block
+                    headers: {
+                        'Content-Type': 'text/plain' 
+                    },
                     body: JSON.stringify({
                         email: loggedInUserEmail,
                         queue: compactQueue
@@ -1394,6 +1643,12 @@
             await fetchFromMasterStream();
             
             let savedQ = await getFromDB('persistent_queue');
+            // FIX: Fallback to localStorage if IndexedDB is empty
+            if (!savedQ || savedQ.length === 0) {
+                let lsQ = localStorage.getItem('persistent_queue_backup');
+                if (lsQ) savedQ = JSON.parse(lsQ);
+            }
+
             if (savedQ) {
                 customerQueue = savedQ.map(c => ({
                     ...c,
@@ -1404,9 +1659,16 @@
             }
             
             let savedRecycle = await getFromDB('persistent_recycle');
+            if (!savedRecycle || savedRecycle.length === 0) {
+                let lsRec = localStorage.getItem('persistent_recycle_backup');
+                if (lsRec) savedRecycle = JSON.parse(lsRec);
+            }
             if (savedRecycle) recycleBin = savedRecycle;
 
             let savedIdx = await getFromDB('persistent_active_idx');
+            if (savedIdx === null || savedIdx === undefined) {
+                savedIdx = localStorage.getItem('persistent_active_idx_backup');
+            }
             if (savedIdx !== null && savedIdx !== undefined) activeCustomerIndex = parseInt(savedIdx);
             if(activeCustomerIndex >= customerQueue.length) activeCustomerIndex = -1;
             
@@ -1879,7 +2141,10 @@
     async function uniDelete() { if(selectedQueueIndex !== -1) await removeCustomer(selectedQueueIndex); }
 
     async function removeCustomer(idx) {
-        let c = customerQueue[idx]; recycleBin.push(c); await saveToDB('persistent_recycle', recycleBin);
+        let c = customerQueue[idx]; recycleBin.push(c); 
+        await saveToDB('persistent_recycle', recycleBin);
+        localStorage.setItem('persistent_recycle_backup', JSON.stringify(recycleBin));
+        
         if(activeCustomerIndex === idx) activeCustomerIndex = -1; else if (activeCustomerIndex > idx) activeCustomerIndex--;
         customerQueue.splice(idx, 1);
         if (selectedQueueIndex === idx) selectedQueueIndex = -1; else if (selectedQueueIndex > idx) selectedQueueIndex--;
@@ -1908,13 +2173,19 @@
     async function restoreCustomer(idx) {
         let c = recycleBin.splice(idx, 1)[0]; customerQueue.unshift(c);
         if(activeCustomerIndex !== -1) activeCustomerIndex++; if(selectedQueueIndex !== -1) selectedQueueIndex++;
-        await saveQueueToLocal(); await saveToDB('persistent_recycle', recycleBin); openRecycleBin(); renderCustomerQueue(); updateUniversalActionButtons();
+        await saveQueueToLocal(); 
+        await saveToDB('persistent_recycle', recycleBin); 
+        localStorage.setItem('persistent_recycle_backup', JSON.stringify(recycleBin));
+        openRecycleBin(); renderCustomerQueue(); updateUniversalActionButtons();
     }
 
     async function emptyRecycleBin() {
         if(recycleBin.length === 0) { alert("⚠️ Recycle bin pehle se hi empty hai!"); return; }
         if (confirm("Are you sure you want to permanently delete all items in the Recycle Bin?")) {
-            recycleBin = []; await saveToDB('persistent_recycle', recycleBin); openRecycleBin(); alert("Recycle Bin completely emptied!");
+            recycleBin = []; 
+            await saveToDB('persistent_recycle', recycleBin); 
+            localStorage.setItem('persistent_recycle_backup', JSON.stringify(recycleBin));
+            openRecycleBin(); alert("Recycle Bin completely emptied!");
         }
     }
 
@@ -2917,7 +3188,7 @@
         resultsDiv.innerHTML = matches.map(m => {
             let bitly = m['BitlyLink'] || m['bitlylink'] || '#'; let dId = m['DealerId'] || m['dealerid'] || '-'; let dName = m['Dealer Name'] || m['dealer name'] || 'Unknown Dealer';
             return `
-            <div onclick=\"openBitlyLink('${bitly}')\" style="display:flex; justify-content:space-between; align-items:center; background:#f8f9fa; padding:10px; border-radius:6px; border:1px solid #ddd; cursor:pointer; transition:0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05);\" onmouseover=\"this.style.borderColor='var(--primary)'; this.style.background='#e3f2fd';\" onmouseout=\"this.style.borderColor='#ddd'; this.style.background='#f8f9fa';\">
+            <div onclick="openBitlyLink('${bitly}')" style="display:flex; justify-content:space-between; align-items:center; background:#f8f9fa; padding:10px; border-radius:6px; border:1px solid #ddd; cursor:pointer; transition:0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05);" onmouseover="this.style.borderColor='var(--primary)'; this.style.background='#e3f2fd';" onmouseout="this.style.borderColor='#ddd'; this.style.background='#f8f9fa';">
                 <div><strong style="color:var(--indigo); display:block;">🏪 ${dName}</strong><span style="color:#555; font-weight:bold;">ID: <span style="color:var(--primary);">${dId}</span></span></div>
                 <button style="background:var(--success); color:white; border:none; padding:6px 12px; border-radius:4px; font-weight:bold; cursor:pointer;">OPEN ↗</button>
             </div>`;
