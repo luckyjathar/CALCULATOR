@@ -3110,33 +3110,138 @@
             hasV = true; 
             let invAmt = prod.inputs.inv > 0 ? prod.inputs.inv : prod.inputs.mrp;
             
-            html += `<div style="margin-bottom:25px; border-radius: 10px; overflow: hidden; border: 2px solid #ddd; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
-            <div style="background:#f8f9fa; padding:15px; border-left:8px solid var(--bajaj-green); display:flex; justify-content: space-between; align-items: center;">
-                <h3 style="margin:0; color:var(--bajaj-blue); font-size:22px; font-weight:900;">📱 ${prod.name}</h3>
-                <div style="background: var(--bajaj-blue); color: white; padding: 6px 12px; border-radius: 6px; font-size:18px; font-weight:bold;">INV: ₹${invAmt}</div>
-            </div>
-            <table style="width:100%; border-collapse:collapse; text-align:center; font-weight:900; font-size:18px;">
-                <thead>
-                    <tr style="background:#eaeaea; color:#333; font-size:16px;">
-                        <th style="padding:14px 6px; border:1px solid #ccc;">SCHEME</th>
-                        <th style="padding:14px 6px; border:1px solid #ccc;">DP</th>
-                        <th style="padding:14px 6px; border:1px solid #ccc;">EMI</th>
-                        <th style="padding:14px 6px; border:1px solid #ccc;">M</th>
-                        <th style="padding:14px 6px; border:1px solid #ccc;">DAILY</th>
+            // --- १. ४ सर्वोत्तम स्कीम्स शोधण्याचे स्मार्ट लॉजिक ---
+            let winDp = [...validS].sort((a,b) => a.dp - b.dp)[0];
+            let winEmi = [...validS].sort((a,b) => a.emi - b.emi)[0];
+            let winPop = [...validS].filter(s => s.roi === 0 || s.isFixed).sort((a,b) => a.dp - b.dp)[0] || validS[0];
+            let winBalance = [...validS].sort((a,b) => (a.dp + (a.emi * 2)) - (b.dp + (b.emi * 2)))[0] || validS[0];
+
+            let schemeMap = new Map();
+            validS.forEach(s => schemeMap.set(s.dIdx, { scheme: s, badges: [], badgeColors: [] }));
+
+            // तू सांगितलेले अचूक आणि कॉम्पॅक्ट टॅग्ज जोडणे
+            if (winDp) {
+                let entry = schemeMap.get(winDp.dIdx);
+                entry.badges.push("🟢 सर्वात कमी डाऊन पेमेंट");
+                entry.badgeColors.push("#10b981");
+            }
+            if (winEmi && !schemeMap.get(winEmi.dIdx).badges.includes("🔵 सर्वात छोटा EMI")) {
+                let entry = schemeMap.get(winEmi.dIdx);
+                entry.badges.push("🔵 सर्वात छोटा EMI");
+                entry.badgeColors.push("#3b82f6");
+            }
+            if (winPop && !schemeMap.get(winPop.dIdx).badges.includes("🟡 सर्वात लोकप्रिय स्कीम")) {
+                let entry = schemeMap.get(winPop.dIdx);
+                entry.badges.push("🟡 सर्वात लोकप्रिय स्कीम");
+                entry.badgeColors.push("#f59e0b");
+            }
+            if (winBalance && !schemeMap.get(winBalance.dIdx).badges.includes("🟣 कमी DP + छोटा EMI (बेस्ट बॅलन्स)")) {
+                let entry = schemeMap.get(winBalance.dIdx);
+                entry.badges.push("🟣 कमी DP + छोटा EMI (बेस्ट बॅलन्स)");
+                entry.badgeColors.push("#8b5cf6");
+            }
+
+            let badgedEntries = Array.from(schemeMap.values()).filter(e => e.badges.length > 0);
+            badgedEntries.sort((a, b) => b.badges.length - a.badges.length);
+            let top4Entries = badgedEntries.slice(0, 4);
+
+            let topSchemeIDs = new Set(top4Entries.map(e => e.scheme.dIdx));
+
+            // --- २. ULTRA-COMPACT CARDS (स्लिम आणि सुटसुटीत लेआऊट) ---
+            let cardsHtml = top4Entries.map(item => {
+                let s = item.scheme;
+                
+                // टॅग्जचा फॉन्ट आणि पॅडिंग एकदम स्लिम केले आहे
+                let badgesHtml = item.badges.map((b, idx) => {
+                    let col = item.badgeColors[idx] || "#475569";
+                    let textCol = col === "#f59e0b" ? "#000" : "#fff";
+                    return `<span style="background: ${col}; color: ${textCol}; font-size: 10px; font-weight: 900; padding: 2px 8px; border-radius: 12px; display: inline-block; margin-right: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.08); letter-spacing: 0.2px;">${b}</span>`;
+                }).join('');
+
+                let accentColor = item.badgeColors[0] || "#64748b";
+                let bgTint = accentColor === "#10b981" ? "#f0fdf4" : (accentColor === "#3b82f6" ? "#eff6ff" : (accentColor === "#f59e0b" ? "#fffbeb" : "#f5f3ff"));
+
+                // बॉक्सचे पॅडिंग 12px वरून थेट 6px केले आणि मार्जिन 5px ठेवले आहे
+                return `
+                <div style="background: ${bgTint}; border: 1px solid ${accentColor}40; border-left: 5px solid ${accentColor}; padding: 6px 12px; border-radius: 8px; margin-bottom: 5px; box-shadow: 0 2px 3px rgba(0,0,0,0.03); text-align: left;">
+                    <div style="margin-bottom: 3px; line-height: 1.2;">${badgesHtml}</div>
+                    <table style="width:100%; border-collapse:collapse; font-family:'Segoe UI', sans-serif;">
+                        <tr>
+                            <td style="width:25%; font-size: 17px; font-weight: 950; color: #0f172a; text-align: left; border:none; padding:0;">${s.currentTenure} / ${s.advEmi}</td>
+                            <td style="width:38%; font-size: 16px; font-weight: 900; color: ${accentColor}; text-align: center; border:none; padding:0;">DP: ₹${Math.round(s.dp).toLocaleString()}</td>
+                            <td style="width:37%; font-size: 16px; font-weight: 950; color: #0f172a; text-align: right; border:none; padding:0;">EMI: ₹${Math.round(s.emi).toLocaleString()} <span style="font-size:12px; color:#64748b; font-weight:bold;">(x ${s.inst})</span></td>
+                        </tr>
+                    </table>
+                </div>`;
+            }).join('');
+
+            // --- ३. उरलेल्या स्कीम्सचे टेबल (Table Deduplication) ---
+            let remainingSchemes = validS.filter(d => !topSchemeIDs.has(d.dIdx));
+
+            let tableHtml = "";
+            if (remainingSchemes.length > 0) {
+                let rowsHtml = remainingSchemes.map((d, i) => `
+                    <tr style="background:${i%2==0?'#ffffff':'#f8fafc'}; color:#1e293b; border-bottom: 1px solid #e2e8f0;">
+                        <td style="padding:8px 6px; font-size:16px; font-weight:950; color:#334155;">${d.currentTenure}/${d.advEmi}</td>
+                        <td style="padding:8px 6px; color:#10b981; font-size:16px; font-weight:900;">₹${Math.round(d.dp).toLocaleString()}</td>
+                        <td style="padding:8px 6px; color:#3b82f6; font-size:16px; font-weight:950;">₹${Math.round(d.emi).toLocaleString()}</td>
+                        <td style="padding:8px 6px; font-size:15px; font-weight:bold; color:#64748b;">${d.inst}</td>
+                        <td style="padding:8px 6px; color:#f97316; font-size:15px; font-weight:900;">₹${Math.round(d.daily).toLocaleString()}</td>
                     </tr>
-                </thead>
-                <tbody>`;
+                `).join('');
+
+                tableHtml = `
+                <div style="font-size: 12px; font-weight: 900; color: #64748b; text-align: center; margin: 10px 0 6px 0; text-transform: uppercase; letter-spacing: 0.5px;">
+                    👇 इतर अतिरिक्त उपलब्ध पर्याय (OTHER AVAILABLE SCHEMES):
+                </div>
+                <div style="border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+                    <table style="width:100%; border-collapse:collapse; text-align:center; font-family:'Segoe UI', sans-serif;">
+                        <thead>
+                            <tr style="background:#f1f5f9; color:#475569; font-size:13px; font-weight:900; text-transform:uppercase; letter-spacing:0.5px;">
+                                <th style="padding:8px 6px; border-bottom:2px solid #cbd5e1;">SCHEME</th>
+                                <th style="padding:8px 6px; border-bottom:2px solid #cbd5e1;">DP</th>
+                                <th style="padding:8px 6px; border-bottom:2px solid #cbd5e1;">EMI</th>
+                                <th style="padding:8px 6px; border-bottom:2px solid #cbd5e1;">M</th>
+                                <th style="padding:8px 6px; border-bottom:2px solid #cbd5e1;">DAILY</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rowsHtml}
+                        </tbody>
+                    </table>
+                </div>`;
+            } else {
+                tableHtml = `
+                <div style="background:#f1f5f9; color:#475569; padding:8px; border-radius:6px; text-align:center; font-weight:bold; font-size:12px; margin-top:10px;">
+                    ✨ वरील सर्व शिफारसीत पर्याय या प्रॉडक्टसाठी सर्वोत्तम आहेत!
+                </div>`;
+            }
+
+            // --- ४. मुख्य प्रिमियम कंटेनर (Main Render) ---
+            html += `<div style="margin-bottom:18px; border-radius: 12px; overflow: hidden; border: 1px solid #cbd5e1; box-shadow: 0 6px 15px -3px rgba(0,0,0,0.06); background:#ffffff; font-family:'Segoe UI', sans-serif;">
             
-            validS.forEach((d, i) => { 
-                html += `<tr style="background:${i%2==0?'#ffffff':'#f9f9f9'}; color:#000;">
-                    <td style="padding:14px 6px; border:1px solid #ccc; font-size:19px; color:#333;">${d.currentTenure}/${d.advEmi}</td>
-                    <td style="padding:14px 6px; border:1px solid #ccc; color:var(--bajaj-green); font-size:21px;">₹${Math.round(d.dp).toLocaleString()}</td>
-                    <td style="padding:14px 6px; border:1px solid #ccc; color:var(--bajaj-blue); font-size:21px;">₹${Math.round(d.emi).toLocaleString()}</td>
-                    <td style="padding:14px 6px; border:1px solid #ccc; font-size:19px; color:#333;">${d.inst}</td>
-                    <td style="padding:14px 6px; border:1px solid #ccc; color:#d35400; font-size:21px;">₹${Math.round(d.daily).toLocaleString()}</td>
-                </tr>`; 
-            });
-            html += `</tbody></table></div>`;
+            <!-- प्रिमियम हेडर (स्लिम केले आहे) -->
+            <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding:12px 16px; display:flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #3b82f6;">
+                <div>
+                    <span style="color:#94a3b8; font-size:10px; font-weight:900; text-transform:uppercase; letter-spacing:1px; display:block;">APPROVED PRODUCT</span>
+                    <h3 style="margin:0; color:#ffffff; font-size:20px; font-weight:950; letter-spacing:0.3px;">📱 ${prod.name}</h3>
+                </div>
+                <div style="background: rgba(59, 130, 246, 0.2); border: 1px solid #3b82f6; color: #60a5fa; padding: 6px 12px; border-radius: 6px; font-size:16px; font-weight:950;">
+                    INV: ₹${invAmt.toLocaleString()}
+                </div>
+            </div>
+
+            <!-- 🏆 TOP RECOMMENDED SECTION (Compact Padding) -->
+            <div style="padding: 12px 14px; background: #ffffff;">
+                <div style="font-size: 13px; font-weight: 950; color: #0f172a; text-transform: uppercase; margin-bottom: 8px; text-align: left; letter-spacing: 0.5px; display:flex; align-items:center; gap:6px;">
+                    <span style="font-size:16px;">🏆</span> तुमच्यासाठी निवडलेले सर्वोत्तम पर्याय:
+                </div>
+                
+                ${cardsHtml}
+                ${tableHtml}
+
+            </div>
+            </div>`;
         });
         
         if(!hasV) { alert("⚠️ Eligibility ke anusar is customer ke liye is model mein koi bhi Scheme nahi baith rahi hai (Due to Limit, LTV, or Constraints)!"); return; }
