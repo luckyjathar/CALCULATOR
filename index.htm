@@ -825,7 +825,6 @@
     </div>
 </footer>
 
-
 <script>
 
     /* === ✨ NEW: TOAST NOTIFICATION FUNCTION ✨ === */
@@ -3288,4 +3287,64 @@
         
         if(!hasV) { showToast("⚠️ Eligibility ke anusar is customer ke liye is model mein koi bhi Scheme nahi baith rahi hai!", "error"); return; }
         
-        html += `<div stylemi kevl ek bhaashik model aslyaane, mi yaabaabt madat karu shakat naahi.
+        html += `<div style="text-align:center; margin-top: 15px; color:#aaa; font-size: 14px; font-weight: bold; border-top: 1px dashed #ddd; padding-top: 15px;">Generated securely via Persistent Portal</div>`;
+        quoteDiv.innerHTML = html; document.body.appendChild(quoteDiv);
+        
+        html2canvas(quoteDiv, {scale: 2}).then(canvas => { 
+            let imgDataUrl = canvas.toDataURL("image/png"); document.getElementById('generatedImage').src = imgDataUrl; 
+            document.getElementById('imageViewerModal').style.display = 'flex'; document.body.removeChild(quoteDiv); 
+            
+            if(requestWhatsAppDispatch) {
+                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                if (isMobile) {
+                    let a = document.createElement("a"); a.href = imgDataUrl; let safeName = c?.name !== "-" ? c.name.replace(/\s+/g, '_') : "Customer";
+                    a.download = `Quotation_${safeName}.png`; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                    showToast("✅ Image download ho gayi hai! Ab WhatsApp khulega.", "success");
+                    setTimeout(() => { let mobile = c?.mobile || ""; if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank'); }, 500);
+                } else {
+                    document.getElementById('clipboardStatusAlert').style.display = 'none';
+                    canvas.toBlob(blob => {
+                        try {
+                            navigator.clipboard.write([ new ClipboardItem({ "image/png": blob }) ]).then(() => {
+                                document.getElementById('clipboardStatusAlert').style.display = 'block'; setTimeout(() => { let mobile = c?.mobile || ""; if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank'); }, 500);
+                            }).catch(err => { showToast("📋 Click / Long Press karke Copy Image karein.", "warning"); let mobile = c?.mobile || ""; if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank'); });
+                        } catch (e) { let mobile = c?.mobile || ""; if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank'); }
+                    }, 'image/png');
+                }
+            } else { document.getElementById('clipboardStatusAlert').style.display = 'none'; }
+        });
+    }
+
+    function openDealerSearchModal() {
+        document.getElementById('dealerSearchInput').value = '';
+        document.getElementById('dealerSearchResults').innerHTML = '<div style="text-align:center; color:#888;">Type ID or Name to search...</div>';
+        document.getElementById('dealerSearchModal').style.display = 'flex';
+        setTimeout(() => document.getElementById('dealerSearchInput').focus(), 100);
+    }
+    function closeDealerSearchModal() { document.getElementById('dealerSearchModal').style.display = 'none'; }
+
+    function searchDealer() {
+        let q = document.getElementById('dealerSearchInput').value.toLowerCase().trim(); let resultsDiv = document.getElementById('dealerSearchResults');
+        if (!q) { resultsDiv.innerHTML = '<div style="text-align:center; color:#888;">Type ID or Name to search...</div>'; return; }
+        if (dealer_records.length === 0) { resultsDiv.innerHTML = '<div style="text-align:center; color:var(--danger);">⚠️ Dealer data abhi load nahi hua hai ya sheet missing hai.</div>'; return; }
+
+        let matches = dealer_records.filter(d => { let dId = String(d['DealerId'] || d['dealerid'] || '').toLowerCase(); let dName = String(d['Dealer Name'] || d['dealer name'] || '').toLowerCase(); return dId.includes(q) || dName.includes(q); }).slice(0, 15);
+        if (matches.length === 0) { resultsDiv.innerHTML = '<div style="text-align:center; color:#d35400;">No dealers found.</div>'; return; }
+
+        resultsDiv.innerHTML = matches.map(m => {
+            let bitly = m['BitlyLink'] || m['bitlylink'] || '#'; let dId = m['DealerId'] || m['dealerid'] || '-'; let dName = m['Dealer Name'] || m['dealer name'] || 'Unknown Dealer';
+            return `
+            <div onclick="openBitlyLink('${bitly}')" style="display:flex; justify-content:space-between; align-items:center; background:#f8f9fa; padding:10px; border-radius:6px; border:1px solid #ddd; cursor:pointer; transition:0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05);" onmouseover="this.style.borderColor='var(--primary)'; this.style.background='#e3f2fd';" onmouseout="this.style.borderColor='#ddd'; this.style.background='#f8f9fa';">
+                <div><strong style="color:var(--indigo); display:block;">🏪 ${dName}</strong><span style="color:#555; font-weight:bold;">ID: <span style="color:var(--primary);">${dId}</span></span></div>
+                <button style="background:var(--success); color:white; border:none; padding:6px 12px; border-radius:4px; font-weight:bold; cursor:pointer;">OPEN ↗</button>
+            </div>`;
+        }).join('');
+    }
+
+    function openBitlyLink(url) {
+        if (url && url !== '#' && url.trim() !== '') { if (!url.startsWith('http://') && !url.startsWith('https://')) { url = 'https://' + url; } window.open(url, '_blank'); closeDealerSearchModal(); } else { showToast('⚠️ Is dealer ke liye Bitly link available nahi hai!', 'warning'); }
+    }
+
+</script>
+</body>
+</html>
