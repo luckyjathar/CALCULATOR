@@ -166,10 +166,11 @@
             ⚙️ GITHUB INTERFACE CONNECTED
         </div>
 
-        <!-- Google Sign-In Container -->
+        <!-- Google Sign-In Container (With Auto-Select Feature) -->
         <div id="g_id_onload"
              data-client_id="777001839486-tqii6kb1hjig7qnreme74vjbm9utavvd.apps.googleusercontent.com"
-             data-callback="handleGoogleLogin">
+             data-callback="handleGoogleLogin"
+             data-auto_select="true">
         </div>
         <div class="g_id_signin" 
              data-type="standard" 
@@ -181,7 +182,7 @@
              style="margin-bottom: 10px; width: 100%;">
         </div>
 
-        <!-- NEW: Manual Force Sync Button (Visible after Login) -->
+        <!-- Manual Force Sync Button -->
         <button onclick="forceCloudSync()" class="sidebar-btn" id="syncBtn" style="background: #3498db; color: white; display: none;">
             <span>🔄</span> FORCE CLOUD SYNC
         </button>
@@ -456,7 +457,6 @@
             </div>
             
             <div id="draftsContainer" style="display:flex; flex-direction:column; gap:10px; max-height: 400px; overflow-y:auto; padding-right: 5px;" class="custom-scroll">
-                <!-- Draft items will be shown here -->
             </div>
         </div>
     </div>
@@ -799,75 +799,93 @@
 
 
 <script>
-    /* === GOOGLE SHEETS CLOUD SYNC API === */
+    /* === GOOGLE SHEETS CLOUD SYNC & SILENT AUTO-SYNC API === */
     const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwWt4xbbEYWpSwtOSY1jqGJauljwPWojqfpxL4Bk2aRE8gJMpAzanAmNQ1OGNzKYHZfGg/exec";
-    let loggedInUserEmail = "";
+    let loggedInUserEmail = localStorage.getItem('persistent_user_email') || "";
+    let isSilentSyncing = false;
 
-    /* GOOGLE SIGN-IN HANDLER (WITH AUTO CLOUD FETCH) */
+    /* GOOGLE SIGN-IN HANDLER (WITH AUTO-LOGIN & PERSISTENCE) */
     async function handleGoogleLogin(response) {
-        const base64Url = response.credential.split('.')[1];
-        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-        }).join(''));
-        
-        const userData = JSON.parse(jsonPayload);
-        loggedInUserEmail = userData.email; 
-        console.log("Logged in User: ", userData.name, loggedInUserEmail);
-        
-        let statusBadge = document.getElementById('gitStatusBadge');
-        if(statusBadge) {
-            statusBadge.innerHTML = '🔄 ' + userData.name + ' - SYNCING CLOUD DATA...';
-            statusBadge.style.background = 'rgba(243, 156, 18, 0.15)';
-            statusBadge.style.color = '#f39c12';
-        }
-        
-        document.getElementById('syncBtn').style.display = 'flex';
-
         try {
-            // Google Sheet kadun data ghene
+            const base64Url = response.credential.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            
+            const userData = JSON.parse(jsonPayload);
+            loggedInUserEmail = userData.email; 
+            
+            localStorage.setItem('persistent_user_email', loggedInUserEmail);
+            localStorage.setItem('persistent_user_name', userData.name);
+            
+            console.log("Logged in User: ", userData.name, loggedInUserEmail);
+            updateLoginUI(userData.name, true);
+            
+            await fetchCloudDataOnLogin(userData.name);
+        } catch(e) {
+            console.error("Google Login Parsing Error:", e);
+        }
+        toggleSidebar();
+    }
+
+    /* UI स्टेटस अपडेट करण्यासाठी फंक्शन */
+    function updateLoginUI(userName, isOnline) {
+        let statusBadge = document.getElementById('gitStatusBadge');
+        let syncBtn = document.getElementById('syncBtn');
+        
+        if(syncBtn) syncBtn.style.display = 'flex';
+        
+        if(statusBadge) {
+            if(isOnline) {
+                statusBadge.innerHTML = '🟢 ' + userName.toUpperCase() + ' (CLOUD SYNC ON)';
+                statusBadge.style.background = 'rgba(39, 174, 96, 0.15)';
+                statusBadge.style.color = 'var(--success)';
+            } else {
+                statusBadge.innerHTML = '🔄 ' + userName + ' - SYNCING...';
+                statusBadge.style.background = 'rgba(243, 156, 18, 0.15)';
+                statusBadge.style.color = '#f39c12';
+            }
+        }
+    }
+
+    /* क्लाउडवरून पहिल्यांदा डेटा डाउनलोड करणे */
+    async function fetchCloudDataOnLogin(userName) {
+        try {
             let res = await fetch(APPS_SCRIPT_URL + "?email=" + encodeURIComponent(loggedInUserEmail));
             let cloudData = await res.json();
             
             if(cloudData && cloudData.length > 0) {
                 if(customerQueue.length > 0) {
-                    if(confirm("☁️ Cloud var aadhi pasun data ahe. Tumhala Cloud varun data Download karaycha ahe (OK) ki Local data Cloud var Upload karaycha ahe (Cancel)?")) {
+                    if(confirm("☁️ Cloud वर आधीपासून डेटा आहे. तुम्हाला Cloud वरून डेटा Download करायचा आहे (OK) की Local डेटा Cloud वर Upload करायचा आहे (Cancel)?")) {
                         customerQueue = cloudData;
-                        await saveQueueToLocal();
+                        await saveQueueToLocal(false);
                         activeCustomerIndex = -1;
                         renderCustomerQueue();
                         updateUniversalActionButtons();
-                        alert("✅ Cloud data successfully Downloaded!");
+                        alert("✅ Cloud डेटा यशस्वीरित्या Download झाला!");
                     } else {
-                        await saveQueueToLocal();
-                        alert("✅ Local data Cloud var Upload zala!");
+                        await triggerSilentCloudSync();
+                        alert("✅ Local डेटा Cloud वर Upload झाला!");
                     }
                 } else {
                     customerQueue = cloudData;
-                    await saveQueueToLocal();
+                    await saveQueueToLocal(false);
                     activeCustomerIndex = -1;
                     renderCustomerQueue();
                     updateUniversalActionButtons();
-                    alert("✅ Welcome " + userData.name + "! Cloud Data successfully load zala.");
                 }
             } else {
-                alert("🆕 Welcome " + userData.name + "! Cloud var data nahi. Tumcha Local data Cloud var save hot ahe...");
-                await saveQueueToLocal();
+                await triggerSilentCloudSync();
             }
-
-            if(statusBadge) {
-                statusBadge.innerHTML = '🟢 ' + userData.name + ' (CLOUD SYNC ON)';
-                statusBadge.style.background = 'rgba(39, 174, 96, 0.15)';
-                statusBadge.style.color = 'var(--success)';
-            }
+            updateLoginUI(userName, true);
         } catch(e) {
             console.error("Cloud Fetch Error", e);
-            alert("⚠️ Cloud varun data fetch kartana error aala. Tumcha local offline data vaprat ahot.");
+            alert("⚠️ Cloud वरून डेटा घेताना एरर आला. तुम्ही ऑफलाइन मोडमध्ये काम करू शकता.");
         }
-
-        toggleSidebar();
     }
 
+    /* मॅन्युअल फोर्स सिंक बटण */
     async function forceCloudSync() {
         if(!loggedInUserEmail) {
             alert("⚠️ कृपया आधी Google Sign In करा!");
@@ -877,12 +895,43 @@
         let originalText = btn.innerHTML;
         btn.innerHTML = '<span>⏳</span> SYNCING...';
         
-        await saveQueueToLocal();
+        await triggerSilentCloudSync();
         
         setTimeout(() => {
             btn.innerHTML = '<span>✅</span> SYNC COMPLETE';
             setTimeout(() => { btn.innerHTML = originalText; }, 2000);
-        }, 1500);
+        }, 1200);
+    }
+
+    /* बॅकएंडला पूर्णपणे सायलेंट (कोणताही आवाज किंवा पॉप-अप न करता) सिंक करणारे फंक्शन */
+    async function triggerSilentCloudSync() {
+        if(!loggedInUserEmail || isSilentSyncing) return;
+        
+        try {
+            isSilentSyncing = true;
+            let compactQueue = customerQueue.map(c => {
+                let cp = (c.products || []).map(p => {
+                    let { calculatedData, allSchemes, ...keepProduct } = p;
+                    return keepProduct;
+                });
+                return { ...c, products: cp };
+            });
+
+            await fetch(APPS_SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({
+                    email: loggedInUserEmail,
+                    queue: compactQueue
+                })
+            });
+            console.log("☁️ Silent Cloud Sync Successful for:", loggedInUserEmail);
+        } catch(err) {
+            console.log("⚠️ Silent Cloud Sync Failed in Background:", err);
+        } finally {
+            isSilentSyncing = false;
+        }
     }
 
     /* PDF.js Initialization */
@@ -900,7 +949,7 @@
     function openCustomerMessageModal() {
         document.getElementById('customerMessageGenModal').style.display = 'flex';
         calculateDates();
-        updateDraftBadgeCount(); // Update badge on load
+        updateDraftBadgeCount();
     }
     
     function closeCustomerMessageModal() {
@@ -999,7 +1048,6 @@
         let startMonth = month + 1;
         let startYear = year;
 
-        // CHANGED: Cut-off date is now >= 24
         if (day >= 24) { startMonth = month + 2; }
 
         let startDateObj = new Date(startYear, startMonth, 2);
@@ -1106,7 +1154,6 @@
             return;
         }
 
-        // Create a draft object
         const draftObj = {
             id: Date.now(),
             shop: shop,
@@ -1123,17 +1170,14 @@
             timestamp: new Date().toLocaleString()
         };
 
-        // Get existing drafts from LocalStorage
         let drafts = JSON.parse(localStorage.getItem('persistent_emi_drafts') || '[]');
         drafts.unshift(draftObj); 
         
-        // Save permanently to LocalStorage
         localStorage.setItem('persistent_emi_drafts', JSON.stringify(drafts));
         
-        updateDraftBadgeCount(); // Update badge instantly
+        updateDraftBadgeCount();
         alert("✅ Draft Successfully Saved! (PC रिस्टार्ट केल्यावर सुद्धा हा ड्राफ्ट राहील)");
         
-        // Optional: Clear form after saving
         document.getElementById('msgCustName').value = '';
         document.getElementById('msgCustMobile').value = '';
         document.getElementById('msgCustEMI').value = '';
@@ -1153,8 +1197,6 @@
 
         draftsContainer.innerHTML = drafts.map((d, index) => `
             <div style="background:#f8f9fa; border:1px solid #ccc; border-radius:6px; padding:10px; display:flex; flex-direction:column; gap:8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                
-                <!-- Clickable Header -->
                 <div onclick="toggleDraftDetails(${index})" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none; padding-bottom: 2px;">
                     <strong style="color:var(--bajaj-blue); font-size:14px;">
                         👤 ${d.name} <span style="color:#555;">(${d.mobile || 'No Number'})</span> 
@@ -1163,7 +1205,6 @@
                     <span style="font-size:11px; color:#666;">${d.timestamp}</span>
                 </div>
                 
-                <!-- Hidden Details (Shows on Click) -->
                 <div id="draftDetails_${index}" style="display:none; font-size:12px; color:#444; background:#fff; padding:10px; border-radius:4px; border:1px dashed #aaa; line-height:1.6; margin-top:4px;">
                     🏬 दुकानाचे नाव (Dealer/Shop): <b style="color:var(--indigo);">${d.shop || '-'}</b><br>
                     📱 वस्तूचा प्रकार (Asset): <b style="color:var(--indigo);">${d.asset || '-'}</b><br>
@@ -1172,7 +1213,6 @@
                     📅 पहिला हप्ता सुरू होण्याची तारीख: <b style="color:#d35400;">${d.startDate || '-'}</b><br>
                     📅 शेवटचा हप्ता संपण्याची तारीख: <b style="color:#d35400;">${d.endDate || '-'}</b>
 
-                    <!-- Action Buttons -->
                     <div style="display:flex; gap:6px; margin-top:10px; border-top:1px solid #eee; padding-top:10px;">
                         <button onclick="loadEmiDraft(${index})" style="flex:1; background:var(--indigo); color:white; padding:8px; border-radius:4px; border:none; cursor:pointer; font-weight:bold; font-size: 11px;">✏️ LOAD</button>
                         <button onclick="sendDraftNow(${index})" style="flex:1.2; background:#25D366; color:white; padding:8px; border-radius:4px; border:none; cursor:pointer; font-weight:bold; font-size: 11px;">💬 SEND NOW</button>
@@ -1213,9 +1253,6 @@
             url = `https://api.whatsapp.com/send?phone=91${mobile}&text=${text}`;
         }
         window.open(url, '_blank');
-        
-        // Optional: Auto mark as sent after opening WhatsApp
-        // markDraftAsSent(index); 
     }
 
     function loadEmiDraft(index) {
@@ -1223,7 +1260,6 @@
         let d = drafts[index];
         if (!d) return;
 
-        // Populate data back into the form
         document.getElementById('msgShopName').value = d.shop || '';
         document.getElementById('msgAssetCategory').value = d.asset || '';
         document.getElementById('msgCustName').value = d.name || '';
@@ -1233,8 +1269,8 @@
         document.getElementById('msgLoanDate').value = d.loanDate || '';
         document.getElementById('msgLang').value = d.lang || 'en';
 
-        calculateDates(); // Recalculate and generate message
-        closeDraftsModal(); // Close drafts window and return to main form
+        calculateDates(); 
+        closeDraftsModal(); 
     }
 
     function markDraftAsSent(index) {
@@ -1242,7 +1278,7 @@
             let drafts = JSON.parse(localStorage.getItem('persistent_emi_drafts') || '[]');
             drafts.splice(index, 1); 
             localStorage.setItem('persistent_emi_drafts', JSON.stringify(drafts)); 
-            renderEmiDrafts(); // Updates modal and badge automatically
+            renderEmiDrafts(); 
         }
     }
 
@@ -1362,7 +1398,6 @@
         return 0;
     }
 
-    /* --- NEW FUNCTION: NON TIEUP PF SLAB LOGIC --- */
     function getNonTieupPfValue(category, amount) {
         let cat = String(category || "").toUpperCase().replace(/\s+/g, '').trim();
         let val = parseFloat(amount) || 0;
@@ -1388,7 +1423,6 @@
 
         return null;
     }
-    /* ----------------------------------------------- */
 
     function applyFestivalTheme() {
         const now = new Date(); const month = now.getMonth() + 1; const root = document.documentElement; const banner = document.getElementById('festiveBanner');
@@ -1501,7 +1535,7 @@
         return null;
     }
 
-    async function saveQueueToLocal() {
+    async function saveQueueToLocal(shouldCloudSync = true) {
         try {
             let compactQueue = customerQueue.map(c => {
                 let cp = (c.products || []).map(p => {
@@ -1511,30 +1545,22 @@
                 return { ...c, products: cp };
             });
             
-            // --- 1. LOCALSTORAGE 100% BACKUP (PC RESTART FIX) ---
+            // --- 1. LOCALSTORAGE BACKUP ---
             localStorage.setItem('persistent_queue_backup', JSON.stringify(compactQueue));
             localStorage.setItem('persistent_active_idx_backup', activeCustomerIndex);
 
-            // --- 2. INDEXEDDB ---
+            // --- 2. INDEXEDDB BACKUP ---
             await saveToDB('persistent_queue', compactQueue);
             await saveToDB('persistent_active_idx', activeCustomerIndex);
             
-            // --- 3. GOOGLE CLOUD SYNC (CROSS-DEVICE CORS FIX) ---
-            if(loggedInUserEmail) {
-                fetch(APPS_SCRIPT_URL, {
-                    method: 'POST',
-                    mode: 'no-cors', // <-- THIS Bypasses Google Apps Script Block
-                    headers: {
-                        'Content-Type': 'text/plain' 
-                    },
-                    body: JSON.stringify({
-                        email: loggedInUserEmail,
-                        queue: compactQueue
-                    })
-                }).catch(e => console.log("Background cloud sync failed", e));
+            // --- 3. SILENT CLOUD SYNC (फक्त डेटा बदलल्यावरच ट्रिगर होईल) ---
+            if(shouldCloudSync && loggedInUserEmail) {
+                triggerSilentCloudSync();
             }
 
-        } catch(e) { console.error("Local Save Interrupted", e); }
+        } catch(e) { 
+            console.error("Local Save Interrupted", e); 
+        }
     }
 
     async function fetchFromMasterStream() {
@@ -1625,6 +1651,12 @@
     }
 
     window.onload = async function() {
+        // ऑटो लॉगिन चेक (पुन्हा साइन-इन न करण्यासाठी)
+        if(loggedInUserEmail) {
+            let savedName = localStorage.getItem('persistent_user_name') || "User";
+            updateLoginUI(savedName, true);
+        }
+
         applyFestivalTheme(); 
         generateStackCards(); 
         try {
@@ -1643,7 +1675,6 @@
             await fetchFromMasterStream();
             
             let savedQ = await getFromDB('persistent_queue');
-            // FIX: Fallback to localStorage if IndexedDB is empty
             if (!savedQ || savedQ.length === 0) {
                 let lsQ = localStorage.getItem('persistent_queue_backup');
                 if (lsQ) savedQ = JSON.parse(lsQ);
@@ -2779,7 +2810,6 @@
         customerQueue[activeCustomerIndex].products = current_products; saveQueueToLocal();
     }
 
-    /* --- RECALC MODEL UPDATED WITH NON-TIEUP PF SLABS --- */
     function recalcModel(pIdx) {
         if(!current_products[pIdx]) return;
         let prod = current_products[pIdx], limit = customerQueue[activeCustomerIndex]?.limit || 0, type = customerQueue[activeCustomerIndex]?.type || 'NEW';
@@ -2796,7 +2826,6 @@
             nbfcMaxL = (currentLimit * s.tenure) / (s.tenure - s.advEmi || 1);
             let dbdRate = (s.dbd * 1.18 / 100); let roiRate = s.roi / 1200; let roiRateDP = roiRate * s.advEmi; 
             
-            // --- DYNAMIC NON-TIEUP PF SLAB LOGIC ---
             let dynamicPf = s.pf;
             if (prod.isNonTieup) {
                 let checkAmount = effectivePrice > 0 ? effectivePrice : (currentLimit < 9999999 ? currentLimit : 0);
@@ -2805,7 +2834,6 @@
                     dynamicPf = slabPf;
                 }
             }
-            // ----------------------------------------
 
             if (isFixed) {
                 let maxRemainingEmis = Math.floor(currentLimit / s.fixedEmi); let maxTotalTenure = maxRemainingEmis + s.advEmi; nbfcMaxL = maxTotalTenure * s.fixedEmi; 
@@ -2897,7 +2925,6 @@
 
     function step(pIdx, dIdx, amt) { let el = document.getElementById(`l_${pIdx}_${dIdx}`); el.value = Math.max(0, parseInt(el.value) + amt); manual(pIdx, dIdx); }
 
-    /* --- MANUAL FUNCTION UPDATED WITH NON-TIEUP PF CHECK --- */
     function manual(pIdx, dIdx) {
         let el = document.getElementById(`l_${pIdx}_${dIdx}`), loan = parseFloat(el.value) || 0, prod = current_products[pIdx], d = prod.calculatedData.find(x => x.dIdx === dIdx), inp = prod.inputs, type = customerQueue[activeCustomerIndex]?.type || 'NEW';
         
@@ -2908,7 +2935,6 @@
 
         syncInsurance(pIdx, inputMrp, loan, 'LOAN'); 
         
-        // --- DYNAMIC NON-TIEUP PF CHECK IN MANUAL STEPPING ---
         let appliedPf = d.pf;
         if (prod.isNonTieup) {
             let checkAmount = effectivePrice > 0 ? effectivePrice : loan;
@@ -2918,7 +2944,6 @@
             let pfCell = document.querySelector(`#row_${pIdx}_${dIdx} td:nth-child(3)`);
             if(pfCell) pfCell.innerText = `₹${appliedPf}`;
         }
-        // ------------------------------------------------------
 
         let dbdRate = (d.dbd * 1.18 / 100); let roiRate = d.roi / 1200; let roiRateDP = roiRate * d.advEmi; 
         let dpE = 0; let dpR = 0;
@@ -3110,7 +3135,6 @@
             hasV = true; 
             let invAmt = prod.inputs.inv > 0 ? prod.inputs.inv : prod.inputs.mrp;
             
-            // --- १. ४ सर्वोत्तम स्कीम्स शोधण्याचे स्मार्ट लॉजिक ---
             let winDp = [...validS].sort((a,b) => a.dp - b.dp)[0];
             let winEmi = [...validS].sort((a,b) => a.emi - b.emi)[0];
             let winPop = [...validS].filter(s => s.roi === 0 || s.isFixed).sort((a,b) => a.dp - b.dp)[0] || validS[0];
@@ -3119,7 +3143,6 @@
             let schemeMap = new Map();
             validS.forEach(s => schemeMap.set(s.dIdx, { scheme: s, badges: [], badgeColors: [] }));
 
-            // तू सांगितलेले अचूक आणि कॉम्पॅक्ट टॅग्ज जोडणे
             if (winDp) {
                 let entry = schemeMap.get(winDp.dIdx);
                 entry.badges.push("🟢 सर्वात कमी डाऊन पेमेंट");
@@ -3147,11 +3170,9 @@
 
             let topSchemeIDs = new Set(top4Entries.map(e => e.scheme.dIdx));
 
-            // --- २. ULTRA-COMPACT CARDS (स्लिम आणि सुटसुटीत लेआऊट) ---
             let cardsHtml = top4Entries.map(item => {
                 let s = item.scheme;
                 
-                // टॅग्जचा फॉन्ट आणि पॅडिंग एकदम स्लिम केले आहे
                 let badgesHtml = item.badges.map((b, idx) => {
                     let col = item.badgeColors[idx] || "#475569";
                     let textCol = col === "#f59e0b" ? "#000" : "#fff";
@@ -3161,7 +3182,6 @@
                 let accentColor = item.badgeColors[0] || "#64748b";
                 let bgTint = accentColor === "#10b981" ? "#f0fdf4" : (accentColor === "#3b82f6" ? "#eff6ff" : (accentColor === "#f59e0b" ? "#fffbeb" : "#f5f3ff"));
 
-                // बॉक्सचे पॅडिंग 12px वरून थेट 6px केले आणि मार्जिन 5px ठेवले आहे
                 return `
                 <div style="background: ${bgTint}; border: 1px solid ${accentColor}40; border-left: 5px solid ${accentColor}; padding: 6px 12px; border-radius: 8px; margin-bottom: 5px; box-shadow: 0 2px 3px rgba(0,0,0,0.03); text-align: left;">
                     <div style="margin-bottom: 3px; line-height: 1.2;">${badgesHtml}</div>
@@ -3175,7 +3195,6 @@
                 </div>`;
             }).join('');
 
-            // --- ३. उरलेल्या स्कीम्सचे टेबल (Table Deduplication) ---
             let remainingSchemes = validS.filter(d => !topSchemeIDs.has(d.dIdx));
 
             let tableHtml = "";
@@ -3217,10 +3236,8 @@
                 </div>`;
             }
 
-            // --- ४. मुख्य प्रिमियम कंटेनर (Main Render) ---
             html += `<div style="margin-bottom:18px; border-radius: 12px; overflow: hidden; border: 1px solid #cbd5e1; box-shadow: 0 6px 15px -3px rgba(0,0,0,0.06); background:#ffffff; font-family:'Segoe UI', sans-serif;">
             
-            <!-- प्रिमियम हेडर (स्लिम केले आहे) -->
             <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding:12px 16px; display:flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #3b82f6;">
                 <div>
                     <span style="color:#94a3b8; font-size:10px; font-weight:900; text-transform:uppercase; letter-spacing:1px; display:block;">APPROVED PRODUCT</span>
@@ -3231,7 +3248,6 @@
                 </div>
             </div>
 
-            <!-- 🏆 TOP RECOMMENDED SECTION (Compact Padding) -->
             <div style="padding: 12px 14px; background: #ffffff;">
                 <div style="font-size: 13px; font-weight: 950; color: #0f172a; text-transform: uppercase; margin-bottom: 8px; text-align: left; letter-spacing: 0.5px; display:flex; align-items:center; gap:6px;">
                     <span style="font-size:16px;">🏆</span> तुमच्यासाठी निवडलेले सर्वोत्तम पर्याय:
