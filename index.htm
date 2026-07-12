@@ -139,10 +139,43 @@
         .festive-glow { animation: pulseGlow 2s infinite; border: 1px solid #fff; }
         .festive-banner { text-align: center; font-weight: 900; color: #fff; padding: 6px; border-radius: 4px; margin-bottom: 8px; font-size: 14px; letter-spacing: 0.5px; display: none; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
 
+        /* ==================================
+           ✨ NEW: TOAST NOTIFICATION CSS ✨
+           ================================== */
+        .toast-notification {
+            visibility: hidden;
+            min-width: 280px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 8px;
+            padding: 14px 20px;
+            position: fixed;
+            z-index: 9999;
+            left: 50%;
+            bottom: 20px;
+            transform: translateX(-50%);
+            font-size: 14px;
+            font-weight: bold;
+            box-shadow: 0px 5px 15px rgba(0,0,0,0.3);
+            opacity: 0;
+            transition: opacity 0.3s, bottom 0.3s, visibility 0.3s;
+        }
+        .toast-notification.show {
+            visibility: visible;
+            opacity: 1;
+            bottom: 40px;
+        }
+        .toast-notification.success { background-color: var(--success); color: white; }
+        .toast-notification.error { background-color: var(--danger); color: white; }
+        .toast-notification.warning { background-color: var(--warning); color: #000; }
+        .toast-notification.info { background-color: var(--bajaj-blue); color: white; }
+
         @media (max-width: 768px) {
             .forms-row { flex-direction: column; }
             .form-container { width: 100%; margin-bottom: 8px; flex: none !important; }
             #customerQueueList { max-height: 350px !important; }
+            .toast-notification { width: 90%; min-width: unset; font-size: 13px; }
         }
 
         div[style*="font-size"] { font-size: 13px !important; }
@@ -153,6 +186,9 @@
     </style>
 </head>
 <body>
+
+<!-- ✨ NEW: TOAST HTML CONTAINER ✨ -->
+<div id="toastNotification" class="toast-notification"></div>
 
 <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
 
@@ -166,7 +202,6 @@
             ⚙️ GITHUB INTERFACE CONNECTED
         </div>
 
-        <!-- Google Sign-In Container (With Auto-Select Feature) -->
         <div id="g_id_onload"
              data-client_id="777001839486-tqii6kb1hjig7qnreme74vjbm9utavvd.apps.googleusercontent.com"
              data-callback="handleGoogleLogin"
@@ -182,7 +217,6 @@
              style="margin-bottom: 10px; width: 100%;">
         </div>
 
-        <!-- Manual Force Sync Button -->
         <button onclick="forceCloudSync()" class="sidebar-btn" id="syncBtn" style="background: #3498db; color: white; display: none;">
             <span>🔄</span> FORCE CLOUD SYNC
         </button>
@@ -363,18 +397,13 @@
         </div>
     </div>
 
-    <!-- MAIN SEND EMI DETAILS MODAL -->
     <div id="customerMessageGenModal" class="modal">
         <div class="modal-content" style="max-width: 850px; padding: 20px;">
             <div style="display: flex; align-items: center; border-bottom: 2px solid var(--bajaj-blue); padding-bottom: 8px; margin-bottom: 10px; position: relative;">
-                
-                <!-- TOP LEFT DRAFT BUTTON -->
                 <button onclick="openDraftsModal()" style="background:var(--warning); color:#000; border:none; padding:6px 12px; border-radius:4px; font-weight:bold; cursor:pointer; display:flex; align-items:center; gap:6px; z-index: 10;">
                     📥 DRAFTS <span id="draftBadge" style="background:var(--danger); color:white; border-radius:10px; padding:2px 6px; font-size:11px; line-height:1; min-width:12px; text-align:center;">0</span>
                 </button>
-                
                 <h3 style="margin:0; color:var(--bajaj-blue); text-align:center; flex:1; position: absolute; width: 100%; left: 0; pointer-events: none;">💬 Send EMI Details</h3>
-                
                 <button onclick="closeCustomerMessageModal()" style="background:none; border:none; color:var(--danger); font-weight:bold; cursor:pointer; font-size:18px; margin-left: auto; z-index: 10;">✖</button>
             </div>
 
@@ -448,7 +477,6 @@
         </div>
     </div>
 
-    <!-- SEPARATE DRAFTS MODAL -->
     <div id="draftsModal" class="modal">
         <div class="modal-content" style="max-width: 500px; padding: 20px;">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--warning); padding-bottom: 8px; margin-bottom: 15px;">
@@ -799,12 +827,25 @@
 
 
 <script>
+
+    /* === ✨ NEW: TOAST NOTIFICATION FUNCTION ✨ === */
+    let toastTimeout;
+    function showToast(message, type = 'success') {
+        const toast = document.getElementById("toastNotification");
+        toast.className = "toast-notification show " + type;
+        toast.innerText = message;
+        
+        clearTimeout(toastTimeout);
+        toastTimeout = setTimeout(function(){ 
+            toast.className = "toast-notification"; 
+        }, 3000);
+    }
+
     /* === GOOGLE SHEETS CLOUD SYNC & SILENT AUTO-SYNC API === */
     const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwWt4xbbEYWpSwtOSY1jqGJauljwPWojqfpxL4Bk2aRE8gJMpAzanAmNQ1OGNzKYHZfGg/exec";
     let loggedInUserEmail = localStorage.getItem('persistent_user_email') || "";
     let isSilentSyncing = false;
 
-    /* GOOGLE SIGN-IN HANDLER (WITH AUTO-LOGIN & PERSISTENCE) */
     async function handleGoogleLogin(response) {
         try {
             const base64Url = response.credential.split('.')[1];
@@ -829,7 +870,6 @@
         toggleSidebar();
     }
 
-    /* UI स्टेटस अपडेट करण्यासाठी फंक्शन */
     function updateLoginUI(userName, isOnline) {
         let statusBadge = document.getElementById('gitStatusBadge');
         let syncBtn = document.getElementById('syncBtn');
@@ -849,7 +889,6 @@
         }
     }
 
-    /* क्लाउडवरून पहिल्यांदा डेटा डाउनलोड करणे */
     async function fetchCloudDataOnLogin(userName) {
         try {
             let res = await fetch(APPS_SCRIPT_URL + "?email=" + encodeURIComponent(loggedInUserEmail));
@@ -863,10 +902,10 @@
                         activeCustomerIndex = -1;
                         renderCustomerQueue();
                         updateUniversalActionButtons();
-                        alert("✅ Cloud डेटा यशस्वीरित्या Download झाला!");
+                        showToast("✅ Cloud डेटा यशस्वीरित्या Download झाला!", "success");
                     } else {
                         await triggerSilentCloudSync();
-                        alert("✅ Local डेटा Cloud वर Upload झाला!");
+                        showToast("✅ Local डेटा Cloud वर Upload झाला!", "success");
                     }
                 } else {
                     customerQueue = cloudData;
@@ -881,14 +920,13 @@
             updateLoginUI(userName, true);
         } catch(e) {
             console.error("Cloud Fetch Error", e);
-            alert("⚠️ Cloud वरून डेटा घेताना एरर आला. तुम्ही ऑफलाइन मोडमध्ये काम करू शकता.");
+            showToast("⚠️ Cloud वरून डेटा घेताना एरर आला. तुम्ही ऑफलाइन मोडमध्ये काम करू शकता.", "warning");
         }
     }
 
-    /* मॅन्युअल फोर्स सिंक बटण */
     async function forceCloudSync() {
         if(!loggedInUserEmail) {
-            alert("⚠️ कृपया आधी Google Sign In करा!");
+            showToast("⚠️ कृपया आधी Google Sign In करा!", "error");
             return;
         }
         let btn = document.getElementById('syncBtn');
@@ -903,7 +941,6 @@
         }, 1200);
     }
 
-    /* बॅकएंडला पूर्णपणे सायलेंट (कोणताही आवाज किंवा पॉप-अप न करता) सिंक करणारे फंक्शन */
     async function triggerSilentCloudSync() {
         if(!loggedInUserEmail || isSilentSyncing) return;
         
@@ -937,7 +974,6 @@
     /* PDF.js Initialization */
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-    /* SIDEBAR CONTROLLER */
     function toggleSidebar() {
         const sidebar = document.getElementById('appSidebar');
         const overlay = document.getElementById('sidebarOverlay');
@@ -945,7 +981,6 @@
         overlay.classList.toggle('show');
     }
 
-    /* CUSTOMER MESSAGE GENERATOR FUNCTIONS (PDF TO WHATSAPP) */
     function openCustomerMessageModal() {
         document.getElementById('customerMessageGenModal').style.display = 'flex';
         calculateDates();
@@ -1101,7 +1136,7 @@
         const textarea = document.getElementById('finalMessage');
         textarea.select();
         document.execCommand('copy');
-        alert('Message copied to clipboard! You can paste it directly into WhatsApp.');
+        showToast('📋 Message copied to clipboard!', 'success');
     }
 
     function sendMsgWhatsApp() {
@@ -1113,10 +1148,6 @@
         }
         window.open(url, '_blank');
     }
-
-    // ==========================================
-    // EMI MESSAGE DRAFT SYSTEM (PERSISTENT & ACCORDION)
-    // ==========================================
 
     function updateDraftBadgeCount() {
         let drafts = JSON.parse(localStorage.getItem('persistent_emi_drafts') || '[]');
@@ -1150,7 +1181,7 @@
         const endDate = document.getElementById('msgEndDate').value;
         
         if (!name) {
-            alert("⚠️ कृपया कस्टमरचे नाव (Name) एंटर करा!");
+            showToast("⚠️ कृपया कस्टमरचे नाव (Name) एंटर करा!", "error");
             return;
         }
 
@@ -1176,7 +1207,7 @@
         localStorage.setItem('persistent_emi_drafts', JSON.stringify(drafts));
         
         updateDraftBadgeCount();
-        alert("✅ Draft Successfully Saved! (PC रिस्टार्ट केल्यावर सुद्धा हा ड्राफ्ट राहील)");
+        showToast("✅ Draft Successfully Saved! (PC रिस्टार्ट केल्यावर सुद्धा हा ड्राफ्ट राहील)", "success");
         
         document.getElementById('msgCustName').value = '';
         document.getElementById('msgCustMobile').value = '';
@@ -1244,7 +1275,7 @@
         let text = encodeURIComponent(d.finalMessage || ''); 
         
         if(!text) {
-            alert("⚠️ हा जुना ड्राफ्ट आहे. कृपया आधी 'LOAD' वर क्लिक करा आणि मग मेसेज पाठवा.");
+            showToast("⚠️ हा जुना ड्राफ्ट आहे. कृपया आधी 'LOAD' वर क्लिक करा आणि मग मेसेज पाठवा.", "warning");
             return;
         }
 
@@ -1282,7 +1313,6 @@
         }
     }
 
-    /* REST OF CORE PORTAL SCRIPT */
     window.isFestiveMode = false;
     let currentModalCategory = ""; 
 
@@ -1545,15 +1575,12 @@
                 return { ...c, products: cp };
             });
             
-            // --- 1. LOCALSTORAGE BACKUP ---
             localStorage.setItem('persistent_queue_backup', JSON.stringify(compactQueue));
             localStorage.setItem('persistent_active_idx_backup', activeCustomerIndex);
 
-            // --- 2. INDEXEDDB BACKUP ---
             await saveToDB('persistent_queue', compactQueue);
             await saveToDB('persistent_active_idx', activeCustomerIndex);
             
-            // --- 3. SILENT CLOUD SYNC (फक्त डेटा बदलल्यावरच ट्रिगर होईल) ---
             if(shouldCloudSync && loggedInUserEmail) {
                 triggerSilentCloudSync();
             }
@@ -1651,7 +1678,6 @@
     }
 
     window.onload = async function() {
-        // ऑटो लॉगिन चेक (पुन्हा साइन-इन न करण्यासाठी)
         if(loggedInUserEmail) {
             let savedName = localStorage.getItem('persistent_user_name') || "User";
             updateLoginUI(savedName, true);
@@ -1761,10 +1787,10 @@
         let sName = document.getElementById('fgSalesName').value.trim(); let sMob = document.getElementById('fgSalesMobile').value.trim();
         let oType = document.getElementById('fgOfferType').value; let oVal = document.getElementById('fgOfferValue').value.trim();
 
-        if(!sName || !sMob || sMob.length !== 10) { alert("⚠️ Kripya Salesman Name aur 10-Digit Mobile Number barabar dalein!"); return; }
-        if(!tempFgDealerId) { alert("⚠️ Kadak Niyam: Dealer Shop select karna Compulsory hai!"); return; }
-        if(!tempFgBitly) { alert("⚠️ Is Dealer ki Bitly Link master data mein nahi mili! Kripya apni Excel file check karein."); return; }
-        if(oType !== "NONE" && !oVal) { alert("⚠️ Agar Offer select ki hai toh Amount ya Gift ka naam dalein!"); return; }
+        if(!sName || !sMob || sMob.length !== 10) { showToast("⚠️ Kripya Salesman Name aur 10-Digit Mobile Number barabar dalein!", "error"); return; }
+        if(!tempFgDealerId) { showToast("⚠️ Kadak Niyam: Dealer Shop select karna Compulsory hai!", "error"); return; }
+        if(!tempFgBitly) { showToast("⚠️ Is Dealer ki Bitly Link master data mein nahi mili! Kripya apni Excel file check karein.", "error"); return; }
+        if(oType !== "NONE" && !oVal) { showToast("⚠️ Agar Offer select ki hai toh Amount ya Gift ka naam dalein!", "error"); return; }
 
         let baseUrl = window.location.href.split('?')[0];
         baseUrl = baseUrl.replace(/index\.html?$/i, '');
@@ -1781,13 +1807,13 @@
 
     function copyFlyerLink() {
         let copyText = document.getElementById('fgGeneratedLinkText'); copyText.select(); copyText.setSelectionRange(0, 99999); document.execCommand("copy");
-        alert("✅ Link Copied! Aap yeh link Customer ko WhatsApp par bhej sakte hain.");
+        showToast("✅ Link Copied! Aap yeh link Customer ko WhatsApp par bhej sakte hain.", "success");
     }
 
     function shareOnWhatsAppStatus() {
         let generatedLink = document.getElementById('fgGeneratedLinkText').value;
         if (!generatedLink) {
-            alert("⚠️ Pehle link generate karein!");
+            showToast("⚠️ Pehle link generate karein!", "error");
             return;
         }
 
@@ -1800,7 +1826,7 @@
 
     function openDictionaryModal() {
         if(!db_records || db_records.length === 0) {
-            alert("⚠️ Schemes Dictionary background se load ho rahi hai, kripya 2 second wait karein...");
+            showToast("⚠️ Schemes Dictionary background se load ho rahi hai, kripya 2 second wait karein...", "warning");
             return;
         }
         document.getElementById('globalModelSearch').value = '';
@@ -2037,7 +2063,7 @@
         let type = document.getElementById('cqType').value;
         let cap = parseFloat(document.getElementById('cqCap').value) || "";
 
-        if(!limit || limit <= 0) { alert("⚠️ Customer add karne ke liye pehle ek valid NBFC LIMIT enter karein!"); return; }
+        if(!limit || limit <= 0) { showToast("⚠️ Customer add karne ke liye pehle ek valid NBFC LIMIT enter karein!", "error"); return; }
 
         let now = new Date();
         let ts = now.toLocaleDateString('en-GB', {day:'2-digit', month:'short'}) + ' ' + now.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
@@ -2126,7 +2152,7 @@
         if(selectedQueueIndex === -1) return;
         let c = customerQueue[selectedQueueIndex];
         if(!c.mobile || c.mobile.length < 10) {
-            alert("⚠️ Kripya pehle Customer ka valid 10 digit mobile number update karein!");
+            showToast("⚠️ Kripya pehle Customer ka valid 10 digit mobile number update karein!", "error");
             return;
         }
         document.getElementById('invSenderName').value = localStorage.getItem('portal_sales_name') || "";
@@ -2139,7 +2165,7 @@
         let sMobile = document.getElementById('invSenderMobile').value.trim();
         
         if(!sName || !sMobile) {
-            alert("⚠️ Kripya apna Naam aur Number dalein!");
+            showToast("⚠️ Kripya apna Naam aur Number dalein!", "error");
             return;
         }
 
@@ -2211,12 +2237,12 @@
     }
 
     async function emptyRecycleBin() {
-        if(recycleBin.length === 0) { alert("⚠️ Recycle bin pehle se hi empty hai!"); return; }
+        if(recycleBin.length === 0) { showToast("⚠️ Recycle bin pehle se hi empty hai!", "warning"); return; }
         if (confirm("Are you sure you want to permanently delete all items in the Recycle Bin?")) {
             recycleBin = []; 
             await saveToDB('persistent_recycle', recycleBin); 
             localStorage.setItem('persistent_recycle_backup', JSON.stringify(recycleBin));
-            openRecycleBin(); alert("Recycle Bin completely emptied!");
+            openRecycleBin(); showToast("🗑️ Recycle Bin completely emptied!", "success");
         }
     }
 
@@ -2253,12 +2279,12 @@
     }
 
     async function setActiveCustomer(idx) { 
-        if(db_records.length === 0) { alert('⚠️ Master Stream se data fetch nahi hua hai. Kripya apna internet connection check karein!'); return; }
+        if(db_records.length === 0) { showToast("⚠️ Master Stream se data fetch nahi hua hai. Kripya apna internet connection check karein!", "error"); return; }
         activeCustomerIndex = idx; await saveQueueToLocal(); document.getElementById('queueSearch').value = ''; goToFinalPage();
     }
     
     function isLimitValid() {
-        if (activeCustomerIndex === -1 || !customerQueue[activeCustomerIndex]) { alert("⚠️ Kripya pehle queue mein ek customer add karein aur use 'ACTIVE' rakhein."); return false; }
+        if (activeCustomerIndex === -1 || !customerQueue[activeCustomerIndex]) { showToast("⚠️ Kripya pehle queue mein ek customer add karein aur use 'ACTIVE' rakhein.", "warning"); return false; }
         return true;
     }
 
@@ -2354,7 +2380,7 @@
 
     async function processMultiStack() {
         let modelName = document.getElementById('multiStackModelName').value.trim().toUpperCase();
-        if (!modelName) return alert("⚠️ Kripya Product Model Name zaroor enter karein!");
+        if (!modelName) { showToast("⚠️ Kripya Product Model Name zaroor enter karein!", "error"); return; }
         let validSchemes = [];
         for(let i=1; i<=10; i++) {
             let ten = parseInt(document.getElementById(`msTen_${i}`).value) || 0; let fix = parseInt(document.getElementById(`msFix_${i}`).value) || 0;
@@ -2373,7 +2399,7 @@
             sortConfigs.push({ key: 'dp', dir: 'asc' }); 
             customerQueue[activeCustomerIndex].products = current_products; customerQueue[activeCustomerIndex].sortConfigs = sortConfigs;
             await saveQueueToLocal(); closeMultiStackModal(); renderMatrix(); 
-        } else { alert("⚠️ Kripya kam se kam ek Scheme ki details zaroor fill karein!"); }
+        } else { showToast("⚠️ Kripya kam se kam ek Scheme ki details zaroor fill karein!", "error"); }
     }
 
     function findValLocal(row, targets) { let key = Object.keys(row).find(k => targets.includes(k.toUpperCase().replace(/\s/g, ''))); return key ? row[key] : null; }
@@ -2496,7 +2522,7 @@
     }
 
     function quickNonTieup() { 
-        if (!isLimitValid()) return; if(db_records.length === 0) return alert("⚠️ Master database fetch me error hai!");
+        if (!isLimitValid()) return; if(db_records.length === 0) { showToast("⚠️ Master database fetch me error hai!", "error"); return; }
         document.getElementById('addProductModal').style.display = 'none'; 
         let tieup = db_records.filter(r => r.model === SPECIAL_MODEL); let cats = [...new Set(tieup.map(r => r.category))].sort(); 
         document.getElementById('categoryGrid').innerHTML = cats.map(c => {
@@ -3064,7 +3090,7 @@
     }
     
     function openQuoteSelectionModal() {
-        if(current_products.length === 0) return alert("⚠️ Kripya pehle matrix mein koi product add karein!");
+        if(current_products.length === 0) { showToast("⚠️ Kripya pehle matrix mein koi product add karein!", "warning"); return; }
         let html = current_products.map((p, idx) => `
             <div style="display:flex; align-items:center; gap:8px; padding:8px; background:#f8f9fa; border:1px solid #ddd; border-radius:4px;">
                 <input type="checkbox" id="qchk_${idx}" class="quote-model-chk" value="${idx}" style="width:16px; height:16px; cursor:pointer;">
@@ -3077,7 +3103,7 @@
 
     function promptForSelectedImageGeneration() {
         let chks = document.querySelectorAll('.quote-model-chk:checked');
-        if(chks.length === 0) return alert("⚠️ Kripya image generate karne ke liye kam se kam ek model select karein!");
+        if(chks.length === 0) { showToast("⚠️ Kripya image generate karne ke liye kam se kam ek model select karein!", "warning"); return; }
         window.tempImageGenIndices = Array.from(chks).map(c => parseInt(c.value));
         document.getElementById('quoteSelectionModal').style.display = 'none';
         requestWhatsAppDispatch = false;
@@ -3260,66 +3286,6 @@
             </div>`;
         });
         
-        if(!hasV) { alert("⚠️ Eligibility ke anusar is customer ke liye is model mein koi bhi Scheme nahi baith rahi hai (Due to Limit, LTV, or Constraints)!"); return; }
+        if(!hasV) { showToast("⚠️ Eligibility ke anusar is customer ke liye is model mein koi bhi Scheme nahi baith rahi hai!", "error"); return; }
         
-        html += `<div style="text-align:center; margin-top: 15px; color:#aaa; font-size: 14px; font-weight: bold; border-top: 1px dashed #ddd; padding-top: 15px;">Generated securely via Persistent Portal</div>`;
-        quoteDiv.innerHTML = html; document.body.appendChild(quoteDiv);
-        
-        html2canvas(quoteDiv, {scale: 2}).then(canvas => { 
-            let imgDataUrl = canvas.toDataURL("image/png"); document.getElementById('generatedImage').src = imgDataUrl; 
-            document.getElementById('imageViewerModal').style.display = 'flex'; document.body.removeChild(quoteDiv); 
-            
-            if(requestWhatsAppDispatch) {
-                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-                if (isMobile) {
-                    let a = document.createElement("a"); a.href = imgDataUrl; let safeName = c?.name !== "-" ? c.name.replace(/\s+/g, '_') : "Customer";
-                    a.download = `Quotation_${safeName}.png`; document.body.appendChild(a); a.click(); document.body.removeChild(a);
-                    alert("✅ Image download ho gayi hai! Ab WhatsApp khulega, waha image attach karke bhejein.");
-                    setTimeout(() => { let mobile = c?.mobile || ""; if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank'); }, 500);
-                } else {
-                    document.getElementById('clipboardStatusAlert').style.display = 'none';
-                    canvas.toBlob(blob => {
-                        try {
-                            navigator.clipboard.write([ new ClipboardItem({ "image/png": blob }) ]).then(() => {
-                                document.getElementById('clipboardStatusAlert').style.display = 'block'; setTimeout(() => { let mobile = c?.mobile || ""; if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank'); }, 500);
-                            }).catch(err => { alert("📋 Click / Long Press karke Copy Image karein."); let mobile = c?.mobile || ""; if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank'); });
-                        } catch (e) { let mobile = c?.mobile || ""; if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank'); }
-                    }, 'image/png');
-                }
-            } else { document.getElementById('clipboardStatusAlert').style.display = 'none'; }
-        });
-    }
-
-    function openDealerSearchModal() {
-        document.getElementById('dealerSearchInput').value = '';
-        document.getElementById('dealerSearchResults').innerHTML = '<div style="text-align:center; color:#888;">Type ID or Name to search...</div>';
-        document.getElementById('dealerSearchModal').style.display = 'flex';
-        setTimeout(() => document.getElementById('dealerSearchInput').focus(), 100);
-    }
-    function closeDealerSearchModal() { document.getElementById('dealerSearchModal').style.display = 'none'; }
-
-    function searchDealer() {
-        let q = document.getElementById('dealerSearchInput').value.toLowerCase().trim(); let resultsDiv = document.getElementById('dealerSearchResults');
-        if (!q) { resultsDiv.innerHTML = '<div style="text-align:center; color:#888;">Type ID or Name to search...</div>'; return; }
-        if (dealer_records.length === 0) { resultsDiv.innerHTML = '<div style="text-align:center; color:var(--danger);">⚠️ Dealer data abhi load nahi hua hai ya sheet missing hai.</div>'; return; }
-
-        let matches = dealer_records.filter(d => { let dId = String(d['DealerId'] || d['dealerid'] || '').toLowerCase(); let dName = String(d['Dealer Name'] || d['dealer name'] || '').toLowerCase(); return dId.includes(q) || dName.includes(q); }).slice(0, 15);
-        if (matches.length === 0) { resultsDiv.innerHTML = '<div style="text-align:center; color:#d35400;">No dealers found.</div>'; return; }
-
-        resultsDiv.innerHTML = matches.map(m => {
-            let bitly = m['BitlyLink'] || m['bitlylink'] || '#'; let dId = m['DealerId'] || m['dealerid'] || '-'; let dName = m['Dealer Name'] || m['dealer name'] || 'Unknown Dealer';
-            return `
-            <div onclick="openBitlyLink('${bitly}')" style="display:flex; justify-content:space-between; align-items:center; background:#f8f9fa; padding:10px; border-radius:6px; border:1px solid #ddd; cursor:pointer; transition:0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05);" onmouseover="this.style.borderColor='var(--primary)'; this.style.background='#e3f2fd';" onmouseout="this.style.borderColor='#ddd'; this.style.background='#f8f9fa';">
-                <div><strong style="color:var(--indigo); display:block;">🏪 ${dName}</strong><span style="color:#555; font-weight:bold;">ID: <span style="color:var(--primary);">${dId}</span></span></div>
-                <button style="background:var(--success); color:white; border:none; padding:6px 12px; border-radius:4px; font-weight:bold; cursor:pointer;">OPEN ↗</button>
-            </div>`;
-        }).join('');
-    }
-
-    function openBitlyLink(url) {
-        if (url && url !== '#' && url.trim() !== '') { if (!url.startsWith('http://') && !url.startsWith('https://')) { url = 'https://' + url; } window.open(url, '_blank'); closeDealerSearchModal(); } else { alert('⚠️ Is dealer ke liye Bitly link available nahi hai!'); }
-    }
-
-</script>
-</body>
-</html>
+        html += `<div stylemi kevl ek bhaashik model aslyaane, mi yaabaabt madat karu shakat naahi.
