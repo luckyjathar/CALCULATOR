@@ -449,6 +449,7 @@
         </div>
     </div>
 
+    <!-- GLOBAL SCHEME VIEWER MODAL (WITH UPDATED EXPORT BUTTONS) -->
     <div id="globalSchemeViewerModal" class="modal">
         <div class="modal-content" style="max-width:650px; width:95%; max-height:85vh; display:flex; flex-direction:column;">
             <h3 id="globalViewerTitle" style="margin-top:0; color:var(--bajaj-blue); border-bottom:2px solid #ccc; padding-bottom:6px;">Model Schemes</h3>
@@ -460,7 +461,11 @@
                     <tbody id="globalViewerBody"></tbody>
                 </table>
             </div>
-            <button onclick="document.getElementById('globalSchemeViewerModal').style.display='none'" style="width:100%; background:var(--danger); color:white; padding:10px;">CLOSE</button>
+            <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+                <button onclick="exportSchemeImage('copy')" style="flex:1; background:var(--primary); color:white; padding:10px; font-size:13px !important; box-shadow: 0 2px 4px rgba(0,0,0,0.15);">📋 COPY IMAGE</button>
+                <button onclick="exportSchemeImage('download')" style="flex:1; background:var(--success); color:white; padding:10px; font-size:13px !important; box-shadow: 0 2px 4px rgba(0,0,0,0.15);">⬇️ DOWNLOAD</button>
+                <button onclick="document.getElementById('globalSchemeViewerModal').style.display='none'" style="flex:0.6; background:var(--danger); color:white; padding:10px; font-size:13px !important;">✖ CLOSE</button>
+            </div>
         </div>
     </div>
 
@@ -1353,6 +1358,101 @@
     }
 
     function openBitlyLink(url) { if (url && url !== '#' && url.trim() !== '') { if (!url.startsWith('http://') && !url.startsWith('https://')) { url = 'https://' + url; } window.open(url, '_blank'); closeDealerSearchModal(); } else { showToast('⚠️ Is dealer ke liye Bitly link available nahi hai!', 'warning'); } }
+
+    /* === SCHEME DICTIONARY IMAGE EXPORT FUNCTION (WITHOUT BRANDING) === */
+    function exportSchemeImage(action) {
+        let modelTitleText = document.getElementById('globalViewerTitle').innerText || "Model Schemes";
+        let cleanTitle = modelTitleText.replace(/^📱\s*Model:\s*/i, '').trim();
+        let tableHtml = document.querySelector('#globalSchemeViewerModal table').outerHTML;
+        
+        let exportDiv = document.createElement('div');
+        exportDiv.style.width = "680px";
+        exportDiv.style.padding = "20px";
+        exportDiv.style.background = "#ffffff";
+        exportDiv.style.position = "absolute";
+        exportDiv.style.top = "-9999px";
+        exportDiv.style.left = "-9999px";
+        exportDiv.style.fontFamily = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+        
+        exportDiv.innerHTML = `
+            <div style="border: 2px solid var(--indigo, #2C3E50); border-radius: 10px; padding: 16px; background: #fff; box-shadow: 0 4px 15px rgba(0,0,0,0.08);">
+                <div style="background: var(--indigo, #2C3E50); color: white; padding: 12px 16px; border-radius: 6px; margin-bottom: 14px; text-align: center;">
+                    <h3 style="margin:0; font-size: 17px; font-weight: 900; letter-spacing: 0.5px; color: #ffffff;">📱 ${cleanTitle}</h3>
+                </div>
+                <div style="overflow: hidden; border-radius: 6px; border: 1px solid #cbd5e1;">
+                    ${tableHtml}
+                </div>
+                <div style="text-align:center; margin-top: 12px; color:#64748b; font-size: 11px; font-weight: bold; border-top: 1px dashed #cbd5e1; padding-top: 10px;">
+                    🚀 Generated via Persistent Portal
+                </div>
+            </div>
+        `;
+        
+        let clonedTable = exportDiv.querySelector('table');
+        clonedTable.style.width = "100%";
+        clonedTable.style.borderCollapse = "collapse";
+        clonedTable.style.fontSize = "13px";
+        clonedTable.style.background = "#ffffff";
+        
+        exportDiv.querySelectorAll('th').forEach(th => {
+            th.style.background = "#f8f9fa";
+            th.style.color = "#2C3E50";
+            th.style.padding = "10px 6px";
+            th.style.borderBottom = "2px solid #cbd5e1";
+            th.style.borderRight = "1px solid #e2e8f0";
+            th.style.fontWeight = "900";
+            th.style.textAlign = "center";
+        });
+        
+        exportDiv.querySelectorAll('td').forEach((td, idx) => {
+            td.style.padding = "8px 6px";
+            td.style.borderBottom = "1px solid #e2e8f0";
+            td.style.borderRight = "1px solid #f1f5f9";
+            td.style.textAlign = "center";
+            td.style.color = "#1e293b";
+            td.style.fontWeight = "700";
+        });
+
+        document.body.appendChild(exportDiv);
+        showToast("⏳ Image तयार होत आहे, कृपया १ सेकंद थांबा...", "info");
+
+        html2canvas(exportDiv, { scale: 2, useCORS: true, backgroundColor: "#ffffff" }).then(canvas => {
+            if (document.body.contains(exportDiv)) document.body.removeChild(exportDiv);
+            
+            if (action === 'download') {
+                let a = document.createElement('a');
+                a.href = canvas.toDataURL("image/png");
+                let safeName = cleanTitle.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 25);
+                a.download = `Schemes_${safeName}.png`;
+                a.click();
+                showToast("✅ Image यशस्वीरित्या डाऊनलोड झाली!", "success");
+            } else if (action === 'copy') {
+                canvas.toBlob(blob => {
+                    try {
+                        navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]).then(() => {
+                            showToast("📋 Image क्लिपबोर्डवर कॉपी झाली! आता WhatsApp वर थेट Paste करा.", "success");
+                        }).catch(err => {
+                            fallbackSchemeDownload(canvas, cleanTitle);
+                        });
+                    } catch (e) {
+                        fallbackSchemeDownload(canvas, cleanTitle);
+                    }
+                }, 'image/png');
+            }
+        }).catch(err => {
+            if (document.body.contains(exportDiv)) document.body.removeChild(exportDiv);
+            showToast("⚠️ Image तयार करताना एरर आला!", "error");
+        });
+    }
+
+    function fallbackSchemeDownload(canvas, title) {
+        let a = document.createElement('a');
+        a.href = canvas.toDataURL("image/png");
+        let safeName = title.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 25);
+        a.download = `Schemes_${safeName}.png`;
+        a.click();
+        showToast("⚠️ Browser Auto-copy सपोर्ट करत नाही. इमेज थेट डाऊनलोड झाली आहे!", "warning");
+    }
 
 </script>
 </body>
