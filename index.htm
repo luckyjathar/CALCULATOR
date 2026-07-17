@@ -233,7 +233,7 @@
                 <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:6px; margin-bottom:12px; background: #f8f9fa; padding: 10px; border-radius: 6px; border: 1px solid #eee;">
                     <div style="grid-column: span 3; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom:4px;">
                         <div><label style="color:var(--primary);">INVOICE AMOUNT / MRP (₹)</label><input type="number" id="fcInv" placeholder="Enter Amount" style="border-color:var(--primary);" oninput="fcInvChanged();"></div>
-                        <div><label style="color:var(--primary);">LOAN AMOUNT (₹)</label><input type="number" id="fcLoanInput" placeholder="Optional Custom Loan" style="border-color:var(--primary);" oninput="calculateFastData();"></div>
+                        <div><label style="color:var(--primary);">LOAN AMOUNT (₹)</label><input type="number" id="fcLoanInput" placeholder="Loan Amount (Default 100%)" style="border-color:var(--primary);" oninput="calculateFastData();" onchange="validateFastLoanMin();" onblur="validateFastLoanMin();"></div>
                     </div>
                     <div><label>TENURE (Max)</label><input type="number" id="fcTenure" placeholder="0" oninput="calculateFastData();"></div>
                     <div><label>ADVANCE EMI</label><input type="number" id="fcAdv" placeholder="0" oninput="calculateFastData();"></div>
@@ -952,7 +952,30 @@
     function resetFastCalc() { let fields = ['fcInv', 'fcLoanInput', 'fcTenure', 'fcAdv', 'fcDbd', 'fcRoi', 'fcPf', 'fcFixed', 'fcCap', 'fcTarget', 'fcExw', 'fcMargin', 'fcDealer']; fields.forEach(id => document.getElementById(id).value = ''); document.getElementById('fcGtl').value = '0'; let rfcOpt = document.getElementById('fcRfcOpt'); if(rfcOpt) { rfcOpt.value = '0'; rfcOpt.innerText = '0'; } document.getElementById('fcCustType').value = 'NEW'; document.getElementById('fcCat').value = 'OTHER'; fcCatChanged(); document.getElementById('fcResult').style.display = 'none'; }
     function copyFastCalcResult(btn) { let inv = document.getElementById('fcInv').value || 0; let loan = document.getElementById('fcResLoan').innerText; let dp = document.getElementById('fcResDp').innerText; let emi = document.getElementById('fcResEmi').innerText; let daily = document.getElementById('fcResDaily').innerText; let ta = document.getElementById('fcResTa').innerText; let text = `⚡ *Zatpat Calculation*\n`; if (inv > 0) text += `*Invoice:* ₹${inv}\n\n`; text += `*Loan:* ${loan}\n*DP:* ${dp}\n*EMI:* ${emi}\n*Daily:* ${daily}\n*Details:* ${ta}`; let orig = btn.innerText; btn.innerText = "COPIED!"; btn.style.background = "var(--success)"; btn.style.color = "white"; if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(text).then(() => { setTimeout(() => { btn.innerText = orig; btn.style.background = "var(--primary)"; btn.style.color = "white"; }, 2000); }).catch(() => fallbackCopy(text, () => { setTimeout(() => { btn.innerText = orig; btn.style.background = "var(--primary)"; btn.style.color = "white"; }, 2000); })); } else { fallbackCopy(text, () => { setTimeout(() => { btn.innerText = orig; btn.style.background = "var(--primary)"; btn.style.color = "white"; }, 2000); }); } }
     function fcCatChanged() { let isPhone = isMobileDeviceCat(document.getElementById('fcCat').value); let rSelect = document.getElementById('fcRfc'); let exwInput = document.getElementById('fcExw'); if(isPhone) { rSelect.disabled = false; rSelect.style.background = '#fff'; rSelect.style.cursor = 'default'; exwInput.value = ""; exwInput.disabled = true; exwInput.style.background = '#e9ecef'; exwInput.style.cursor = 'not-allowed'; fcInvChanged(); } else { rSelect.value = "0"; rSelect.disabled = true; rSelect.style.background = '#e9ecef'; rSelect.style.cursor = 'not-allowed'; exwInput.disabled = false; exwInput.style.background = '#fff'; exwInput.style.cursor = 'text'; calculateFastData(); } }
-    function fcInvChanged() { let inv = parseFloat(document.getElementById('fcInv').value) || 0; let isPhone = isMobileDeviceCat(document.getElementById('fcCat').value); let gtl = inv > 100000 ? 2398 : (inv > 50000 ? 1799 : (inv > 30000 ? 1499 : (inv > 10000 ? 1199 : (inv > 0 ? 699 : 0)))); document.getElementById('fcGtl').value = gtl; let rfcSlab = getRfcSlabValue(inv); let rfcOpt = document.getElementById('fcRfcOpt'); if(rfcOpt) { rfcOpt.value = rfcSlab; rfcOpt.innerText = rfcSlab; } if (isPhone) { document.getElementById('fcRfc').value = rfcSlab; } else { document.getElementById('fcRfc').value = "0"; } calculateFastData(); }
+    
+    function fcInvChanged() { 
+        let inv = parseFloat(document.getElementById('fcInv').value) || 0; 
+        document.getElementById('fcLoanInput').value = inv > 0 ? inv : '';
+        let isPhone = isMobileDeviceCat(document.getElementById('fcCat').value); 
+        let gtl = inv > 100000 ? 2398 : (inv > 50000 ? 1799 : (inv > 30000 ? 1499 : (inv > 10000 ? 1199 : (inv > 0 ? 699 : 0)))); 
+        document.getElementById('fcGtl').value = gtl; 
+        let rfcSlab = getRfcSlabValue(inv); 
+        let rfcOpt = document.getElementById('fcRfcOpt'); 
+        if(rfcOpt) { rfcOpt.value = rfcSlab; rfcOpt.innerText = rfcSlab; } 
+        if (isPhone) { document.getElementById('fcRfc').value = rfcSlab; } else { document.getElementById('fcRfc').value = "0"; } 
+        calculateFastData(); 
+    }
+
+    function validateFastLoanMin() {
+        let inv = parseFloat(document.getElementById('fcInv').value) || 0;
+        let loanInput = parseFloat(document.getElementById('fcLoanInput').value) || 0;
+        let minFastLoan = inv > 0 ? inv * 0.50 : 0;
+        if (inv > 0 && loanInput > 0 && loanInput < minFastLoan) {
+            document.getElementById('fcLoanInput').value = minFastLoan;
+            showToast("⚠️ कोणत्याही स्कीममध्ये लोन अमाऊंट इन्व्हॉइसच्या ५०% पेक्षा कमी असू शकत नाही!", "error");
+            calculateFastData();
+        }
+    }
 
     function calculateFastData() {
         let inv = parseFloat(document.getElementById('fcInv').value) || 0; let loanInput = parseFloat(document.getElementById('fcLoanInput').value) || 0; let tenure = parseInt(document.getElementById('fcTenure').value) || 0; let adv = parseInt(document.getElementById('fcAdv').value) || 0; let roi = parseFloat(document.getElementById('fcRoi').value) || 0; let pf = parseFloat(document.getElementById('fcPf').value) || 0; let dbd = parseFloat(document.getElementById('fcDbd').value) || 0; let custType = document.getElementById('fcCustType').value; let fixedEmi = parseFloat(document.getElementById('fcFixed').value) || 0; let cap = parseFloat(document.getElementById('fcCap').value) || 0; let target = parseFloat(document.getElementById('fcTarget').value) || 0; let gtl = parseFloat(document.getElementById('fcGtl').value) || 0; let rfc = parseFloat(document.getElementById('fcRfc').value) || 0; let exw = parseFloat(document.getElementById('fcExw').value) || 0; let margin = parseFloat(document.getElementById('fcMargin').value) || 0; let dealer = parseFloat(document.getElementById('fcDealer').value) || 0;
@@ -961,8 +984,6 @@
         let minFastLoan = inv > 0 ? inv * 0.50 : 0;
         if (loanInput > 0 && loanInput < minFastLoan) {
             loanInput = minFastLoan;
-            document.getElementById('fcLoanInput').value = minFastLoan;
-            showToast("⚠️ कोणत्याही स्कीममध्ये लोन अमाऊंट इन्व्हॉइसच्या ५०% पेक्षा कमी असू शकत नाही!", "error");
         }
         
         let fee = (custType === 'EMI CARD') ? 270 : (custType === 'W/O CARD' ? 320 : 850); let totalFees = fee + margin + dealer; let insTotal = gtl + rfc + exw; let dbdRate = (dbd * 1.18 / 100); let roiRate = roi / 1200; let roiRateDP = roiRate * adv; let loan = loanInput > 0 ? loanInput : inv;
