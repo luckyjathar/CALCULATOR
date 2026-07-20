@@ -610,6 +610,56 @@
 </footer>
 
 <script>
+    function checkDuplicateMobile(val) {
+    let warningEl = document.getElementById('mobileDupWarning');
+    let mobileInp = document.getElementById('cqMobile');
+    let addBtn = document.getElementById('addToQueueBtn');
+    let queueSearchInp = document.getElementById('queueSearch');
+    if (!warningEl || !mobileInp || !addBtn) return;
+    
+    let cleanVal = val.trim();
+    
+    // बरोबर १० डिजिट टाकल्यावर चेक आणि सर्च सुरू होईल
+    if (cleanVal.length === 10) {
+        let existingCust = customerQueue.find(c => c.mobile && c.mobile === cleanVal);
+        if (existingCust) {
+            // १. जागेवरच अलर्ट दाखवा
+            warningEl.innerHTML = `⚠️ हा नंबर आधीच Queue मध्ये <b>'${existingCust.name}'</b> नावाने आहे! उजवीकडे तपासा.`;
+            warningEl.style.display = 'block';
+            mobileInp.style.borderColor = 'var(--danger)';
+            mobileInp.style.background = '#fff0f0';
+            
+            // २. ADD TO QUEUE बटण डिसेबल करा
+            addBtn.disabled = true;
+            addBtn.style.opacity = '0.5';
+            addBtn.style.cursor = 'not-allowed';
+            addBtn.style.background = 'gray';
+            
+            // ३. उजव्या बाजूच्या Queue मध्ये ऑटो-सर्च करा
+            if (queueSearchInp) {
+                queueSearchInp.value = cleanVal;
+                renderCustomerQueue(); // लिस्ट फिल्टर होऊन फक्त हाच कस्टमर दिसेल
+            }
+            return;
+        }
+    }
+    
+    // नंबर युनिक असल्यास किंवा खोडल्यास सर्व पूर्ववत (Normal) करा
+    warningEl.style.display = 'none';
+    mobileInp.style.borderColor = '#ccc';
+    mobileInp.style.background = '#fff';
+    
+    addBtn.disabled = false;
+    addBtn.style.opacity = '1';
+    addBtn.style.cursor = 'pointer';
+    addBtn.style.background = 'var(--success)';
+    
+    // जर ऑटो-सर्च केला असेल, तर तो क्लिअर करून संपूर्ण लिस्ट पुन्हा दाखवा
+    if (queueSearchInp && queueSearchInp.value === cleanVal) {
+        queueSearchInp.value = '';
+        renderCustomerQueue();
+    }
+}
     /* === TOAST NOTIFICATION FUNCTION === */
     let toastTimeout;
     function showToast(message, type = 'success') {
