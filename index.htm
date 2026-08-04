@@ -38,7 +38,7 @@
         .top-nav-box { display: flex; gap: 5px; margin-bottom: 6px; position: sticky; top: 0; z-index: 100; background: var(--bg); padding: 4px 0; align-items: center; }
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.85); display: none; justify-content: center; align-items: flex-start; padding-top: 10px; z-index: 4000; overflow-y: auto; box-sizing: border-box; backdrop-filter: blur(3px); }
         .modal-content { background: white; padding: 15px; border-radius: 8px; width: 90%; max-width: 400px; position: relative; margin-bottom: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-        #multiStackModal .modal-content, #globalSchemeViewerModal .modal-content, #customerMessageGenModal .modal-content, #draftsModal .modal-content { max-width: 900px; width: 95%; padding: 15px; }
+        #multiStackModal .modal-content, #customerMessageGenModal .modal-content, #draftsModal .modal-content { max-width: 900px; width: 95%; padding: 15px; }
         .stack-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px; margin-top: 8px; }
         .stack-card { border: 1px solid #ddd; padding: 10px; border-radius: 6px; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .stack-card .inner-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px; }
@@ -109,6 +109,11 @@
         .toast-notification.error { background-color: var(--danger); color: white; }
         .toast-notification.warning { background-color: var(--warning); color: #000; }
         .toast-notification.info { background-color: var(--bajaj-blue); color: white; }
+
+        /* SMART DICTIONARY SPECIFIC CSS */
+        .calc-col { background: #f4fcf6; color: var(--success); font-weight: 900; }
+        .diff-col { background: #fff3e0; color: #d35400; font-weight: 900; }
+        .emi-col { background: #eef6ff; color: var(--primary); font-weight: 900; }
 
         @media (max-width: 768px) {
             .forms-row { flex-direction: column; }
@@ -278,6 +283,86 @@
         </div>
     </div>
 
+    <!-- SMART SCHEME DICTIONARY MODAL -->
+    <div id="smartDictionaryModal" class="modal">
+        <div class="modal-content" style="max-width: 950px; padding: 20px; max-height: 90vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--indigo); padding-bottom: 8px; margin-bottom: 12px;">
+                <h3 style="margin:0; color:var(--indigo); font-size: 18px !important;">🔍 SMART SCHEMES DICTIONARY</h3>
+                <button onclick="closeSmartDictionaryModal()" style="background:none; border:none; color:var(--danger); font-weight:bold; cursor:pointer; font-size:18px; padding:0;">✖</button>
+            </div>
+
+            <div style="background: #f0f7ff; border: 1.5px solid var(--primary); padding: 12px; border-radius: 6px; margin-bottom: 15px;">
+                <h4 style="margin-top:0; margin-bottom: 10px; color:var(--primary); font-size: 14px;">⚡ 1. Eligibility & Invoice</h4>
+                
+                <div class="forms-row" style="gap: 12px;">
+                    <div style="flex:1; min-width: 140px;">
+                        <label style="font-size:10px;">1. CUSTOMER TYPE</label>
+                        <select id="dictCustType" onchange="recalcCurrentModel()">
+                            <option value="NEW">NEW</option>
+                            <option value="EMI CARD">EMI CARD</option>
+                            <option value="VIRTUAL">VIRTUAL</option>
+                            <option value="W/O CARD">W/O CARD</option>
+                        </select>
+                    </div>
+                    <div style="flex:1; min-width: 140px;">
+                        <label style="font-size:10px;">2. APPROVED LIMIT (₹)</label>
+                        <input type="number" id="dictLimit" placeholder="E.g. 50000" oninput="recalcCurrentModel()">
+                    </div>
+                    <div style="flex:1; min-width: 140px;">
+                        <label style="font-size:10px;">3. MAX LTV (%)</label>
+                        <input type="number" id="dictLtv" placeholder="100" value="100" oninput="recalcCurrentModel()">
+                    </div>
+                </div>
+
+                <div class="forms-row" style="gap: 12px;">
+                    <div style="flex:2; min-width: 250px; position:relative;">
+                        <label style="font-size:10px;">4. SEARCH PRODUCT</label>
+                        <input type="search" id="dictModelSearch" oninput="doDictSearch()" placeholder="Type Brand or Model Name...">
+                        <div id="dictModelDropdown" class="custom-scroll" style="position: absolute; width: 100%; background: #fff; z-index: 1000; border: 1px solid #ddd; display: none; box-shadow: 0 10px 20px rgba(0,0,0,0.15); border-radius: 6px; max-height: 250px; overflow-y: auto; margin-top: 2px;"></div>
+                    </div>
+                    <div style="flex:1; min-width: 140px;">
+                        <label style="font-size:10px;">5. INVOICE AMOUNT (₹)</label>
+                        <input type="number" id="dictInvoice" placeholder="E.g. 35000" oninput="recalcCurrentModel()">
+                    </div>
+                    <div style="flex:1; min-width: 140px;">
+                        <label style="font-size:10px;">6. MARGIN (₹)</label>
+                        <input type="number" id="dictMargin" placeholder="E.g. 0" value="0" oninput="recalcCurrentModel()">
+                    </div>
+                </div>
+
+                <div class="forms-row" style="gap: 12px; margin-bottom: 0;">
+                    <div style="flex:1; min-width: 140px;">
+                        <label style="font-size:10px; color:#d35400;">7. TARGET DP (₹) (OPT)</label>
+                        <input type="number" id="dictTarget" placeholder="Reverse Calc DP" oninput="recalcCurrentModel()">
+                    </div>
+                    <div style="flex:1; min-width: 140px;">
+                        <label style="font-size:10px; color:#d35400;">8. EMI CAPPING (₹) (OPT)</label>
+                        <input type="number" id="dictCap" placeholder="Max EMI Limit" oninput="recalcCurrentModel()">
+                    </div>
+                </div>
+                
+                <div style="font-size: 11px; color: var(--primary); font-weight: bold; margin-top: 8px;">💡 मॉडेल निवडल्यावर त्याची MRP थेट Invoice Amount मध्ये भरेल. तुम्ही ती मॅन्युअली बदलू शकता. जास्त LTV असलेल्या स्कीम्स आपोआप लपवल्या जातील.</div>
+            </div>
+
+            <!-- RESULTS TAB -->
+            <div id="dictResultArea" style="display: none; background: #fff; border: 1px solid #ddd; padding: 12px; border-radius: 6px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--indigo); padding-bottom: 8px; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                    <h3 id="dictViewerTitle" style="margin:0; color:var(--bajaj-blue); font-size: 16px !important;">Model Schemes</h3>
+                    <div style="display: flex; gap: 6px;">
+                        <button onclick="exportDictSchemeImage('copy')" style="background: var(--primary); color: white; padding: 6px 12px; border-radius: 4px; font-weight: bold; font-size: 11px !important; border:none; cursor:pointer;">📋 COPY IMAGE</button>
+                        <button onclick="exportDictSchemeImage('download')" style="background: var(--success); color: white; padding: 6px 12px; border-radius: 4px; font-weight: bold; font-size: 11px !important; border:none; cursor:pointer;">⬇️ DOWNLOAD</button>
+                    </div>
+                </div>
+                <div class="table-wrapper">
+                    <table style="width:100%;" id="dictTable">
+                        <thead id="dictTableHead"></thead>
+                        <tbody id="dictTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- MAIN SEND EMI DETAILS MODAL -->
     <div id="customerMessageGenModal" class="modal">
         <div class="modal-content" style="max-width: 850px; padding: 20px;">
@@ -380,20 +465,6 @@
         </div>
     </div>
 
-    <div id="dictionarySearchModal" class="modal">
-        <div class="modal-content" style="max-width: 550px; padding: 18px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--indigo); padding-bottom: 8px; margin-bottom: 12px;">
-                <h3 style="margin:0; color:var(--indigo); font-size: 16px !important;">🔍 SEARCH SCHEMES DICTIONARY</h3>
-                <button onclick="closeDictionaryModal()" style="background:none; border:none; color:var(--danger); font-weight:bold; cursor:pointer; font-size:18px; padding:0;">✖</button>
-            </div>
-            <div style="position:relative;">
-                <input type="search" id="globalModelSearch" oninput="doGlobalSearch()" placeholder="Type Brand, Category or Model Name..." style="width:100%; border:2px solid var(--indigo); padding: 8px; font-size: 14px !important; outline: none; border-radius: 4px;">
-                <div id="globalModelDropdown" class="custom-scroll" style="position: absolute; width: 100%; background: #fff; z-index: 1000; border: 1px solid #ddd; display: none; box-shadow: 0 10px 25px rgba(0,0,0,0.2); border-radius: 4px; max-height: 250px; overflow-y: auto; margin-top: 4px;"></div>
-            </div>
-            <div style="font-size:11px; color:#666; margin-top:8px; text-align:center;">💡 Tip: Brand ka naam (e.g. Apple, Samsung), Category (e.g. Phone, LED) ya Model ka naam type karein.</div>
-        </div>
-    </div>
-
     <!-- UPDATED DEALER SEARCH MODAL WITH STAR FAVORITES FEATURE -->
     <div id="dealerSearchModal" class="modal">
         <div class="modal-content" style="max-width: 480px; padding: 20px;">
@@ -455,26 +526,6 @@
                 <button onclick="openMultiStackModal();" style="flex:1.2; background:var(--indigo); color:white;">+ MANUAL (10 SCHEMES)</button>
             </div>
             <button onclick="document.getElementById('addProductModal').style.display='none'" style="width:100%; background:var(--danger); color:white; margin-top:12px;">CANCEL</button>
-        </div>
-    </div>
-
-    <!-- GLOBAL SCHEME VIEWER MODAL -->
-    <div id="globalSchemeViewerModal" class="modal">
-        <div class="modal-content" style="max-width:650px; width:95%; max-height:85vh; display:flex; flex-direction:column;">
-            <h3 id="globalViewerTitle" style="margin-top:0; color:var(--bajaj-blue); border-bottom:2px solid #ccc; padding-bottom:6px;">Model Schemes</h3>
-            <div class="table-wrapper" style="flex:1; overflow-y:auto; margin-bottom:10px;">
-                <table style="width:100%;">
-                    <thead>
-                        <tr><th style="background:#e3f2fd;">T/A</th><th style="background:#e3f2fd;">LTV%</th><th style="background:#e3f2fd;">FIXED EMI</th><th style="background:#e3f2fd;">DBD%</th><th style="background:#e3f2fd;">ROI%</th><th style="background:#e3f2fd;">PF</th><th style="background:#e3f2fd;">EXPIRY</th></tr>
-                    </thead>
-                    <tbody id="globalViewerBody"></tbody>
-                </table>
-            </div>
-            <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
-                <button onclick="exportSchemeImage('copy')" style="flex:1; background:var(--primary); color:white; padding:10px; font-size:13px !important; box-shadow: 0 2px 4px rgba(0,0,0,0.15);">📋 COPY IMAGE</button>
-                <button onclick="exportSchemeImage('download')" style="flex:1; background:var(--success); color:white; padding:10px; font-size:13px !important; box-shadow: 0 2px 4px rgba(0,0,0,0.15);">⬇️ DOWNLOAD</button>
-                <button onclick="document.getElementById('globalSchemeViewerModal').style.display='none'" style="flex:0.6; background:var(--danger); color:white; padding:10px; font-size:13px !important;">✖ CLOSE</button>
-            </div>
         </div>
     </div>
 
@@ -877,6 +928,9 @@
     function standardizeCategoryName(cat) { if (!cat) return "OTHER"; let c = String(cat).toUpperCase().trim(); let cNoSpace = c.replace(/\s+/g, ''); if (cNoSpace === 'PHONE(WEB-MOBILE)' || cNoSpace === 'PHONE,TABLET,SMARTWATCH' || cNoSpace.includes('TABLET,SMART') || cNoSpace.includes('PHONE,TABLET') || cNoSpace === 'SMARTPHONES' || cNoSpace === 'MOBILE') { return "PHONE(WEB-MOBILE)"; } if (cNoSpace === 'AIRCONDITIONERS' || cNoSpace === 'AIRCONDITIONER' || cNoSpace === 'AC') { return "AC"; } if (cNoSpace === 'BATTERIES' || cNoSpace === 'BATTERY') { return "BATTERY"; } if (cNoSpace === 'AIRCOOLERS' || cNoSpace === 'AIRCOOLER' || cNoSpace === 'COOLER') { return "AIR COOLER"; } if (cNoSpace === 'TELEVISIONS' || cNoSpace === 'TELEVISION' || cNoSpace === 'TV' || cNoSpace === 'LED' || cNoSpace === 'LEDTV') { return "LED TV"; } if (cNoSpace === 'WASHINGMACHINES' || cNoSpace === 'WASHINGMACHINE' || cNoSpace === 'WM') { return "WASHING MACHINE"; } if (cNoSpace === 'REFRIGERATORS' || cNoSpace === 'REFRIGERATOR' || cNoSpace === 'FRIDGE' || cNoSpace === 'REF') { return "REFRIGERATOR"; } if (cNoSpace === 'WATERPURIFIERS' || cNoSpace === 'WATERPURIFIER' || cNoSpace === 'RO') { return "WATER PURIFIER"; } return c; }
     function getRfcSlabValue(val) { let amount = parseFloat(val) || 0; if (amount < 8000) return 0; if (amount <= 10000) return 1109; if (amount <= 15000) return 1631; if (amount <= 20000) return 2147; if (amount <= 25000) return 2695; if (amount <= 30000) return 3215; if (amount <= 35000) return 3648; if (amount <= 40000) return 4219; if (amount <= 50000) return 5720; if (amount <= 60000) return 8686; if (amount <= 100000) return 11438; if (amount <= 200000) return 16677; return 0; }
     function getNonTieupPfValue(category, amount) { let cat = String(category || "").toUpperCase().replace(/\s+/g, '').trim(); let val = parseFloat(amount) || 0; if (cat.includes('DESKTOP') || cat.includes('LAPTOP')) { return 699; } if (cat === 'PHONE(WEB-MOBILE)' || cat.includes('PHONE') || cat.includes('TABLET') || cat.includes('WATCH') || cat.includes('PRINTER') || cat.includes('HEADPHONE') || cat === 'SMARTPHONES' || cat === 'MOBILE') { if (val <= 30000) return 499; if (val <= 50000) return 599; return 699; } return null; }
+
+    function applyFestivalTheme() { const now = new Date(); const month = now.getMonth() + 1; const root = document.documentElement; const banner = document.getElementById('festiveBanner'); let emojiAdd = '📝', emojiQueue = '👥', emojiBtn = '➕', emojiFc = '🧮'; if (month === 1) { root.style.setProperty('--primary', '#e67e22'); root.style.setProperty('--bajaj-blue', '#d35400'); root.style.setProperty('--bajaj-green', '#27ae60'); root.style.setProperty('--bg-pattern', 'radial-gradient(circle, rgba(230,126,34,0.05) 0%, rgba(244,247,246,1) 100%)'); banner.innerText = "🪁 Makar Sankranti Ki Hardik Shubhkamnayein! Naye Saal Mein Nayi Schemes!"; banner.style.background = "linear-gradient(90deg, #d35400, #e67e22)"; window.isFestiveMode = true; emojiAdd = '🪁'; emojiQueue = '☀️'; emojiBtn = '✨'; emojiFc = '📊'; } else if (month === 3) { root.style.setProperty('--primary', '#e84393'); root.style.setProperty('--bajaj-blue', '#8e44ad'); root.style.setProperty('--bajaj-green', '#00b894'); root.style.setProperty('--bg-pattern', 'radial-gradient(circle, rgba(232,67,147,0.05) 0%, rgba(244,247,246,1) 100%)'); banner.innerText = "🎨 Rangapanchami Ki Rangbhari Shubhkamnayein!"; banner.style.background = "linear-gradient(90deg, #8e44ad, #e84393)"; window.isFestiveMode = true; emojiAdd = '🎨'; emojiQueue = '🤝'; emojiBtn = '✨'; emojiFc = '🎯'; } else if (month === 8 || month === 9) { root.style.setProperty('--primary', '#c0392b'); root.style.setProperty('--bajaj-blue', '#d35400'); root.style.setProperty('--bajaj-green', '#f39c12'); root.style.setProperty('--warning', '#f1c40f'); root.style.setProperty('--bg-pattern', 'radial-gradient(circle, rgba(243,156,18,0.1) 0%, rgba(244,247,246,1) 100%)'); banner.innerText = "🌺 Ganpati Bappa Morya! Vighnaharta aapke targets pure karein!"; banner.style.background = "linear-gradient(90deg, #c0392b, #f39c12)"; window.isFestiveMode = true; emojiAdd = '🌺'; emojiQueue = '🙏'; emojiBtn = '🕉️'; emojiFc = '🥥'; } else if (month === 10 || month === 11) { root.style.setProperty('--primary', '#8e44ad'); root.style.setProperty('--bajaj-blue', '#f39c12'); root.style.setProperty('--bajaj-green', '#e67e22'); root.style.setProperty('--dark', '#2c3e50'); root.style.setProperty('--bg-pattern', 'radial-gradient(circle, rgba(142,68,173,0.05) 0%, rgba(244,247,246,1) 100%)'); banner.innerText = "🪔 Diwali Dhamaka! Festive Offers Aur Nayi Schemes Check Karein!"; banner.style.background = "linear-gradient(90deg, #2c3e50, #8e44ad)"; window.isFestiveMode = true; emojiAdd = '🪔'; emojiQueue = '✨'; emojiBtn = '🎆'; emojiFc = '🎁'; } if (window.isFestiveMode && banner) { banner.style.display = 'block'; let addBtn = document.getElementById('addToQueueBtn'); if(addBtn) addBtn.classList.add('festive-glow'); let genBtn = document.getElementById('genQuoteBtn'); if(genBtn) genBtn.classList.add('festive-glow'); let iAdd = document.getElementById('icon_add'); if(iAdd) iAdd.innerText = emojiAdd; let iQueue = document.getElementById('icon_queue'); if(iQueue) iQueue.innerText = emojiQueue; let iBtn = document.getElementById('icon_btn_add'); if(iBtn) iBtn.innerText = emojiBtn; let iFc = document.getElementById('icon_fc'); if(iFc) iFc.innerText = emojiFc; } }
+
     const GITHUB_RAW_URL = "https://raw.githubusercontent.com/luckyjathar/CALCULATOR/main/master_data.xlsx"; const GITHUB_API_URL = "https://api.github.com/repos/luckyjathar/CALCULATOR/commits?path=master_data.xlsx&page=1&per_page=1";
     const DB_NAME = "PersistentPortalDB"; const DB_VERSION = 2; const STORE_NAME = "dataStore"; let dbInstance;
 
@@ -912,7 +966,7 @@
 
     window.onload = async function() {
         if(loggedInUserEmail) { let savedName = localStorage.getItem('persistent_user_name') || "User"; updateLoginUI(savedName, true); }
-        generateStackCards(); 
+        applyFestivalTheme(); generateStackCards(); 
         try {
             await initDB(); 
             let savedDB = await getFromDB("persistent_db"); if (savedDB && savedDB.length > 0) { db_records = savedDB; }
@@ -951,8 +1005,17 @@
     function copyFlyerLink() { let copyText = document.getElementById('fgGeneratedLinkText'); copyText.select(); copyText.setSelectionRange(0, 99999); document.execCommand("copy"); showToast("✅ Link Copied! Aap yeh link Customer ko WhatsApp par bhej sakte hain.", "success"); }
     function shareOnWhatsAppStatus() { let generatedLink = document.getElementById('fgGeneratedLinkText').value; if (!generatedLink) { showToast("⚠️ Pehle link generate karein!", "error"); return; } let statusMessage = "🔥 *Festival Special Offers!* 🔥\n\nNaya Mobile, Laptop ya TV lene ka soch rahe ho? Zero percent interest (0% EMI) par kharidi karein!\n\nAaj hi apni eligibility (Limit) check karein aur attractive offers payein. Neeche di gayi link par click karein 👇\n\n" + generatedLink; let encodedMessage = encodeURIComponent(statusMessage); window.open(`https://wa.me/?text=${encodedMessage}`, '_blank'); }
 
-    function openDictionaryModal() { if(!db_records || db_records.length === 0) { showToast("⚠️ Schemes Dictionary background se load ho rahi hai, kripya 2 second wait karein...", "warning"); return; } document.getElementById('globalModelSearch').value = ''; document.getElementById('globalModelDropdown').style.display = 'none'; document.getElementById('dictionarySearchModal').style.display = 'flex'; setTimeout(() => document.getElementById('globalModelSearch').focus(), 100); }
-    function closeDictionaryModal() { document.getElementById('dictionarySearchModal').style.display = 'none'; }
+    function openDictionaryModal() { 
+        if(!db_records || db_records.length === 0) { 
+            showToast("⚠️ Schemes Dictionary background se load ho rahi hai, kripya 2 second wait karein...", "warning"); return; 
+        } 
+        document.getElementById('dictModelSearch').value = ''; 
+        document.getElementById('dictModelDropdown').style.display = 'none'; 
+        document.getElementById('dictResultArea').style.display = 'none';
+        document.getElementById('smartDictionaryModal').style.display = 'flex'; 
+        setTimeout(() => document.getElementById('dictModelSearch').focus(), 100); 
+    }
+    function closeSmartDictionaryModal() { document.getElementById('smartDictionaryModal').style.display = 'none'; }
     function resetFastCalc() { let fields = ['fcInv', 'fcLoanInput', 'fcTenure', 'fcAdv', 'fcDbd', 'fcRoi', 'fcPf', 'fcFixed', 'fcCap', 'fcTarget', 'fcExw', 'fcMargin', 'fcDealer']; fields.forEach(id => document.getElementById(id).value = ''); document.getElementById('fcGtl').value = '0'; let rfcOpt = document.getElementById('fcRfcOpt'); if(rfcOpt) { rfcOpt.value = '0'; rfcOpt.innerText = '0'; } document.getElementById('fcCustType').value = 'NEW'; document.getElementById('fcCat').value = 'OTHER'; fcCatChanged(); document.getElementById('fcResult').style.display = 'none'; }
     function copyFastCalcResult(btn) { let inv = document.getElementById('fcInv').value || 0; let loan = document.getElementById('fcResLoan').innerText; let dp = document.getElementById('fcResDp').innerText; let emi = document.getElementById('fcResEmi').innerText; let daily = document.getElementById('fcResDaily').innerText; let ta = document.getElementById('fcResTa').innerText; let text = `⚡ *Zatpat Calculation*\n`; if (inv > 0) text += `*Invoice:* ₹${inv}\n\n`; text += `*Loan:* ${loan}\n*DP:* ${dp}\n*EMI:* ${emi}\n*Daily:* ${daily}\n*Details:* ${ta}`; let orig = btn.innerText; btn.innerText = "COPIED!"; btn.style.background = "var(--success)"; btn.style.color = "white"; if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(text).then(() => { setTimeout(() => { btn.innerText = orig; btn.style.background = "var(--primary)"; btn.style.color = "white"; }, 2000); }).catch(() => fallbackCopy(text, () => { setTimeout(() => { btn.innerText = orig; btn.style.background = "var(--primary)"; btn.style.color = "white"; }, 2000); })); } else { fallbackCopy(text, () => { setTimeout(() => { btn.innerText = orig; btn.style.background = "var(--primary)"; btn.style.color = "white"; }, 2000); }); } }
     function fcCatChanged() { let isPhone = isMobileDeviceCat(document.getElementById('fcCat').value); let rSelect = document.getElementById('fcRfc'); let exwInput = document.getElementById('fcExw'); if(isPhone) { rSelect.disabled = false; rSelect.style.background = '#fff'; rSelect.style.cursor = 'default'; exwInput.value = ""; exwInput.disabled = true; exwInput.style.background = '#e9ecef'; exwInput.style.cursor = 'not-allowed'; fcInvChanged(); } else { rSelect.value = "0"; rSelect.disabled = true; rSelect.style.background = '#e9ecef'; rSelect.style.cursor = 'not-allowed'; exwInput.disabled = false; exwInput.style.background = '#fff'; exwInput.style.cursor = 'text'; calculateFastData(); } }
@@ -1152,30 +1215,272 @@
     async function setActiveCustomer(idx) { if(db_records.length === 0) { showToast("⚠️ Master Stream se data fetch nahi hua hai. Kripya apna internet connection check karein!", "error"); return; } activeCustomerIndex = idx; await saveQueueToLocal(); document.getElementById('queueSearch').value = ''; goToFinalPage(); }
     function isLimitValid() { if (activeCustomerIndex === -1 || !customerQueue[activeCustomerIndex]) { showToast("⚠️ Kripya pehle queue mein ek customer add karein aur use 'ACTIVE' rakhein.", "warning"); return false; } return true; }
 
-    function doGlobalSearch() { let q = document.getElementById('globalModelSearch').value.toUpperCase().trim(); let dd = document.getElementById('globalModelDropdown'); if(!q) { dd.style.display='none'; return; } let validRecords = db_records.filter(r => r.model !== SPECIAL_MODEL); let matches = validRecords.filter(r => { let m = r.model || ""; let b = r.brand || ""; let c = r.category || ""; return m.includes(q) || b.includes(q) || c.includes(q); }).map(r => r.model); matches = [...new Set(matches)].slice(0, 30); if (matches.length === 0) { dd.innerHTML = `<div style="padding:10px; color:#d35400; font-weight:bold; text-align:center;">No matching models found.</div>`; dd.style.display = 'block'; return; } dd.innerHTML = matches.map(m => { let rec = validRecords.find(x => x.model === m); let catTag = rec && rec.category ? `<span style="font-size:10px; background:#e0e0e0; color:#333; padding:2px 6px; border-radius:4px; float:right;">📁 ${rec.category}</span>` : ''; let brandTag = rec && rec.brand ? `<span style="font-size:10px; color:#0984e3; font-weight:900; margin-right:5px;">[${rec.brand}]</span>` : ''; return `<div style="padding:10px; border-bottom:1px solid #eee; cursor:pointer; font-weight:800; color:var(--dark); display:flex; justify-content:space-between; align-items:center;" onmouseover="this.style.background='#e3f2fd'" onmouseout="this.style.background='#fff'" onclick="viewGlobalModel('${m}')"> <span style="flex:1;">${brandTag}📱 ${m}</span> ${catTag} </div>`; }).join(''); dd.style.display = 'block'; }
-    
-    function viewGlobalModel(name) { document.getElementById('globalModelSearch').value = ''; document.getElementById('globalModelDropdown').style.display = 'none'; closeDictionaryModal(); let schemes = db_records.filter(r => r.model === name); if(schemes.length === 0) return; document.getElementById('globalViewerTitle').innerText = '📱 Model: ' + name; let tbody = document.getElementById('globalViewerBody'); let validSchemes = schemes.filter(s => s.tenure > 0 || s.fixedEmi > 0); validSchemes.forEach(s => { s.calcLTV = s.tenure > 0 ? ((s.tenure - s.advEmi)/s.tenure)*100 : 0; }); validSchemes.sort((a,b) => b.calcLTV - a.calcLTV); if (validSchemes.length === 0) { tbody.innerHTML = `<tr><td colspan="7" style="color:var(--danger); font-weight:bold; padding: 25px 10px !important; text-align:center; font-size:15px !important; border:1px solid #ddd; background:#fff9e6;">⚠️ Please Add Schemes Manually</td></tr>`; } else { tbody.innerHTML = validSchemes.map(s => ` <tr> <td style="font-weight:900; color:var(--indigo); border:1px solid #ddd;">${s.tenure}/${s.advEmi}</td> <td style="font-weight:bold; color:var(--bajaj-blue); border:1px solid #ddd;">${Math.round(s.calcLTV)}%</td> <td style="font-weight:900; color:var(--primary); border:1px solid #ddd;">${s.fixedEmi > 0 ? '₹'+s.fixedEmi : 'N/A'}</td> <td style="border:1px solid #ddd;">${+parseFloat(s.dbd).toFixed(3)}%</td> <td style="border:1px solid #ddd;">${+parseFloat(s.roi).toFixed(2)}%</td> <td style="border:1px solid #ddd;">₹${s.pf}</td> <td style="font-size:11px; font-weight:bold; color:${s.isExpired ? '#d35400' : '#555'}; border:1px solid #ddd;">${s.expiryDateStr || '-'}</td> </tr> `).join(''); } document.getElementById('globalSchemeViewerModal').style.display = 'flex'; }
-    
-    function generateStackCards() { let container = document.getElementById('stackInputsContainer'); container.innerHTML = ""; for(let i=1; i<=10; i++) { container.innerHTML += ` <div class="stack-card"><div style="font-weight:900; color:var(--primary); margin-bottom:4px; border-bottom:1px solid #eee; padding-bottom:2px;">SCHEME #${i}</div> <div class="inner-grid"> <div><label>TENURE (MAX)</label><input type="number" id="msTen_${i}" placeholder="0"></div> <div><label>ADVANCE</label><input type="number" id="msAdv_${i}" placeholder="0"></div> <div><label>DBD %</label><input type="number" id="msDbd_${i}" placeholder="0"></div> <div><label>PF (₹)</label><input type="number" id="msPf_${i}" placeholder="0"></div> <div><label>ROI %</label><input type="number" id="msRoi_${i}" placeholder="0"></div> <div><label>FIXED EMI (₹)</label><input type="number" id="msFix_${i}" placeholder="0"></div> </div> </div>`; } }
-    function openMultiStackModal() { if (!isLimitValid()) return; document.getElementById('addProductModal').style.display='none'; document.getElementById('multiStackModal').style.display='flex'; }
-    function closeMultiStackModal() { document.getElementById('multiStackModal').style.display='none'; }
-
-    async function processMultiStack() {
-        let modelName = document.getElementById('multiStackModelName').value.trim().toUpperCase(); if (!modelName) { showToast("⚠️ Kripya Product Model Name zaroor enter karein!", "error"); return; } let validSchemes = [];
-        for(let i=1; i<=10; i++) { let ten = parseInt(document.getElementById(`msTen_${i}`).value) || 0; let fix = parseInt(document.getElementById(`msFix_${i}`).value) || 0; if(ten > 0 || fix > 0) { validSchemes.push({ tenure: ten, advEmi: parseInt(document.getElementById(`msAdv_${i}`).value) || 0, dbd: parseFloat(document.getElementById(`msDbd_${i}`).value) || 0, pf: parseInt(document.getElementById(`msPf_${i}`).value) || 0, roi: parseFloat(document.getElementById(`msRoi_${i}`).value) || 0, fixedEmi: fix, minLoan: 0, maxLoan: 9999999, category: "MANUAL", inactive: false, isExpired: false, expiryDateStr: "" }); } }
-        if(validSchemes.length > 0) { let comp = customerQueue[activeCustomerIndex].components || {}; current_products.push({ name: modelName, schemes: validSchemes, category: "MANUAL", inputs: { mrp: comp.mrp||"", inv: comp.inv||"", cap: comp.cap||(customerQueue[activeCustomerIndex]?.cap || ""), target: comp.target||"", gtl: comp.gtl||0, rfc: comp.rfc||0, exw: comp.exw||"", margin: comp.margin||"", dealer: comp.dealer||"", surch: 0, manualLoans: {} }, isManual: true, isNonTieup: false }); sortConfigs.push({ key: 'dp', dir: 'asc' }); customerQueue[activeCustomerIndex].products = current_products; customerQueue[activeCustomerIndex].sortConfigs = sortConfigs; await saveQueueToLocal(); closeMultiStackModal(); renderMatrix(); } else { showToast("⚠️ Kripya kam se kam ek Scheme ki details zaroor fill karein!", "error"); }
+    function doDictSearch() {
+        let q = document.getElementById('dictModelSearch').value.toUpperCase().trim();
+        let dd = document.getElementById('dictModelDropdown');
+        if(!q) { dd.style.display='none'; return; }
+        let validRecords = db_records.filter(r => r.model !== "NON TIEUP");
+        let matches = validRecords.filter(r => (r.model || "").includes(q) || (r.brand || "").includes(q) || (r.category || "").includes(q)).map(r => r.model);
+        matches = [...new Set(matches)].slice(0, 30);
+        if (matches.length === 0) {
+            dd.innerHTML = `<div style="padding:10px; color:#d35400; font-weight:bold; text-align:center;">No matching models found.</div>`;
+            dd.style.display = 'block'; return;
+        }
+        dd.innerHTML = matches.map(m => {
+            let rec = validRecords.find(x => x.model === m);
+            let catTag = rec && rec.category ? `<span style="font-size:10px; background:#e0e0e0; color:#333; padding:2px 6px; border-radius:4px; float:right;">📁 ${rec.category}</span>` : '';
+            let brandTag = rec && rec.brand ? `<span style="font-size:10px; color:#0984e3; font-weight:900; margin-right:5px;">[${rec.brand}]</span>` : '';
+            return `<div style="padding:10px; border-bottom:1px solid #eee; cursor:pointer; font-weight:800; color:var(--dark); display:flex; justify-content:space-between; align-items:center;" onmouseover="this.style.background='#e3f2fd'" onmouseout="this.style.background='#fff'" onclick="viewDictModel('${m.replace(/'/g, "\\'")}')"> <span style="flex:1;">${brandTag}📱 ${m}</span> ${catTag} </div>`;
+        }).join('');
+        dd.style.display = 'block';
     }
 
-    function findValLocal(row, targets) { let key = Object.keys(row).find(k => targets.includes(k.toUpperCase().replace(/\s/g, ''))); return key ? row[key] : null; }
-    function mapData(row, type) { if(!row) return null; let expVal = findValLocal(row, ['EXPIRY', 'EXPIRYDATE', 'VALIDTILL', 'SCHEMEEXPIRY', 'ENDDATE']); let expDate = parseExcelDate(expVal); let isExp = false; let expiryDateStr = ""; if(expDate) { let today = new Date(); today.setHours(0,0,0,0); if(expDate < today) isExp = true; let dd = String(expDate.getDate()).padStart(2, '0'); let mm = String(expDate.getMonth() + 1).padStart(2, '0'); let yyyy = expDate.getFullYear(); expiryDateStr = `${dd}/${mm}/${yyyy}`; } return { model: type === SPECIAL_MODEL ? SPECIAL_MODEL : String(findValLocal(row,['MODEL','BRANDMODEL'])||"").toUpperCase(), brand: String(findValLocal(row, ['BRAND', 'MAKE', 'MANUFACTURER'])||"").toUpperCase(), mrp: parseFloat(findValLocal(row, ['MRP', 'PRICE', 'M.R.P'])) || 0, tenure: parseInt(findValLocal(row, ['TOTALTENURE', 'TENURE', 'TA'])) || 0, advEmi: parseInt(findValLocal(row, ['ADVANCEEMI', 'ADV'])) || 0, dbd: parseFloat(findValLocal(row,['DBD','DBD%'])||0), pf: parseInt(findValLocal(row,['PF','PROCESSINGFEE'])||0), roi: parseFloat(findValLocal(row,['ROI','ROI%'])||0), fixedEmi: parseFloat(findValLocal(row,['FIXEDEMI', 'FIXED'])||0), category: standardizeCategoryName(findValLocal(row,['CATEGORY','CAT'])||""), minLoan: parseFloat(findValLocal(row, ['MINLOAN', 'MINL'])) || 0, maxLoan: parseFloat(findValLocal(row, ['MAXLOAN', 'MAXL'])) || 9999999, isExpired: isExp, expiryDateStr: expiryDateStr, inactive: false }; }
-    function goHome() { document.getElementById('finalEligibleArea').style.display='none'; document.getElementById('catSelectionModal').style.display='none'; document.getElementById('unifiedHome').style.display='flex'; activeCustomerIndex = -1; selectedQueueIndex = -1; renderCustomerQueue(); updateUniversalActionButtons(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
-    function closeImageViewer() { document.getElementById('imageViewerModal').style.display='none'; }
-    function openAddProductModal() { if (!isLimitValid()) return; document.getElementById('modalMatrixSearch').value = ''; document.getElementById('modalMatrixSearchDropdown').style.display = 'none'; document.getElementById('addProductModal').style.display = 'flex'; }
-    function openSchemeOnlyModal(pIdx) { if (!isLimitValid()) return; document.getElementById('modalTitle').innerText = "Add Custom Scheme"; document.getElementById('modelNameInputArea').style.display = 'none'; document.getElementById('targetPIdx').value = pIdx; document.getElementById('manualModal').style.display='flex'; }
-    function closeManualModal() { document.getElementById('manualModal').style.display='none'; }
-    function openEditSchemeModal(pIdx, dIdx) { let scheme = current_products[pIdx].schemes[dIdx]; document.getElementById('editPIdx').value = pIdx; document.getElementById('editDIdx').value = dIdx; document.getElementById('editTen').value = scheme.tenure || 0; document.getElementById('editAdv').value = scheme.advEmi || 0; document.getElementById('editDbd').value = scheme.dbd || 0; document.getElementById('editPf').value = scheme.pf || 0; document.getElementById('editRoi').value = scheme.roi || 0; document.getElementById('editFixed').value = scheme.fixedEmi || 0; document.getElementById('editSchemeModal').style.display = 'flex'; }
-    function closeEditSchemeModal() { document.getElementById('editSchemeModal').style.display = 'none'; }
-    function saveSchemeEdit() { let pIdx = parseInt(document.getElementById('editPIdx').value); let dIdx = parseInt(document.getElementById('editDIdx').value); let scheme = current_products[pIdx].schemes[dIdx]; scheme.tenure = parseInt(document.getElementById('editTen').value) || 0; scheme.advEmi = parseInt(document.getElementById('editAdv').value) || 0; scheme.dbd = parseFloat(document.getElementById('editDbd').value) || 0; scheme.pf = parseInt(document.getElementById('editPf').value) || 0; scheme.roi = parseFloat(document.getElementById('editRoi').value) || 0; scheme.fixedEmi = parseFloat(document.getElementById('editFixed').value) || 0; closeEditSchemeModal(); recalcModel(pIdx); }
+    let currentDictModel = "";
+    
+    function viewDictModel(name) {
+        document.getElementById('dictModelSearch').value = name;
+        document.getElementById('dictModelDropdown').style.display = 'none';
+        currentDictModel = name;
+        
+        let rec = db_records.find(r => r.model === name);
+        if(rec && rec.mrp > 0) {
+            document.getElementById('calcInvoice').value = rec.mrp;
+        }
+        
+        recalcCurrentModel();
+    }
+    
+    function recalcCurrentModel() {
+        if(currentDictModel !== "") {
+            renderTableModel();
+        }
+    }
+
+    function renderTableModel() {
+        let schemes = db_records.filter(r => r.model === currentDictModel);
+        if(schemes.length === 0) return;
+        
+        document.getElementById('dictViewerTitle').innerText = '📱 ' + currentDictModel;
+        
+        let custType = document.getElementById('calcCustType').value;
+        let ltvLimit = parseFloat(document.getElementById('calcLtv').value) || 100;
+        let limit = parseFloat(document.getElementById('calcLimit').value) || 0;
+        let invoice = parseFloat(document.getElementById('calcInvoice').value) || 0;
+        let margin = parseFloat(document.getElementById('calcMargin').value) || 0;
+        let targetDp = parseFloat(document.getElementById('calcTarget').value) || 0;
+        let emiCap = parseFloat(document.getElementById('calcCap').value) || 0;
+        
+        let gtl = invoice > 100000 ? 2398 : (invoice > 50000 ? 1799 : (invoice > 30000 ? 1499 : (invoice > 10000 ? 1199 : (invoice > 0 ? 699 : 0))));
+        
+        let isCalculatedMode = (limit > 0 && invoice > 0);
+        let fee = (custType === 'EMI CARD') ? 270 : (custType === 'W/O CARD' ? 320 : 850);
+
+        let validSchemes = schemes.filter(s => s.tenure > 0 || s.fixedEmi > 0);
+        
+        let thead = document.getElementById('dictTableHead');
+        if (isCalculatedMode) {
+            thead.innerHTML = `<tr><th style="background:#e3f2fd;">T/A</th><th style="background:#e3f2fd;">LTV%</th><th style="background:#e8f5e9; color:var(--success);">LOAN</th><th style="background:#fff3e0; color:#d35400;">DIFF (INV-LOAN)</th><th style="background:#e8f5e9; color:var(--success);">EST. DP</th><th style="background:#e3f2fd; color:var(--primary);">EMI</th><th style="background:#e3f2fd; color:var(--primary);">MONTHS</th><th>ACTION</th></tr>`;
+        } else {
+            thead.innerHTML = `<tr><th style="background:#e3f2fd;">T/A</th><th style="background:#e3f2fd;">LTV%</th><th style="background:#e3f2fd;">FIXED EMI</th><th style="background:#e3f2fd;">DBD%</th><th style="background:#e3f2fd;">ROI%</th><th style="background:#e3f2fd;">PF</th></tr>`;
+        }
+
+        validSchemes.forEach(s => { 
+            s.calcLTV = s.tenure > 0 ? ((s.tenure - s.advEmi)/s.tenure)*100 : 0; 
+            
+            if (isCalculatedMode) {
+                let nbfcMax = (limit * s.tenure) / (s.tenure - s.advEmi || 1);
+                let finalLoan = 0, emi = 0, dp = 0, diff = 0;
+                let dbdRate = (s.dbd * 1.18 / 100);
+                let roiRate = s.roi / 1200;
+                let roiRateDP = roiRate * s.advEmi;
+                let inst = s.tenure - s.advEmi;
+                if (inst < 1) inst = 1;
+                
+                if (s.fixedEmi > 0) {
+                    let maxTotalTenure = Math.floor(limit / s.fixedEmi) + s.advEmi;
+                    let currentTenure = Math.floor(invoice / s.fixedEmi);
+                    if(currentTenure > maxTotalTenure) currentTenure = maxTotalTenure;
+                    if(currentTenure < 1) currentTenure = 1;
+                    
+                    finalLoan = currentTenure * s.fixedEmi;
+                    
+                    if (targetDp > 0) {
+                        let numerator = targetDp - invoice - (s.fixedEmi * s.advEmi) - s.pf - fee - margin;
+                        let denominator = dbdRate + roiRateDP - 1;
+                        let solvedLoan = numerator / denominator;
+                        let solvedTenure = Math.floor(solvedLoan / s.fixedEmi);
+                        if (solvedTenure > maxTotalTenure) solvedTenure = maxTotalTenure;
+                        finalLoan = Math.max(0, solvedTenure * s.fixedEmi);
+                    }
+                    
+                    if (finalLoan > invoice) finalLoan = Math.floor(invoice/s.fixedEmi)*s.fixedEmi;
+                    currentTenure = Math.floor(finalLoan / s.fixedEmi) || 1;
+                    inst = currentTenure - s.advEmi;
+                    if(inst < 1) inst = 1;
+                    
+                    let roiInEmi = finalLoan * roiRate;
+                    emi = s.fixedEmi + (gtl / inst) + roiInEmi;
+                    
+                    let roiInDp = finalLoan * roiRateDP;
+                    dp = invoice - finalLoan + (s.fixedEmi * s.advEmi) + s.pf + fee + (finalLoan * dbdRate) + margin + roiInDp;
+                    s.currentTenure = currentTenure;
+                    s.calcInst = inst;
+                } else {
+                    finalLoan = Math.min(nbfcMax, invoice);
+                    
+                    if (targetDp > 0) {
+                        let advRate = s.advEmi / s.tenure; 
+                        let numerator = targetDp - invoice - s.pf - fee - margin; 
+                        let denominator = advRate + dbdRate + roiRateDP - 1; 
+                        let solvedLoan = numerator / denominator; 
+                        finalLoan = Math.min(finalLoan, Math.max(0, Math.floor(solvedLoan)));
+                    }
+                    
+                    let roiInEmi = finalLoan * roiRate;
+                    emi = (finalLoan / s.tenure) + (gtl / inst) + roiInEmi;
+                    
+                    if (emiCap > 0 && emi > emiCap) {
+                        finalLoan = (emiCap - (gtl / inst)) / ((1 / s.tenure) + roiRate);
+                        if(finalLoan < 0) finalLoan = 0;
+                        roiInEmi = finalLoan * roiRate;
+                        emi = (finalLoan / s.tenure) + (gtl / inst) + roiInEmi;
+                    }
+
+                    let roiInDp = finalLoan * roiRateDP;
+                    dp = invoice - finalLoan + ((finalLoan / s.tenure) * s.advEmi) + s.pf + fee + (finalLoan * dbdRate) + margin + roiInDp;
+                    s.currentTenure = s.tenure;
+                    s.calcInst = inst;
+                }
+                
+                s.calcLoan = finalLoan;
+                diff = invoice - finalLoan;
+                s.calcDiff = diff > 0 ? diff : 0;
+                s.calcDp = Math.ceil(dp/10)*10;
+                s.calcEmi = emi;
+            }
+        });
+
+        validSchemes = validSchemes.filter(s => s.fixedEmi > 0 || s.calcLTV <= ltvLimit);
+
+        if (isCalculatedMode) {
+            validSchemes.sort((a,b) => a.calcDp - b.calcDp);
+        } else {
+            validSchemes.sort((a,b) => b.calcLTV - a.calcLTV);
+        }
+        
+        let tbody = document.getElementById('dictTableBody');
+        tbody.innerHTML = validSchemes.map(s => {
+            let displayTenure = s.currentTenure ? s.currentTenure : s.tenure;
+            if (isCalculatedMode) {
+                return `<tr>
+                    <td style="font-weight:900; color:var(--indigo);">${displayTenure}/${s.advEmi}</td>
+                    <td style="font-weight:bold; color:var(--bajaj-blue);">${Math.round(s.calcLTV)}%</td>
+                    <td class="calc-col">₹${Math.floor(s.calcLoan).toLocaleString()}</td>
+                    <td class="diff-col">₹${Math.floor(s.calcDiff).toLocaleString()}</td>
+                    <td class="calc-col">₹${Math.round(s.calcDp).toLocaleString()}</td>
+                    <td class="emi-col">₹${Math.round(s.calcEmi).toLocaleString()}</td>
+                    <td style="font-weight:900; color:var(--primary); background:#eef6ff;">${s.calcInst}</td>
+                    <td><button class="action-btn" style="background:var(--primary); padding:6px; min-width:60px;" onclick="copySingleScheme('${displayTenure}', '${s.advEmi}', '${s.calcLoan}', '${s.calcDp}', '${s.calcEmi}', '${s.fixedEmi}', '${s.dbd}', '${s.roi}', '${s.pf}', this)">COPY</button></td>
+                </tr>`;
+            } else {
+                let dbdAmtPreview = invoice > 0 ? invoice * (s.dbd * 1.18 / 100) : 0;
+                let dbdStr = invoice > 0 ? `${+parseFloat(s.dbd).toFixed(3)}%<br><span style="color:var(--danger); font-weight:900;">₹${Math.round(dbdAmtPreview).toLocaleString()}</span>` : `${+parseFloat(s.dbd).toFixed(3)}%`;
+
+                return `<tr>
+                    <td style="font-weight:900; color:var(--indigo);">${displayTenure}/${s.advEmi}</td>
+                    <td style="font-weight:bold; color:var(--bajaj-blue);">${Math.round(s.calcLTV)}%</td>
+                    <td style="font-weight:900; color:var(--primary);">${s.fixedEmi > 0 ? '₹'+s.fixedEmi : 'N/A'}</td>
+                    <td>${dbdStr}</td>
+                    <td>${+parseFloat(s.roi).toFixed(2)}%</td>
+                    <td style="font-weight:900;">₹${s.pf}</td>
+                </tr>`;
+            }
+        }).join('');
+        
+        document.getElementById('dictResultArea').style.display = 'block';
+    }
+
+    function copySingleScheme(tenure, advEmi, loan, dp, emi, fixedEmi, dbd, roi, pf, btn) {
+        let limit = parseFloat(document.getElementById('calcLimit').value) || 0;
+        let invoice = parseFloat(document.getElementById('calcInvoice').value) || 0;
+        let isCalculatedMode = (limit > 0 && invoice > 0);
+        let inst = Math.max(1, parseInt(tenure) - parseInt(advEmi));
+        
+        let textToCopy = `📱 *${currentDictModel}*\n`;
+        
+        if (isCalculatedMode) {
+            textToCopy += `*INVOICE AMOUNT:* ₹${invoice}\n\n`;
+            textToCopy += `✅ *Scheme:* ${tenure}/${advEmi}\n`;
+            textToCopy += `💳 *Loan:* ₹${Math.floor(loan).toLocaleString()}\n`;
+            textToCopy += `💰 *Net DP:* ₹${Math.round(dp).toLocaleString()}\n`;
+            textToCopy += `🗓️ *EMI:* ₹${Math.round(emi).toLocaleString()} x ${inst} Months`;
+        } else {
+            textToCopy += `✅ *Scheme:* ${tenure}/${advEmi}\n`;
+            if (fixedEmi > 0) textToCopy += `🗓️ *FIXED EMI:* ₹${fixedEmi}\n`;
+            textToCopy += `*DBD:* ${parseFloat(dbd).toFixed(2)}% | *ROI:* ${parseFloat(roi).toFixed(2)}%\n`;
+            textToCopy += `*PF:* ₹${pf}`;
+        }
+        
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                let orig = btn.innerText;
+                btn.innerText = "COPIED!";
+                btn.style.background = "var(--success)";
+                setTimeout(() => { btn.innerText = orig; btn.style.background = "var(--primary)"; }, 2000);
+            });
+        } else {
+            fallbackCopy(textToCopy, () => {
+                let orig = btn.innerText;
+                btn.innerText = "COPIED!";
+                btn.style.background = "var(--success)";
+                setTimeout(() => { btn.innerText = orig; btn.style.background = "var(--primary)"; }, 2000);
+            });
+        }
+    }
+
+    function exportDictSchemeImage(action) {
+        let titleText = document.getElementById('dictViewerTitle').innerText;
+        let tableHtml = document.querySelector('#dictResultArea table').outerHTML;
+        
+        let ltvLimit = document.getElementById('calcLtv').value || 100;
+        let limit = document.getElementById('calcLimit').value;
+        let invoice = parseFloat(document.getElementById('calcInvoice').value) || 0;
+        let margin = parseFloat(document.getElementById('calcMargin').value) || 0;
+        let targetDp = parseFloat(document.getElementById('calcTarget').value) || 0;
+        let emiCap = parseFloat(document.getElementById('calcCap').value) || 0;
+        let custType = document.getElementById('calcCustType').value;
+        
+        let extraStr = `Customer: ${custType} | LTV: ${ltvLimit}% | Limit: ₹${limit} | Invoice: ₹${invoice}`;
+        if (margin > 0) extraStr += ` | Margin: ₹${margin}`;
+        if (targetDp > 0) extraStr += ` | Target DP: ₹${targetDp}`;
+        if (emiCap > 0) extraStr += ` | Cap: ₹${emiCap}`;
+
+        let extraInfo = (limit && invoice) ? `<div style="background:#e8f5e9; color:#27ae60; padding:8px; border-radius:6px; margin-bottom:10px; font-weight:bold; font-size:14px; text-transform:uppercase;">${extraStr}</div>` : '';
+
+        let exportDiv = document.createElement('div');
+        exportDiv.style.width = "750px"; exportDiv.style.padding = "20px"; exportDiv.style.background = "#fff"; exportDiv.style.position = "absolute"; exportDiv.style.top = "-9999px";
+        exportDiv.innerHTML = `<div style="border: 2px solid #2C3E50; border-radius: 10px; padding: 16px; background: #fff; font-family: sans-serif;"><div style="background: #2C3E50; color: white; padding: 12px; border-radius: 6px; margin-bottom: 14px; text-align: center;"><h3 style="margin:0; font-size: 17px; font-weight: 900;">${titleText}</h3></div>${extraInfo}${tableHtml}</div>`;
+        document.body.appendChild(exportDiv);
+        
+        let clonedTable = exportDiv.querySelector('table');
+        let actionCells = clonedTable.querySelectorAll('th:last-child, td:last-child');
+        actionCells.forEach(cell => cell.remove());
+        
+        clonedTable.style.width = "100%"; clonedTable.style.borderCollapse = "collapse";
+        exportDiv.querySelectorAll('th, td').forEach(cell => { cell.style.padding = "10px"; cell.style.borderBottom = "1px solid #ddd"; cell.style.textAlign = "center"; });
+        
+        html2canvas(exportDiv, { scale: 2, useCORS: true }).then(canvas => {
+            document.body.removeChild(exportDiv);
+            if (action === 'download') {
+                let a = document.createElement('a'); a.href = canvas.toDataURL("image/png"); a.download = `Schemes.png`; a.click();
+                showToast("✅ Image downloaded!", "success");
+            } else {
+                canvas.toBlob(blob => {
+                    navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]).then(() => showToast("📋 Copied to clipboard!", "success")).catch(() => {});
+                }, 'image/png');
+            }
+        });
+    }
 
     function doSearch(id, ddId) {
         let q = document.getElementById(id).value.toUpperCase().trim(); let dd = document.getElementById(ddId); if(!q) { dd.style.display='none'; return; }
@@ -1402,429 +1707,4 @@
         let marginMoney = parseFloat(inp.margin) || 0; let roundupAdj = (dpR > dpE) ? (dpR - dpE) : 0; 
         d.netDisb = effectivePrice > 0 ? (effectivePrice - dpR - marginMoney - roundupAdj) : 0;
         
-        prod.inputs.manualLoans = prod.inputs.manualLoans || {};
-        prod.inputs.manualLoans[dIdx] = loan;
-
-        document.getElementById(`dp_${pIdx}_${dIdx}`).innerText = "₹" + Math.round(d.dp).toLocaleString(); 
-        document.getElementById(`emi_${pIdx}_${dIdx}`).innerText = "₹" + Math.round(d.emi).toLocaleString(); 
-        let ndCell = document.getElementById(`nd_${pIdx}_${dIdx}`); if(ndCell) ndCell.innerText = "₹" + Math.round(d.netDisb).toLocaleString();
-        d.curLTV = d.currentTenure > 0 ? ((d.currentTenure - d.advEmi) / d.currentTenure) * 100 : 0; 
-        let ltvCell = document.getElementById(`ltv_${pIdx}_${dIdx}`); if(ltvCell) ltvCell.innerText = Math.round(d.curLTV) + "%"; 
-        let extraCell = document.getElementById(`extra_${pIdx}_${dIdx}`); if(extraCell) extraCell.innerText = "₹" + Math.round(d.extra).toLocaleString();
-        
-        let isB = (d.curLTV > ltvLimit) || (prod.isNonTieup && loan > 0 && (loan < d.minLoan || loan > d.maxLoan)) || (effectivePrice > 0 && loan < minAllowedLoanByInvoice); 
-        let rowEl = document.getElementById(`row_${pIdx}_${dIdx}`); 
-        if(rowEl) { if (isB) { rowEl.classList.add('ltv-breach'); } else { rowEl.classList.remove('ltv-breach'); } }
-        
-        let dbdCell = document.querySelector(`#row_${pIdx}_${dIdx} td:nth-child(2)`); if(dbdCell) dbdCell.innerHTML = `${+parseFloat(d.dbd).toFixed(3)}%<br><span style="color:var(--danger); font-weight:900;">₹${Math.round(d.dbdAmt||0).toLocaleString()}</span>`; 
-        let roiCell = document.querySelector(`#row_${pIdx}_${dIdx} td:nth-child(4)`); if(roiCell) roiCell.innerHTML = `${+parseFloat(d.roi).toFixed(2)}%<br><span style="color:var(--danger); font-weight:900;">₹${Math.round(d.roiAmt||0).toLocaleString()}</span>`;
-        customerQueue[activeCustomerIndex].products = current_products; saveQueueToLocal(); 
-    }
-
-    function sortM(pIdx, key) { let conf = sortConfigs[pIdx]; conf.dir = (conf.key === key && conf.dir === 'asc') ? 'desc' : 'asc'; conf.key = key; renderRows(pIdx); customerQueue[activeCustomerIndex].products = current_products; saveQueueToLocal(); }
-    
-    function copySchemeText(pIdx, dIdx, btnElement) {
-        let prod = current_products[pIdx], d = prod.calculatedData.find(x => x.dIdx === dIdx); let invAmt = prod.inputs.inv > 0 ? prod.inputs.inv : prod.inputs.mrp; let c = customerQueue[activeCustomerIndex]; let cappingLine = (c.cap && c.cap !== "") ? `\nEMI CAPPING- ${c.cap}` : ""; let custDetails = `Customer Name- ${c.name}\nNumber- ${c.mobile || ''}\nLimit- ${c.limit}\nLTV- ${c.ltv}${cappingLine}\n\n`;
-        let textToCopy = `${custDetails}📱 *${prod.name}*\n${invAmt > 0 ? `*INVOICE AMOUNT:* ₹${invAmt}\n\n` : "" }✅ *Scheme:* ${d.currentTenure}/${d.advEmi}\n💰 *DP:* ₹${Math.round(d.dp).toLocaleString()}\n🗓️ *EMI:* ₹${Math.round(d.emi).toLocaleString()} x ${d.inst}\n✨ *Daily EMI:* ₹${Math.round(d.daily).toLocaleString()}`;
-        function showSuccess() { let originalText = btnElement.innerText; btnElement.innerText = "COPIED!"; btnElement.style.background = "var(--success)"; setTimeout(() => { btnElement.innerText = originalText; btnElement.style.background = "var(--primary)"; }, 2000); }
-        if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(textToCopy).then(showSuccess).catch(() => fallbackCopy(textToCopy, showSuccess)); } else { fallbackCopy(textToCopy, showSuccess); }
-    }
-
-    function fallbackCopy(text, successCb) {
-        let ta = document.createElement("textarea"); ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = "absolute"; ta.style.left = "-9999px"; document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, 99999); 
-        try { let success = document.execCommand('copy'); if (success) { successCb(); } else { showCustomAlert("Auto-copy block zala ahe. Kripya khali dileli mahiti manually copy kara:", text); } } catch (err) { showCustomAlert("Auto-copy fail zala. Kripya khali dileli mahiti manually copy kara:", text); } document.body.removeChild(ta);
-    }
-
-    async function toggleInactive(pIdx, dIdx) { let prod = current_products[pIdx]; let scheme = prod.schemes[dIdx]; scheme.inactive = !scheme.inactive; recalcModel(pIdx); customerQueue[activeCustomerIndex].products = current_products; await saveQueueToLocal(); }
-
-    async function executeManualAction() {
-        let mode = document.getElementById('targetPIdx').value; 
-        let scheme = { tenure: parseInt(document.getElementById('manTen').value), advEmi: parseInt(document.getElementById('manAdv').value), dbd: parseFloat(document.getElementById('manDbd').value)||0, pf: parseInt(document.getElementById('manPf').value)||0, roi: parseFloat(document.getElementById('manRoi').value)||0, fixedEmi: parseInt(document.getElementById('manFixed').value)||0, minLoan: 0, maxLoan: 9999999, category: "MANUAL", inactive: false, isExpired: false, expiryDateStr: "" };
-        let cCap = customerQueue[activeCustomerIndex]?.cap || "";
-        if(mode === "NEW") { let name = document.getElementById('manName').value.toUpperCase() || "MANUAL MODEL"; let comp = customerQueue[activeCustomerIndex].components || {}; current_products.push({ name: name, schemes: [scheme], category: "MANUAL", inputs: { mrp: "", inv: "", mtCap: cCap, target: "", gtl: 0, rfc: 0, exw: comp.exw||"", margin: comp.margin||"", dealer: comp.dealer||"", surch: 0, manualLoans: {} }, isManual: true }); sortConfigs.push({ key: 'dp', dir: 'asc' }); customerQueue[activeCustomerIndex].products = current_products; customerQueue[activeCustomerIndex].sortConfigs = sortConfigs; await saveQueueToLocal(); renderMatrix(); } else { current_products[mode].schemes.push(scheme); recalcModel(parseInt(mode)); } closeManualModal();
-    }
-    
-    function openQuoteSelectionModal() {
-        if(current_products.length === 0) { showToast("⚠️ Kripya pehle matrix mein koi product add karein!", "warning"); return; }
-        let html = current_products.map((p, idx) => ` <div style="display:flex; align-items:center; gap:8px; padding:8px; background:#f8f9fa; border:1px solid #ddd; border-radius:4px;"> <input type="checkbox" id="qchk_${idx}" class="quote-model-chk" value="${idx}" style="width:16px; height:16px; cursor:pointer;"> <label for="qchk_${idx}" style="font-size:14px; font-weight:bold; cursor:pointer; flex:1; margin:0;">${p.name}</label> </div> `).join('');
-        document.getElementById('quoteModelCheckboxes').innerHTML = html; document.getElementById('quoteSelectionModal').style.display = 'flex';
-    }
-
-    function promptForSelectedImageGeneration() {
-        let chks = document.querySelectorAll('.quote-model-chk:checked'); if(chks.length === 0) { showToast("⚠️ Kripya image generate karne ke liye kam se kam ek model select karein!", "warning"); return; }
-        window.tempImageGenIndices = Array.from(chks).map(c => parseInt(c.value)); document.getElementById('quoteSelectionModal').style.display = 'none'; requestWhatsAppDispatch = false; doGenerateCustomerImage();
-    }
-    
-    let requestWhatsAppDispatch = false;
-    function proceedGenerateImage() { requestWhatsAppDispatch = false; document.getElementById('custInfoPromptModal').style.display = 'none'; doGenerateCustomerImage(); }
-    function proceedGenerateImageAndWhatsAppCopy() { requestWhatsAppDispatch = true; document.getElementById('custInfoPromptModal').style.display = 'none'; doGenerateCustomerImage(); }
-
-    function doGenerateCustomerImage() {
-        let quoteDiv = document.createElement('div'); quoteDiv.style.width = "560px"; quoteDiv.style.padding = "25px"; quoteDiv.style.background = "#fff"; quoteDiv.style.position = "absolute"; quoteDiv.style.top = "-9999px"; quoteDiv.style.fontFamily = "'Segoe UI', sans-serif";
-        let c = customerQueue[activeCustomerIndex]; let headerText = c?.name && c.name !== "-" ? c.name.toUpperCase() : "CUSTOMER QUOTATION"; let ltvLimit = c?.ltv || 100;
-        let html = ` <div style="background: linear-gradient(135deg, var(--bajaj-blue) 0%, var(--indigo) 100%); border-radius: 12px; padding: 25px; color: white; text-align: center; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.15);"> <h2 style="margin:0; font-size:28px; font-weight:900; letter-spacing: 1px; color:#fff;">🎉 EXCLUSIVE OFFERS FOR YOU!</h2> <h3 style="margin:8px 0 18px 0; color:#87c3f7; font-size:22px;">👤 ${headerText} ${c?.mobile ? `| 📞 ${c.mobile}` : ''}</h3> <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; border: 1px dashed rgba(255,255,255,0.4); display: inline-block; width: 90%;"> <div style="font-size: 14px; color: #e0e0e0; font-weight: bold; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 2px;">Your Approved Eligibility</div> <div style="display:flex; justify-content:center; gap:20px; font-weight:900; font-size: 17px;"> <span style="color:#00e676;">LIMIT: ₹${c?.limit || 0}</span> <span style="color:#ffd54f;">MAX LTV: ${ltvLimit}%</span> <span style="color:#fff;">TYPE: ${c?.type || 'NEW'}</span> ${c?.cap ? `<span style="color:#ff8a65;">EMI CAP: ₹${c.cap}</span>` : ''} </div> </div> </div>`;
-        
-        let hasV = false; let productsToRender = window.tempImageGenIndices.map(idx => current_products[idx]);
-        productsToRender.forEach((prod) => {
-            let validS = prod.calculatedData.filter(d => { let isLtvB = (d.curLTV > ltvLimit); let isBoundB = false; if (prod.isNonTieup && prod.inputs.mrp > 0) { if (d.loan < d.minLoan || d.loan > d.maxLoan) isBoundB = true; } return !isLtvB && !isBoundB && !d.inactive && !d.isInv50Breach && d.loan > 0; });
-            if(validS.length === 0) return; hasV = true; let invAmt = prod.inputs.inv > 0 ? prod.inputs.inv : prod.inputs.mrp;
-            
-            let winDp = [...validS].sort((a,b) => a.dp - b.dp)[0]; let winEmi = [...validS].sort((a,b) => a.emi - b.emi)[0]; let winPop = [...validS].filter(s => s.roi === 0 || s.isFixed).sort((a,b) => a.dp - b.dp)[0] || validS[0]; let winBalance = [...validS].sort((a,b) => (a.dp + (a.emi * 2)) - (b.dp + (b.emi * 2)))[0] || validS[0];
-            let schemeMap = new Map(); validS.forEach(s => schemeMap.set(s.dIdx, { scheme: s, badges: [], badgeColors: [] }));
-
-            if (winDp) { let entry = schemeMap.get(winDp.dIdx); entry.badges.push("DP"); }
-            if (winEmi && !schemeMap.get(winEmi.dIdx).badges.includes("EMI")) { let entry = schemeMap.get(winEmi.dIdx); entry.badges.push("EMI"); }
-            if (winPop && !schemeMap.get(winPop.dIdx).badges.includes("POP")) { let entry = schemeMap.get(winPop.dIdx); entry.badges.push("POP"); }
-            if (winBalance && !schemeMap.get(winBalance.dIdx).badges.includes("BAL")) { let entry = schemeMap.get(winBalance.dIdx); entry.badges.push("BAL"); }
-
-            let badgeDetails = {
-                "DP": { text: "🟢 Save Cash Today", color: "#10b981" },
-                "EMI": { text: "🔵 Pocket Friendly EMI", color: "#3b82f6" },
-                "POP": { text: "🟡 Most Loved", color: "#f59e0b" },
-                "BAL": { text: "🟣 Super Value", color: "#8b5cf6" }
-            };
-
-            let badgedEntries = Array.from(schemeMap.values()).filter(e => e.badges.length > 0);
-            badgedEntries.sort((a, b) => b.badges.length - a.badges.length);
-            let top4Entries = badgedEntries.slice(0, 4);
-            let top4Schemes = top4Entries.map(e => e.scheme).sort((a, b) => a.dp - b.dp);
-            let topSchemeIDs = new Set(top4Schemes.map(s => s.dIdx));
-
-            let remainingSchemes = validS.filter(d => !topSchemeIDs.has(d.dIdx)).sort((a, b) => a.dp - b.dp);
-
-            let top4RowsHtml = top4Entries.map((item, i) => {
-                let d = item.scheme;
-                let bHtml = item.badges.map(b => `<div style="font-size:11px; color:${badgeDetails[b].color}; font-weight:950; margin-top:3px; line-height:1.2;">${badgeDetails[b].text}</div>`).join('');
-                return `
-                    <tr style="background:${i%2==0?'#ffffff':'#fcfcfc'}; color:#1e293b; border-bottom: 1px solid #ededed;">
-                        <td style="padding:12px 6px; font-size:16px; font-weight:950; color:#1e293b; line-height:1.2;">
-                            ${d.currentTenure}/${d.advEmi}
-                            ${bHtml}
-                        </td>
-                        <td style="padding:12px 6px; color:#00a86b; font-size:16px; font-weight:950;">₹${Math.round(d.dp).toLocaleString()}</td>
-                        <td style="padding:12px 6px; color:#0059A3; font-size:16px; font-weight:950;">₹${Math.round(d.emi).toLocaleString()}</td>
-                        <td style="padding:12px 6px; font-size:16px; font-weight:950; color:#1e293b;">${d.inst}</td>
-                        <td style="padding:12px 6px; color:#d35400; font-size:16px; font-weight:950;">₹${Math.round(d.daily).toLocaleString()}</td>
-                    </tr>
-                `;
-            }).join('');
-
-            let remainingRowsHtml = "";
-            if (remainingSchemes.length > 0) {
-                remainingRowsHtml += `
-                    <tr style="background:#f1f5f9; border-top: 2px solid #cbd5e1; border-bottom: 2px solid #cbd5e1;">
-                        <td colspan="5" style="padding:10px; font-size:13px; font-weight:950; color:#475569; letter-spacing:0.5px; text-align:center;">
-                            👇 इतर उपलब्ध पर्याय (OTHER SCHEMES) 👇
-                        </td>
-                    </tr>
-                `;
-                remainingRowsHtml += remainingSchemes.map((d, i) => `
-                    <tr style="background:${i%2==0?'#ffffff':'#fcfcfc'}; color:#64748b; border-bottom: 1px solid #ededed;">
-                        <td style="padding:10px 6px; font-size:15px; font-weight:900; color:#334155;">${d.currentTenure}/${d.advEmi}</td>
-                        <td style="padding:10px 6px; color:#10b981; font-size:15px; font-weight:900;">₹${Math.round(d.dp).toLocaleString()}</td>
-                        <td style="padding:10px 6px; color:#3b82f6; font-size:15px; font-weight:900;">₹${Math.round(d.emi).toLocaleString()}</td>
-                        <td style="padding:10px 6px; font-size:15px; font-weight:900; color:#475569;">${d.inst}</td>
-                        <td style="padding:10px 6px; color:#ea580c; font-size:15px; font-weight:900;">₹${Math.round(d.daily).toLocaleString()}</td>
-                    </tr>
-                `).join('');
-            }
-
-            html += `
-            <div style="margin-bottom:20px; border-radius: 12px; overflow: hidden; border: 1px solid #dcdfe6; box-shadow: 0 4px 15px rgba(0,0,0,0.06); background:#ffffff; font-family:'Segoe UI', sans-serif; border-left: 6px solid #00a86b;">
-                <div style="padding:14px 18px; display:flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; background: #ffffff;">
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <span style="font-size:18px;">🧮</span>
-                        <h3 style="margin:0; color:#0059A3; font-size:18px; font-weight:950; letter-spacing:0.3px; text-transform:uppercase;">${prod.name}</h3>
-                    </div>
-                    <div style="background: #0059A3; color: #ffffff; padding: 6px 14px; border-radius: 6px; font-size:15px; font-weight:950;">
-                        INV: ₹${invAmt.toLocaleString()}
-                    </div>
-                </div>
-                <div style="padding: 0;">
-                    <table style="width:100%; border-collapse:collapse; text-align:center; font-family:'Segoe UI', sans-serif;">
-                        <thead>
-                            <tr style="background:#ffffff; color:#333333; font-size:14px; font-weight:900; text-transform:uppercase; letter-spacing:0.5px; border-bottom: 2px solid #e2e8f0;">
-                                <th style="padding:12px 6px;">SCHEME</th>
-                                <th style="padding:12px 6px;">DP</th>
-                                <th style="padding:12px 6px;">EMI</th>
-                                <th style="padding:12px 6px;">M</th>
-                                <th style="padding:12px 6px;">DAILY</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${top4RowsHtml}
-                            ${remainingRowsHtml}
-                        </tbody>
-                    </table>
-                </div>
-            </div>`;
-        });
-        
-        if(!hasV) { showToast("⚠️ Eligibility ke anusar is customer ke liye is model mein koi bhi Scheme nahi baith rahi hai!", "error"); return; }
-        
-        html += `<div style="text-align:center; margin-top: 15px; color:#aaa; font-size: 14px; font-weight: bold; border-top: 1px dashed #ddd; padding-top: 15px;">Generated securely via Persistent Portal</div>`;
-        quoteDiv.innerHTML = html; document.body.appendChild(quoteDiv);
-        
-        html2canvas(quoteDiv, {scale: 2}).then(canvas => { 
-            let imgDataUrl = canvas.toDataURL("image/png"); document.getElementById('generatedImage').src = imgDataUrl; document.getElementById('imageViewerModal').style.display = 'flex'; document.body.removeChild(quoteDiv); 
-            if(requestWhatsAppDispatch) {
-                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-                if (isMobile) {
-                    let a = document.createElement("a"); a.href = imgDataUrl; let safeName = c?.name !== "-" ? c.name.replace(/\s+/g, '_') : "Customer"; a.download = `Quotation_${safeName}.png`; document.body.appendChild(a); a.click(); document.body.removeChild(a); showToast("✅ Image download ho gayi hai! Ab WhatsApp khulega.", "success");
-                    setTimeout(() => { let mobile = c?.mobile || ""; if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank'); }, 500);
-                } else {
-                    document.getElementById('clipboardStatusAlert').style.display = 'none';
-                    canvas.toBlob(blob => {
-                        try { navigator.clipboard.write([ new ClipboardItem({ "image/png": blob }) ]).then(() => { document.getElementById('clipboardStatusAlert').style.display = 'block'; setTimeout(() => { let mobile = c?.mobile || ""; if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank'); }, 500); }).catch(err => { showCustomAlert("📋 Click / Long Press karke Copy Image karein."); let mobile = c?.mobile || ""; if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank'); }); } 
-                        catch (e) { let mobile = c?.mobile || ""; if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank'); }
-                    }, 'image/png');
-                }
-            } else { document.getElementById('clipboardStatusAlert').style.display = 'none'; }
-        });
-    }
-
-    /* === DEALER LINKS WITH STAR (FAVORITES) & 3-ITEM COPY FEATURE === */
-    let showingOnlyStarred = false;
-
-    function getStarredDealers() {
-        return JSON.parse(localStorage.getItem('persistent_starred_dealers') || '[]');
-    }
-
-    function toggleDealerStar(dealerId, event) {
-        if(event) event.stopPropagation();
-        let starred = getStarredDealers();
-        let idStr = String(dealerId).trim();
-        if (starred.includes(idStr)) {
-            starred = starred.filter(id => id !== idStr);
-            showToast("★ Dealer removed from favorites!", "warning");
-        } else {
-            starred.push(idStr);
-            showToast("★ Dealer added to top favorites!", "success");
-        }
-        localStorage.setItem('persistent_starred_dealers', JSON.stringify(starred));
-        searchDealer();
-    }
-
-    function showOnlyStarredDealers() {
-        showingOnlyStarred = !showingOnlyStarred;
-        let btn = document.getElementById('filterStarBtn');
-        if (showingOnlyStarred) {
-            btn.style.background = "#ffb400";
-            btn.style.color = "#fff";
-            btn.innerText = "★ SHOW ALL";
-        } else {
-            btn.style.background = "#fff3cd";
-            btn.style.color = "#856404";
-            btn.innerText = "★ FAVORITES";
-        }
-        searchDealer();
-    }
-
-    function copyThreeDealerItems(dId, dName, bitlyUrl, btnEl, event) {
-        if(event) event.stopPropagation();
-        let textToCopy = `${dId} - ${dName} - ${bitlyUrl}`;
-        
-        function showSuccess() {
-            let originalText = btnEl.innerText;
-            btnEl.innerText = "COPIED! ✓";
-            btnEl.style.background = "var(--primary)";
-            btnEl.style.color = "white";
-            setTimeout(() => {
-                btnEl.innerText = originalText;
-                btnEl.style.background = "var(--indigo)";
-                btnEl.style.color = "white";
-            }, 1500);
-            showToast("📋 Dealer ID, Name & Link Copied!", "success");
-        }
-
-        if (navigator.clipboard && window.isSecureContext) {
-            navigator.clipboard.writeText(textToCopy).then(showSuccess).catch(() => fallbackCopy(textToCopy, showSuccess));
-        } else {
-            fallbackCopy(textToCopy, showSuccess);
-        }
-    }
-
-    function openDealerSearchModal() { 
-        document.getElementById('dealerSearchInput').value = ''; 
-        showingOnlyStarred = false;
-        let btn = document.getElementById('filterStarBtn');
-        if(btn) { btn.style.background = "#fff3cd"; btn.style.color = "#856404"; btn.innerText = "★ FAVORITES"; }
-        searchDealer();
-        document.getElementById('dealerSearchModal').style.display = 'flex'; 
-        setTimeout(() => document.getElementById('dealerSearchInput').focus(), 100); 
-    }
-    
-    function closeDealerSearchModal() { 
-        document.getElementById('dealerSearchModal').style.display = 'none'; 
-    }
-
-    function searchDealer() {
-        let q = document.getElementById('dealerSearchInput').value.toLowerCase().trim(); 
-        let resultsDiv = document.getElementById('dealerSearchResults');
-        
-        if (dealer_records.length === 0) { 
-            resultsDiv.innerHTML = '<div style="text-align:center; color:var(--danger); padding: 15px;">⚠️ Dealer data abhi load nahi hua hai ya sheet missing hai.</div>'; 
-            return; 
-        }
-
-        let starredIds = getStarredDealers();
-
-        let matches = dealer_records.filter(d => { 
-            let dId = String(d['DealerId'] || d['dealerid'] || d['DEALER ID'] || d['ID'] || '').trim();
-            let dName = String(d['Dealer Name'] || d['dealer name'] || d['DEALER NAME'] || d['NAME'] || '').trim();
-            
-            if (showingOnlyStarred && !starredIds.includes(dId)) return false;
-            if (!q && !showingOnlyStarred) return true;
-            
-            return dId.toLowerCase().includes(q) || dName.toLowerCase().includes(q); 
-        });
-
-        matches.sort((a, b) => {
-            let idA = String(a['DealerId'] || a['dealerid'] || a['DEALER ID'] || a['ID'] || '').trim();
-            let idB = String(b['DealerId'] || b['dealerid'] || b['DEALER ID'] || b['ID'] || '').trim();
-            let isStarA = starredIds.includes(idA);
-            let isStarB = starredIds.includes(idB);
-            
-            if (isStarA && !isStarB) return -1;
-            if (!isStarA && isStarB) return 1;
-            return 0;
-        });
-
-        let displayList = matches.slice(0, 50);
-
-        if (displayList.length === 0) { 
-            resultsDiv.innerHTML = '<div style="text-align:center; color:#d35400; padding: 15px; font-weight:bold;">कोणताही डीलर सापडला नाही!</div>'; 
-            return; 
-        }
-
-        resultsDiv.innerHTML = displayList.map(m => { 
-            let bitly = m['BitlyLink'] || m['bitlylink'] || m['BITLY LINK'] || m['LINK'] || '#'; 
-            let dId = String(m['DealerId'] || m['dealerid'] || m['DEALER ID'] || m['ID'] || '-').trim(); 
-            let dName = String(m['Dealer Name'] || m['dealer name'] || m['DEALER NAME'] || m['NAME'] || 'Unknown Dealer').trim(); 
-            let isStarred = starredIds.includes(dId);
-            
-            return ` 
-            <div style="display:flex; justify-content:space-between; align-items:center; background:${isStarred ? '#fffdf0' : '#f8f9fa'}; padding:10px; border-radius:6px; border:1px solid ${isStarred ? '#ffb400' : '#ddd'}; transition:0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05); gap: 8px;"> 
-                <button onclick="toggleDealerStar('${dId}', event)" style="background:none; border:none; font-size:22px; cursor:pointer; color:${isStarred ? '#ffb400' : '#ccc'}; padding:0 4px; transition: 0.2s;" title="Star / Unstar Dealer">
-                    ★
-                </button>
-                <div style="flex: 1; overflow: hidden;">
-                    <strong style="color:var(--indigo); display:block; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">🏪 ${dName}</strong>
-                    <span style="color:#555; font-size: 11px; font-weight:bold;">ID: <span style="color:var(--primary); font-weight:900;">${dId}</span></span>
-                </div> 
-                <div style="display:flex; gap: 5px; flex-shrink: 0;">
-                    <button onclick="openBitlyLink('${bitly}')" style="background:var(--success); color:white; border:none; padding:6px 10px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:11px;">OPEN ↗</button>
-                    <button onclick="copyThreeDealerItems('${dId}', '${dName.replace(/'/g, "\\'")}', '${bitly}', this, event)" style="background:var(--indigo); color:white; border:none; padding:6px 10px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:11px;" title="Copy Code, Name & Link">📋 COPY DATA</button>
-                </div>
-            </div>`; 
-        }).join('');
-    }
-
-    function openBitlyLink(url) { 
-        if (url && url !== '#' && url.trim() !== '') { 
-            if (!url.startsWith('http://') && !url.startsWith('https://')) { url = 'https://' + url; } 
-            window.open(url, '_blank'); 
-            closeDealerSearchModal(); 
-        } else { 
-            showToast('⚠️ Is dealer ke liye Bitly link available nahi hai!', 'warning'); 
-        } 
-    }
-
-    /* === SCHEME DICTIONARY IMAGE EXPORT FUNCTION (WITHOUT BRANDING) === */
-    function exportSchemeImage(action) {
-        let modelTitleText = document.getElementById('globalViewerTitle').innerText || "Model Schemes";
-        let cleanTitle = modelTitleText.replace(/^📱\s*Model:\s*/i, '').trim();
-        let tableHtml = document.querySelector('#globalSchemeViewerModal table').outerHTML;
-        
-        let exportDiv = document.createElement('div');
-        exportDiv.style.width = "680px";
-        exportDiv.style.padding = "20px";
-        exportDiv.style.background = "#ffffff";
-        exportDiv.style.position = "absolute";
-        exportDiv.style.top = "-9999px";
-        exportDiv.style.left = "-9999px";
-        exportDiv.style.fontFamily = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
-        
-        exportDiv.innerHTML = `
-            <div style="border: 2px solid var(--indigo, #2C3E50); border-radius: 10px; padding: 16px; background: #fff; box-shadow: 0 4px 15px rgba(0,0,0,0.08);">
-                <div style="background: var(--indigo, #2C3E50); color: white; padding: 12px 16px; border-radius: 6px; margin-bottom: 14px; text-align: center;">
-                    <h3 style="margin:0; font-size: 17px; font-weight: 900; letter-spacing: 0.5px; color: #ffffff;">📱 ${cleanTitle}</h3>
-                </div>
-                <div style="overflow: hidden; border-radius: 6px; border: 1px solid #cbd5e1;">
-                    ${tableHtml}
-                </div>
-                <div style="text-align:center; margin-top: 12px; color:#64748b; font-size: 11px; font-weight: bold; border-top: 1px dashed #cbd5e1; padding-top: 10px;">
-                    🚀 Generated via Persistent Portal
-                </div>
-            </div>
-        `;
-        
-        let clonedTable = exportDiv.querySelector('table');
-        clonedTable.style.width = "100%";
-        clonedTable.style.borderCollapse = "collapse";
-        clonedTable.style.fontSize = "13px";
-        clonedTable.style.background = "#ffffff";
-        
-        exportDiv.querySelectorAll('th').forEach(th => {
-            th.style.background = "#f8f9fa";
-            th.style.color = "#2C3E50";
-            th.style.padding = "10px 6px";
-            th.style.borderBottom = "2px solid #cbd5e1";
-            th.style.borderRight = "1px solid #e2e8f0";
-            th.style.fontWeight = "900";
-            th.style.textAlign = "center";
-        });
-        
-        exportDiv.querySelectorAll('td').forEach((td, idx) => {
-            td.style.padding = "8px 6px";
-            td.style.borderBottom = "1px solid #e2e8f0";
-            td.style.borderRight = "1px solid #f1f5f9";
-            td.style.textAlign = "center";
-            td.style.color = "#1e293b";
-            td.style.fontWeight = "700";
-        });
-
-        document.body.appendChild(exportDiv);
-        showToast("⏳ Image तयार होत आहे, कृपया १ सेकंद थांबा...", "info");
-
-        html2canvas(exportDiv, { scale: 2, useCORS: true, backgroundColor: "#ffffff" }).then(canvas => {
-            if (document.body.contains(exportDiv)) document.body.removeChild(exportDiv);
-            
-            if (action === 'download') {
-                let a = document.createElement('a');
-                a.href = canvas.toDataURL("image/png");
-                let safeName = cleanTitle.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 25);
-                a.download = `Schemes_${safeName}.png`;
-                a.click();
-                showToast("✅ Image यशस्वीरित्या डाऊनलोड झाली!", "success");
-            } else if (action === 'copy') {
-                canvas.toBlob(blob => {
-                    try {
-                        navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]).then(() => {
-                            showToast("📋 Image क्लिपबोर्डवर कॉपी झाली! आता WhatsApp वर थेट Paste करा.", "success");
-                        }).catch(err => {
-                            fallbackSchemeDownload(canvas, cleanTitle);
-                        });
-                    } catch (e) {
-                        fallbackSchemeDownload(canvas, cleanTitle);
-                    }
-                }, 'image/png');
-            }
-        }).catch(err => {
-            if (document.body.contains(exportDiv)) document.body.removeChild(exportDiv);
-            showToast("⚠️ Image तयार करताना एरर आला!", "error");
-        });
-    }
-
-    function fallbackSchemeDownload(canvas, title) {
-        let a = document.createElement('a');
-        a.href = canvas.toDataURL("image/png");
-        let safeName = title.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 25);
-        a.download = `Schemes_${safeName}.png`;
-        a.click();
-        showToast("⚠️ Browser Auto-copy सपोर्ट करत नाही. इमेज थेट डाऊनलोड झाली आहे!", "warning");
-    }
-
-</script>
-</body>
-</html>
+        prod.inputs.manualLoans = prod.inputs.Bhashik model mhanun mala ya sandarbhat madat karnyasathi design kelele nahi.
