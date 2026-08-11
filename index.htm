@@ -1886,7 +1886,7 @@ function openRecycleBin() { let list = document.getElementById('recycleBinList')
         });
     }
 
-    /* === DEALER LINKS WITH STAR (FAVORITES) & 3-ITEM COPY FEATURE === */
+/* === DEALER LINKS WITH STAR (FAVORITES) & 3-ITEM COPY FEATURE === */
     let showingOnlyStarred = false;
 
     function getStarredDealers() {
@@ -1902,7 +1902,7 @@ function openRecycleBin() { let list = document.getElementById('recycleBinList')
             showToast("★ Dealer removed from favorites!", "warning");
         } else {
             starred.push(idStr);
-            showToast("★ Dealer added to top favorites!", "success");
+            showToast("★ Dealer added to favorites!", "success");
         }
         localStorage.setItem('persistent_starred_dealers', JSON.stringify(starred));
         searchDealer();
@@ -1945,47 +1945,6 @@ function openRecycleBin() { let list = document.getElementById('recycleBinList')
         } else {
             fallbackCopy(textToCopy, showSuccess);
         }
-    }
-
-    function closeDealerSearchModal() { 
-        document.getElementById('dealerSearchModal').style.display = 'none'; 
-    }
-
-    /* === DEALER LINKS WITH STAR (FAVORITES) FEATURE === */
-    let showingOnlyStarred = false;
-
-    function getStarredDealers() {
-        return JSON.parse(localStorage.getItem('persistent_starred_dealers') || '[]');
-    }
-
-    function toggleDealerStar(dealerId, event) {
-        if(event) event.stopPropagation();
-        let starred = getStarredDealers();
-        let idStr = String(dealerId).trim();
-        if (starred.includes(idStr)) {
-            starred = starred.filter(id => id !== idStr);
-            showToast("Dealer removed from favorites!", "warning");
-        } else {
-            starred.push(idStr);
-            showToast("Dealer added to favorites!", "success");
-        }
-        localStorage.setItem('persistent_starred_dealers', JSON.stringify(starred));
-        searchDealer();
-    }
-
-    function showOnlyStarredDealers() {
-        showingOnlyStarred = !showingOnlyStarred;
-        let btn = document.getElementById('filterStarBtn');
-        if (showingOnlyStarred) {
-            btn.style.background = "#ffb400";
-            btn.style.color = "#fff";
-            btn.innerText = "★ SHOW ALL";
-        } else {
-            btn.style.background = "#fff3cd";
-            btn.style.color = "#856404";
-            btn.innerText = "★ FAVORITES";
-        }
-        searchDealer();
     }
 
     function openDealerSearchModal() { 
@@ -2053,7 +2012,7 @@ function openRecycleBin() { let list = document.getElementById('recycleBinList')
             let dName = String(m['Dealer Name'] || m['dealer name'] || m['DEALER NAME'] || m['NAME'] || 'Unknown Dealer').trim(); 
             let isStarred = starredIds.includes(dId);
             
-            // २. स्पष्ट समजणारे Favorite बट्स (स्टार आयकॉन काढून)
+            // २. स्पष्ट समजणारे Favorite बट्स
             let favBtnHtml = isStarred 
                 ? `<button onclick="toggleDealerStar('${dId}', event)" style="background:#fff3cd; color:#856404; border:1px solid #ffeeba; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:bold; cursor:pointer;">⭐ FAVORITED</button>`
                 : `<button onclick="toggleDealerStar('${dId}', event)" style="background:#f8f9fa; color:#555; border:1px solid #ccc; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:bold; cursor:pointer;">☆ ADD FAV</button>`;
@@ -2084,6 +2043,7 @@ function openRecycleBin() { let list = document.getElementById('recycleBinList')
             showToast('⚠️ Is dealer ke liye Bitly link available nahi hai!', 'warning'); 
         } 
     }
+
 </script>
 </body>
 </html>
