@@ -1100,7 +1100,7 @@
         let isCalculatedMode = (limit > 0 && invoice > 0);
         let fee = (custType === 'EMI CARD') ? 270 : (custType === 'W/O CARD' ? 320 : 850);
 
-        let validSchemes = schemes.filter(s => s.tenure > 0 || s.fixedEmi > 0);
+        let validSchemes = schemes.filter(s => (s.tenure > 0 || s.fixedEmi > 0) && !s.isExpired);
         
         let thead = document.getElementById('tableHead');
         if (isCalculatedMode) {
@@ -1814,7 +1814,7 @@ function openRecycleBin() { let list = document.getElementById('recycleBinList')
         
         let hasV = false; let productsToRender = window.tempImageGenIndices.map(idx => current_products[idx]);
         productsToRender.forEach((prod) => {
-            let validS = prod.calculatedData.filter(d => { let isLtvB = (d.curLTV > ltvLimit); let isBoundB = false; if (prod.isNonTieup && prod.inputs.mrp > 0) { if (d.loan < d.minLoan || d.loan > d.maxLoan) isBoundB = true; } return !isLtvB && !isBoundB && !d.inactive && !d.isInv50Breach && d.loan > 0; });
+            let validS = prod.calculatedData.filter(d => { let isLtvB = (d.curLTV > ltvLimit); let isBoundB = false; if (prod.isNonTieup && prod.inputs.mrp > 0) { if (d.loan < d.minLoan || d.loan > d.maxLoan) isBoundB = true; } return !isLtvB && !isBoundB && !d.inactive && !d.isInv50Breach && d.loan > 0 && !d.isExpired; });
             if(validS.length === 0) return; hasV = true; let invAmt = prod.inputs.inv > 0 ? prod.inputs.inv : prod.inputs.mrp;
             
             let winDp = [...validS].sort((a,b) => a.dp - b.dp)[0]; let winEmi = [...validS].sort((a,b) => a.emi - b.emi)[0]; let winPop = [...validS].filter(s => s.roi === 0 || s.isFixed).sort((a,b) => a.dp - b.dp)[0] || validS[0]; let winBalance = [...validS].sort((a,b) => (a.dp + (a.emi * 2)) - (b.dp + (b.emi * 2)))[0] || validS[0];
