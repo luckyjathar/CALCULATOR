@@ -474,12 +474,6 @@
                 </div>
                 <button onclick="showOnlyStarredDealers()" id="filterStarBtn" style="background: #fff3cd; border: 1px solid #ffeeba; color: #856404; font-weight: bold; padding: 0 15px; border-radius: 10px; cursor: pointer; transition: 0.2s; font-size: 13px; white-space: nowrap; box-shadow: 0 2px 4px rgba(0,0,0,0.02);" title="Show Favorite Dealers Only">★ FAVS</button>
             </div>
-            
-            <div id="dealerSearchResults" class="custom-scroll" style="max-height: 380px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding-right: 6px; padding-bottom: 10px;">
-                <div style="text-align:center; color:#888; margin-top: 20px;">Type ID or Name to search...</div>
-            </div>
-        </div>
-    </div>
 
     <div id="editCustomerModal" class="modal">
         <div class="modal-content" style="max-width:300px;">
@@ -1679,16 +1673,7 @@ function openRecycleBin() { let list = document.getElementById('recycleBinList')
     function renderRows(pIdx) {
         let prod = current_products[pIdx]; if(!sortConfigs[pIdx]) sortConfigs[pIdx] = {key: 'dp', dir: 'asc'}; let conf = sortConfigs[pIdx]; prod.calculatedData.sort((a,b) => conf.dir==='asc' ? a[conf.key]-b[conf.key] : b[conf.key]-a[conf.key]); let ltvLimit = customerQueue[activeCustomerIndex]?.ltv || 100; let isNT = prod.isNonTieup;
         document.getElementById(`body_${pIdx}`).innerHTML = prod.calculatedData.map(d => {
-            let isExpLive = d.isExpired;
-            if (d.expiryDateStr) {
-                let pts = d.expiryDateStr.split('/');
-                if (pts.length === 3) {
-                    let expDate = new Date(pts[2], pts[1]-1, pts[0]);
-                    let today = new Date(); today.setHours(0,0,0,0);
-                    if (expDate < today) isExpLive = true;
-                }
-            }
-            if (isExpLive) return ''; // Live Expiry Check
+            if (checkIsLiveExpired(d.isExpired, d.expiryDateStr)) return '';
 
             let curLTV = d.curLTV; let isLtvB = (curLTV > ltvLimit); let isBoundB = false; if (isNT && prod.inputs.mrp > 0) { if (d.loan < d.minLoan || d.loan > d.maxLoan) isBoundB = true; } let isInactive = d.inactive; 
             
