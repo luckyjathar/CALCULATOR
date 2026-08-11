@@ -1258,8 +1258,12 @@
         document.body.appendChild(exportDiv);
         
         let clonedTable = exportDiv.querySelector('table');
-        let actionCells = clonedTable.querySelectorAll('th:last-child, td:last-child');
-        actionCells.forEach(cell => cell.remove());
+        
+        // Delete the last column ONLY if it is the "ACTION" column (Calculated Mode)
+        if (limit > 0 && invoice > 0) {
+            let actionCells = clonedTable.querySelectorAll('th:last-child, td:last-child');
+            actionCells.forEach(cell => cell.remove());
+        }
         
         clonedTable.style.width = "100%"; clonedTable.style.borderCollapse = "collapse";
         exportDiv.querySelectorAll('th, td').forEach(cell => { cell.style.padding = "10px"; cell.style.borderBottom = "1px solid #ddd"; cell.style.textAlign = "center"; });
