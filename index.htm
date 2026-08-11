@@ -1978,21 +1978,19 @@ function openRecycleBin() { let list = document.getElementById('recycleBinList')
             return;
         }
 
-        let matches = dealer_records.filter(d => { 
-            let dId = String(d['DealerId'] || d['dealerid'] || d['DEALER ID'] || d['ID'] || '').trim();
-            let dName = String(d['Dealer Name'] || d['dealer name'] || d['DEALER NAME'] || d['NAME'] || '').trim();
-            
-            if (showingOnlyStarred && !starredIds.includes(dId)) return false;
+        // २. स्मार्ट पार्सर वापरून डीलर्सचा डेटा फिक्स करा (हे एरर दूर करेल)
+        let parsedDealers = dealer_records.map(d => parseDealerObj(d));
+
+        let matches = parsedDealers.filter(p => { 
+            if (showingOnlyStarred && !starredIds.includes(p.code)) return false;
             if (!q && !showingOnlyStarred) return true;
             
-            return dId.toLowerCase().includes(q) || dName.toLowerCase().includes(q); 
+            return p.code.toLowerCase().includes(q) || p.name.toLowerCase().includes(q) || p.city.toLowerCase().includes(q); 
         });
 
         matches.sort((a, b) => {
-            let idA = String(a['DealerId'] || a['dealerid'] || a['DEALER ID'] || a['ID'] || '').trim();
-            let idB = String(b['DealerId'] || b['dealerid'] || b['DEALER ID'] || b['ID'] || '').trim();
-            let isStarA = starredIds.includes(idA);
-            let isStarB = starredIds.includes(idB);
+            let isStarA = starredIds.includes(a.code);
+            let isStarB = starredIds.includes(b.code);
             
             if (isStarA && !isStarB) return -1;
             if (!isStarA && isStarB) return 1;
@@ -2007,12 +2005,12 @@ function openRecycleBin() { let list = document.getElementById('recycleBinList')
         }
 
         resultsDiv.innerHTML = displayList.map(m => { 
-            let bitly = m['BitlyLink'] || m['bitlylink'] || m['BITLY LINK'] || m['LINK'] || '#'; 
-            let dId = String(m['DealerId'] || m['dealerid'] || m['DEALER ID'] || m['ID'] || '-').trim(); 
-            let dName = String(m['Dealer Name'] || m['dealer name'] || m['DEALER NAME'] || m['NAME'] || 'Unknown Dealer').trim(); 
+            let bitly = m.bitly || '#'; 
+            let dId = m.code || '-'; 
+            // नाव आणि शहर एकत्र दाखवूया
+            let dName = m.name + (m.city ? ` - ${m.city}` : ''); 
             let isStarred = starredIds.includes(dId);
             
-            // २. स्पष्ट समजणारे Favorite बट्स
             let favBtnHtml = isStarred 
                 ? `<button onclick="toggleDealerStar('${dId}', event)" style="background:#fff3cd; color:#856404; border:1px solid #ffeeba; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:bold; cursor:pointer;">⭐ FAVORITED</button>`
                 : `<button onclick="toggleDealerStar('${dId}', event)" style="background:#f8f9fa; color:#555; border:1px solid #ccc; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:bold; cursor:pointer;">☆ ADD FAV</button>`;
