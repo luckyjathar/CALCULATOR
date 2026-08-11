@@ -450,46 +450,6 @@
         </div>
     </div>
 
-    <!-- UPDATED DEALER SEARCH MODAL WITH STAR FAVORITES FEATURE -->
-    <!-- UPDATED DEALER SEARCH MODAL (JOTFORM APP UI) -->
-    <div id="dealerSearchModal" class="modal">
-        <div class="modal-content" style="max-width: 480px; padding: 20px; border-radius: 20px; background: #f9fbfd;">
-            
-            <!-- Jotform App Style Header -->
-            <div style="display: flex; flex-direction: column; align-items: center; border-bottom: 1px solid #eef2f5; padding-bottom: 15px; margin-bottom: 15px; position: relative;">
-                <button onclick="closeDealerSearchModal()" style="position: absolute; top: -5px; right: -5px; background: #f0f4f8; border: none; color: #999; font-weight: bold; cursor: pointer; font-size: 16px; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; transition: 0.2s;" onmouseover="this.style.background='#ffebee'; this.style.color='red';" onmouseout="this.style.background='#f0f4f8'; this.style.color='#999';">✖</button>
-                
-                <div style="background: var(--bajaj-blue); width: 64px; height: 64px; border-radius: 18px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; box-shadow: 0 6px 15px rgba(0,89,163,0.3);">
-                    <span style="font-size: 32px; color: white;">🔗</span>
-                </div>
-                <h3 style="margin:0; color:#1e293b; font-size: 22px; font-weight: 800; font-family: 'Segoe UI', sans-serif;">Dealer Links</h3>
-                <p style="margin: 4px 0 0; font-size: 13px; color: #64748b; text-align: center; font-weight: 500;">Search and access dealer forms instantly</p>
-            </div>
-            
-            <!-- Search Bar Jotform Style -->
-            <div style="display: flex; gap: 8px; margin-bottom: 15px;">
-                <div style="flex: 1; position: relative;">
-                    <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 16px; color: #94a3b8;">🔍</span>
-                    <input type="text" id="dealerSearchInput" placeholder="Search Dealer ID or Name..." oninput="searchDealer()" style="width: 100%; padding: 12px 12px 12px 38px; border: 1px solid #cbd5e1; border-radius: 10px; outline: none; font-size: 14px; background: #ffffff; transition: 0.2s; box-sizing: border-box; box-shadow: 0 2px 4px rgba(0,0,0,0.02);" onfocus="this.style.borderColor='var(--bajaj-blue)'; this.style.boxShadow='0 0 0 3px rgba(0,89,163,0.1)';">
-                </div>
-                <button onclick="showOnlyStarredDealers()" id="filterStarBtn" style="background: #fff3cd; border: 1px solid #ffeeba; color: #856404; font-weight: bold; padding: 0 15px; border-radius: 10px; cursor: pointer; transition: 0.2s; font-size: 13px; white-space: nowrap; box-shadow: 0 2px 4px rgba(0,0,0,0.02);" title="Show Favorite Dealers Only">★ FAVS</button>
-            </div>
-            
-            <div id="dealerSearchResults" class="custom-scroll" style="max-height: 380px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding-right: 6px; padding-bottom: 10px;">
-                <div style="text-align:center; color:#888; margin-top: 20px;">Type ID or Name to search...</div>
-            </div>
-        </div>
-    </div>
-            <div style="display: flex; gap: 6px; margin-bottom: 10px;">
-                <input type="text" id="dealerSearchInput" placeholder="🔍 Enter Dealer ID or Name..." oninput="searchDealer()" style="flex: 1; padding: 10px; border: 2px solid var(--primary); border-radius: 6px; outline: none;">
-                <button onclick="showOnlyStarredDealers()" id="filterStarBtn" style="background: #fff3cd; border: 1px solid #ffeeba; color: #856404; font-weight: bold; padding: 0 12px; border-radius: 6px; cursor: pointer; transition: 0.2s;" title="Show Favorite Dealers Only">★ FAVORITES</button>
-            </div>
-            <div id="dealerSearchResults" class="custom-scroll" style="max-height: 320px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding-right: 4px;">
-                <div style="text-align:center; color:#888;">Type ID or Name to search...</div>
-            </div>
-        </div>
-    </div>
-
     <div id="editCustomerModal" class="modal">
         <div class="modal-content" style="max-width:300px;">
             <h3 style="margin-top:0; color:var(--indigo); border-bottom: 2px solid #ddd; padding-bottom: 6px;">✏️ Edit Customer Details</h3>
@@ -1281,12 +1241,8 @@
         document.body.appendChild(exportDiv);
         
         let clonedTable = exportDiv.querySelector('table');
-        
-        // Delete the last column ONLY if it is the "ACTION" column (Calculated Mode)
-        if (limit > 0 && invoice > 0) {
-            let actionCells = clonedTable.querySelectorAll('th:last-child, td:last-child');
-            actionCells.forEach(cell => cell.remove());
-        }
+        let actionCells = clonedTable.querySelectorAll('th:last-child, td:last-child');
+        actionCells.forEach(cell => cell.remove());
         
         clonedTable.style.width = "100%"; clonedTable.style.borderCollapse = "collapse";
         exportDiv.querySelectorAll('th, td').forEach(cell => { cell.style.padding = "10px"; cell.style.borderBottom = "1px solid #ddd"; cell.style.textAlign = "center"; });
@@ -1991,6 +1947,47 @@ function openRecycleBin() { let list = document.getElementById('recycleBinList')
         }
     }
 
+    function closeDealerSearchModal() { 
+        document.getElementById('dealerSearchModal').style.display = 'none'; 
+    }
+
+    /* === DEALER LINKS WITH STAR (FAVORITES) FEATURE === */
+    let showingOnlyStarred = false;
+
+    function getStarredDealers() {
+        return JSON.parse(localStorage.getItem('persistent_starred_dealers') || '[]');
+    }
+
+    function toggleDealerStar(dealerId, event) {
+        if(event) event.stopPropagation();
+        let starred = getStarredDealers();
+        let idStr = String(dealerId).trim();
+        if (starred.includes(idStr)) {
+            starred = starred.filter(id => id !== idStr);
+            showToast("Dealer removed from favorites!", "warning");
+        } else {
+            starred.push(idStr);
+            showToast("Dealer added to favorites!", "success");
+        }
+        localStorage.setItem('persistent_starred_dealers', JSON.stringify(starred));
+        searchDealer();
+    }
+
+    function showOnlyStarredDealers() {
+        showingOnlyStarred = !showingOnlyStarred;
+        let btn = document.getElementById('filterStarBtn');
+        if (showingOnlyStarred) {
+            btn.style.background = "#ffb400";
+            btn.style.color = "#fff";
+            btn.innerText = "★ SHOW ALL";
+        } else {
+            btn.style.background = "#fff3cd";
+            btn.style.color = "#856404";
+            btn.innerText = "★ FAVORITES";
+        }
+        searchDealer();
+    }
+
     function openDealerSearchModal() { 
         document.getElementById('dealerSearchInput').value = ''; 
         showingOnlyStarred = false;
@@ -2010,11 +2007,17 @@ function openRecycleBin() { let list = document.getElementById('recycleBinList')
         let resultsDiv = document.getElementById('dealerSearchResults');
         
         if (dealer_records.length === 0) { 
-            resultsDiv.innerHTML = '<div style="text-align:center; color:var(--danger); padding: 15px;">⚠️ Dealer data abhi load nahi hua hai ya sheet missing hai.</div>'; 
+            resultsDiv.innerHTML = '<div style="text-align:center; color:var(--danger); padding: 15px;">⚠️ Dealer data abhi load nahi hua hai.</div>'; 
             return; 
         }
 
         let starredIds = getStarredDealers();
+
+        // १. रिकामं सर्च बार असेल तर पूर्ण लिस्ट लपवा (फक्त Favorites पाहत नसाल तर)
+        if (!q && !showingOnlyStarred) {
+            resultsDiv.innerHTML = '<div style="text-align:center; color:#888; padding: 20px;">Type Dealer ID or Name to search...</div>';
+            return;
+        }
 
         let matches = dealer_records.filter(d => { 
             let dId = String(d['DealerId'] || d['dealerid'] || d['DEALER ID'] || d['ID'] || '').trim();
@@ -2050,27 +2053,23 @@ function openRecycleBin() { let list = document.getElementById('recycleBinList')
             let dName = String(m['Dealer Name'] || m['dealer name'] || m['DEALER NAME'] || m['NAME'] || 'Unknown Dealer').trim(); 
             let isStarred = starredIds.includes(dId);
             
+            // २. स्पष्ट समजणारे Favorite बट्स (स्टार आयकॉन काढून)
+            let favBtnHtml = isStarred 
+                ? `<button onclick="toggleDealerStar('${dId}', event)" style="background:#fff3cd; color:#856404; border:1px solid #ffeeba; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:bold; cursor:pointer;">⭐ FAVORITED</button>`
+                : `<button onclick="toggleDealerStar('${dId}', event)" style="background:#f8f9fa; color:#555; border:1px solid #ccc; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:bold; cursor:pointer;">☆ ADD FAV</button>`;
+
             return ` 
-            <div style="display:flex; flex-direction:column; justify-content:space-between; align-items:stretch; background:${isStarred ? '#fffcf0' : '#ffffff'}; padding:15px; border-radius:14px; border:1px solid ${isStarred ? '#ffb400' : '#eaeaea'}; transition: all 0.2s ease-in-out; box-shadow: 0 4px 8px rgba(0,0,0,0.04); margin-bottom: 4px;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 12px rgba(0,0,0,0.08)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.04)';"> 
-                
-                <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom: 12px;">
-                    <div style="background: ${isStarred ? '#fff3cd' : '#f0f4f8'}; min-width: 45px; height: 45px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px;">
-                        🏪
+            <div style="display:flex; flex-direction:column; background:${isStarred ? '#fffdf0' : '#fff'}; padding:10px; border-radius:6px; border:1px solid ${isStarred ? '#ffb400' : '#ddd'}; box-shadow: 0 2px 4px rgba(0,0,0,0.05); gap: 8px;"> 
+                <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                    <div style="flex: 1;">
+                        <strong style="color:var(--indigo); display:block; font-size: 14px;">🏪 ${dName}</strong>
+                        <span style="color:#555; font-size: 11px; font-weight:bold;">ID: <span style="color:var(--primary); font-weight:900;">${dId}</span></span>
                     </div>
-                    
-                    <div style="flex: 1; overflow: hidden; padding-top: 2px;">
-                        <strong style="color:#111; display:block; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: 'Segoe UI', sans-serif;">${dName}</strong>
-                        <span style="color:#666; font-size: 12px; font-weight:600;">ID: <span style="color:var(--primary); font-weight:800;">${dId}</span></span>
-                    </div> 
-                    
-                    <button onclick="toggleDealerStar('${dId}', event)" style="background:none; border:none; font-size:24px; cursor:pointer; color:${isStarred ? '#ffb400' : '#e0e0e0'}; padding:0; line-height:1; transition: 0.2s;" title="Star / Unstar Dealer">
-                        ★
-                    </button>
+                    <div>${favBtnHtml}</div>
                 </div>
-                
-                <div style="display:flex; gap: 8px; width: 100%;">
-                    <button onclick="openBitlyLink('${bitly}')" style="flex: 1.2; background:var(--bajaj-blue); color:white; border:none; padding:10px; border-radius:8px; font-weight:700; cursor:pointer; font-size:12px; transition: 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">🌐 OPEN LINK</button>
-                    <button onclick="copyThreeDealerItems('${dId}', '${dName.replace(/'/g, "\\'")}', '${bitly}', this, event)" style="flex: 1; background:#f0f4f8; color:var(--bajaj-blue); border:none; padding:10px; border-radius:8px; font-weight:700; cursor:pointer; font-size:12px; transition: 0.2s;" title="Copy Code, Name & Link">📋 COPY DATA</button>
+                <div style="display:flex; gap: 5px; border-top: 1px dashed #eee; padding-top: 8px;">
+                    <button onclick="openBitlyLink('${bitly}')" style="flex:1; background:var(--success); color:white; border:none; padding:6px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:11px;">OPEN LINK ↗</button>
+                    <button onclick="copyThreeDealerItems('${dId}', '${dName.replace(/'/g, "\\'")}', '${bitly}', this, event)" style="flex:1.5; background:var(--indigo); color:white; border:none; padding:6px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:11px;">📋 COPY DATA</button>
                 </div>
             </div>`; 
         }).join('');
