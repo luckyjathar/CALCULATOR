@@ -668,6 +668,18 @@
     </div>
 </footer>
 <script>
+    function checkIsLiveExpired(isExpiredFlag, dateStr) {
+    if (isExpiredFlag) return true;
+    if (dateStr) {
+        let pts = dateStr.split('/');
+        if (pts.length === 3) {
+            let expDate = new Date(pts[2], pts[1]-1, pts[0]);
+            let today = new Date(); today.setHours(0,0,0,0);
+            if (expDate < today) return true;
+        }
+    }
+    return false;
+}
     /* === TOAST NOTIFICATION FUNCTION === */
     let toastTimeout;
     function showToast(message, type = 'success') {
