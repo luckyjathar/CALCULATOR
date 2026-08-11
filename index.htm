@@ -451,12 +451,35 @@
     </div>
 
     <!-- UPDATED DEALER SEARCH MODAL WITH STAR FAVORITES FEATURE -->
+    <!-- UPDATED DEALER SEARCH MODAL (JOTFORM APP UI) -->
     <div id="dealerSearchModal" class="modal">
-        <div class="modal-content" style="max-width: 480px; padding: 20px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--bajaj-blue); padding-bottom: 8px; margin-bottom: 15px;">
-                <h3 style="margin:0; color:var(--bajaj-blue);">🔗 SEARCH DEALER LINK</h3>
-                <button onclick="closeDealerSearchModal()" style="background:none; border:none; color:var(--danger); font-weight:bold; cursor:pointer; font-size:16px;">✖</button>
+        <div class="modal-content" style="max-width: 480px; padding: 20px; border-radius: 20px; background: #f9fbfd;">
+            
+            <!-- Jotform App Style Header -->
+            <div style="display: flex; flex-direction: column; align-items: center; border-bottom: 1px solid #eef2f5; padding-bottom: 15px; margin-bottom: 15px; position: relative;">
+                <button onclick="closeDealerSearchModal()" style="position: absolute; top: -5px; right: -5px; background: #f0f4f8; border: none; color: #999; font-weight: bold; cursor: pointer; font-size: 16px; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; transition: 0.2s;" onmouseover="this.style.background='#ffebee'; this.style.color='red';" onmouseout="this.style.background='#f0f4f8'; this.style.color='#999';">✖</button>
+                
+                <div style="background: var(--bajaj-blue); width: 64px; height: 64px; border-radius: 18px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; box-shadow: 0 6px 15px rgba(0,89,163,0.3);">
+                    <span style="font-size: 32px; color: white;">🔗</span>
+                </div>
+                <h3 style="margin:0; color:#1e293b; font-size: 22px; font-weight: 800; font-family: 'Segoe UI', sans-serif;">Dealer Links</h3>
+                <p style="margin: 4px 0 0; font-size: 13px; color: #64748b; text-align: center; font-weight: 500;">Search and access dealer forms instantly</p>
             </div>
+            
+            <!-- Search Bar Jotform Style -->
+            <div style="display: flex; gap: 8px; margin-bottom: 15px;">
+                <div style="flex: 1; position: relative;">
+                    <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 16px; color: #94a3b8;">🔍</span>
+                    <input type="text" id="dealerSearchInput" placeholder="Search Dealer ID or Name..." oninput="searchDealer()" style="width: 100%; padding: 12px 12px 12px 38px; border: 1px solid #cbd5e1; border-radius: 10px; outline: none; font-size: 14px; background: #ffffff; transition: 0.2s; box-sizing: border-box; box-shadow: 0 2px 4px rgba(0,0,0,0.02);" onfocus="this.style.borderColor='var(--bajaj-blue)'; this.style.boxShadow='0 0 0 3px rgba(0,89,163,0.1)';">
+                </div>
+                <button onclick="showOnlyStarredDealers()" id="filterStarBtn" style="background: #fff3cd; border: 1px solid #ffeeba; color: #856404; font-weight: bold; padding: 0 15px; border-radius: 10px; cursor: pointer; transition: 0.2s; font-size: 13px; white-space: nowrap; box-shadow: 0 2px 4px rgba(0,0,0,0.02);" title="Show Favorite Dealers Only">★ FAVS</button>
+            </div>
+            
+            <div id="dealerSearchResults" class="custom-scroll" style="max-height: 380px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding-right: 6px; padding-bottom: 10px;">
+                <div style="text-align:center; color:#888; margin-top: 20px;">Type ID or Name to search...</div>
+            </div>
+        </div>
+    </div>
             <div style="display: flex; gap: 6px; margin-bottom: 10px;">
                 <input type="text" id="dealerSearchInput" placeholder="🔍 Enter Dealer ID or Name..." oninput="searchDealer()" style="flex: 1; padding: 10px; border: 2px solid var(--primary); border-radius: 6px; outline: none;">
                 <button onclick="showOnlyStarredDealers()" id="filterStarBtn" style="background: #fff3cd; border: 1px solid #ffeeba; color: #856404; font-weight: bold; padding: 0 12px; border-radius: 6px; cursor: pointer; transition: 0.2s;" title="Show Favorite Dealers Only">★ FAVORITES</button>
@@ -2028,17 +2051,26 @@ function openRecycleBin() { let list = document.getElementById('recycleBinList')
             let isStarred = starredIds.includes(dId);
             
             return ` 
-            <div style="display:flex; justify-content:space-between; align-items:center; background:${isStarred ? '#fffdf0' : '#f8f9fa'}; padding:10px; border-radius:6px; border:1px solid ${isStarred ? '#ffb400' : '#ddd'}; transition:0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05); gap: 8px;"> 
-                <button onclick="toggleDealerStar('${dId}', event)" style="background:none; border:none; font-size:22px; cursor:pointer; color:${isStarred ? '#ffb400' : '#ccc'}; padding:0 4px; transition: 0.2s;" title="Star / Unstar Dealer">
-                    ★
-                </button>
-                <div style="flex: 1; overflow: hidden;">
-                    <strong style="color:var(--indigo); display:block; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">🏪 ${dName}</strong>
-                    <span style="color:#555; font-size: 11px; font-weight:bold;">ID: <span style="color:var(--primary); font-weight:900;">${dId}</span></span>
-                </div> 
-                <div style="display:flex; gap: 5px; flex-shrink: 0;">
-                    <button onclick="openBitlyLink('${bitly}')" style="background:var(--success); color:white; border:none; padding:6px 10px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:11px;">OPEN ↗</button>
-                    <button onclick="copyThreeDealerItems('${dId}', '${dName.replace(/'/g, "\\'")}', '${bitly}', this, event)" style="background:var(--indigo); color:white; border:none; padding:6px 10px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:11px;" title="Copy Code, Name & Link">📋 COPY DATA</button>
+            <div style="display:flex; flex-direction:column; justify-content:space-between; align-items:stretch; background:${isStarred ? '#fffcf0' : '#ffffff'}; padding:15px; border-radius:14px; border:1px solid ${isStarred ? '#ffb400' : '#eaeaea'}; transition: all 0.2s ease-in-out; box-shadow: 0 4px 8px rgba(0,0,0,0.04); margin-bottom: 4px;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 12px rgba(0,0,0,0.08)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.04)';"> 
+                
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom: 12px;">
+                    <div style="background: ${isStarred ? '#fff3cd' : '#f0f4f8'}; min-width: 45px; height: 45px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px;">
+                        🏪
+                    </div>
+                    
+                    <div style="flex: 1; overflow: hidden; padding-top: 2px;">
+                        <strong style="color:#111; display:block; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: 'Segoe UI', sans-serif;">${dName}</strong>
+                        <span style="color:#666; font-size: 12px; font-weight:600;">ID: <span style="color:var(--primary); font-weight:800;">${dId}</span></span>
+                    </div> 
+                    
+                    <button onclick="toggleDealerStar('${dId}', event)" style="background:none; border:none; font-size:24px; cursor:pointer; color:${isStarred ? '#ffb400' : '#e0e0e0'}; padding:0; line-height:1; transition: 0.2s;" title="Star / Unstar Dealer">
+                        ★
+                    </button>
+                </div>
+                
+                <div style="display:flex; gap: 8px; width: 100%;">
+                    <button onclick="openBitlyLink('${bitly}')" style="flex: 1.2; background:var(--bajaj-blue); color:white; border:none; padding:10px; border-radius:8px; font-weight:700; cursor:pointer; font-size:12px; transition: 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">🌐 OPEN LINK</button>
+                    <button onclick="copyThreeDealerItems('${dId}', '${dName.replace(/'/g, "\\'")}', '${bitly}', this, event)" style="flex: 1; background:#f0f4f8; color:var(--bajaj-blue); border:none; padding:10px; border-radius:8px; font-weight:700; cursor:pointer; font-size:12px; transition: 0.2s;" title="Copy Code, Name & Link">📋 COPY DATA</button>
                 </div>
             </div>`; 
         }).join('');
