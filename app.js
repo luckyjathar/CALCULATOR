@@ -255,7 +255,13 @@ function cleanPureShopName(raw) { if(!raw) return ""; return raw.split('#')[0].s
 function parseDealerObj(d) {
     if (!d) return { code: '', name: '', city: '', bitly: '' };
     let keys = Object.keys(d); let rawName = '', code = '', city = '', bitly = '';
-    for (let k of keys) { let val = String(d[k]).trim(); if (val.startsWith('http://') || val.startsWith('https://') || val.includes('bit.ly')) { bitly = val; break; } }
+    for (let k of keys) { 
+        let val = String(d[k]).trim(); 
+        if (val.startsWith('http://') || val.startsWith('https://') || val.includes('bit.ly') || val.includes('bfl.onelink.me') || val.includes('bajajfinserv.in')) { 
+            bitly = val; 
+            break; 
+        } 
+    }
     let nameKey = keys.find(k => ['DEALER NAME', 'SHOP NAME', 'NAME', 'SHOP', 'DEALER'].includes(k.toUpperCase().trim())); rawName = nameKey ? String(d[nameKey]).trim() : '';
     let codeKey = keys.find(k => ['DEALERID', 'DEALER CODE', 'CODE', 'ID', 'BPES RCD', 'DEALER_ID'].includes(k.toUpperCase().trim())); code = codeKey ? String(d[codeKey]).trim() : '';
     let cityKey = keys.find(k => ['CITY', 'LOCATION', 'TOWN', 'DISTRICT'].includes(k.toUpperCase().trim())); city = cityKey ? String(d[cityKey]).trim() : '';
@@ -268,8 +274,7 @@ function standardizeCategoryName(cat) { if (!cat) return "OTHER"; let c = String
 function getRfcSlabValue(val) { let amount = parseFloat(val) || 0; if (amount < 8000) return 0; if (amount <= 10000) return 1109; if (amount <= 15000) return 1631; if (amount <= 20000) return 2147; if (amount <= 25000) return 2695; if (amount <= 30000) return 3215; if (amount <= 35000) return 3648; if (amount <= 40000) return 4219; if (amount <= 50000) return 5720; if (amount <= 60000) return 8686; if (amount <= 100000) return 11438; if (amount <= 200000) return 16677; return 0; }
 function getNonTieupPfValue(category, amount) { let cat = String(category || "").toUpperCase().replace(/\s+/g, '').trim(); let val = parseFloat(amount) || 0; if (cat.includes('DESKTOP') || cat.includes('LAPTOP')) { return 699; } if (cat === 'PHONE(WEB-MOBILE)' || cat.includes('PHONE') || cat.includes('TABLET') || cat.includes('WATCH') || cat.includes('PRINTER') || cat.includes('HEADPHONE') || cat === 'SMARTPHONES' || cat === 'MOBILE') { if (val <= 30000) return 499; if (val <= 50000) return 599; return 699; } return null; }
 
-const GITHUB_RAW_URL = "https://raw.githubusercontent.com/luckyjathar/CALCULATOR/main/master_data.xlsx"; const GITHUB_API_URL = "https://api.github.com/repos/luckyjathar/CALCULATOR/commits?path=master_data.xlsx&page=1&per_page=1";
-const DB_NAME = "PersistentPortalDB"; const DB_VERSION = 2; const STORE_NAME = "dataStore"; let dbInstance;
+const GITHUB_RAW_URL = "https://raw.githubusercontent.com/luckyjathar/testcalculator/main/master_data.xlsx";const DB_NAME = "PersistentPortalDB"; const DB_VERSION = 2; const STORE_NAME = "dataStore"; let dbInstance;
 
 function initDB() { return new Promise((resolve, reject) => { let request = indexedDB.open(DB_NAME, DB_VERSION); request.onupgradeneeded = function(e) { let db = e.target.result; if (!db.objectStoreNames.contains(STORE_NAME)) { db.createObjectStore(STORE_NAME); } }; request.onsuccess = function(e) { dbInstance = e.target.result; resolve(dbInstance); }; request.onerror = function(e) { reject(e); }; }); }
 function saveToDB(key, data) { return new Promise((resolve, reject) => { if (!dbInstance) return reject("DB not initialized"); try { let tx = dbInstance.transaction(STORE_NAME, 'readwrite'); let store = tx.objectStore(STORE_NAME); let req = store.put(JSON.stringify(data), key); req.onsuccess = () => resolve(); req.onerror = (e) => reject(e.target.error); } catch(e) { reject(e); } }); }
@@ -283,50 +288,170 @@ function parseExcelDate(val) { if (!val) return null; if (typeof val === 'number
 
 async function saveQueueToLocal(shouldCloudSync = true) { try { let compactQueue = customerQueue.map(c => { let cp = (c.products || []).map(p => { let { calculatedData, allSchemes, ...keepProduct } = p; return keepProduct; }); return { ...c, products: cp }; }); localStorage.setItem('persistent_queue_backup', JSON.stringify(compactQueue)); localStorage.setItem('persistent_active_idx_backup', activeCustomerIndex); await saveToDB('persistent_queue', compactQueue); await saveToDB('persistent_active_idx', activeCustomerIndex); if(shouldCloudSync && loggedInUserEmail) { triggerSilentCloudSync(); } } catch(e) { console.error("Local Save Interrupted", e); } }
 
-async function fetchFromMasterStream() {
-    let statusBadge = document.getElementById('gitStatusBadge'); if(statusBadge) { statusBadge.innerHTML = '🔄 CHECKING UPDATES...'; statusBadge.style.color = '#f39c12'; statusBadge.style.borderColor = '#f39c12'; statusBadge.style.background = 'rgba(243, 156, 18, 0.15)'; }
+// === FETCH MASTER DATA FUNCTION ===
+const CACHE_DURATION_MS = 12 * 60 * 60 * 1000; 
+
+async function fetchFromMasterStream(forceSync = false) {
+    let statusBadge = document.getElementById('gitStatusBadge'); 
+    let globalLoader = document.getElementById('dataLoadingIndicator');
+    let searchInput1 = document.getElementById('modalMatrixSearch');
+    let searchInput2 = document.getElementById('globalModelSearch');
+
+    if(globalLoader) {
+        globalLoader.style.display = 'block';
+        globalLoader.style.background = 'var(--warning)';
+        globalLoader.style.color = '#000';
+        globalLoader.innerHTML = '⏳ Checking Data...';
+    }
+    if(searchInput1) { searchInput1.disabled = true; searchInput1.placeholder = "⏳ Please wait..."; }
+    if(searchInput2) { searchInput2.disabled = true; searchInput2.placeholder = "⏳ Please wait..."; }
+
     try {
-        let apiRes = await fetch(GITHUB_API_URL); if (!apiRes.ok) throw new Error("API Limit Reached or Repo Error");
-        let apiData = await apiRes.json(); if (!apiData || apiData.length === 0) throw new Error("No commits found for file.");
-        let latestSha = apiData[0].sha; let savedSha = localStorage.getItem('persistent_master_sha'); let savedDB = await getFromDB("persistent_db"); let isDbEmpty = (!savedDB || savedDB.length === 0);
-        if (latestSha === savedSha && !isDbEmpty) { if(statusBadge) { statusBadge.innerHTML = '✅ SYSTEM OPTIMIZED (FAST LOAD)'; statusBadge.style.color = 'var(--success)'; statusBadge.style.borderColor = 'var(--success)'; statusBadge.style.background = 'rgba(39, 174, 96, 0.15)'; } return; }
-        if (statusBadge) statusBadge.innerHTML = '⬇️ DOWNLOADING NEW RATES...';
-        let cacheBusterUrl = GITHUB_RAW_URL + '?t=' + Date.now(); let res = await fetch(cacheBusterUrl); if (!res.ok) throw new Error("File not deployed inside path setup yet.");
-        let dataBuffer = await res.arrayBuffer(); let wb = XLSX.read(new Uint8Array(dataBuffer), { type: 'array' });
-        tempSheet1Data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { raw: false, defval: "" }); parsedSheet2Data = wb.SheetNames.length > 1 ? XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[1]], { raw: false, defval: "" }).map(r => mapData(r, SPECIAL_MODEL)).filter(x => x && x.model && x.model.trim() !== "") : [];
-        if (wb.SheetNames.length > 2) { dealer_records = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[2]], { raw: false, defval: "" }); await saveToDB("persistent_dealers", dealer_records); }
-        let filteredSheet1 = tempSheet1Data.map(r => mapData(r, "REG")).filter(m => m && m.model && m.model.trim() !== ""); let rawCombined = [...filteredSheet1, ...parsedSheet2Data]; let uniqueDB = []; let seenDB = new Set();
-        rawCombined.forEach(r => { let key = `${r.model}_${r.category}_${r.tenure}_${r.advEmi}_${r.fixedEmi}_${r.minLoan}_${r.maxLoan}`; if (!seenDB.has(key)) { seenDB.add(key); uniqueDB.push(r); } });
-        if (uniqueDB.length > 0) { db_records = uniqueDB; await saveToDB("persistent_db", db_records); localStorage.setItem('persistent_master_sha', latestSha); if (activeCustomerIndex !== -1) { loadCurrentProducts(); renderMatrix(); } }
-        if(statusBadge) { statusBadge.innerHTML = '✅ MASTER DATA SYNCED'; statusBadge.style.color = 'var(--success)'; statusBadge.style.borderColor = 'var(--success)'; statusBadge.style.background = 'rgba(39, 174, 96, 0.15)'; }
-    } catch(err) { console.error("Smart Version Check Error: ", err); if(statusBadge) { statusBadge.innerHTML = '⚠️ OFFLINE MODE (USING LOCAL DATA)'; statusBadge.style.color = 'var(--danger)'; statusBadge.style.borderColor = 'var(--danger)'; statusBadge.style.background = 'rgba(214, 48, 49, 0.15)'; } }
+        let now = new Date().getTime();
+        
+        if (!forceSync) {
+            let cachedTime = await getFromDB('master_data_time');
+            let cachedDbRecords = await getFromDB('cached_db_records');
+            let cachedDealerRecords = await getFromDB('cached_dealer_records');
+            
+            if (cachedTime && cachedDbRecords && cachedDealerRecords && (now - cachedTime < CACHE_DURATION_MS)) {
+                db_records = cachedDbRecords;
+                dealer_records = cachedDealerRecords;
+                
+                if (activeCustomerIndex !== -1) { loadCurrentProducts(); renderMatrix(); }
+                
+                if(statusBadge) { 
+                    statusBadge.innerHTML = '⚡ LOADED FROM CACHE'; 
+                    statusBadge.style.color = 'var(--success)'; 
+                    statusBadge.style.background = 'rgba(39, 174, 96, 0.15)'; 
+                }
+                
+                if(globalLoader) globalLoader.style.display = 'none'; 
+                if(searchInput1) { searchInput1.disabled = false; searchInput1.placeholder = "Type model, brand or category..."; }
+                if(searchInput2) { searchInput2.disabled = false; searchInput2.placeholder = "Type Brand or Model Name..."; }
+                
+                return;
+            }
+        }
+
+        if(globalLoader) globalLoader.innerHTML = '⏳ Downloading Master Data...';
+        if(statusBadge) { 
+            statusBadge.innerHTML = '⬇️ DOWNLOADING LIVE DATA...'; 
+            statusBadge.style.color = '#f39c12'; 
+            statusBadge.style.background = 'rgba(243, 156, 18, 0.15)'; 
+        }
+        
+        let cacheBusterUrl = GITHUB_RAW_URL + '?t=' + now; 
+        let res = await fetch(cacheBusterUrl); 
+        
+        if (!res.ok) throw new Error("Master file missing or deleted from GitHub."); 
+        
+        let dataBuffer = await res.arrayBuffer(); 
+        let wb = XLSX.read(new Uint8Array(dataBuffer), { type: 'array' });
+        
+        tempSheet1Data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { raw: false, defval: "" }); 
+        parsedSheet2Data = wb.SheetNames.length > 1 ? XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[1]], { raw: false, defval: "" }).map(r => mapData(r, SPECIAL_MODEL)).filter(x => x && x.model && x.model.trim() !== "") : [];
+        
+        if (wb.SheetNames.length > 2) { dealer_records = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[2]], { raw: false, defval: "" }); } 
+        else { dealer_records = []; }
+        
+        let filteredSheet1 = tempSheet1Data.map(r => mapData(r, "REG")).filter(m => m && m.model && m.model.trim() !== ""); 
+        let rawCombined = [...filteredSheet1, ...parsedSheet2Data]; 
+        let uniqueDB = []; let seenDB = new Set();
+        
+        rawCombined.forEach(r => { 
+            let key = `${r.model}_${r.category}_${r.tenure}_${r.advEmi}_${r.fixedEmi}_${r.minLoan}_${r.maxLoan}`; 
+            if (!seenDB.has(key)) { seenDB.add(key); uniqueDB.push(r); } 
+        });
+        
+        let today = new Date(); today.setHours(0,0,0,0);
+        db_records = uniqueDB.filter(r => {
+            if(!r.expiryDateStr) return true;
+            let p = r.expiryDateStr.split('/');
+            if(p.length !== 3) return true;
+            let expD = new Date(p[2], p[1]-1, p[0]);
+            return expD >= today;
+        });
+
+        await saveToDB('cached_db_records', db_records);
+        await saveToDB('cached_dealer_records', dealer_records);
+        await saveToDB('master_data_time', now);
+
+        if (activeCustomerIndex !== -1) { loadCurrentProducts(); renderMatrix(); }
+        
+        if(statusBadge) { 
+            statusBadge.innerHTML = '✅ LIVE DATA SYNCED'; 
+            statusBadge.style.color = 'var(--success)'; 
+            statusBadge.style.background = 'rgba(39, 174, 96, 0.15)'; 
+        }
+
+        if(globalLoader) {
+            globalLoader.style.background = 'var(--success)';
+            globalLoader.style.color = '#fff';
+            globalLoader.innerHTML = '✅ Data Ready!';
+            setTimeout(() => { globalLoader.style.display = 'none'; }, 2000); 
+        }
+        if(searchInput1) { searchInput1.disabled = false; searchInput1.placeholder = "Type model, brand or category..."; }
+        if(searchInput2) { searchInput2.disabled = false; searchInput2.placeholder = "Type Brand or Model Name..."; }
+
+    } catch(err) { 
+        console.error("Live Fetch Error: ", err); 
+        db_records = []; dealer_records = [];
+        if(statusBadge) { 
+            statusBadge.innerHTML = '⚠️ NO MASTER DATA FOUND'; 
+            statusBadge.style.color = 'var(--danger)'; 
+            statusBadge.style.background = 'rgba(214, 48, 49, 0.15)'; 
+        } 
+        
+        if(globalLoader) {
+            globalLoader.style.background = 'var(--danger)';
+            globalLoader.style.color = '#fff';
+            globalLoader.innerHTML = '⚠️ Failed to Load Data!';
+        }
+        if(searchInput1) { searchInput1.placeholder = "⚠️ Error loading data"; }
+        if(searchInput2) { searchInput2.placeholder = "⚠️ Error loading data"; }
+    }
 }
 
 window.onload = async function() {
-    if(loggedInUserEmail) { let savedName = localStorage.getItem('persistent_user_name') || "User"; updateLoginUI(savedName, true); } generateStackCards(); 
+    if(loggedInUserEmail) { 
+        let savedName = localStorage.getItem('persistent_user_name') || "User"; 
+        updateLoginUI(savedName, true); 
+    } 
+    generateStackCards(); 
+    
     try {
         await initDB(); 
-        let savedDB = await getFromDB("persistent_db"); 
-        if (savedDB && savedDB.length > 0) { 
-            let today = new Date(); today.setHours(0,0,0,0);
-            db_records = savedDB.filter(r => {
-                if(!r.expiryDateStr) return true;
-                let p = r.expiryDateStr.split('/');
-                if(p.length !== 3) return true;
-                let expD = new Date(p[2], p[1]-1, p[0]);
-                return expD >= today;
-            });
+        
+        let savedQ = await getFromDB('persistent_queue'); 
+        if (!savedQ || savedQ.length === 0) { 
+            let lsQ = localStorage.getItem('persistent_queue_backup'); 
+            if (lsQ) savedQ = JSON.parse(lsQ); 
         }
-        let savedDealers = await getFromDB("persistent_dealers"); if (savedDealers && savedDealers.length > 0) { dealer_records = savedDealers; }
-        await fetchFromMasterStream();
-        let savedQ = await getFromDB('persistent_queue'); if (!savedQ || savedQ.length === 0) { let lsQ = localStorage.getItem('persistent_queue_backup'); if (lsQ) savedQ = JSON.parse(lsQ); }
         if (savedQ) { customerQueue = savedQ.map(c => ({ ...c, components: c.components || {}, products: c.products || [], sortConfigs: c.sortConfigs || [] })); }
-        let savedRecycle = await getFromDB('persistent_recycle'); if (!savedRecycle || savedRecycle.length === 0) { let lsRec = localStorage.getItem('persistent_recycle_backup'); if (lsRec) savedRecycle = JSON.parse(lsRec); }
+        
+        let savedRecycle = await getFromDB('persistent_recycle'); 
+        if (!savedRecycle || savedRecycle.length === 0) { 
+            let lsRec = localStorage.getItem('persistent_recycle_backup'); 
+            if (lsRec) savedRecycle = JSON.parse(lsRec); 
+        }
         if (savedRecycle) recycleBin = savedRecycle;
-        let savedIdx = await getFromDB('persistent_active_idx'); if (savedIdx === null || savedIdx === undefined) { savedIdx = localStorage.getItem('persistent_active_idx_backup'); }
-        if (savedIdx !== null && savedIdx !== undefined) activeCustomerIndex = parseInt(savedIdx); if(activeCustomerIndex >= customerQueue.length) activeCustomerIndex = -1;
-        renderCustomerQueue(); updateUniversalActionButtons();
-    } catch(e) { console.error("Local Data Initialization Failure", e); }
+        
+        let savedIdx = await getFromDB('persistent_active_idx'); 
+        if (savedIdx === null || savedIdx === undefined) { 
+            savedIdx = localStorage.getItem('persistent_active_idx_backup'); 
+        }
+        if (savedIdx !== null && savedIdx !== undefined) activeCustomerIndex = parseInt(savedIdx); 
+        if(activeCustomerIndex >= customerQueue.length) activeCustomerIndex = -1;
+        
+        renderCustomerQueue(); 
+        updateUniversalActionButtons();
+
+        fetchFromMasterStream(); 
+        setTimeout(() => checkForExcelUpdates(), 3000);
+    } catch(e) { 
+        console.error("Local Data Initialization Failure", e); 
+    }
 };
 
 function openFlyerGenModal() { document.getElementById('fgSalesName').value = ''; document.getElementById('fgSalesMobile').value = ''; document.getElementById('fgDealerSearch').value = ''; document.getElementById('fgDealerList').innerHTML = ''; tempFgDealerId = ""; tempFgDealerName = ""; tempFgBitly = ""; clearFgModel(); document.getElementById('fgOfferType').value = 'NONE'; toggleFgOfferInput(); document.getElementById('fgSelectedDealerBox').style.display = 'none'; document.getElementById('flyerGeneratedLinkBox').style.display = 'none'; document.getElementById('flyerGenModal').style.display = 'flex'; }
@@ -454,9 +579,25 @@ function renderTableModel() {
     
     let thead = document.getElementById('tableHead');
     if (isCalculatedMode) {
-        thead.innerHTML = `<tr><th style="background:#e3f2fd;">T/A</th><th style="background:#e3f2fd;">LTV%</th><th style="background:#e8f5e9; color:var(--success);">LOAN</th><th style="background:#fff3e0; color:#d35400;">DIFF (INV-LOAN)</th><th style="background:#e8f5e9; color:var(--success);">EST. DP</th><th style="background:#e3f2fd; color:var(--primary);">EMI</th><th style="background:#e3f2fd; color:var(--primary);">MONTHS</th><th>ACTION</th></tr>`;
+        thead.innerHTML = `<tr>
+            <th style="display: table-cell !important; background:#e3f2fd; padding:10px 4px; font-size:12px;">T/A</th>
+            <th style="background:#e3f2fd; padding:10px 4px; font-size:12px;">LTV%</th>
+            <th style="background:#e8f5e9; color:var(--success); padding:10px 4px; font-size:12px;">LOAN</th>
+            <th style="background:#fff3e0; color:#d35400; padding:10px 4px; font-size:12px;">DIFF</th>
+            <th style="background:#e8f5e9; color:var(--success); padding:10px 4px; font-size:12px;">NET DP</th>
+            <th style="background:#e3f2fd; color:var(--primary); padding:10px 4px; font-size:12px;">EMI</th>
+            <th style="background:#e3f2fd; color:var(--primary); padding:10px 4px; font-size:12px;">M</th>
+            <th style="padding:10px 4px; font-size:12px;">ACT</th>
+        </tr>`;
     } else {
-        thead.innerHTML = `<tr><th style="background:#e3f2fd;">T/A</th><th style="background:#e3f2fd;">LTV%</th><th style="background:#e3f2fd;">FIXED EMI</th><th style="background:#e3f2fd;">DBD%</th><th style="background:#e3f2fd;">ROI%</th><th style="background:#e3f2fd;">PF</th></tr>`;
+        thead.innerHTML = `<tr>
+            <th style="display: table-cell !important; background:#e3f2fd;">T/A</th>
+            <th style="background:#e3f2fd;">LTV%</th>
+            <th style="background:#e3f2fd;">FIXED EMI</th>
+            <th style="background:#e3f2fd;">DBD%</th>
+            <th style="background:#e3f2fd;">ROI%</th>
+            <th style="background:#e3f2fd;">PF</th>
+        </tr>`;
     }
 
     validSchemes.forEach(s => { 
@@ -562,21 +703,21 @@ function renderTableModel() {
         let displayTenure = s.currentTenure ? s.currentTenure : s.tenure;
         if (isCalculatedMode) {
             return `<tr>
-                <td style="font-weight:900; color:var(--indigo); border-bottom:1px solid #eee;">${displayTenure}/${s.advEmi}</td>
-                <td style="font-weight:bold; color:var(--bajaj-blue); border-bottom:1px solid #eee;">${Math.round(s.calcLTV)}%</td>
-                <td style="border-bottom:1px solid #eee; background:#f4fcf6; color:var(--success); font-weight:900;">₹${Math.floor(s.calcLoan).toLocaleString()}</td>
-                <td style="border-bottom:1px solid #eee; background:#fff3e0; color:#d35400; font-weight:900;">₹${Math.floor(s.calcDiff).toLocaleString()}</td>
-                <td style="border-bottom:1px solid #eee; background:#f4fcf6; color:var(--success); font-weight:900;">₹${Math.round(s.calcDp).toLocaleString()}</td>
-                <td style="border-bottom:1px solid #eee; background:#eef6ff; color:var(--primary); font-weight:900;">₹${Math.round(s.calcEmi).toLocaleString()}</td>
-                <td style="font-weight:900; color:var(--primary); background:#eef6ff; border-bottom:1px solid #eee;">${s.calcInst}</td>
-                <td style="border-bottom:1px solid #eee;"><button style="padding:4px 8px; font-size:10px !important; background:var(--primary); color:white; border:none; border-radius:3px; cursor:pointer;" onclick="copySingleScheme('${displayTenure}', '${s.advEmi}', '${s.calcLoan}', '${s.calcDp}', '${s.calcEmi}', '${s.fixedEmi}', '${s.dbd}', '${s.roi}', '${s.pf}', this)">COPY</button></td>
+                <td style="display: table-cell !important; font-weight:900; color:var(--indigo); border-bottom:1px solid #eee; padding:10px 4px; font-size:13px;">${displayTenure}/${s.advEmi}</td>
+                <td style="font-weight:bold; color:var(--bajaj-blue); border-bottom:1px solid #eee; padding:10px 4px; font-size:13px;">${Math.round(s.calcLTV)}%</td>
+                <td style="border-bottom:1px solid #eee; background:#f4fcf6; color:var(--success); font-weight:900; padding:10px 4px; font-size:13px;">₹${Math.floor(s.calcLoan).toLocaleString()}</td>
+                <td style="border-bottom:1px solid #eee; background:#fff3e0; color:#d35400; font-weight:900; padding:10px 4px; font-size:13px;">₹${Math.floor(s.calcDiff).toLocaleString()}</td>
+                <td style="border-bottom:1px solid #eee; background:#f4fcf6; color:var(--success); font-weight:900; padding:10px 4px; font-size:13px;">₹${Math.round(s.calcDp).toLocaleString()}</td>
+                <td style="border-bottom:1px solid #eee; background:#eef6ff; color:var(--primary); font-weight:900; padding:10px 4px; font-size:13px;">₹${Math.round(s.calcEmi).toLocaleString()}</td>
+                <td style="font-weight:900; color:var(--primary); background:#eef6ff; border-bottom:1px solid #eee; padding:10px 4px; font-size:13px;">${s.calcInst}</td>
+                <td style="border-bottom:1px solid #eee; padding:10px 4px;"><button style="padding:4px 6px; font-size:10px !important; background:var(--primary); color:white; border:none; border-radius:3px; cursor:pointer;" onclick="copySingleScheme('${displayTenure}', '${s.advEmi}', '${s.calcLoan}', '${s.calcDp}', '${s.calcEmi}', '${s.fixedEmi}', '${s.dbd}', '${s.roi}', '${s.pf}', this)">COPY</button></td>
             </tr>`;
         } else {
             let dbdAmtPreview = invoice > 0 ? invoice * (s.dbd * 1.18 / 100) : 0;
             let dbdStr = invoice > 0 ? `${+parseFloat(s.dbd).toFixed(3)}%<br><span style="color:var(--danger); font-weight:900;">₹${Math.round(dbdAmtPreview).toLocaleString()}</span>` : `${+parseFloat(s.dbd).toFixed(3)}%`;
 
             return `<tr>
-                <td style="font-weight:900; color:var(--indigo); border-bottom:1px solid #eee;">${displayTenure}/${s.advEmi}</td>
+                <td style="display: table-cell !important; font-weight:900; color:var(--indigo); border-bottom:1px solid #eee;">${displayTenure}/${s.advEmi}</td>
                 <td style="font-weight:bold; color:var(--bajaj-blue); border-bottom:1px solid #eee;">${Math.round(s.calcLTV)}%</td>
                 <td style="font-weight:900; color:var(--primary); border-bottom:1px solid #eee;">${s.fixedEmi > 0 ? '₹'+s.fixedEmi : 'N/A'}</td>
                 <td style="border-bottom:1px solid #eee;">${dbdStr}</td>
@@ -887,12 +1028,50 @@ function closeRecycleBin() { document.getElementById('recycleBinModal').style.di
 async function restoreCustomer(idx) { let c = recycleBin.splice(idx, 1)[0]; customerQueue.unshift(c); if(activeCustomerIndex !== -1) activeCustomerIndex++; if(selectedQueueIndex !== -1) selectedQueueIndex++; await saveQueueToLocal(); await saveToDB('persistent_recycle', recycleBin); localStorage.setItem('persistent_recycle_backup', JSON.stringify(recycleBin)); openRecycleBin(); renderCustomerQueue(); updateUniversalActionButtons(); }
 
 async function emptyRecycleBin() {
-    if(recycleBin.length === 0) { showToast("⚠️ Recycle bin pehle se hi empty hai!", "warning"); return; }
+    if(recycleBin.length === 0) { showToast("⚠️ Recycle bin pehle से hi empty hai!", "warning"); return; }
     showCustomConfirm("Are you sure you want to permanently delete all items in the Recycle Bin?", async () => { recycleBin = []; await saveToDB('persistent_recycle', recycleBin); localStorage.setItem('persistent_recycle_backup', JSON.stringify(recycleBin)); openRecycleBin(); showToast("🗑️ Recycle Bin completely emptied!", "success"); });
 }
 
-function renderCustomerQueue() { let documentCount = document.getElementById('queueCount'); if(documentCount) documentCount.innerText = customerQueue.length; let list = document.getElementById('customerQueueList'); if(!list) return; let qSearch = document.getElementById('queueSearch').value.toLowerCase().trim(); let isSearching = qSearch !== ""; let filtered = customerQueue.map((c, idx) => ({...c, originalIdx: idx})).filter(c => { if(!isSearching) return true; return c.name.toLowerCase().includes(qSearch) || (c.mobile && c.mobile.includes(qSearch)) || c.limit.toString().includes(qSearch) || (c.cap && c.cap.toString().includes(qSearch)) || c.type.toLowerCase().includes(qSearch); }); if(filtered.length === 0) { list.innerHTML = `<div style="text-align:center; color:#888;">No customers found.</div>`; return; } list.innerHTML = filtered.map((c) => { let idx = c.originalIdx; let isSelected = (selectedQueueIndex === idx); let isActive = (activeCustomerIndex === idx); let displayName = (isSearching || isSelected) ? c.name : maskName(c.name); let bgStyle = isSelected ? '#e3f2fd' : (isActive ? '#f0f8ff' : '#fff'); let borderStyle = isSelected ? 'var(--primary)' : (isActive ? '#0088cc' : '#ddd'); let shadowStyle = isSelected ? '0 0 5px rgba(9, 132, 227, 0.5)' : (isActive ? '0 0 5px rgba(0, 136, 204, 0.3)' : 'none'); return ` <div onclick="selectQueueItem(${idx})" style="cursor:pointer; display:flex; flex-direction:column; background:${bgStyle}; padding:8px; border-radius:4px; border:1px solid ${borderStyle}; box-shadow:${shadowStyle}; transition:0.2s;"> <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;"> <strong style="color:var(--indigo);">👤 ${displayName} ${c.mobile ? `<span style="color:#d35400; cursor:text;" title="Double-click to select" ondblclick="highlightNumber(event, this.querySelector('.mob-num'))">(📞 <span class="mob-num">${c.mobile}</span>)</span>` : ''}</strong> <span style="color:#888; font-weight:bold;">${c.timestamp || ''}</span> </div> <div style="color:#555; font-weight:bold;"> LMT: <span style="color:var(--success)">₹${c.limit}</span> | LTV: ${c.ltv}% | CAP: ${c.cap ? '₹'+c.cap : 'NO'} | ${c.type} ${isActive ? '<span style="float:right; color:var(--primary);">[ACTIVE ✓]</span>' : ''} </div> </div>`; }).join(''); }
-
+function renderCustomerQueue() { 
+    let documentCount = document.getElementById('queueCount'); 
+    if(documentCount) documentCount.innerText = customerQueue.length; 
+    
+    let list = document.getElementById('customerQueueList'); 
+    if(!list) return; 
+    
+    let qSearch = document.getElementById('queueSearch').value.toLowerCase().trim(); 
+    let isSearching = qSearch !== ""; 
+    
+    let filtered = customerQueue.map((c, idx) => ({...c, originalIdx: idx})).filter(c => { 
+        if(!isSearching) return true; 
+        return c.name.toLowerCase().includes(qSearch) || (c.mobile && c.mobile.includes(qSearch)) || c.limit.toString().includes(qSearch) || (c.cap && c.cap.toString().includes(qSearch)) || c.type.toLowerCase().includes(qSearch); 
+    }); 
+    
+    if(filtered.length === 0) { 
+        list.innerHTML = `<div style="text-align:center; color:#888;">No customers found.</div>`; 
+        return; 
+    } 
+    
+    list.innerHTML = filtered.map((c) => { 
+        let idx = c.originalIdx; 
+        let isSelected = (selectedQueueIndex === idx); 
+        let isActive = (activeCustomerIndex === idx); 
+        let displayName = (isSearching || isSelected) ? c.name : maskName(c.name); 
+        let bgStyle = isSelected ? '#e3f2fd' : (isActive ? '#f0f8ff' : '#fff'); 
+        let borderStyle = isSelected ? 'var(--primary)' : (isActive ? '#0088cc' : '#ddd'); 
+        let shadowStyle = isSelected ? '0 0 5px rgba(9, 132, 227, 0.5)' : (isActive ? '0 0 5px rgba(0, 136, 204, 0.3)' : 'none'); 
+        
+        return ` <div onclick="handleCustomerTap(${idx})" style="cursor:pointer; display:flex; flex-direction:column; background:${bgStyle}; padding:8px; border-radius:4px; border:1px solid ${borderStyle}; box-shadow:${shadowStyle}; transition:0.2s;"> 
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;"> 
+                <strong style="color:var(--indigo);">👤 ${displayName} ${c.mobile ? `<span style="color:#d35400; cursor:text;" title="Double-click to select" ondblclick="highlightNumber(event, this.querySelector('.mob-num'))">(📞 <span class="mob-num">${c.mobile}</span>)</span>` : ''}</strong> 
+                <span style="color:#888; font-weight:bold;">${c.timestamp || ''}</span> 
+            </div> 
+            <div style="color:#555; font-weight:bold;"> 
+                LMT: <span style="color:var(--success)">₹${c.limit}</span> | LTV: ${c.ltv}% | CAP: ${c.cap ? '₹'+c.cap : 'NO'} | ${c.type} ${isActive ? '<span style="float:right; color:var(--primary);">[ACTIVE ✓]</span>' : ''} 
+            </div> 
+        </div>`; 
+    }).join(''); 
+}
 async function setActiveCustomer(idx) { if(db_records.length === 0) { showToast("⚠️ Master Stream se data fetch nahi hua hai. Kripya connection check karein!", "error"); return; } activeCustomerIndex = idx; await saveQueueToLocal(); document.getElementById('queueSearch').value = ''; goToFinalPage(); }
 function isLimitValid() { if (activeCustomerIndex === -1 || !customerQueue[activeCustomerIndex]) { showToast("⚠️ Kripya pehle queue mein ek customer add karein aur use 'ACTIVE' rakhein.", "warning"); return false; } return true; }
 
@@ -957,7 +1136,7 @@ async function finalizeProductAddition() {
     let raw = tempPendingProduct.isNT ? db_records.filter(r => r.model === SPECIAL_MODEL && r.category === tempPendingProduct.category) : db_records.filter(r => r.model === tempPendingProduct.name); let ltvLimit = customerQueue[activeCustomerIndex]?.ltv || 100; let matrixEligible = raw.filter(s => s.fixedEmi > 0 || (s.tenure > 0 && ((s.tenure-s.advEmi)/s.tenure)*100 <= ltvLimit)); let uniqueSchemes = []; let seenSchemes = new Set();
     matrixEligible.forEach(s => { let schemeKey = `${s.tenure}_${s.advEmi}_${s.fixedEmi}_${s.minLoan}_${s.maxLoan}`; if (!seenSchemes.has(schemeKey)) { seenSchemes.add(schemeKey); s.inactive = false; uniqueSchemes.push(s); } });
     let comp = customerQueue[activeCustomerIndex].components || {}; let finalMrp = comp.mrp || ""; let finalInv = comp.inv || ""; let surch = (finalInv > finalMrp && finalMrp > 0) ? finalInv - finalMrp : 0;
-    current_products.push({ name: tempPendingProduct.name, isNonTieup: tempPendingProduct.isNT, schemes: uniqueSchemes, category: tempPendingProduct.category, inputs: { mrp: finalMrp, inv: finalInv, cap: comp.cap || (customerQueue[activeCustomerIndex]?.cap || ""), target: comp.target || "", gtl: comp.gtl || 0, rfc: comp.rfc || 0, exw: comp.exw || 0, margin: comp.margin || "", dealer: comp.dealer || "", surch: surch, manualLoans: {} }, isManual: false }); sortConfigs.push({ key: 'dp', dir: 'asc' }); customerQueue[activeCustomerIndex].products = current_products; customerQueue[activeCustomerIndex].sortConfigs = sortConfigs; tempPendingProduct = null; await saveQueueToLocal(); renderMatrix(); 
+    current_products.push({ name: tempPendingProduct.name, isNonTieup: tempPendingProduct.isNT, schemes: uniqueSchemes, category: tempPendingProduct.category, inputs: { mrp: finalMrp, inv: finalInv, cap: comp.cap || (customerQueue[activeCustomerIndex]?.cap || ""), target: comp.target || "", gtl: comp.gtl || 0, rfc: comp.rfc || 0, exw: comp.exw || 0, margin: comp.margin || "", dealer: comp.dealer || "", surch: surch, manualLoans: {} }, isManual: false }); sortConfigs.push({ key: 'dp', asc: 'asc' }); customerQueue[activeCustomerIndex].products = current_products; customerQueue[activeCustomerIndex].sortConfigs = sortConfigs; tempPendingProduct = null; await saveQueueToLocal(); renderMatrix(); 
 }
 
 function updateFinalSwitcher() { let sw = document.getElementById('finalCustomerSwitcher'); if(!sw) return; sw.innerHTML = customerQueue.map((c, i) => `<option value="${i}" ${i === activeCustomerIndex ? 'selected' : ''}>👤 ${c.name} (₹${c.limit})</option>`).join(''); }
@@ -997,10 +1176,27 @@ function renderMatrix() {
                 <div><label>MARGIN</label><input type="number" value="${prod.inputs.margin}" placeholder="0" oninput="updateVal(${pIdx},'margin',this.value)"></div>
                 <div><label>DEALER</label><input type="number" value="${prod.inputs.dealer}" placeholder="0" oninput="updateVal(${pIdx},'dealer',this.value)"></div>
             </div>
-            <div class="table-wrapper" id="tw_${pIdx}" style="display:${displayStyle};">
-                <table>
+            <div class="table-wrapper" id="tw_${pIdx}" style="display:${displayStyle}; overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse;">
                     <thead>
-                        <tr><th class="hidden-col" onclick="sortM(${pIdx},'category')">CAT ↕</th><th class="hidden-col" onclick="sortM(${pIdx},'dbd')">DBD% ↕</th><th class="hidden-col" onclick="sortM(${pIdx},'pf')">PF ↕</th><th class="hidden-col" onclick="sortM(${pIdx},'roi')">ROI% ↕</th><th class="hidden-col" onclick="sortM(${pIdx},'fixedEmi')">FIXED ↕</th><th class="hidden-col" onclick="sortM(${pIdx},'curLTV')">LTV% ↕</th><th class="hidden-col" onclick="sortM(${pIdx},'netDisb')" style="color:var(--bajaj-blue);">NET DISB ↕</th><th class="hidden-col" onclick="sortM(${pIdx},'extra')">EXTRA ↕</th>${isNT ? `<th onclick="sortM(${pIdx},'minLoan')">MIN ↕</th><th onclick="sortM(${pIdx},'maxLoan')">MAX ↕</th>` : `<th onclick="sortM(${pIdx},'nbfcMaxL')">NBFC LMT ↕</th>`}<th onclick="sortM(${pIdx},'loan')">LOAN ↕</th><th onclick="sortM(${pIdx},'currentTenure')">T/A ↕</th><th onclick="sortM(${pIdx},'dp')">NET DP ↕</th><th onclick="sortM(${pIdx},'emi')">EMI ↕</th><th onclick="sortM(${pIdx},'inst')">M ↕</th><th onclick="sortM(${pIdx},'daily')">DAILY ↕</th><th>ACT</th></tr>
+                        <tr style="font-size: 10px; white-space: nowrap;">
+                            <th class="hidden-col" onclick="sortM(${pIdx},'category')">CAT ↕</th>
+                            <th class="hidden-col" onclick="sortM(${pIdx},'dbd')">DBD% ↕</th>
+                            <th class="hidden-col" onclick="sortM(${pIdx},'pf')">PF ↕</th>
+                            <th class="hidden-col" onclick="sortM(${pIdx},'roi')">ROI% ↕</th>
+                            <th class="hidden-col" onclick="sortM(${pIdx},'fixedEmi')">FIXED ↕</th>
+                            <th class="hidden-col" onclick="sortM(${pIdx},'curLTV')">LTV% ↕</th>
+                            <th class="hidden-col" onclick="sortM(${pIdx},'netDisb')" style="color:var(--bajaj-blue);">NET DISB ↕</th>
+                            <th class="hidden-col" onclick="sortM(${pIdx},'extra')">EXTRA ↕</th>
+                            ${isNT ? `<th style="padding:4px 1px;" onclick="sortM(${pIdx},'minLoan')">MIN ↕</th><th style="padding:4px 1px;" onclick="sortM(${pIdx},'maxLoan')">MAX ↕</th>` : `<th style="padding:4px 1px;" onclick="sortM(${pIdx},'nbfcMaxL')">LMT ↕</th>`}
+                            <th style="padding:4px 1px;" onclick="sortM(${pIdx},'loan')">LOAN ↕</th>
+                            <th style="padding:4px 1px;" onclick="sortM(${pIdx},'currentTenure')">T/A ↕</th>
+                            <th style="padding:4px 1px;" onclick="sortM(${pIdx},'dp')">NET DP ↕</th>
+                            <th style="padding:4px 1px;" onclick="sortM(${pIdx},'emi')">EMI ↕</th>
+                            <th style="padding:4px 1px;" onclick="sortM(${pIdx},'inst')">M ↕</th>
+                            <th style="padding:4px 1px;" onclick="sortM(${pIdx},'daily')">DAILY ↕</th>
+                            <th style="padding:4px 1px;">ACT</th>
+                        </tr>
                     </thead>
                     <tbody id="body_${pIdx}"></tbody>
                 </table>
@@ -1008,7 +1204,6 @@ function renderMatrix() {
         container.appendChild(div); recalcModel(pIdx);
     });
 }
-
 function syncInsurance(pIdx, mrpVal, baseLoanVal, triggerType = 'NONE') {
     let prod = current_products[pIdx]; let isPhoneWebMobile = isMobileDeviceCat(prod.category); let gtl = baseLoanVal > 100000 ? 2398 : (baseLoanVal > 50000 ? 1799 : (baseLoanVal > 30000 ? 1499 : (baseLoanVal > 10000 ? 1199 : (baseLoanVal > 0 ? 699 : 0)))); let rfcSlab = getRfcSlabValue(mrpVal); let inp = prod.inputs;
     if(triggerType === 'MRP' || triggerType === 'INV') { inp.gtl = gtl; if(triggerType === 'MRP') inp.rfc = isPhoneWebMobile ? rfcSlab : 0; } else if (triggerType === 'LOAN') { inp.gtl = gtl; }
@@ -1123,19 +1318,42 @@ function renderRows(pIdx) {
         if (d.isInv50Breach) { isBoundB = true; }
 
         let rowClass = (d.isFixed ? "fixed-row " : "") + (isLtvB || isBoundB ? "ltv-breach " : "") + (d.isExpired && !isInactive ? "expired-row " : "") + (isInactive ? "inactive-row " : "");
-        let toggleBtnHTML = isInactive ? `<button class="action-btn" style="background:var(--success);" onclick="toggleInactive(${pIdx}, ${d.dIdx})">ADD</button>` : `<button class="action-btn" style="background:var(--danger);" onclick="toggleInactive(${pIdx}, ${d.dIdx})">DISABLE</button>`;
-        let expInfo = d.expiryDateStr ? `<div style="font-size:10px; color:#555; margin-top:2px; font-weight:bold;">Exp: ${d.expiryDateStr}</div>` : ''; let expiredWarning = d.isExpired ? `<div style="color:#d35400; font-size:9px; font-weight:900; margin-top:3px; line-height:1.2; background:#ffeaa7; padding:2px; border-radius:3px;">⚠️ EXPIRED<br>Check Live</div>` : '';
+        
+        // Action Button Dropdown (Size reduced for mobile)
+        let actionMenuBtnHtml = `
+        <div style="position:relative; display:inline-block;">
+            <button onclick="toggleActionMenu(${pIdx}, ${d.dIdx}, event)" style="background:var(--primary); color:white; border:none; padding:4px 6px; border-radius:4px; font-weight:bold; cursor:pointer; font-size: 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.2); min-width: 40px; letter-spacing:0;">ACT▼</button>
+            
+            <div id="actMenu_${pIdx}_${d.dIdx}" class="act-menu-dropdown" style="display:none; position:absolute; right:0; top:100%; background:white; border:1px solid #e2e8f0; box-shadow:0 10px 25px rgba(0,0,0,0.15); border-radius:8px; z-index:9999; min-width:120px; flex-direction:column; overflow:hidden; margin-top:5px;">
+                <button onclick="copySchemeText(${pIdx}, ${d.dIdx}, this); document.getElementById('actMenu_${pIdx}_${d.dIdx}').style.display='none';" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#fff'" style="background:#fff; border:none; padding:10px 12px; text-align:left; cursor:pointer; width:100%; border-bottom:1px solid #f1f5f9; font-size:11px; font-weight:bold; color:var(--dark); transition:0.2s;">📋 COPY</button>
+                <button onclick="openEditSchemeModal(${pIdx}, ${d.dIdx}); document.getElementById('actMenu_${pIdx}_${d.dIdx}').style.display='none';" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#fff'" style="background:#fff; border:none; padding:10px 12px; text-align:left; cursor:pointer; width:100%; border-bottom:1px solid #f1f5f9; font-size:11px; font-weight:bold; color:#d97706; transition:0.2s;">✏️ EDIT</button>
+                <button onclick="toggleInactive(${pIdx}, ${d.dIdx}); document.getElementById('actMenu_${pIdx}_${d.dIdx}').style.display='none';" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#fff'" style="background:#fff; border:none; padding:10px 12px; text-align:left; cursor:pointer; width:100%; font-size:11px; font-weight:bold; color:${isInactive ? '#059669' : '#dc2626'}; transition:0.2s;">${isInactive ? '✅ ADD' : '🚫 DISABLE'}</button>
+            </div>
+        </div>`;
+        
+        let expInfo = d.expiryDateStr ? `<div style="font-size:9px; color:#555; margin-top:2px; font-weight:bold;">Exp: ${d.expiryDateStr}</div>` : ''; let expiredWarning = d.isExpired ? `<div style="color:#d35400; font-size:8px; font-weight:900; margin-top:3px; line-height:1.2; background:#ffeaa7; padding:2px; border-radius:3px;">⚠️ EXPIRED</div>` : '';
+        
         return `<tr id="row_${pIdx}_${d.dIdx}" class="${rowClass}">
             <td class="hidden-col">${d.category}</td><td class="hidden-col">${+parseFloat(d.dbd).toFixed(3)}%<br><span style="color:var(--danger); font-weight:900;">₹${Math.round(d.dbdAmt||0).toLocaleString()}</span></td><td class="hidden-col">₹${d.pf}</td><td class="hidden-col">${+parseFloat(d.roi).toFixed(2)}%<br><span style="color:var(--danger); font-weight:900;">₹${Math.round(d.roiAmt||0).toLocaleString()}</span></td><td class="hidden-col">${d.fixedEmi > 0 ? '₹'+d.fixedEmi : 'N/A'}</td><td class="hidden-col" id="ltv_${pIdx}_${d.dIdx}">${Math.round(d.curLTV)}%</td><td class="hidden-col" id="nd_${pIdx}_${d.dIdx}" style="font-weight:900; color:var(--bajaj-blue);">₹${Math.round(d.netDisb).toLocaleString()}</td><td class="hidden-col" id="extra_${pIdx}_${d.dIdx}" style="font-weight:900; color:var(--danger);">₹${Math.round(d.extra).toLocaleString()}</td>
-            ${isNT ? `<td class="bound-col">${d.minLoan > 0 ? '₹' + d.minLoan : '0'}</td><td class="bound-col">${d.maxLoan < 9999999 ? '₹' + d.maxLoan : 'NO'}</td>` : `<td style="color:#777;">₹${Math.floor(d.nbfcMaxL)}</td>`}
-            <td><div class="stepper"><button class="step-btn" onclick="step(${pIdx},${d.dIdx},-${d.isFixed ? d.fixedEmi : 1000})">-</button><input id="l_${pIdx}_${d.dIdx}" type="number" value="${Math.floor(d.loan)}" class="step-inp" onchange="manual(${pIdx},${d.dIdx})" onblur="manual(${pIdx},${d.dIdx})"><button class="step-btn" onclick="step(${pIdx},${d.dIdx},${d.isFixed ? d.fixedEmi : 1000})">+</button></div></td>
-            <td id="ta_${pIdx}_${d.dIdx}" style="font-weight:900;">${d.currentTenure}/${d.advEmi}${expInfo}${expiredWarning}</td>
-            <td id="dp_${pIdx}_${d.dIdx}" style="color:var(--success); font-weight:950;">₹${Math.round(d.dp).toLocaleString()}</td><td id="emi_${pIdx}_${d.dIdx}" style="color:var(--primary); font-weight:950;">₹${Math.round(d.emi).toLocaleString()}</td><td id="inst_${pIdx}_${d.dIdx}" style="font-weight:900;">${d.inst}</td><td id="day_${pIdx}_${d.dIdx}" style="color:var(--success); font-weight:950;">₹${Math.round(d.daily).toLocaleString()}</td>
-            <td><div style="display:flex; flex-direction:column; gap:2px; min-width: 40px;"><button class="action-btn btn-copy" onclick="copySchemeText(${pIdx}, ${d.dIdx}, this)">COPY</button><button class="action-btn" style="background:var(--warning); color:#000;" onclick="openEditSchemeModal(${pIdx}, ${d.dIdx})">EDIT</button>${toggleBtnHTML}</div></td>
+            ${isNT ? `<td class="bound-col" style="padding:4px 1px; font-size:11px; white-space:nowrap;">${d.minLoan > 0 ? '₹' + d.minLoan : '0'}</td><td class="bound-col" style="padding:4px 1px; font-size:11px; white-space:nowrap;">${d.maxLoan < 9999999 ? '₹' + d.maxLoan : 'NO'}</td>` : `<td style="padding:4px 1px; color:#777; font-size:11px; white-space:nowrap;">₹${Math.floor(d.nbfcMaxL)}</td>`}
+            
+            <!-- Loan Column Full Visibility Fix (Width and font updated) -->
+            <td style="padding:4px 2px; text-align:center; vertical-align:middle; white-space:nowrap;" title="Click to Edit Loan Amount">
+                <div style="display:inline-flex; justify-content:center; align-items:center;">
+                    <span style="color:var(--primary); font-weight:900; font-size:13px;">₹</span>
+                    <input id="l_${pIdx}_${d.dIdx}" type="number" value="${Math.floor(d.loan)}" onchange="manual(${pIdx},${d.dIdx})" onblur="manual(${pIdx},${d.dIdx})" style="width: 65px; padding: 0; margin: 0 0 0 2px; border: none; background: transparent; outline: none; box-shadow: none; -webkit-appearance: none; -moz-appearance: textfield; appearance: none; text-align: left; font-weight: 900; font-size: 13px; color: var(--primary); cursor: pointer;">
+                </div>
+            </td>
+
+            <td id="ta_${pIdx}_${d.dIdx}" style="padding:4px 1px; font-weight:900; font-size:11px; white-space:nowrap;">${d.currentTenure}/${d.advEmi}${expInfo}${expiredWarning}</td>
+            <td id="dp_${pIdx}_${d.dIdx}" style="padding:4px 1px; color:var(--success); font-weight:950; font-size:11px; white-space:nowrap;">₹${Math.round(d.dp).toLocaleString()}</td>
+            <td id="emi_${pIdx}_${d.dIdx}" style="padding:4px 1px; color:var(--primary); font-weight:950; font-size:11px; white-space:nowrap;">₹${Math.round(d.emi).toLocaleString()}</td>
+            <td id="inst_${pIdx}_${d.dIdx}" style="padding:4px 1px; font-weight:900; font-size:11px; white-space:nowrap;">${d.inst}</td>
+            <td id="day_${pIdx}_${d.dIdx}" style="padding:4px 1px; color:var(--success); font-weight:950; font-size:11px; white-space:nowrap;">₹${Math.round(d.daily).toLocaleString()}</td>
+            <td style="padding:4px 1px; text-align: center; white-space:nowrap;">${actionMenuBtnHtml}</td>
         </tr>`;
     }).join('');
 }
-
 function step(pIdx, dIdx, amt) { let el = document.getElementById(`l_${pIdx}_${dIdx}`); el.value = Math.max(0, parseInt(el.value) + amt); manual(pIdx, dIdx); }
 
 function manual(pIdx, dIdx) {
@@ -1272,143 +1490,235 @@ let requestWhatsAppDispatch = false;
 function proceedGenerateImage() { requestWhatsAppDispatch = false; document.getElementById('custInfoPromptModal').style.display = 'none'; doGenerateCustomerImage(); }
 function proceedGenerateImageAndWhatsAppCopy() { requestWhatsAppDispatch = true; document.getElementById('custInfoPromptModal').style.display = 'none'; doGenerateCustomerImage(); }
 
-/* === UPDATED: QUOTATION IMAGE GENERATOR WITH CLEAN SLEEK FINTECH BADGES === */
+/* === NEW: DAILY INDIAN FESTIVAL THEME FUNCTION === */
+function getDailyTheme() {
+    const festivalThemes = [
+        { bg: "linear-gradient(135deg, #D35400 0%, #F39C12 100%)", text: "#fff", accent: "#FFF", icon: "🪔" }, // Diwali
+        { bg: "linear-gradient(135deg, #C0392B 0%, #E74C3C 100%)", text: "#fff", accent: "#F1C40F", icon: "🌺" }, // Ganesh Chaturthi
+        { bg: "linear-gradient(135deg, #1E8449 0%, #2ECC71 100%)", text: "#fff", accent: "#F1C40F", icon: "🚩" }, // Gudi Padwa
+        { bg: "linear-gradient(135deg, #8E44AD 0%, #E74C3C 100%)", text: "#fff", accent: "#F1C40F", icon: "🎨" }, // Holi
+        { bg: "linear-gradient(135deg, #2980B9 0%, #6DD5FA 100%)", text: "#fff", accent: "#000", icon: "🪁" }, // Makar Sankranti
+        { bg: "linear-gradient(135deg, #B92B27 0%, #1565C0 100%)", text: "#fff", accent: "#F1C40F", icon: "🏹" }, // Dussehra
+        { bg: "linear-gradient(135deg, #e52d27 0%, #b31217 100%)", text: "#fff", accent: "#F1C40F", icon: "💃" }  // Navratri
+    ];
+    const today = new Date().getDate(); 
+    return festivalThemes[today % festivalThemes.length];
+}
+
+/* === PIXEL-PERFECT EXACT QUOTATION IMAGE GENERATOR (NO OUTER BOX, BLUE LINE, MASSIVE FONTS) === */
 function doGenerateCustomerImage() {
-    let quoteDiv = document.createElement('div'); quoteDiv.style.width = "560px"; quoteDiv.style.padding = "25px"; quoteDiv.style.background = "#fff"; quoteDiv.style.position = "absolute"; quoteDiv.style.top = "-9999px"; quoteDiv.style.fontFamily = "'Segoe UI', sans-serif";
-    let c = customerQueue[activeCustomerIndex]; let headerText = c?.name && c.name !== "-" ? c.name.toUpperCase() : "CUSTOMER QUOTATION"; let ltvLimit = c?.ltv || 100;
-    let html = ` <div style="background: linear-gradient(135deg, var(--bajaj-blue) 0%, var(--indigo) 100%); border-radius: 12px; padding: 25px; color: white; text-align: center; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.15);"> <h2 style="margin:0; font-size:28px; font-weight:900; letter-spacing: 1px; color:#fff;">🎉 EXCLUSIVE OFFERS FOR YOU!</h2> <h3 style="margin:8px 0 18px 0; color:#87c3f7; font-size:22px;">👤 ${headerText} ${c?.mobile ? `| 📞 ${c.mobile}` : ''}</h3> <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; border: 1px dashed rgba(255,255,255,0.4); display: inline-block; width: 90%;"> <div style="font-size: 14px; color: #e0e0e0; font-weight: bold; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 2px;">Your Approved Eligibility</div> <div style="display:flex; justify-content:center; gap:20px; font-weight:900; font-size: 17px;"> <span style="color:#00e676;">LIMIT: ₹${c?.limit || 0}</span> <span style="color:#ffd54f;">MAX LTV: ${ltvLimit}%</span> <span style="color:#fff;">TYPE: ${c?.type || 'NEW'}</span> ${c?.cap ? `<span style="color:#ff8a65;">EMI CAP: ₹${c.cap}</span>` : ''} </div> </div> </div>`;
+    let quoteDiv = document.createElement('div'); 
+    quoteDiv.style.width = "780px"; /* रुंदी थोडी वाढवली जेणेकरून मोठे फॉन्ट छान बसतील */
+    quoteDiv.style.padding = "16px"; 
+    quoteDiv.style.background = "#f8fafc"; 
+    quoteDiv.style.position = "absolute"; 
+    quoteDiv.style.top = "-9999px"; 
+    quoteDiv.style.boxSizing = "border-box";
+    quoteDiv.style.fontFamily = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
 
-    let hasV = false; let productsToRender = window.tempImageGenIndices.map(idx => current_products[idx]);
-    productsToRender.forEach((prod) => {
-        let validS = prod.calculatedData.filter(d => { let isLtvB = (d.curLTV > ltvLimit); let isBoundB = false; if (prod.isNonTieup && prod.inputs.mrp > 0) { if (d.loan < d.minLoan || d.loan > d.maxLoan) isBoundB = true; } return !isLtvB && !isBoundB && !d.inactive && !d.isInv50Breach && d.loan > 0; });
-        if(validS.length === 0) return; hasV = true; let invAmt = prod.inputs.inv > 0 ? prod.inputs.inv : prod.inputs.mrp;
+    let c = customerQueue[activeCustomerIndex]; 
+    let ltvLimit = c?.ltv || 100;
+    
+    // Customer Name Formatting: Title Case
+    let rawName = c?.name && c.name !== "-" ? c.name : "Valued Customer";
+    let custName = rawName.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
+    let custMobile = c?.mobile && c.mobile !== "" ? c.mobile : "N/A";
 
-        let winDp = [...validS].sort((a,b) => a.dp - b.dp)[0]; 
-        let winEmi = [...validS].sort((a,b) => a.emi - b.emi)[0]; 
-        let winPop = [...validS].filter(s => s.roi === 0 || s.isFixed).sort((a,b) => a.dp - b.dp)[0] || validS[0]; 
-        let winBalance = [...validS].sort((a,b) => (a.dp + (a.emi * 2)) - (b.dp + (b.emi * 2)))[0] || validS[0];
+    // 1. Top Modern Gradient Header
+    let html = `
+    <div style="background: #ffffff; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); overflow: hidden; border: 1px solid #e2e8f0;">
         
-        let schemeMap = new Map(); validS.forEach(s => schemeMap.set(s.dIdx, { scheme: s, badges: [] }));
+        <!-- Header Banner -->
+        <div style="background: linear-gradient(180deg, #095797 0%, #153e75 100%); padding: 20px 16px 22px 16px; color: #ffffff; text-align: center; border-radius: 16px 16px 0 0;">
+            <h2 style="margin: 0 0 14px 0; font-size: 30px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; text-shadow: 1px 1px 3px rgba(0,0,0,0.3);">
+                🎉 EXCLUSIVE OFFERS FOR YOU!
+            </h2> 
 
-        if (winDp) { let entry = schemeMap.get(winDp.dIdx); entry.badges.push("DP"); }
-        if (winEmi && !schemeMap.get(winEmi.dIdx).badges.includes("EMI")) { let entry = schemeMap.get(winEmi.dIdx); entry.badges.push("EMI"); }
-        if (winPop && !schemeMap.get(winPop.dIdx).badges.includes("POP")) { let entry = schemeMap.get(winPop.dIdx); entry.badges.push("POP"); }
-        if (winBalance && !schemeMap.get(winBalance.dIdx).badges.includes("BAL")) { let entry = schemeMap.get(winBalance.dIdx); entry.badges.push("BAL"); }
-
-        let badgeDetails = {
-            "DP": { text: "▼ LOWEST DP", bg: "#059669", color: "#ffffff", rowBg: "#ecfdf5", accent: "#059669" },
-            "EMI": { text: "▼ LOWEST EMI", bg: "#2563eb", color: "#ffffff", rowBg: "#eff6ff", accent: "#2563eb" },
-            "POP": { text: "★ TOP CHOICE", bg: "#d97706", color: "#ffffff", rowBg: "#fffbeb", accent: "#d97706" },
-            "BAL": { text: "✦ BEST VALUE", bg: "#7c3aed", color: "#ffffff", rowBg: "#f5f3ff", accent: "#7c3aed" }
-        };
-
-        let badgedEntries = Array.from(schemeMap.values()).filter(e => e.badges.length > 0);
-        badgedEntries.sort((a, b) => b.badges.length - a.badges.length);
-        let top4Entries = badgedEntries.slice(0, 4);
-        let top4Schemes = top4Entries.map(e => e.scheme).sort((a, b) => a.dp - b.dp);
-        let topSchemeIDs = new Set(top4Schemes.map(s => s.dIdx));
-
-        let remainingSchemes = validS.filter(d => !topSchemeIDs.has(d.dIdx)).sort((a, b) => a.dp - b.dp);
-
-        let top4RowsHtml = top4Entries.map((item, i) => {
-            let d = item.scheme;
-            let primaryBadge = badgeDetails[item.badges[0]] || badgeDetails["DP"];
-
-            let bHtml = item.badges.map(b => `
-                <div style="background:${badgeDetails[b].bg}; color:${badgeDetails[b].color}; font-size:10px; font-weight:900; margin-top:5px; padding:3px 7px; border-radius:4px; display:inline-block; letter-spacing:0.5px; text-transform:uppercase;">
-                    ${badgeDetails[b].text}
+            <!-- Approved Eligibility Container -->
+            <div style="display: block; width: 96%; margin: 0 auto; background: rgba(255, 255, 255, 0.08); border: 2px dashed rgba(255,255,255,0.4); border-radius: 10px; padding: 14px 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                
+                <!-- Customer Details -->
+                <div style="font-size: 21px; font-weight: 900; color: #ffffff; letter-spacing: 0.5px; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; display: flex; justify-content: space-between; text-shadow: 1px 1px 2px rgba(0,0,0,0.2);">
+                    <span>🧑 Customer Name: <span style="color: #bfdbfe;">${custName}</span></span>
+                    <span>📱 <span style="color: #bfdbfe;">${custMobile}</span></span>
                 </div>
-            `).join('<br>');
 
-            return `
-                <tr style="background:${primaryBadge.rowBg}; border-bottom: 2px solid #cbd5e1; border-left: 6px solid ${primaryBadge.accent};">
-                    <td style="padding:15px 6px; font-size:16px; font-weight:950; color:#1e293b; line-height:1.2;">
-                        <span style="font-size:18px;">${d.currentTenure}/${d.advEmi}</span><br>
-                        ${bHtml}
-                    </td>
-                    <td style="padding:15px 6px; color:#059669; font-size:17px; font-weight:950;">₹${Math.round(d.dp).toLocaleString()}</td>
-                    <td style="padding:15px 6px; color:#2563eb; font-size:17px; font-weight:950;">₹${Math.round(d.emi).toLocaleString()}</td>
-                    <td style="padding:15px 6px; font-size:16px; font-weight:950; color:#1e293b;">${d.inst}</td>
-                    <td style="padding:15px 6px; color:#ea580c; font-size:17px; font-weight:950;">₹${Math.round(d.daily).toLocaleString()}</td>
-                </tr>
-            `;
-        }).join('');
-
-        let remainingRowsHtml = "";
-        if (remainingSchemes.length > 0) {
-            remainingRowsHtml += `
-                <tr style="background:#f1f5f9; border-top: 2px solid #cbd5e1; border-bottom: 2px solid #cbd5e1;">
-                    <td colspan="5" style="padding:10px; font-size:13px; font-weight:950; color:#475569; letter-spacing:0.5px; text-align:center;">
-                        👇 इतर उपलब्ध पर्याय (OTHER SCHEMES) 👇
-                    </td>
-                </tr>
-            `;
-            remainingRowsHtml += remainingSchemes.map((d, i) => `
-                <tr style="background:${i%2==0?'#ffffff':'#fcfcfc'}; color:#64748b; border-bottom: 1px solid #ededed;">
-                    <td style="padding:10px 6px; font-size:15px; font-weight:900; color:#334155;">${d.currentTenure}/${d.advEmi}</td>
-                    <td style="padding:10px 6px; color:#10b981; font-size:15px; font-weight:900;">₹${Math.round(d.dp).toLocaleString()}</td>
-                    <td style="padding:10px 6px; color:#3b82f6; font-size:15px; font-weight:900;">₹${Math.round(d.emi).toLocaleString()}</td>
-                    <td style="padding:10px 6px; font-size:15px; font-weight:900; color:#475569;">${d.inst}</td>
-                    <td style="padding:10px 6px; color:#ea580c; font-size:15px; font-weight:900;">₹${Math.round(d.daily).toLocaleString()}</td>
-                </tr>
-            `).join('');
-        }
-
-        html += `
-        <div style="margin-bottom:20px; border-radius: 12px; overflow: hidden; border: 1px solid #dcdfe6; box-shadow: 0 4px 15px rgba(0,0,0,0.06); background:#ffffff; font-family:'Segoe UI', sans-serif; border-left: 6px solid #00a86b;">
-            <div style="padding:14px 18px; display:flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; background: #ffffff;">
-                <div style="display:flex; align-items:center; gap:8px;">
-                    <span style="font-size:18px;">🧮</span>
-                    <h3 style="margin:0; color:#0059A3; font-size:18px; font-weight:950; letter-spacing:0.3px; text-transform:uppercase;">${prod.name}</h3>
-                </div>
-                <div style="background: #0059A3; color: #ffffff; padding: 6px 14px; border-radius: 6px; font-size:15px; font-weight:950;">
-                    INV: ₹${invAmt.toLocaleString()}
+                <!-- Eligibility Details -->
+                <div style="display: flex; gap: 18px; font-size: 24px; font-weight: 900; align-items: center; justify-content: center; text-shadow: 1px 1px 2px rgba(0,0,0,0.3);">
+                    <span>LIMIT: <b style="color: #34d399;">₹${c?.limit ? c.limit.toLocaleString() : 0}</b></span>
+                    <span style="opacity: 0.5;">|</span>
+                    <span>MAX LTV: <b style="color: #facc15;">${ltvLimit}%</b></span>
+                    <span style="opacity: 0.5;">|</span>
+                    <span>TYPE: <b style="color: #ffffff;">${c?.type || 'NEW'}</b></span>
                 </div>
             </div>
-            <div style="padding: 0;">
-                <table style="width:100%; border-collapse:collapse; text-align:center; font-family:'Segoe UI', sans-serif;">
-                    <thead>
-                        <tr style="background:#ffffff; color:#333333; font-size:14px; font-weight:900; text-transform:uppercase; letter-spacing:0.5px; border-bottom: 2px solid #e2e8f0;">
-                            <th style="padding:12px 6px;">SCHEME</th>
-                            <th style="padding:12px 6px;">DP</th>
-                            <th style="padding:12px 6px;">EMI</th>
-                            <th style="padding:12px 6px;">M</th>
-                            <th style="padding:12px 6px;">DAILY</th>
+        </div>
+
+        <div style="padding: 20px;">
+    `;
+
+    let hasV = false; 
+    let productsToRender = window.tempImageGenIndices.map(idx => current_products[idx]);
+    
+    productsToRender.forEach((prod, index) => {
+        let validS = prod.calculatedData.filter(d => { 
+            let isLtvB = (d.curLTV > ltvLimit); 
+            let isBoundB = false; 
+            if (prod.isNonTieup && prod.inputs.mrp > 0) { 
+                if (d.loan < d.minLoan || d.loan > d.maxLoan) isBoundB = true; 
+            } 
+            return !isLtvB && !isBoundB && !d.inactive && !d.isInv50Breach && d.loan > 0; 
+        });
+        
+        if(validS.length === 0) return; 
+        hasV = true; 
+        let invAmt = prod.inputs.inv > 0 ? prod.inputs.inv : prod.inputs.mrp;
+
+        // Sorting Logic for Badges
+        let sortedByDp = [...validS].sort((a,b) => a.dp - b.dp);
+        let winDp = sortedByDp[0];
+        
+        let remainingAfterDp = validS.filter(s => s.dIdx !== winDp.dIdx);
+        let sortedByEmi = [...remainingAfterDp].sort((a,b) => a.emi - b.emi);
+        let winEmi = sortedByEmi[0] || sortedByDp[1] || winDp;
+        
+        let highlightIds = [winDp?.dIdx, winEmi?.dIdx].filter(Boolean);
+        let otherSchemes = validS.filter(s => !highlightIds.includes(s.dIdx)).sort((a,b) => a.dp - b.dp);
+
+        // Combine all schemes into one array
+        let allSchemes = [];
+        if (winDp) allSchemes.push({ ...winDp, isWinDp: true });
+        if (winEmi && (!winDp || winEmi.dIdx !== winDp.dIdx)) allSchemes.push({ ...winEmi, isWinEmi: true });
+        otherSchemes.forEach(s => allSchemes.push(s));
+
+        let marginBottom = (index === productsToRender.length - 1) ? '0px' : '20px';
+
+        /* 
+           Product Card Frame 
+           बाहेरची करडी लाईन (Border) काढून टाकली आहे. 
+           फक्त डावीकडे जाड निळी (Blue) लाईन आणि हलकी शॅडो ठेवली आहे. 
+        */
+        html += `
+            <div style="border-left: 12px solid #034887; background: #ffffff; margin-bottom: ${marginBottom}; box-shadow: 0 4px 15px rgba(0,0,0,0.06);">
+                
+                <!-- Product Title Header -->
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 22px 20px 20px 20px; border-bottom: 2px solid #e2e8f0; background: #ffffff;">
+                    <div style="display: flex; align-items: center; gap: 14px; flex: 1;">
+                        <span style="font-size: 32px;">📱</span>
+                        <div style="font-size: 24px; font-weight: 900; color: #034887; line-height: 1.3;">
+                            ${prod.name.toUpperCase()}
+                        </div>
+                    </div>
+                    <div style="background: #034887; color: #fff; padding: 10px 20px; border-radius: 8px; text-align: center; min-width: 120px; box-shadow: 0 3px 8px rgba(3,72,135,0.3);">
+                        <div style="font-size: 12px; font-weight: 800; color: #93c5fd; letter-spacing: 0.5px;">INV VALUE</div>
+                        <div style="font-size: 22px; font-weight: 900;">₹${invAmt.toLocaleString()}</div>
+                    </div>
+                </div>
+
+                <!-- SINGLE UNIFIED SCHEMES TABLE (Massive Fonts) -->
+                <table style="width: 100%; border-collapse: collapse; text-align: center;">
+                    <thead style="background: #f8fafc; color: #334155; border-bottom: 2px solid #cbd5e1;">
+                        <tr style="font-size: 18px; font-weight: 900; letter-spacing: 0.5px;">
+                            <th style="padding: 16px 10px; width: 26%;">SCHEME</th>
+                            <th style="padding: 16px 10px; width: 20%;">DP</th>
+                            <th style="padding: 16px 10px; width: 22%;">EMI</th>
+                            <th style="padding: 16px 10px; width: 14%;">M</th>
+                            <th style="padding: 16px 10px; width: 18%;">DAILY</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${top4RowsHtml}
-                        ${remainingRowsHtml}
+        `;
+
+        // Render all schemes uniformly with HUGE font sizes
+        allSchemes.forEach((d, i) => {
+            let isLast = (i === allSchemes.length - 1);
+            let bBorder = isLast ? 'none' : '1px solid #e2e8f0';
+            let bgCol = (d.isWinDp) ? '#f0fdf4' : (d.isWinEmi ? '#eff6ff' : (i % 2 === 0 ? '#ffffff' : '#f8fafc'));
+            
+            // Build badges if applicable
+            let badges = [];
+            if (d.isWinDp) {
+                badges.push('<span style="background: #059669; color: white; font-size: 13px; font-weight: 900; padding: 5px 12px; border-radius: 6px; width: 85%;">▼ LOWEST DP</span>');
+                badges.push('<span style="background: #d97706; color: white; font-size: 13px; font-weight: 900; padding: 5px 12px; border-radius: 6px; width: 85%;">★ TOP CHOICE</span>');
+                badges.push('<span style="background: #7c3aed; color: white; font-size: 13px; font-weight: 900; padding: 5px 12px; border-radius: 6px; width: 85%;">✦ BEST VALUE</span>');
+            } else if (d.isWinEmi) {
+                badges.push('<span style="background: #2563eb; color: white; font-size: 13px; font-weight: 900; padding: 5px 12px; border-radius: 6px; width: 85%;">▼ LOWEST EMI</span>');
+            }
+            let badgeHtml = badges.length > 0 ? `<div style="display: flex; flex-direction: column; gap: 4px; align-items: center; margin-top: 8px;">${badges.join('')}</div>` : '';
+
+            // Render Row with UNIFORM 30px FONT SIZE across all columns and rows
+            html += `
+                <tr style="background: ${bgCol}; border-bottom: ${bBorder};">
+                    <td style="padding: 22px 10px; text-align: center;">
+                        <div style="font-size: 30px; font-weight: 900; color: #0f172a;">${d.currentTenure}/${d.advEmi}</div>
+                        ${badgeHtml}
+                    </td>
+                    <td style="padding: 22px 10px; font-size: 30px; font-weight: 900; color: #059669;">₹${Math.round(d.dp).toLocaleString()}</td>
+                    <td style="padding: 22px 10px; font-size: 30px; font-weight: 900; color: #095797;">₹${Math.round(d.emi).toLocaleString()}</td>
+                    <td style="padding: 22px 10px; font-size: 30px; font-weight: 900; color: #1e293b;">${d.inst}</td>
+                    <td style="padding: 22px 10px; font-size: 30px; font-weight: 900; color: #ea580c;">₹${Math.round(d.daily).toLocaleString()}</td>
+                </tr>
+            `;
+        });
+
+        html += `
                     </tbody>
                 </table>
             </div>
-        </div>`;
+        `;
     });
 
-    if(!hasV) { showToast("⚠️ Eligibility ke anusar koi Scheme nahi baith rahi hai!", "error"); return; }
+    if(!hasV) { 
+        showToast("⚠️ No eligible schemes found for this customer!", "error"); 
+        return; 
+    }
 
-    html += `<div style="text-align:center; margin-top: 15px; color:#aaa; font-size: 14px; font-weight: bold; border-top: 1px dashed #ddd; padding-top: 15px;">Generated securely via Persistent Portal</div>`;
-    quoteDiv.innerHTML = html; document.body.appendChild(quoteDiv);
+    html += `
+        </div>
+    </div>`;
+    
+    quoteDiv.innerHTML = html; 
+    document.body.appendChild(quoteDiv);
 
-    html2canvas(quoteDiv, {scale: 2}).then(canvas => { 
-        let imgDataUrl = canvas.toDataURL("image/png"); document.getElementById('generatedImage').src = imgDataUrl; document.getElementById('imageViewerModal').style.display = 'flex'; document.body.removeChild(quoteDiv); 
+    html2canvas(quoteDiv, {scale: 2, useCORS: true, backgroundColor: null}).then(canvas => { 
+        let imgDataUrl = canvas.toDataURL("image/png"); 
+        document.getElementById('generatedImage').src = imgDataUrl; 
+        document.getElementById('imageViewerModal').style.display = 'flex'; 
+        document.body.removeChild(quoteDiv); 
+        
         if(requestWhatsAppDispatch) {
             const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
             if (isMobile) {
-                let a = document.createElement("a"); a.href = imgDataUrl; let safeName = c?.name !== "-" ? c.name.replace(/\s+/g, '_') : "Customer"; a.download = `Quotation_${safeName}.png`; document.body.appendChild(a); a.click(); document.body.removeChild(a); showToast("✅ Image downloaded! WhatsApp opening...", "success");
-                setTimeout(() => { let mobile = c?.mobile || ""; if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank'); }, 500);
+                let a = document.createElement("a"); 
+                a.href = imgDataUrl; 
+                let safeName = c?.name !== "-" ? c.name.replace(/\s+/g, '_') : "Customer"; 
+                a.download = `Offer_${safeName}.png`; 
+                document.body.appendChild(a); 
+                a.click(); 
+                document.body.removeChild(a); 
+                showToast("✅ Image downloaded! Opening WhatsApp...", "success");
+                setTimeout(() => { 
+                    let mobile = c?.mobile || ""; 
+                    if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank'); 
+                }, 500);
             } else {
-                document.getElementById('clipboardStatusAlert').style.display = 'none';
                 canvas.toBlob(blob => {
-                    try { navigator.clipboard.write([ new ClipboardItem({ "image/png": blob }) ]).then(() => { document.getElementById('clipboardStatusAlert').style.display = 'block'; setTimeout(() => { let mobile = c?.mobile || ""; if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank'); }, 500); }).catch(err => { showCustomAlert("📋 Long Press karke Copy Image karein."); let mobile = c?.mobile || ""; if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank'); }); } 
-                    catch (e) { let mobile = c?.mobile || ""; if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank'); }
+                    try { 
+                        navigator.clipboard.write([ new ClipboardItem({ "image/png": blob }) ]).then(() => { 
+                            showToast("📋 Image copied to clipboard!", "success");
+                            let mobile = c?.mobile || ""; 
+                            if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank'); 
+                        }); 
+                    } catch (e) { 
+                        let mobile = c?.mobile || ""; 
+                        if(mobile && mobile.length >= 10) window.open(`https://wa.me/91${mobile}`, '_blank'); 
+                    }
                 }, 'image/png');
             }
-        } else { document.getElementById('clipboardStatusAlert').style.display = 'none'; }
+        }
     });
 }
-
-/* === DEALER LINKS WITH STAR (FAVORITES) & 3-ITEM COPY FEATURE === */
+/* === DEALER LINKS WITH STAR (FAVORITES) & SECURE DIRECT LINK FEATURE === */
 let showingOnlyStarred = false;
 
 function getStarredDealers() {
@@ -1416,7 +1726,7 @@ function getStarredDealers() {
 }
 
 function toggleDealerStar(dealerId, event) {
-    if(event) event.stopPropagation();
+    if(event) { event.preventDefault(); event.stopPropagation(); }
     let starred = getStarredDealers();
     let idStr = String(dealerId).trim();
     if (starred.includes(idStr)) {
@@ -1445,8 +1755,9 @@ function showOnlyStarredDealers() {
     searchDealer();
 }
 
-function copyThreeDealerItems(dId, dName, bitlyUrl, btnEl, event) {
-    if(event) event.stopPropagation();
+function copyThreeDealerItems(dId, dName, encBitly, btnEl, event) {
+    if(event) { event.preventDefault(); event.stopPropagation(); }
+    let bitlyUrl = decodeURIComponent(encBitly);
     let textToCopy = `${dId} - ${dName} - ${bitlyUrl}`;
 
     function showSuccess() {
@@ -1481,6 +1792,19 @@ function openDealerSearchModal() {
 
 function closeDealerSearchModal() { 
     document.getElementById('dealerSearchModal').style.display = 'none'; 
+}
+
+function openBitlyLink(url) { 
+    if (url && url !== '#' && url.trim() !== '') { 
+        let targetUrl = url.trim();
+        if (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) { 
+            targetUrl = 'https://' + targetUrl; 
+        } 
+        window.open(targetUrl, '_blank'); 
+        closeDealerSearchModal(); 
+    } else { 
+        showToast('⚠️ Is dealer ke liye Bitly link available nahi hai!', 'warning'); 
+    } 
 }
 
 function searchDealer() {
@@ -1525,7 +1849,9 @@ function searchDealer() {
     }
 
     resultsDiv.innerHTML = displayList.map(m => { 
-        let bitly = m.bitly || '#'; 
+        let rawBitly = m.bitly || '#'; 
+        let validLink = (rawBitly && rawBitly !== '#') ? (rawBitly.startsWith('http') ? rawBitly : 'https://' + rawBitly) : '';
+        let encBitly = encodeURIComponent(validLink); 
         let dId = m.code || '-'; 
         let dName = m.name + (m.city ? ` - ${m.city}` : ''); 
         let isStarred = starredIds.includes(dId);
@@ -1533,6 +1859,10 @@ function searchDealer() {
         let favBtnHtml = isStarred 
             ? `<button onclick="toggleDealerStar('${dId}', event)" style="background:#fff3cd; color:#856404; border:1px solid #ffeeba; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:bold; cursor:pointer;">⭐ FAVORITED</button>`
             : `<button onclick="toggleDealerStar('${dId}', event)" style="background:#f8f9fa; color:#555; border:1px solid #ccc; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:bold; cursor:pointer;">☆ ADD FAV</button>`;
+
+        let linkBtnHtml = validLink 
+            ? `<a href="${validLink}" target="_blank" rel="noopener noreferrer" onclick="closeDealerSearchModal()" style="flex:1; background:var(--success); color:white; border:none; padding:8px 6px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:11px; text-decoration:none; text-align:center; display:inline-block;">OPEN LINK ↗</a>`
+            : `<button onclick="showToast('⚠️ No Link Available', 'warning')" style="flex:1; background:#ccc; color:#666; border:none; padding:8px 6px; border-radius:4px; font-weight:bold; font-size:11px; cursor:not-allowed;">NO LINK</button>`;
 
         return ` 
         <div style="display:flex; flex-direction:column; background:${isStarred ? '#fffdf0' : '#fff'}; padding:10px; border-radius:6px; border:1px solid ${isStarred ? '#ffb400' : '#ddd'}; box-shadow: 0 2px 4px rgba(0,0,0,0.05); gap: 8px;"> 
@@ -1544,19 +1874,114 @@ function searchDealer() {
                 <div>${favBtnHtml}</div>
             </div>
             <div style="display:flex; gap: 5px; border-top: 1px dashed #eee; padding-top: 8px;">
-                <button onclick="openBitlyLink('${bitly}')" style="flex:1; background:var(--success); color:white; border:none; padding:6px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:11px;">OPEN LINK ↗</button>
-                <button onclick="copyThreeDealerItems('${dId}', '${dName.replace(/'/g, "\\'")}', '${bitly}', this, event)" style="flex:1.5; background:var(--indigo); color:white; border:none; padding:6px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:11px;">📋 COPY DATA</button>
+                ${linkBtnHtml}
+                <button onclick="copyThreeDealerItems('${dId}', '${dName.replace(/'/g, "\\'")}', '${encBitly}', this, event)" style="flex:1.5; background:var(--indigo); color:white; border:none; padding:8px 6px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:11px;">📋 COPY DATA</button>
             </div>
         </div>`; 
     }).join('');
 }
 
-function openBitlyLink(url) { 
-    if (url && url !== '#' && url.trim() !== '') { 
-        if (!url.startsWith('http://') && !url.startsWith('https://')) { url = 'https://' + url; } 
-        window.open(url, '_blank'); 
-        closeDealerSearchModal(); 
-    } else { 
-        showToast('⚠️ Is dealer ke liye Bitly link available nahi hai!', 'warning'); 
-    } 
+let lastTapTime = 0;
+let lastTapIdx = -1;
+
+function handleCustomerTap(idx) {
+    let currentTime = new Date().getTime();
+    let tapLength = currentTime - lastTapTime;
+
+    if (tapLength < 400 && tapLength > 0 && lastTapIdx === idx) {
+        setActiveCustomer(idx); 
+        lastTapTime = 0; 
+    } else {
+        selectQueueItem(idx); 
+        lastTapTime = currentTime;
+        lastTapIdx = idx;
+    }
 }
+
+async function checkForExcelUpdates() {
+    try {
+        let repoUrl = "https://api.github.com/repos/luckyjathar/testcalculator/commits?path=master_data.xlsx&page=1&per_page=1";
+        let res = await fetch(repoUrl);
+        
+        if (res.ok) {
+            let data = await res.json();
+            if (data && data.length > 0) {
+                let latestCommitTime = new Date(data[0].commit.committer.date).getTime();
+                let localSavedTime = await getFromDB('master_data_version_time') || 0;
+
+                if (localSavedTime > 0 && latestCommitTime > localSavedTime) {
+                    showUpdateNotification();
+                } else if (localSavedTime === 0) {
+                    await saveToDB('master_data_version_time', latestCommitTime);
+                }
+            }
+        }
+    } catch(e) {
+        console.log("Update check failed silently:", e);
+    }
+}
+
+function showUpdateNotification() {
+    let updateDiv = document.getElementById('updateNotificationBar');
+    if (!updateDiv) {
+        updateDiv = document.createElement('div');
+        updateDiv.id = 'updateNotificationBar';
+        updateDiv.innerHTML = `
+            <div style="background: var(--danger); color: white; text-align: center; padding: 10px; font-weight: bold; position: fixed; top: 0; width: 100%; z-index: 9999; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
+                🚀 नवीन स्कीम्स आणि ऑफर्स अपडेट झाल्या आहेत! 
+                <button onclick="forceRefreshMasterData()" style="background: white; color: var(--danger); border: none; padding: 5px 10px; margin-left: 10px; font-weight: bold; border-radius: 4px; cursor: pointer;">
+                    UPDATE NOW
+                </button>
+            </div>
+        `;
+        document.body.prepend(updateDiv);
+    }
+    updateDiv.style.display = 'block';
+}
+
+async function forceRefreshMasterData() {
+    let updateDiv = document.getElementById('updateNotificationBar');
+    if(updateDiv) updateDiv.innerHTML = "⏳ डाउनलोड सुरू आहे, कृपया थांबा...";
+    
+    await saveToDB('master_data_time', 0); 
+    await fetchFromMasterStream(true); 
+    
+    let repoUrl = "https://api.github.com/repos/luckyjathar/testcalculator/commits?path=master_data.xlsx&page=1&per_page=1";
+    let res = await fetch(repoUrl);
+    if(res.ok) {
+        let data = await res.json();
+        if(data && data.length > 0) {
+            let latestCommitTime = new Date(data[0].commit.committer.date).getTime();
+            await saveToDB('master_data_version_time', latestCommitTime);
+        }
+    }
+    
+    if(updateDiv) updateDiv.style.display = 'none';
+    showToast("✅ डेटा यशस्वीरित्या अपडेट झाला!", "success");
+}
+/* === ACTION DROPDOWN MENU CONTROLLER === */
+function toggleActionMenu(pIdx, dIdx, event) {
+    event.stopPropagation();
+    
+    // आधी सुरु असलेले इतर सगळे मेनू बंद करा
+    document.querySelectorAll('.act-menu-dropdown').forEach(el => {
+        if (el.id !== `actMenu_${pIdx}_${dIdx}`) {
+            el.style.display = 'none';
+        }
+    });
+    
+    // जो क्लिक केलाय तो टॉगल करा
+    let menu = document.getElementById(`actMenu_${pIdx}_${dIdx}`);
+    if(menu.style.display === 'none' || menu.style.display === '') {
+        menu.style.display = 'flex';
+    } else {
+        menu.style.display = 'none';
+    }
+}
+
+// स्क्रीनवर कुठेही बाहेर क्लिक केल्यास मेनू बंद होईल
+document.addEventListener('click', function() {
+    document.querySelectorAll('.act-menu-dropdown').forEach(el => {
+        el.style.display = 'none';
+    });
+});
