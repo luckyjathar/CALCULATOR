@@ -2,7 +2,16 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- App-like Viewport (झूम बंद करण्यासाठी) -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<!-- Android Chrome Theme Color (स्टेटस बारचा रंग) -->
+<meta name="theme-color" content="#1976D2">
+
+<!-- iOS Safari App Mode -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Persistent Portal">
     <title>Persistent Portal V76.18 - Ultimate Filter Edition</title>
     <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -11,10 +20,58 @@
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     
     <!-- Link to our separate CSS file -->
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=6.5">
+
+<style>
+/* काचेसारखा इफेक्ट (Glassmorphism) */
+.premium-customer-card::before {
+    content: '';
+    position: absolute;
+    top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%);
+    transform: rotate(30deg);
+    pointer-events: none;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+    position: relative;
+    z-index: 2;
+}
+
+.profile-info { display: flex; align-items: center; gap: 15px; }
+.avatar { font-size: 35px; background: rgba(255,255,255,0.2); border-radius: 50%; padding: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+.cust-name { margin: 0; font-size: 20px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
+
+.cust-badges { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.premium-badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; letter-spacing: 0.5px; }
+.type-badge { background: #e67e22; color: white; box-shadow: 0 2px 5px rgba(230, 126, 34, 0.4); }
+.ltv-badge { background: rgba(255,255,255,0.2); }
+.cap-badge { border: 1px dashed rgba(255,255,255,0.5); }
+
+.card-body { position: relative; z-index: 2; text-align: center; }
+.limit-label { font-size: 12px; color: #a8c0ff; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; }
+.limit-amount { font-size: 42px; font-weight: 900; color: #00ff87; text-shadow: 0 0 20px rgba(0, 255, 135, 0.4); margin-top: 5px; line-height: 1; }
+
+.quick-actions { display: flex; gap: 10px; }
+.icon-btn { background: rgba(255,255,255,0.1); border: none; font-size: 18px; padding: 10px; border-radius: 50%; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; }
+.icon-btn:hover { background: rgba(255,255,255,0.3); transform: scale(1.1); }
+.wa-btn { color: #25D366; text-shadow: 0 0 5px rgba(37, 211, 102, 0.5); }
+.call-btn { color: #3498db; }
+</style>
+
 </head>
 <body>
-
+<!-- Global Data Loader -->
+<div id="dataLoadingIndicator" style="display: none; position: fixed; top: 15px; left: 50%; transform: translateX(-50%); background: var(--warning); color: #000; padding: 6px 15px; border-radius: 20px; font-weight: 900; font-size: 12px; z-index: 100000; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
+    ⏳ Downloading Master Data...
+</div>
 <!-- TOAST NOTIFICATION CONTAINER -->
 <div id="toastNotification" class="toast-notification"></div>
 
@@ -51,7 +108,7 @@
         <div id="gitStatusBadge" style="font-weight: 950; font-size: 11px; background: rgba(39, 174, 96, 0.15); color: var(--success); padding: 8px 10px; border-radius: 6px; border: 1px solid var(--success); letter-spacing: 0.5px; text-align: center; margin-bottom: 6px;">
             ⚙️ GITHUB INTERFACE CONNECTED
         </div>
-        <div id="g_id_onload" data-client_id="777001839486-tqii6kb1hjig7qnreme74vjbm9utavvd.apps.googleusercontent.com" data-callback="handleGoogleLogin" data-auto_select="true"></div>
+        <div id="g_id_onload" data-client_id="777001839486-tqii6kb1hjig7qnreme74vjbm9utavvd.apps.googleusercontent.com" data-callback="handleGoogleLogin" data-auto_select="false" data-auto_prompt="false"></div>
         <div class="g_id_signin" data-type="standard" data-shape="rectangular" data-theme="outline" data-text="signin_with" data-size="large" data-logo_alignment="left" style="margin-bottom: 10px; width: 100%;"></div>
         <button onclick="forceCloudSync()" class="sidebar-btn" id="syncBtn" style="background: #3498db; color: white; display: none;"><span>🔄</span> FORCE CLOUD SYNC</button>
         <button onclick="toggleSidebar(); openFlyerGenModal()" class="sidebar-btn" style="background: var(--warning); color: #000;"><span>📱</span> CREATE FLYER LINK</button>
@@ -514,13 +571,38 @@
             <button onclick="goHome()" style="flex:0.8; background:var(--danger); color:white;">✖ BACK</button>
         </div>
         
-        <div class="bajaj-cust-card">
-            <span style="color: #87c3f7;">NAME:</span> <span id="infoName" style="color: #fff;">-</span> |
-            <span style="color: #87c3f7;">MOBILE:</span> <span id="infoMobile" style="color: #fff;">-</span> |
-            <span style="color: #87c3f7;">LIMIT:</span> <span id="infoLimit" class="highlight">₹0</span> |
-            <span style="color: #87c3f7;">TYPE:</span> <span id="infoType" style="color: #fff;">-</span> |
-            <span style="color: #87c3f7;">LTV:</span> <span id="infoLtv" style="color: #fff;">0%</span> |
-            <span style="color: #87c3f7;">EMI CAPPING:</span> <span id="infoCap" style="color: #fff;">-</span>
+<!-- COMPACT ACTIVE CUSTOMER INFO CARD (For Web UI) -->
+        <div style="background: #253241; border-radius: 8px; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.2); margin-bottom: 12px; border: 1px solid #3b4b5e;">
+            
+            <!-- Left Side: Profile & Details -->
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="width: 38px; height: 38px; background: rgba(0,0,0,0.3); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 18px;">👤</div>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span id="infoName" style="font-size: 15px; font-weight: 900; text-transform: uppercase;">-</span>
+                        <span style="font-size: 11px; color: #94a3b8; font-weight: bold;">📞 <span id="infoMobile">0000000000</span></span>
+                    </div>
+                    <div style="display: flex; gap: 6px; font-size: 10px; font-weight: 900;">
+                        <span id="infoType" style="background: #f39c12; padding: 2px 6px; border-radius: 4px; color: #fff;">NEW</span>
+                        <span style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px;">LTV: <span id="infoLtv">100%</span></span>
+                        <span style="border: 1px dashed rgba(255,255,255,0.3); padding: 2px 6px; border-radius: 4px;">CAP: <span id="infoCap">NONE</span></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side: Compact Limit Box -->
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="text-align: right; background: rgba(0,0,0,0.2); padding: 4px 12px; border-radius: 6px; border-right: 3px solid #2ecc71;">
+                    <div style="font-size: 9px; color: #94a3b8; font-weight: 900; letter-spacing: 0.5px;">APPROVED LIMIT</div>
+                    <div id="infoLimit" style="font-size: 18px; font-weight: 900; color: #2ecc71; text-shadow: 0 0 5px rgba(46,204,113,0.3);">₹0</div>
+                </div>
+                
+                <!-- Quick Action Buttons -->
+                <div style="display: flex; gap: 6px;">
+                    <button onclick="let mob=document.getElementById('infoMobile').innerText; if(mob && mob!=='-') window.open('tel:+91'+mob)" style="width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.1); border: none; cursor: pointer; font-size: 14px;">📞</button>
+                    <button onclick="let mob=document.getElementById('infoMobile').innerText; if(mob && mob!=='-') window.open('https://wa.me/91'+mob)" style="width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.1); border: none; cursor: pointer; font-size: 14px;">💬</button>
+                </div>
+            </div>
         </div>
         
         <button onclick="openAddProductModal()" style="width: 100%; background:var(--warning); color:#000; padding:10px; border-radius:6px; font-weight:900; margin-bottom:8px; border: 1.5px solid #d35400; box-shadow: 0 2px 5px rgba(0,0,0,0.1); cursor:pointer;">➕ ADD NEW PRODUCT (SEARCH / NON-TIEUP / MANUAL)</button>
