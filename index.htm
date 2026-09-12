@@ -152,7 +152,9 @@
                         <div><label>EMI CAPPING</label><input type="number" id="cqCap" placeholder="₹ Cap"></div>
                     </div>
                 </div>
-                <button id="addToQueueBtn" onclick="addCustomerToQueue()" style="width:100%; background:var(--success); color:white; padding:10px; border-radius:4px; box-shadow: 0 2px 4px rgba(39, 174, 96, 0.3); margin-top: 8px;"><span id="icon_btn_add">➕</span> ADD TO QUEUE</button>
+                <button id="addToQueueBtn" class="btn-action btn-success" style="width: 100%; margin-top: 8px;" onclick="addCustomerToQueue()">
+    <span id="icon_btn_add">➕</span> ADD TO QUEUE
+</button>
             </div>
             <div class="form-container" style="flex: 1.5; min-width: 280px; margin-bottom:0; border: 2px solid var(--bajaj-blue); box-sizing: border-box; display: flex; flex-direction: column;">
                 <label style="color:var(--bajaj-blue); font-size:13px !important; border-bottom:2px solid #ccc; padding-bottom:4px; margin-bottom:6px; display:block; text-align:center;">
@@ -460,10 +462,10 @@
         <div class="modal-content" style="max-width:350px;">
             <h3 style="margin-top:0; color:var(--bajaj-blue);">🖼️ Select Models for Quotation</h3>
             <div id="quoteModelCheckboxes" style="display:flex; flex-direction:column; gap:6px; max-height:220px; overflow-y:auto; margin-bottom:15px; padding-right:5px;" class="custom-scroll"></div>
-            <div style="display:flex; gap:10px;">
-                <button onclick="promptForSelectedImageGeneration()" style="flex:2; background:var(--bajaj-blue); color:white;">PROCEED</button>
-                <button onclick="document.getElementById('quoteSelectionModal').style.display='none'" style="flex:1; background:var(--danger); color:white;">CANCEL</button>
-            </div>
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+    <button class="btn-action btn-primary" style="flex: 2;" onclick="processMultiStack()">PROCEED</button>
+    <button class="btn-action btn-danger" style="flex: 1;" onclick="closeMultiStackModal()">CANCEL</button>
+</div>
         </div>
     </div>
 
