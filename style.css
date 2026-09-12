@@ -410,3 +410,45 @@ td.bound-col:nth-last-child(8) {
 .show-details-mode td.hidden-col:nth-child(6)::before { content: "LTV %" !important; }
 .show-details-mode td.hidden-col:nth-child(7) { grid-column: 7 / span 2; grid-row: 2; background: #fdfdfd; }
 .show-details-mode td.hidden-col:nth-child(7)::before { content: "NET DISB" !important; color: var(--bajaj-blue); }
+/* कॉमन ॲक्शन बटन स्टाईल */
+.btn-action {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px; /* आयकॉन आणि टेक्स्ट मधील अंतर */
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: bold;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    text-transform: uppercase;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* बटनवर माउस नेल्यावरचा इफेक्ट */
+.btn-action:hover {
+    transform: translateY(-2px); /* बटन थोडे वर येईल */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* बटन क्लिक करतानाचा इफेक्ट */
+.btn-action:active {
+    transform: translateY(1px); /* बटन दाबले जाईल */
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* डिसएबल्ड (Inactive) बटन */
+.btn-action:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* रंगांचे प्रकार */
+.btn-primary { background: var(--bajaj-blue, #00509a); color: white; }
+.btn-success { background: var(--success, #27ae60); color: white; }
+.btn-danger { background: var(--danger, #e74c3c); color: white; }
+.btn-warning { background: var(--warning, #f1c40f); color: #000; }
