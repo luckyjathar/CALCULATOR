@@ -164,12 +164,12 @@
                 <input type="text" id="queueSearch" placeholder="🔍 Search saved customer by name, limit..." oninput="renderCustomerQueue()" style="margin-bottom: 6px; border-color:var(--bajaj-blue);">
                 <div id="customerQueueList" class="custom-scroll" style="display:flex; flex-direction:column; gap:6px; overflow-y:auto; flex:1; max-height: 250px; padding-right:4px;"></div>
                 <div style="display:flex; gap:4px; margin-top:8px; border-top:1px solid #ccc; padding-top:8px; flex-wrap:wrap;">
-                    <button id="uniCopyBtn" onclick="uniCopy()" style="flex:1; background:var(--warning); color:#000; opacity:0.5; pointer-events:none; padding:6px; font-size:11px !important;">📋 COPY</button>
-                    <button id="uniSelectBtn" onclick="uniSelect()" style="flex:1.2; background:var(--primary); color:white; opacity:0.5; pointer-events:none; padding:6px; font-size:11px !important;">▶ SELECT</button>
-                    <button id="uniEditBtn" onclick="uniEdit()" style="flex:1; background:var(--indigo); color:white; opacity:0.5; pointer-events:none; padding:6px; font-size:11px !important;">✏️ EDIT</button>
-                    <button id="uniDeleteBtn" onclick="uniDelete()" style="flex:1; background:var(--danger); color:white; opacity:0.5; pointer-events:none; padding:6px; font-size:11px !important;">✖ DEL</button>
-                    <button id="uniInviteBtn" onclick="uniInvite()" style="flex:1.2; background:#25D366; color:white; opacity:0.5; pointer-events:none; padding:6px; font-size:11px !important;">💬 INVITE</button>
-                </div>
+    <button id="uniCopyBtn" class="btn-action btn-warning" style="flex:1; padding:6px; font-size:11px !important; opacity:0.5; pointer-events:none;" onclick="uniCopy()">📋 COPY</button>
+    <button id="uniSelectBtn" class="btn-action btn-primary" style="flex:1.2; padding:6px; font-size:11px !important; opacity:0.5; pointer-events:none;" onclick="uniSelect()">▶ SELECT</button>
+    <button id="uniEditBtn" class="btn-action" style="flex:1; padding:6px; font-size:11px !important; background:var(--indigo); color:white; opacity:0.5; pointer-events:none;" onclick="uniEdit()">✏️ EDIT</button>
+    <button id="uniDeleteBtn" class="btn-action btn-danger" style="flex:1; padding:6px; font-size:11px !important; opacity:0.5; pointer-events:none;" onclick="uniDelete()">✖ DEL</button>
+    <button id="uniInviteBtn" class="btn-action" style="flex:1.2; padding:6px; font-size:11px !important; background:#25D366; color:white; opacity:0.5; pointer-events:none;" onclick="uniInvite()">💬 INVITE</button>
+</div>
             </div>
         </div>
 
