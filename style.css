@@ -452,3 +452,16 @@ td.bound-col:nth-last-child(8) {
 .btn-success { background: var(--success, #27ae60); color: white; }
 .btn-danger { background: var(--danger, #e74c3c); color: white; }
 .btn-warning { background: var(--warning, #f1c40f); color: #000; }
+/* बटन्सच्या कंटेनरसाठी ॲनिमेशन क्लास */
+.slide-up-fade {
+    animation: slideUpFadeEffect 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    opacity: 0; /* सुरुवातीला अदृश्य */
+    transform: translateY(15px); /* सुरुवातीला थोडे खाली */
+}
+
+@keyframes slideUpFadeEffect {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
