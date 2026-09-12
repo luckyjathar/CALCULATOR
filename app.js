@@ -364,14 +364,7 @@ async function fetchFromMasterStream(forceSync = false) {
             if (!seenDB.has(key)) { seenDB.add(key); uniqueDB.push(r); } 
         });
         
-        let today = new Date(); today.setHours(0,0,0,0);
-        db_records = uniqueDB.filter(r => {
-            if(!r.expiryDateStr) return true;
-            let p = r.expiryDateStr.split('/');
-            if(p.length !== 3) return true;
-            let expD = new Date(p[2], p[1]-1, p[0]);
-            return expD >= today;
-        });
+        db_records = uniqueDB;
 
         await saveToDB('cached_db_records', db_records);
         await saveToDB('cached_dealer_records', dealer_records);
@@ -565,17 +558,6 @@ function renderTableModel() {
     let fee = (custType === 'EMI CARD') ? 270 : (custType === 'W/O CARD' ? 320 : 850);
 
     let validSchemes = schemes.filter(s => s.tenure > 0 || s.fixedEmi > 0);
-    
-    let today = new Date(); today.setHours(0,0,0,0);
-    validSchemes = validSchemes.filter(s => {
-        if(!s.expiryDateStr) return true;
-        let p = s.expiryDateStr.trim().split('/');
-        if(p.length === 3) {
-            let expD = new Date(p[2], p[1]-1, p[0]);
-            if(expD < today) return false;
-        }
-        return true;
-    });
     
     let thead = document.getElementById('tableHead');
     if (isCalculatedMode) {
@@ -1096,7 +1078,6 @@ function mapData(row, type) {
         if(expDate < today) isExp = true; 
         let dd = String(expDate.getDate()).padStart(2, '0'); let mm = String(expDate.getMonth() + 1).padStart(2, '0'); let yyyy = expDate.getFullYear(); expiryDateStr = `${dd}/${mm}/${yyyy}`; 
     } 
-    if(isExp) return null; 
     return { model: type === SPECIAL_MODEL ? SPECIAL_MODEL : String(findValLocal(row,['MODEL','BRANDMODEL'])||"").toUpperCase(), brand: String(findValLocal(row, ['BRAND', 'MAKE', 'MANUFACTURER'])||"").toUpperCase(), mrp: parseFloat(findValLocal(row, ['MRP', 'PRICE', 'M.R.P'])) || 0, tenure: parseInt(findValLocal(row, ['TOTALTENURE', 'TENURE', 'TA'])) || 0, advEmi: parseInt(findValLocal(row, ['ADVANCEEMI', 'ADV'])) || 0, dbd: parseFloat(findValLocal(row,['DBD','DBD%'])||0), pf: parseInt(findValLocal(row,['PF','PROCESSINGFEE'])||0), roi: parseFloat(findValLocal(row,['ROI','ROI%'])||0), fixedEmi: parseFloat(findValLocal(row,['FIXEDEMI', 'FIXED'])||0), category: standardizeCategoryName(findValLocal(row,['CATEGORY','CAT'])||""), minLoan: parseFloat(findValLocal(row, ['MINLOAN', 'MINL'])) || 0, maxLoan: parseFloat(findValLocal(row, ['MAXLOAN', 'MAXL'])) || 9999999, isExpired: isExp, expiryDateStr: expiryDateStr, inactive: false }; 
 }
 
@@ -1224,16 +1205,12 @@ function updateVal(pIdx, field, val) {
 function recalcModel(pIdx) {
     if(!current_products[pIdx]) return; 
 
-    let today = new Date(); today.setHours(0,0,0,0);
-    current_products[pIdx].schemes = current_products[pIdx].schemes.filter(s => {
-        if(!s.expiryDateStr) return true;
-        let p = s.expiryDateStr.split('/');
-        if(p.length !== 3) return true;
-        let expD = new Date(p[2], p[1]-1, p[0]);
-        return expD >= today;
-    });
-
-    let prod = current_products[pIdx], limit = customerQueue[activeCustomerIndex]?.limit || 0, type = customerQueue[activeCustomerIndex]?.type || 'NEW'; let fee = (type === 'EMI CARD') ? 270 : (type === 'W/O CARD' ? 320 : 850), inp = prod.inputs; let totalFees = fee + (parseFloat(inp.margin)||0) + (parseFloat(inp.dealer)||0); let currentLimit = limit > 0 ? limit : 9999999; let inputMrp = parseFloat(inp.mrp) || 0; let inputInv = parseFloat(inp.inv) || 0; let effectivePrice = inputInv > 0 ? inputInv : (inputMrp > 0 ? inputMrp : 0); let loanCapPrice = (inputMrp > 0 && inputInv > 0) ? Math.min(inputMrp, inputInv) : effectivePrice;
+    let prod = current_products[pIdx], limit = customerQueue[activeCustomerIndex]?.limit || 0, type = customerQueue[activeCustomerIndex]?.type || 'NEW'; 
+    let fee = (type === 'EMI CARD') ? 270 : (type === 'W/O CARD' ? 320 : 850), inp = prod.inputs; 
+    let totalFees = fee + (parseFloat(inp.margin)||0) + (parseFloat(inp.dealer)||0); 
+    let currentLimit = limit > 0 ? limit : 9999999; 
+    let inputMrp = parseFloat(inp.mrp) || 0; let inputInv = parseFloat(inp.inv) || 0; 
+    let effectivePrice = inputInv > 0 ? inputInv : (inputMrp > 0 ? inputMrp : 0); let loanCapPrice = (inputMrp > 0 && inputInv > 0) ? Math.min(inputMrp, inputInv) : effectivePrice;
 
     let minAllowedLoanByInvoice = effectivePrice > 0 ? effectivePrice * 0.50 : 0;
 
@@ -1305,14 +1282,6 @@ function renderRows(pIdx) {
     let today = new Date(); today.setHours(0,0,0,0);
 
     document.getElementById(`body_${pIdx}`).innerHTML = prod.calculatedData.map(d => {
-        if(d.expiryDateStr) {
-            let p = d.expiryDateStr.trim().split('/');
-            if(p.length === 3) {
-                let expD = new Date(p[2], p[1]-1, p[0]);
-                if(expD < today) return ''; 
-            }
-        }
-
         let curLTV = d.curLTV; let isLtvB = (curLTV > ltvLimit); let isBoundB = false; if (isNT && prod.inputs.mrp > 0) { if (d.loan < d.minLoan || d.loan > d.maxLoan) isBoundB = true; } let isInactive = d.inactive; 
 
         if (d.isInv50Breach) { isBoundB = true; }
@@ -1985,3 +1954,5 @@ document.addEventListener('click', function() {
         el.style.display = 'none';
     });
 });
+
+check this one also
