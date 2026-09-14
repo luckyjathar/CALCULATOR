@@ -3,16 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <!-- App-like Viewport (झूम बंद करण्यासाठी) -->
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-<!-- Android Chrome Theme Color (स्टेटस बारचा रंग) -->
-<meta name="theme-color" content="#1976D2">
+    <!-- Android Chrome Theme Color (स्टेटस बारचा रंग) -->
+    <meta name="theme-color" content="#1976D2">
 
-<!-- iOS Safari App Mode -->
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Persistent Portal">
-    <title>Persistent Portal V76.18 - Ultimate Filter Edition</title>
+    <!-- iOS Safari App Mode -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Persistent Portal">
+    
+    <title>Persistent Portal V76.19 - User Friendly Edition</title>
+    
     <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -20,58 +22,15 @@
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     
     <!-- Link to our separate CSS file -->
-    <link rel="stylesheet" href="style.css?v=6.5">
-
-<style>
-/* काचेसारखा इफेक्ट (Glassmorphism) */
-.premium-customer-card::before {
-    content: '';
-    position: absolute;
-    top: -50%; left: -50%;
-    width: 200%; height: 200%;
-    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%);
-    transform: rotate(30deg);
-    pointer-events: none;
-}
-
-.card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-    padding-bottom: 15px;
-    margin-bottom: 15px;
-    position: relative;
-    z-index: 2;
-}
-
-.profile-info { display: flex; align-items: center; gap: 15px; }
-.avatar { font-size: 35px; background: rgba(255,255,255,0.2); border-radius: 50%; padding: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-.cust-name { margin: 0; font-size: 20px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
-
-.cust-badges { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
-.premium-badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; letter-spacing: 0.5px; }
-.type-badge { background: #e67e22; color: white; box-shadow: 0 2px 5px rgba(230, 126, 34, 0.4); }
-.ltv-badge { background: rgba(255,255,255,0.2); }
-.cap-badge { border: 1px dashed rgba(255,255,255,0.5); }
-
-.card-body { position: relative; z-index: 2; text-align: center; }
-.limit-label { font-size: 12px; color: #a8c0ff; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; }
-.limit-amount { font-size: 42px; font-weight: 900; color: #00ff87; text-shadow: 0 0 20px rgba(0, 255, 135, 0.4); margin-top: 5px; line-height: 1; }
-
-.quick-actions { display: flex; gap: 10px; }
-.icon-btn { background: rgba(255,255,255,0.1); border: none; font-size: 18px; padding: 10px; border-radius: 50%; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; }
-.icon-btn:hover { background: rgba(255,255,255,0.3); transform: scale(1.1); }
-.wa-btn { color: #25D366; text-shadow: 0 0 5px rgba(37, 211, 102, 0.5); }
-.call-btn { color: #3498db; }
-</style>
-
+    <link rel="stylesheet" href="style.css?v=6.6">
 </head>
 <body>
+
 <!-- Global Data Loader -->
 <div id="dataLoadingIndicator" style="display: none; position: fixed; top: 15px; left: 50%; transform: translateX(-50%); background: var(--warning); color: #000; padding: 6px 15px; border-radius: 20px; font-weight: 900; font-size: 12px; z-index: 100000; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
     ⏳ Downloading Master Data...
 </div>
+
 <!-- TOAST NOTIFICATION CONTAINER -->
 <div id="toastNotification" class="toast-notification"></div>
 
@@ -131,7 +90,6 @@
             <div class="form-container" style="flex: 1; min-width: 250px; background: #e3f2fd; border: 2px solid var(--primary); margin-bottom:0; display: flex; flex-direction: column;">
                 <label style="color:var(--primary); font-size:13px !important; border-bottom:2px solid var(--primary); padding-bottom:4px; margin-bottom:8px; display:block;"><span id="icon_add">📝</span> ADD NEW CUSTOMER</label>
                 <div style="flex: 1;">
-                    <!-- ON-THE-SPOT DUPLICATE CHECK INPUT & WARNING (HIDDEN) -->
                     <div style="display:none;">
                         <label>MOBILE NO.</label>
                         <input type="text" id="cqMobile" placeholder="10 Digits" maxlength="10" oninput="checkDuplicateMobile(this.value)">
@@ -246,7 +204,6 @@
                 <div class="msg-form-group"><label>Dealer / Shop Name:</label><input type="text" id="msgShopName" value="" placeholder="Enter Dealer / Shop Name" oninput="generateMessage()"></div>
                 <div class="msg-form-group"><label>Asset Category:</label><input type="text" id="msgAssetCategory" value="" placeholder="Enter Category (e.g. PHONE)" oninput="generateMessage()"></div>
                 <div class="msg-form-group"><label>Customer Name:</label><input type="text" id="msgCustName" value="" placeholder="Enter Customer Name" oninput="generateMessage()"></div>
-                <!-- MOBILE NUMBER INPUT REMOVED (HIDDEN) FROM HERE -->
                 <div class="msg-form-group" style="display:none;"><label>Mobile Number:</label><input type="text" id="msgCustMobile" value="" placeholder="10 Digits" maxlength="10" oninput="generateMessage()"></div>
                 <div class="msg-form-group"><label>Monthly EMI Amount (₹):</label><input type="number" id="msgCustEMI" value="" placeholder="0" oninput="generateMessage()"></div>
                 <div class="msg-form-group"><label>Total Tenure (Months):</label><input type="number" id="msgCustTenure" value="" placeholder="0" oninput="generateMessage()"></div>
@@ -287,7 +244,6 @@
                 <button onclick="document.getElementById('flyerGenModal').style.display='none'" style="background:none; border:none; color:var(--danger); font-weight:bold; cursor:pointer; font-size:16px;">✖</button>
             </div>
             <div style="margin-bottom:10px;"><label>Salesman Name (Required)</label><input type="text" id="fgSalesName" placeholder="Lakshya"></div>
-            <!-- MOBILE NUMBER INPUT REMOVED (HIDDEN) FROM HERE -->
             <div style="display:none;"><label>WhatsApp Number (Required)</label><input type="text" id="fgSalesMobile" placeholder="10 Digit Mobile Number" maxlength="10"></div>
             <div style="margin-bottom:10px; background: #f8f9fa; padding: 10px; border: 1.5px solid var(--bajaj-blue); border-radius: 6px;">
                 <label style="color:var(--bajaj-blue);">🏪 Select Dealer Shop (Compulsory)</label>
@@ -320,7 +276,6 @@
             <h3 style="margin-top:0; color:#25D366; border-bottom: 2px solid #ddd; padding-bottom: 6px;">💬 Send Invitation</h3>
             <p style="font-size:12px; color:#555; margin-bottom:12px;">Customer ko WhatsApp se kharidari ke liye invite karein.</p>
             <div style="margin-bottom:6px;"><label>YOUR NAME (SALESPERSON)</label><input type="text" id="invSenderName" placeholder="E.g. Lakshya"></div>
-            <!-- MOBILE NUMBER INPUT REMOVED (HIDDEN) FROM HERE -->
             <div style="display:none;"><label>YOUR MOBILE NO.</label><input type="text" id="invSenderMobile" placeholder="10 Digits" maxlength="10"></div>
             <div style="display:flex; gap:8px;">
                 <button onclick="sendWhatsAppInvite()" style="flex:2; background:#25D366; color:white;">SEND ON WHATSAPP ↗</button>
@@ -412,7 +367,6 @@
         <div class="modal-content" style="max-width:300px;">
             <h3 style="margin-top:0; color:var(--indigo); border-bottom: 2px solid #ddd; padding-bottom: 6px;">✏️ Edit Customer Details</h3>
             <div style="margin-bottom:6px;"><label>CUSTOMER NAME</label><input type="text" id="ecName"></div>
-            <!-- MOBILE NUMBER INPUT REMOVED (HIDDEN) FROM HERE -->
             <div style="display:none;"><label>MOBILE NO.</label><input type="text" id="ecMobile" maxlength="10"></div>
             <div style="margin-bottom:6px;"><label>NBFC LIMIT</label><input type="number" id="ecLimit"></div>
             <div style="margin-bottom:6px;"><label>CUSTOMER TYPE</label>
@@ -495,7 +449,6 @@
                 <label style="color:var(--indigo);">CUSTOMER NAME</label>
                 <input type="text" id="promptCustName" readonly style="background:#f0f0f0; cursor:not-allowed;">
             </div>
-            <!-- MOBILE NUMBER INPUT REMOVED (HIDDEN) FROM HERE -->
             <div style="display:none;">
                 <label style="color:var(--indigo);">MOBILE NUMBER</label>
                 <input type="text" id="promptCustMobile" readonly style="background:#f0f0f0; cursor:not-allowed;">
@@ -576,10 +529,9 @@
             <button onclick="goHome()" style="flex:0.8; background:var(--danger); color:white;">✖ BACK</button>
         </div>
         
-<!-- COMPACT ACTIVE CUSTOMER INFO CARD (For Web UI) -->
+        <!-- COMPACT ACTIVE CUSTOMER INFO CARD (For Web UI) -->
         <div style="background: #253241; border-radius: 8px; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.2); margin-bottom: 12px; border: 1px solid #3b4b5e;">
             
-            <!-- Left Side: Profile & Details -->
             <div style="display: flex; align-items: center; gap: 12px;">
                 <div style="width: 38px; height: 38px; background: rgba(0,0,0,0.3); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 18px;">👤</div>
                 <div style="display: flex; flex-direction: column; gap: 4px;">
@@ -595,14 +547,12 @@
                 </div>
             </div>
 
-            <!-- Right Side: Compact Limit Box -->
             <div style="display: flex; align-items: center; gap: 12px;">
                 <div style="text-align: right; background: rgba(0,0,0,0.2); padding: 4px 12px; border-radius: 6px; border-right: 3px solid #2ecc71;">
                     <div style="font-size: 9px; color: #94a3b8; font-weight: 900; letter-spacing: 0.5px;">APPROVED LIMIT</div>
                     <div id="infoLimit" style="font-size: 18px; font-weight: 900; color: #2ecc71; text-shadow: 0 0 5px rgba(46,204,113,0.3);">₹0</div>
                 </div>
                 
-                <!-- Quick Action Buttons -->
                 <div style="display: flex; gap: 6px;">
                     <button onclick="let mob=document.getElementById('infoMobile').innerText; if(mob && mob!=='-') window.open('tel:+91'+mob)" style="width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.1); border: none; cursor: pointer; font-size: 14px;">📞</button>
                     <button onclick="let mob=document.getElementById('infoMobile').innerText; if(mob && mob!=='-') window.open('https://wa.me/91'+mob)" style="width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.1); border: none; cursor: pointer; font-size: 14px;">💬</button>
@@ -632,6 +582,19 @@
             </div>
         </div>
     </div>
+    
+    <!-- NEW ROW ACTION MODAL (Bottom Sheet for Mobile, Centered for Desktop) -->
+    <div id="rowActionModal" class="modal" style="z-index: 99999;">
+        <div class="modal-content action-sheet">
+            <div class="sheet-handle"></div>
+            <h3 style="margin-top:0; color:var(--bajaj-blue); text-align:center;">⚙️ Select Action</h3>
+            <div id="rowActionButtons" style="display:flex; flex-direction:column; gap:12px; margin-top:15px;">
+                <!-- Buttons will be injected here via JS -->
+            </div>
+            <button onclick="closeRowActionModal()" style="width:100%; margin-top:15px; background:var(--danger); color:white; padding:12px; border-radius:8px; font-weight:900; font-size:15px !important; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">CANCEL</button>
+        </div>
+    </div>
+
 </main>
 
 <footer>
@@ -640,6 +603,7 @@
         <p class="footer-support">Kisi bhi help, support ya suggestions ke liye bejhijhak connect karein:<br><a href="https://wa.me/918087313624" target="_blank" class="wa-link">💬 WhatsApp : 8087313624</a></p>
     </div>
 </footer>
+
 <!-- Link to our separate JS file -->
 <script src="app.js"></script>
 </body>
