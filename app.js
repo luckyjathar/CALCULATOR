@@ -1554,6 +1554,13 @@ function fallbackCopy(text, successCb) {
 async function toggleInactive(pIdx, dIdx) { let prod = current_products[pIdx]; let scheme = prod.schemes[dIdx]; scheme.inactive = !scheme.inactive; recalcModel(pIdx); customerQueue[activeCustomerIndex].products = current_products; await saveQueueToLocal(); }
 
 async function executeManualAction() {
+    // 'executeManualAction' फंक्शनमध्ये पहिल्या ओळीवर हे टाका:
+let manNameInput = document.getElementById('manName').value.toUpperCase().trim();
+let name = manNameInput !== "" ? manNameInput : "MANUAL MODEL";
+
+// आणि multiStack साठी:
+let msNameInput = document.getElementById('multiStackModelName').value.trim().toUpperCase();
+if (!msNameInput) { showToast("⚠️ Kripya Product Model Name zaroor enter karein!", "error"); return; }
     let mode = document.getElementById('targetPIdx').value; 
     let scheme = { tenure: parseInt(document.getElementById('manTen').value), advEmi: parseInt(document.getElementById('manAdv').value), dbd: parseFloat(document.getElementById('manDbd').value)||0, pf: parseInt(document.getElementById('manPf').value)||0, roi: parseFloat(document.getElementById('manRoi').value)||0, fixedEmi: parseInt(document.getElementById('manFixed').value)||0, minLoan: 0, maxLoan: 9999999, category: "MANUAL", inactive: false, isExpired: false, expiryDateStr: "" };
     let cCap = customerQueue[activeCustomerIndex]?.cap || "";
