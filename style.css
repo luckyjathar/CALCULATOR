@@ -663,3 +663,61 @@ td.bound-col:nth-last-child(8) {
 .pmp-table-wrapper::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
 .pmp-table-wrapper::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
 .pmp-table-wrapper::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+/* =========================================================
+   ✨ TOP UTILITY BAR (QUICK TOOLS) ✨
+   ========================================================= */
+.top-utility-bar {
+    display: flex;
+    gap: 8px;
+    background: #ffffff;
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    margin-bottom: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    overflow-x: auto; /* मोबाईलवर स्क्रीन बाहेर गेल्यास हॉरिझॉन्टल स्क्रोल होण्यासाठी */
+    white-space: nowrap;
+}
+
+.top-utility-bar::-webkit-scrollbar {
+    display: none; /* स्क्रोलबार लपवण्यासाठी (क्लिन लूकसाठी) */
+}
+
+.util-btn {
+    background: #f1f5f9;
+    color: var(--indigo);
+    border: 1px solid #cbd5e1;
+    padding: 6px 12px !important;
+    border-radius: 6px;
+    font-size: 12px !important;
+    font-weight: 800 !important;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.util-btn:hover {
+    background: var(--primary);
+    color: #ffffff;
+    border-color: var(--primary);
+    transform: translateY(-1px);
+}
+
+.util-btn span {
+    font-size: 14px;
+}
+
+/* मोबाईलसाठी विशेष सेटिंग */
+@media (max-width: 768px) {
+    .top-utility-bar {
+        padding: 6px 8px;
+        gap: 6px;
+    }
+    .util-btn {
+        padding: 5px 10px !important;
+        font-size: 11px !important;
+    }
+}
