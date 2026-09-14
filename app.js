@@ -1119,7 +1119,21 @@ function doSearch(id, ddId) {
 
 function selectModel(name) { if (!isLimitValid()) return; let raw = db_records.filter(r => r.model === name); let baseMrp = raw.find(s => s.mrp > 0)?.mrp || ""; let cat = raw[0]?.category || ""; tempPendingProduct = { name: name, isNT: false, category: cat }; currentModalCategory = cat; document.getElementById('modalMatrixSearchDropdown').style.display = 'none'; document.getElementById('modalMatrixSearch').value = ''; document.getElementById('addProductModal').style.display = 'none'; showComponentsModal(baseMrp); }
 function quickNonTieup() { if (!isLimitValid()) return; if(db_records.length === 0) { showToast("⚠️ Master database fetch me error hai!", "error"); return; } document.getElementById('addProductModal').style.display = 'none'; let tieup = db_records.filter(r => r.model === SPECIAL_MODEL); let cats = [...new Set(tieup.map(r => r.category))].sort(); document.getElementById('categoryGrid').innerHTML = cats.map(c => { let label = (c === 'PHONE(WEB-MOBILE)') ? 'PHONE, TABLET, SMART WATCH' : c; return `<div style="background:var(--indigo);color:white;padding:12px;border-radius:4px;cursor:pointer;font-weight:900;text-align:center;" onclick="selectCategory('${c}')">${label}</div>`; }).join(''); document.getElementById('catSelectionModal').style.display = 'flex'; }
-function selectCategory(catName) { document.getElementById('catSelectionModal').style.display = 'none'; let displayName = (catName === 'PHONE(WEB-MOBILE)') ? 'PHONE / TABLET / SMART WATCH' : catName; tempPendingProduct = { name: SPECIAL_MODEL + " - " + displayName, isNT: true, category: catName }; currentModalCategory = catName; finalizeProductAddition(); }
+function selectCategory(catName) { 
+    document.getElementById('catSelectionModal').style.display = 'none'; 
+    let displayName = (catName === 'PHONE(WEB-MOBILE)') ? 'PHONE / TABLET / SMART WATCH' : catName; 
+    
+    // नॉन-टाईअप प्रॉडक्टसाठी टेम्पोरेरी ऑब्जेक्ट सेट करणे
+    tempPendingProduct = { 
+        name: SPECIAL_MODEL + " - " + displayName, 
+        isNT: true, 
+        category: catName 
+    }; 
+    currentModalCategory = catName; 
+    
+    // आता थेट पुढे जाण्याऐवजी MRP/INV टाकायचा कॉम्पोनंट्स बॉक्स ओपन होईल
+    showComponentsModal(""); 
+}
 
 function compMrpChanged() { 
     let mrp = parseFloat(document.getElementById('compMrp').value) || 0; 
