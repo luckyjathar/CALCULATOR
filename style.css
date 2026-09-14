@@ -632,3 +632,34 @@ td.bound-col:nth-last-child(8) {
     .pmp-input-group input { width: 100% !important; }
     .pmp-toolbar { grid-template-columns: 1fr 1fr; display: grid; }
 }
+/* =========================================================
+   ✨ FREEZE TABLE HEADER (STICKY HEADER) ✨
+   ========================================================= */
+.pmp-table-wrapper {
+    /* टेबलची जास्तीत जास्त उंची सेट केली आहे, जेणेकरून जास्त स्कीम्स असल्यास तो आतल्या आत स्क्रोल होईल */
+    max-height: 65vh; 
+    overflow-y: auto;
+    overflow-x: auto;
+    position: relative;
+}
+
+/* हेडिंग लाईनला वरती फ्रीझ (Stick) करणे */
+.pmp-table-wrapper thead {
+    position: sticky;
+    top: 0; /* बॉक्सच्या सर्वात वरती चिकटून राहील */
+    z-index: 50; /* हेडिंग नेहमी स्कीम्सच्या वर राहील */
+}
+
+/* स्क्रोल करताना हेडिंगच्या खाली छान सावली (Shadow) दिसण्यासाठी आणि मागचे टेक्स्ट दिसू नये म्हणून */
+.pmp-table-wrapper th {
+    background: #f1f5f9 !important; /* सॉलिड बॅकग्राउंड */
+    box-shadow: 0 4px 6px -2px rgba(0, 0, 0, 0.1); /* शॅडो इफेक्ट */
+    position: relative;
+    z-index: 51;
+}
+
+/* टेबलच्या आतल्या स्क्रोल बारची स्टाईल (Scrollbar Styling) */
+.pmp-table-wrapper::-webkit-scrollbar { width: 6px; height: 6px; }
+.pmp-table-wrapper::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+.pmp-table-wrapper::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+.pmp-table-wrapper::-webkit-scrollbar-thumb:hover { background: var(--primary); }
