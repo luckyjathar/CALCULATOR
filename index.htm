@@ -474,7 +474,8 @@
             <h3 style="margin-top:0; color:var(--dark);">Add Manual Product (Up to 10 Schemes)</h3>
             <div style="margin-bottom: 12px; background: #f8f9fa; padding: 8px; border-radius: 6px; border: 1.5px solid #ccc;">
                 <label style="color: var(--indigo);">MODEL NAME (One for all schemes below)</label>
-                <input type="text" id="multiStackModelName" placeholder="Enter Product Model Name" value="MANUAL MODEL">
+                <!-- value काढून टाकले आहे -->
+                <input type="text" id="multiStackModelName" placeholder="Enter Product Model Name" value="">
             </div>
             <div class="stack-grid" id="stackInputsContainer"></div>
             <div style="margin-top:12px; display:flex; flex-direction:column; gap:8px; position:sticky; bottom:-15px; background:white; padding-top:8px;">
@@ -507,14 +508,23 @@
         <img id="generatedImage" src="" alt="Quotation">
     </div>
 
+    <!-- MANUAL MODAL -->
     <div id="manualModal" class="modal">
         <div class="modal-content" style="max-width:300px;">
             <h3 id="modalTitle" style="margin-top:0;">Add Custom Scheme</h3>
-            <div id="modelNameInputArea" style="display:none;"><label>Model Name</label><input type="text" id="manName" value="MANUAL MODEL"></div>
+            <div id="modelNameInputArea" style="display:none;">
+                <label>Model Name</label>
+                <!-- value काढून टाकले आहे -->
+                <input type="text" id="manName" placeholder="Enter Model Name" value="">
+            </div>
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-top:8px;">
-                <div><label>TENURE (Max)</label><input type="number" id="manTen" placeholder="12"></div><div><label>ADVANCE</label><input type="number" id="manAdv" placeholder="4"></div>
-                <div><label>DBD %</label><input type="number" id="manDbd" placeholder="0"></div><div><label>PF (₹)</label><input type="number" id="manPf" placeholder="0"></div>
-                <div><label>ROI %</label><input type="number" id="manRoi" placeholder="0"></div><div><label>FIXED EMI (₹)</label><input type="number" id="manFixed" placeholder="0"></div>
+                <!-- placeholders 0 केले आहेत -->
+                <div><label>TENURE (Max)</label><input type="number" id="manTen" placeholder="0"></div>
+                <div><label>ADVANCE</label><input type="number" id="manAdv" placeholder="0"></div>
+                <div><label>DBD %</label><input type="number" id="manDbd" placeholder="0"></div>
+                <div><label>PF (₹)</label><input type="number" id="manPf" placeholder="0"></div>
+                <div><label>ROI %</label><input type="number" id="manRoi" placeholder="0"></div>
+                <div><label>FIXED EMI (₹)</label><input type="number" id="manFixed" placeholder="0"></div>
             </div>
             <input type="hidden" id="targetPIdx" value="">
             <button onclick="executeManualAction()" style="width:100%; background:var(--success); color:white; margin-top:12px;">ADD SCHEME</button>
