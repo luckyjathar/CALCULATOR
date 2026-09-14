@@ -1147,63 +1147,120 @@ function loadCurrentProducts() { let c = customerQueue[activeCustomerIndex]; cur
 function goToFinalPage() {
     if(activeCustomerIndex === -1) return; loadCurrentProducts(); updateMatrixTopCard(); updateFinalSwitcher(); document.getElementById('unifiedHome').style.display = 'none'; document.getElementById('finalEligibleArea').style.display = 'flex'; renderMatrix(); setTimeout(() => { document.getElementById('finalEligibleArea').scrollIntoView({ behavior: 'smooth', block: 'start' }); if(current_products.length === 0) openAddProductModal(); }, 150);
 }
+function toggleModelView(pIdx) { 
+    let wrapper = document.getElementById(`tw_${pIdx}`); 
+    let icon = document.getElementById(`togIcon_${pIdx}`); 
+    if(wrapper.style.display === 'none') { 
+        wrapper.style.display = 'block'; 
+        icon.innerText = '▼'; 
+    } else { 
+        wrapper.style.display = 'none'; 
+        icon.innerText = '▶'; 
+    } 
+}
 
-function toggleModelView(pIdx) { let wrapper = document.getElementById(`tw_${pIdx}`); let grid = document.getElementById(`cg_${pIdx}`); let icon = document.getElementById(`togIcon_${pIdx}`); if(wrapper.style.display === 'none') { wrapper.style.display = 'block'; if(grid) grid.style.display = 'grid'; icon.innerText = '▼'; } else { wrapper.style.display = 'none'; if(grid) grid.style.display = 'none'; icon.innerText = '▶'; } }
-function instantSingleQuote(pIdx) { window.tempImageGenIndices = [pIdx]; requestWhatsAppDispatch = false; doGenerateCustomerImage(); }
+function toggleSettingsGrid(pIdx) {
+    let grid = document.getElementById(`cg_${pIdx}`);
+    if(grid.style.display === 'none' || grid.style.display === '') {
+        grid.style.display = 'grid';
+    } else {
+        grid.style.display = 'none';
+    }
+}
 
 function renderMatrix() {
     let container = document.getElementById('multiModelContainer'); container.innerHTML = "";
     current_products.forEach((prod, pIdx) => {
-        let div = document.createElement('div'); div.className = 'model-panel'; let isNT = prod.isNonTieup; let isCollapsed = (current_products.length > 1 && pIdx < current_products.length - 1); let displayStyle = isCollapsed ? 'none' : 'block'; let gridStyle = isCollapsed ? 'none' : 'grid'; let toggleIcon = isCollapsed ? '▶' : '▼'; let isPhoneWebMobile = isMobileDeviceCat(prod.category); if (!isPhoneWebMobile) prod.inputs.rfc = 0; if (isPhoneWebMobile) prod.inputs.exw = 0; let mVal = parseFloat(prod.inputs.mrp) || 0; let rfcSlab = getRfcSlabValue(mVal);
+        let div = document.createElement('div'); div.className = 'premium-model-panel'; 
+        let isNT = prod.isNonTieup; 
+        let isCollapsed = (current_products.length > 1 && pIdx < current_products.length - 1); 
+        let displayStyle = isCollapsed ? 'none' : 'block'; 
+        let toggleIcon = isCollapsed ? '▶' : '▼'; 
+        let isPhoneWebMobile = isMobileDeviceCat(prod.category); 
+        if (!isPhoneWebMobile) prod.inputs.rfc = 0; 
+        if (isPhoneWebMobile) prod.inputs.exw = 0; 
+        let mVal = parseFloat(prod.inputs.mrp) || 0; 
+        let rfcSlab = getRfcSlabValue(mVal);
+
         div.innerHTML = `
-            <div style="font-weight:900; color:var(--indigo); border-bottom:1px solid #ccc; padding-bottom:4px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
-                <div style="display:flex; align-items:center; gap: 8px; flex-wrap:wrap;">
-                    <span style="text-transform:uppercase; display:flex; align-items:center;"><span id="togIcon_${pIdx}" onclick="toggleModelView(${pIdx})" style="cursor:pointer; color:var(--primary); padding-right:6px; user-select:none;">${toggleIcon}</span>${prod.name}</span>
-                    <div style="display:flex; gap:4px; align-items:center; background:#e3f2fd; padding:4px 8px; border-radius:4px; border:1px solid #0984e3;">
-                        <label style="margin:0; color:var(--primary);">MRP:</label> <input type="number" id="mrp_${pIdx}" value="${prod.inputs.mrp}" style="width:60px; padding:4px;" oninput="updateVal(${pIdx},'mrp',this.value)">
-                        <label style="margin:0; color:var(--primary);">INV:</label> <input type="number" id="inv_${pIdx}" value="${prod.inputs.inv}" style="width:60px; padding:4px;" oninput="updateVal(${pIdx},'inv',this.value)">
-                        <label style="margin:0; color:var(--primary);">VAR:</label> <input type="number" id="surch_${pIdx}" value="${prod.inputs.surch}" style="width:60px; padding:4px; background:#e8e8e8; border:1px dashed #aaa; color:var(--danger); cursor:not-allowed;" readonly>
+            <!-- Premium Clean Header -->
+            <div class="pmp-header">
+                <div class="pmp-title" onclick="toggleModelView(${pIdx})">
+                    <span id="togIcon_${pIdx}" class="pmp-icon">${toggleIcon}</span>
+                    ${prod.name}
+                </div>
+                <div class="pmp-quick-inputs">
+                    <div class="pmp-input-group">
+                        <label>MRP:</label>
+                        <input type="number" id="mrp_${pIdx}" value="${prod.inputs.mrp}" oninput="updateVal(${pIdx},'mrp',this.value)">
+                    </div>
+                    <div class="pmp-input-group">
+                        <label>INV:</label>
+                        <input type="number" id="inv_${pIdx}" value="${prod.inputs.inv}" oninput="updateVal(${pIdx},'inv',this.value)">
+                    </div>
+                    <div class="pmp-input-group readonly-group">
+                        <label>VAR:</label>
+                        <input type="number" id="surch_${pIdx}" value="${prod.inputs.surch}" readonly>
                     </div>
                 </div>
-                <div style="display:flex; gap:6px;"><button onclick="instantSingleQuote(${pIdx})" style="background:var(--bajaj-blue); color:white; box-shadow:0 1px 3px rgba(0,0,0,0.2);">🖼️ QUOTE</button><button onclick="document.getElementById('tw_${pIdx}').classList.toggle('show-details-mode')" style="background:var(--warning); color:#000;">👁️ DETAILS</button><button onclick="openSchemeOnlyModal(${pIdx})" style="background:var(--success); color:white;">+ MANUAL</button><button onclick="current_products.splice(${pIdx},1);saveQueueToLocal();renderMatrix();" style="background:var(--danger); color:white;">REMOVE</button></div>
             </div>
-            <div class="control-grid" id="cg_${pIdx}" style="display:${gridStyle};">
-                <div><label>EMI CAPPING</label><input type="number" id="capInp_${pIdx}" value="${prod.inputs.cap}" placeholder="MAX" oninput="updateVal(${pIdx},'cap',this.value)"></div>
-                <div><label>TARGET DP</label><input type="number" value="${prod.inputs.target}" placeholder="0" oninput="updateVal(${pIdx},'target',this.value)"></div>
-                <div><label>GTL</label><select id="gtl_${pIdx}" onchange="updateVal(${pIdx},'gtl',this.value)"><option value="0" ${prod.inputs.gtl == 0 ? 'selected' : ''}>0</option><option value="699" ${prod.inputs.gtl == 699 ? 'selected' : ''}>699</option><option value="1099" ${prod.inputs.gtl == 1099 ? 'selected' : ''}>1099</option><option value="1199" ${prod.inputs.gtl == 1199 ? 'selected' : ''}>1199</option><option value="1499" ${prod.inputs.gtl == 1499 ? 'selected' : ''}>1499</option><option value="1799" ${prod.inputs.gtl == 1799 ? 'selected' : ''}>1799</option><option value="2398" ${prod.inputs.gtl == 2398 ? 'selected' : ''}>2398</option></select></div>
-                <div><label>RFC</label><select id="rfc_${pIdx}" onchange="updateVal(${pIdx},'rfc',this.value)" ${isPhoneWebMobile ? '' : 'disabled style="background:#e9ecef; cursor:not-allowed;"'}><option value="0">0</option>${isPhoneWebMobile ? `<option id="rfc_opt_${pIdx}" value="${rfcSlab}" ${prod.inputs.rfc > 0 ? 'selected' : ''}>${rfcSlab}</option>` : ''}</select></div>
-                <div><label>EXW</label><input type="number" id="exw_${pIdx}" value="${prod.inputs.exw}" placeholder="0" oninput="updateVal(${pIdx},'exw',this.value)" ${isPhoneWebMobile ? 'disabled style="background:#e9ecef; cursor:not-allowed;"' : 'style="background:#fff;"'}></div>
-                <div><label>MARGIN</label><input type="number" value="${prod.inputs.margin}" placeholder="0" oninput="updateVal(${pIdx},'margin',this.value)"></div>
-                <div><label>DEALER</label><input type="number" value="${prod.inputs.dealer}" placeholder="0" oninput="updateVal(${pIdx},'dealer',this.value)"></div>
-            </div>
-            <div class="table-wrapper" id="tw_${pIdx}" style="display:${displayStyle}; overflow-x: auto;">
-                <table style="width: 100%; border-collapse: collapse;">
-                    <thead>
-                        <tr style="font-size: 10px; white-space: nowrap;">
-                            <th class="hidden-col" onclick="sortM(${pIdx},'category')">CAT ↕</th>
-                            <th class="hidden-col" onclick="sortM(${pIdx},'dbd')">DBD% ↕</th>
-                            <th class="hidden-col" onclick="sortM(${pIdx},'pf')">PF ↕</th>
-                            <th class="hidden-col" onclick="sortM(${pIdx},'roi')">ROI% ↕</th>
-                            <th class="hidden-col" onclick="sortM(${pIdx},'fixedEmi')">FIXED ↕</th>
-                            <th class="hidden-col" onclick="sortM(${pIdx},'curLTV')">LTV% ↕</th>
-                            <th class="hidden-col" onclick="sortM(${pIdx},'netDisb')" style="color:var(--bajaj-blue);">NET DISB ↕</th>
-                            <th class="hidden-col" onclick="sortM(${pIdx},'extra')">EXTRA ↕</th>
-                            ${isNT ? `<th style="padding:4px 1px;" onclick="sortM(${pIdx},'minLoan')">MIN ↕</th><th style="padding:4px 1px;" onclick="sortM(${pIdx},'maxLoan')">MAX ↕</th>` : `<th style="padding:4px 1px;" onclick="sortM(${pIdx},'nbfcMaxL')">LMT ↕</th>`}
-                            <th style="padding:4px 1px;" onclick="sortM(${pIdx},'loan')">LOAN ↕</th>
-                            <th style="padding:4px 1px;" onclick="sortM(${pIdx},'currentTenure')">T/A ↕</th>
-                            <th style="padding:4px 1px;" onclick="sortM(${pIdx},'dp')">NET DP ↕</th>
-                            <th style="padding:4px 1px;" onclick="sortM(${pIdx},'emi')">EMI ↕</th>
-                            <th style="padding:4px 1px;" onclick="sortM(${pIdx},'inst')">M ↕</th>
-                            <th style="padding:4px 1px;" onclick="sortM(${pIdx},'daily')">DAILY ↕</th>
-                            <th style="padding:4px 1px;">ACT</th>
-                        </tr>
-                    </thead>
-                    <tbody id="body_${pIdx}"></tbody>
-                </table>
+
+            <!-- Collapsible Body -->
+            <div id="tw_${pIdx}" style="display:${displayStyle};">
+                
+                <!-- Dedicated Action Toolbar -->
+                <div class="pmp-toolbar">
+                    <button class="pmp-btn btn-quote" onclick="instantSingleQuote(${pIdx})">🖼️ QUOTE</button>
+                    <!-- Settings Button to toggle the messy grid -->
+                    <button class="pmp-btn btn-settings" onclick="toggleSettingsGrid(${pIdx})">⚙️ SETTINGS</button>
+                    <button class="pmp-btn btn-manual" onclick="openSchemeOnlyModal(${pIdx})">➕ MANUAL</button>
+                    <button class="pmp-btn btn-remove" onclick="current_products.splice(${pIdx},1);saveQueueToLocal();renderMatrix();">🗑️ REMOVE</button>
+                </div>
+
+                <!-- Settings Grid (Hidden by Default for Cleanliness) -->
+                <div class="control-grid" id="cg_${pIdx}" style="display:none;">
+                    <div><label>EMI CAPPING</label><input type="number" id="capInp_${pIdx}" value="${prod.inputs.cap}" placeholder="MAX" oninput="updateVal(${pIdx},'cap',this.value)"></div>
+                    <div><label>TARGET DP</label><input type="number" value="${prod.inputs.target}" placeholder="0" oninput="updateVal(${pIdx},'target',this.value)"></div>
+                    <div><label>GTL</label><select id="gtl_${pIdx}" onchange="updateVal(${pIdx},'gtl',this.value)"><option value="0" ${prod.inputs.gtl == 0 ? 'selected' : ''}>0</option><option value="699" ${prod.inputs.gtl == 699 ? 'selected' : ''}>699</option><option value="1099" ${prod.inputs.gtl == 1099 ? 'selected' : ''}>1099</option><option value="1199" ${prod.inputs.gtl == 1199 ? 'selected' : ''}>1199</option><option value="1499" ${prod.inputs.gtl == 1499 ? 'selected' : ''}>1499</option><option value="1799" ${prod.inputs.gtl == 1799 ? 'selected' : ''}>1799</option><option value="2398" ${prod.inputs.gtl == 2398 ? 'selected' : ''}>2398</option></select></div>
+                    <div><label>RFC</label><select id="rfc_${pIdx}" onchange="updateVal(${pIdx},'rfc',this.value)" ${isPhoneWebMobile ? '' : 'disabled style="background:#e9ecef; cursor:not-allowed;"'}><option value="0">0</option>${isPhoneWebMobile ? `<option id="rfc_opt_${pIdx}" value="${rfcSlab}" ${prod.inputs.rfc > 0 ? 'selected' : ''}>${rfcSlab}</option>` : ''}</select></div>
+                    <div><label>EXW</label><input type="number" id="exw_${pIdx}" value="${prod.inputs.exw}" placeholder="0" oninput="updateVal(${pIdx},'exw',this.value)" ${isPhoneWebMobile ? 'disabled style="background:#e9ecef; cursor:not-allowed;"' : 'style="background:#fff;"'}></div>
+                    <div><label>MARGIN</label><input type="number" value="${prod.inputs.margin}" placeholder="0" oninput="updateVal(${pIdx},'margin',this.value)"></div>
+                    <div><label>DEALER</label><input type="number" value="${prod.inputs.dealer}" placeholder="0" oninput="updateVal(${pIdx},'dealer',this.value)"></div>
+                </div>
+
+                <!-- Scheme Table Wrapper -->
+                <div class="table-wrapper pmp-table-wrapper">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="font-size: 10px; white-space: nowrap;">
+                                <th class="hidden-col" onclick="sortM(${pIdx},'category')">CAT ↕</th>
+                                <th class="hidden-col" onclick="sortM(${pIdx},'dbd')">DBD% ↕</th>
+                                <th class="hidden-col" onclick="sortM(${pIdx},'pf')">PF ↕</th>
+                                <th class="hidden-col" onclick="sortM(${pIdx},'roi')">ROI% ↕</th>
+                                <th class="hidden-col" onclick="sortM(${pIdx},'fixedEmi')">FIXED ↕</th>
+                                <th class="hidden-col" onclick="sortM(${pIdx},'curLTV')">LTV% ↕</th>
+                                <th class="hidden-col" onclick="sortM(${pIdx},'netDisb')" style="color:var(--bajaj-blue);">NET DISB ↕</th>
+                                <th class="hidden-col" onclick="sortM(${pIdx},'extra')">EXTRA ↕</th>
+                                ${isNT ? `<th style="padding:4px 1px;" onclick="sortM(${pIdx},'minLoan')">MIN ↕</th><th style="padding:4px 1px;" onclick="sortM(${pIdx},'maxLoan')">MAX ↕</th>` : `<th style="padding:4px 1px;" onclick="sortM(${pIdx},'nbfcMaxL')">LMT ↕</th>`}
+                                <th style="padding:4px 1px;" onclick="sortM(${pIdx},'loan')">LOAN ↕</th>
+                                <th style="padding:4px 1px;" onclick="sortM(${pIdx},'currentTenure')">T/A ↕</th>
+                                <th style="padding:4px 1px;" onclick="sortM(${pIdx},'dp')">NET DP ↕</th>
+                                <th style="padding:4px 1px;" onclick="sortM(${pIdx},'emi')">EMI ↕</th>
+                                <th style="padding:4px 1px;" onclick="sortM(${pIdx},'inst')">M ↕</th>
+                                <th style="padding:4px 1px;" onclick="sortM(${pIdx},'daily')">DAILY ↕</th>
+                                <th style="padding:4px 1px;">ACT</th>
+                            </tr>
+                        </thead>
+                        <tbody id="body_${pIdx}"></tbody>
+                    </table>
+                </div>
             </div>`;
         container.appendChild(div); recalcModel(pIdx);
     });
 }
+function instantSingleQuote(pIdx) { window.tempImageGenIndices = [pIdx]; requestWhatsAppDispatch = false; doGenerateCustomerImage(); }
+
+
 function syncInsurance(pIdx, mrpVal, baseLoanVal, triggerType = 'NONE') {
     let prod = current_products[pIdx]; let isPhoneWebMobile = isMobileDeviceCat(prod.category); let gtl = baseLoanVal > 100000 ? 2398 : (baseLoanVal > 50000 ? 1799 : (baseLoanVal > 30000 ? 1499 : (baseLoanVal > 10000 ? 1199 : (baseLoanVal > 0 ? 699 : 0)))); let rfcSlab = getRfcSlabValue(mrpVal); let inp = prod.inputs;
     if(triggerType === 'MRP' || triggerType === 'INV') { inp.gtl = gtl; if(triggerType === 'MRP') inp.rfc = isPhoneWebMobile ? rfcSlab : 0; } else if (triggerType === 'LOAN') { inp.gtl = gtl; }
