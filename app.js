@@ -1083,7 +1083,7 @@ async function processMultiStack() {
     if (!msNameInput) { showToast("⚠️ Kripya Product Model Name zaroor enter karein!", "error"); return; } 
     let validSchemes = [];
     for(let i=1; i<=10; i++) { let ten = parseInt(document.getElementById(`msTen_${i}`).value) || 0; let fix = parseInt(document.getElementById(`msFix_${i}`).value) || 0; if(ten > 0 || fix > 0) { validSchemes.push({ tenure: ten, advEmi: parseInt(document.getElementById(`msAdv_${i}`).value) || 0, dbd: parseFloat(document.getElementById(`msDbd_${i}`).value) || 0, pf: parseInt(document.getElementById(`msPf_${i}`).value) || 0, roi: parseFloat(document.getElementById(`msRoi_${i}`).value) || 0, fixedEmi: fix, minLoan: 0, maxLoan: 9999999, category: "MANUAL", inactive: false, isExpired: false, expiryDateStr: "" }); } }
-    if(validSchemes.length > 0) { let comp = customerQueue[activeCustomerIndex].components || {}; current_products.push({ name: msNameInput, schemes: validSchemes, category: "MANUAL", inputs: { mrp: comp.mrp||"", inv: comp.inv||"", cap: comp.cap||(customerQueue[activeCustomerIndex]?.cap || ""), target: comp.target||"", gtl: comp.gtl||0, rfc: comp.rfc||0, exw: comp.exw||"", margin: comp.margin||"", dealer: comp.dealer||"", surch: 0, manualLoans: {} }, isManual: true, isNonTieup: false }); sortConfigs.push({ key: 'curLTV', dir: 'desc' }); customerQueue[activeCustomerIndex].products = current_products; customerQueue[activeCustomerIndex].sortConfigs = sortConfigs; await saveQueueToLocal(); closeMultiStackModal(); renderMatrix(); } else { showToast("⚠️ Kripya kam se kam ek Scheme ki details zaroor fill karein!", "error"); }
+    if(validSchemes.length > 0) { let comp = customerQueue[activeCustomerIndex].components || {}; current_products.push({ name: msNameInput, schemes: validSchemes, category: "MANUAL", inputs: { mrp: comp.mrp||"", inv: comp.inv||"", cap: comp.cap||(customerQueue[activeCustomerIndex]?.cap || ""), target: comp.target||"", gtl: comp.gtl||0, rfc: comp.rfc||0, exw: comp.exw||"", margin: comp.margin||"", dealer: comp.dealer||"", surch: 0, manualLoans: {} }, isManual: true, isNonTieup: false }); sortConfigs.push({ key: 'default_ltv', dir: 'desc' }); customerQueue[activeCustomerIndex].products = current_products; customerQueue[activeCustomerIndex].sortConfigs = sortConfigs; await saveQueueToLocal(); closeMultiStackModal(); renderMatrix(); } else { showToast("⚠️ Kripya kam se kam ek Scheme ki details zaroor fill karein!", "error"); }
 }
 
 function findValLocal(row, targets) { let key = Object.keys(row).find(k => targets.includes(k.toUpperCase().replace(/\s/g, ''))); return key ? row[key] : null; }
@@ -1153,7 +1153,7 @@ async function finalizeProductAddition() {
     let raw = tempPendingProduct.isNT ? db_records.filter(r => r.model === SPECIAL_MODEL && r.category === tempPendingProduct.category) : db_records.filter(r => r.model === tempPendingProduct.name); let ltvLimit = customerQueue[activeCustomerIndex]?.ltv || 100; let matrixEligible = raw.filter(s => s.fixedEmi > 0 || (s.tenure > 0 && ((s.tenure-s.advEmi)/s.tenure)*100 <= ltvLimit)); let uniqueSchemes = []; let seenSchemes = new Set();
     matrixEligible.forEach(s => { let schemeKey = `${s.tenure}_${s.advEmi}_${s.fixedEmi}_${s.minLoan}_${s.maxLoan}`; if (!seenSchemes.has(schemeKey)) { seenSchemes.add(schemeKey); s.inactive = false; uniqueSchemes.push(s); } });
     let comp = customerQueue[activeCustomerIndex].components || {}; let finalMrp = comp.mrp || ""; let finalInv = comp.inv || ""; let surch = (finalInv > finalMrp && finalMrp > 0) ? finalInv - finalMrp : 0;
-    current_products.push({ name: tempPendingProduct.name, isNonTieup: tempPendingProduct.isNT, schemes: uniqueSchemes, category: tempPendingProduct.category, inputs: { mrp: finalMrp, inv: finalInv, cap: comp.cap || (customerQueue[activeCustomerIndex]?.cap || ""), target: comp.target || "", gtl: comp.gtl || 0, rfc: comp.rfc || 0, exw: comp.exw || 0, margin: comp.margin || "", dealer: comp.dealer || "", surch: surch, manualLoans: {} }, isManual: false }); sortConfigs.push({ key: 'curLTV', dir: 'desc' }); customerQueue[activeCustomerIndex].products = current_products; customerQueue[activeCustomerIndex].sortConfigs = sortConfigs; tempPendingProduct = null; await saveQueueToLocal(); renderMatrix(); 
+    current_products.push({ name: tempPendingProduct.name, isNonTieup: tempPendingProduct.isNT, schemes: uniqueSchemes, category: tempPendingProduct.category, inputs: { mrp: finalMrp, inv: finalInv, cap: comp.cap || (customerQueue[activeCustomerIndex]?.cap || ""), target: comp.target || "", gtl: comp.gtl || 0, rfc: comp.rfc || 0, exw: comp.exw || 0, margin: comp.margin || "", dealer: comp.dealer || "", surch: surch, manualLoans: {} }, isManual: false }); sortConfigs.push({ key: 'default_ltv', dir: 'desc' }); customerQueue[activeCustomerIndex].products = current_products; customerQueue[activeCustomerIndex].sortConfigs = sortConfigs; tempPendingProduct = null; await saveQueueToLocal(); renderMatrix(); 
 }
 
 function updateFinalSwitcher() { let sw = document.getElementById('finalCustomerSwitcher'); if(!sw) return; sw.innerHTML = customerQueue.map((c, i) => `<option value="${i}" ${i === activeCustomerIndex ? 'selected' : ''}>👤 ${c.name} (₹${c.limit})</option>`).join(''); }
@@ -1375,26 +1375,55 @@ function recalcModel(pIdx) {
 
 function renderRows(pIdx) {
     let prod = current_products[pIdx]; 
-    if(!sortConfigs[pIdx]) sortConfigs[pIdx] = {key: 'curLTV', dir: 'desc'}; 
+    if(!sortConfigs[pIdx]) sortConfigs[pIdx] = {key: 'default_ltv', dir: 'desc'}; 
     let conf = sortConfigs[pIdx]; 
-    prod.calculatedData.sort((a,b) => conf.dir==='asc' ? a[conf.key]-b[conf.key] : b[conf.key]-a[conf.key]); 
+    
     let ltvLimit = customerQueue[activeCustomerIndex]?.ltv || 100; 
     let isNT = prod.isNonTieup;
-
     let today = new Date(); today.setHours(0,0,0,0);
 
-    document.getElementById(`body_${pIdx}`).innerHTML = prod.calculatedData.map(d => {
+    /* --- लपवण्याचे लॉजिक (Hide Ineligible) --- */
+    let visibleSchemes = prod.calculatedData.filter(d => {
         if(d.expiryDateStr) {
             let p = d.expiryDateStr.trim().split('/');
             if(p.length === 3) {
                 let expD = new Date(p[2], p[1]-1, p[0]);
-                if(expD < today) return ''; 
+                if(expD < today) return false; 
             }
         }
-
-        let curLTV = d.curLTV; let isLtvB = (curLTV > ltvLimit); let isBoundB = false; if (isNT && prod.inputs.mrp > 0) { if (d.loan < d.minLoan || d.loan > d.maxLoan) isBoundB = true; } let isInactive = d.inactive; 
+        let curLTV = d.curLTV; 
+        let isLtvB = (curLTV > ltvLimit); 
+        let isBoundB = false; 
+        if (isNT && prod.inputs.mrp > 0) { 
+            if (d.loan < d.minLoan || d.loan > d.maxLoan) isBoundB = true; 
+        }
         if (d.isInv50Breach) { isBoundB = true; }
 
+        // जर स्कीम inactive नसेल आणि breach करत असेल, तर लपवा.
+        if ((isLtvB || isBoundB) && !d.inactive) {
+            return false;
+        }
+        return true;
+    });
+
+    /* --- सॉर्टिंग लॉजिक --- */
+    visibleSchemes.sort((a,b) => {
+        if (conf.key === 'extra') {
+            return conf.dir === 'asc' ? a.extra - b.extra : b.extra - a.extra;
+        } else {
+            // Default Sort: LTV (Desc) -> DP (Asc) -> EMI (Asc)
+            if (Math.round(b.curLTV) !== Math.round(a.curLTV)) {
+                return b.curLTV - a.curLTV;
+            }
+            if (a.dp !== b.dp) {
+                return a.dp - b.dp;
+            }
+            return a.emi - b.emi;
+        }
+    });
+
+    document.getElementById(`body_${pIdx}`).innerHTML = visibleSchemes.map(d => {
+        let isInactive = d.inactive; 
         let actionMenuBtnHtml = `<button onclick="openRowActionModal(${pIdx}, ${d.dIdx}, ${isInactive})" style="background:var(--primary); color:white; border:none; padding:6px 12px; border-radius:6px; font-weight:900; cursor:pointer; font-size: 11px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">ACT ⚙️</button>`;
 
         let bgCol = isInactive ? '#f8f9fa' : (d.isExpired ? '#fff4e6' : '#ffffff');
@@ -1404,8 +1433,6 @@ function renderRows(pIdx) {
         let dbdStr = `${+parseFloat(d.dbd).toFixed(3)}% (₹${Math.round(d.dbdAmt||0)})`;
         let roiStr = `${+parseFloat(d.roi).toFixed(2)}% (₹${Math.round(d.roiAmt||0)})`;
         let limitStr = isNT ? `MIN:₹${d.minLoan} MAX:${d.maxLoan < 9999999 ? d.maxLoan : 'NO'}` : `LMT:₹${Math.floor(d.nbfcMaxL)}`;
-
-        let breachStyle = (isLtvB || isBoundB) ? `color:var(--danger); text-decoration:line-through;` : `color:var(--success);`;
 
         return `
         <tr id="row_${pIdx}_${d.dIdx}" style="background: ${bgCol}; opacity: ${textOpacity};">
@@ -1419,7 +1446,7 @@ function renderRows(pIdx) {
                     <input id="l_${pIdx}_${d.dIdx}" type="number" value="${Math.floor(d.loan)}" onchange="manual(${pIdx},${d.dIdx})" onblur="manual(${pIdx},${d.dIdx})" style="width: 55px; padding: 0; margin: 0 0 0 2px; border: none; background: transparent; outline: none; box-shadow: none; -webkit-appearance: none; -moz-appearance: textfield; appearance: none; text-align: left; font-weight: 900; font-size: 13px; color: var(--primary); cursor: text;">
                 </div>
             </td>
-            <td id="dp_${pIdx}_${d.dIdx}" style="padding: 12px 4px; text-align: center; font-size: 15px; font-weight: 900; ${breachStyle}">₹${Math.round(d.dp).toLocaleString()}</td>
+            <td id="dp_${pIdx}_${d.dIdx}" style="padding: 12px 4px; text-align: center; font-size: 15px; font-weight: 900; color:var(--success);">₹${Math.round(d.dp).toLocaleString()}</td>
             <td id="emi_${pIdx}_${d.dIdx}" style="padding: 12px 4px; text-align: center; font-size: 15px; font-weight: 900; color: var(--primary);">₹${Math.round(d.emi).toLocaleString()}</td>
             <td id="inst_${pIdx}_${d.dIdx}" style="padding: 12px 4px; text-align: center; font-size: 14px; font-weight: 900; color: #475569;">${d.inst}</td>
             <td id="day_${pIdx}_${d.dIdx}" style="padding: 12px 4px; text-align: center; font-size: 14px; font-weight: 900; color: #ea580c;">₹${Math.round(d.daily).toLocaleString()}</td>
@@ -1427,7 +1454,7 @@ function renderRows(pIdx) {
         </tr>
         <tr style="background: ${subRowBg}; border-bottom: 2px solid #e2e8f0; opacity: ${textOpacity};">
             <td colspan="7" style="padding: 6px 10px 10px 10px; font-size: 11px; font-weight: 700; color: #64748b; text-align: left;">
-                <div style="display:flex; flex-wrap:wrap; column-gap: 12px; row-gap: 6px; justify-content: space-between; align-items:center;">
+                <div style="display:flex; flex-wrap:wrap; column-gap: 12px; row-gap: 6px; justify-content: flex-start; align-items:center;">
                     <span><b style="color:var(--bajaj-blue);">LTV:</b> <span id="ltv_${pIdx}_${d.dIdx}">${Math.round(d.curLTV)}%</span></span>
                     <span><b style="color:var(--bajaj-blue);">PF:</b> ₹<span id="pf_${pIdx}_${d.dIdx}">${d.pf}</span></span>
                     <span><b style="color:var(--bajaj-blue);">DBD:</b> <span id="dbd_${pIdx}_${d.dIdx}">${dbdStr}</span></span>
@@ -1435,14 +1462,13 @@ function renderRows(pIdx) {
                     <span><b style="color:var(--success);">NET DISB:</b> <span id="nd_${pIdx}_${d.dIdx}">₹${Math.round(d.netDisb).toLocaleString()}</span></span>
                     ${d.fixedEmi > 0 ? `<span><b style="color:var(--bajaj-blue);">FIXED:</b> ₹${d.fixedEmi}</span>` : ''}
                     <span><b style="color:#8b5cf6;">${limitStr}</b></span>
-                    <span id="extra_${pIdx}_${d.dIdx}" onclick="sortM(${pIdx}, 'extra')" style="cursor:pointer; background:#fee2e2; color:#b91c1c; padding:3px 8px; border-radius:4px; font-weight:900; box-shadow:0 1px 2px rgba(0,0,0,0.1);">EXTRA: ₹${Math.round(d.extra).toLocaleString()} ↕</span>
+                    <span id="extra_${pIdx}_${d.dIdx}" onclick="sortM(${pIdx}, 'extra')" style="cursor:pointer; background:#fee2e2; color:#b91c1c; padding:3px 8px; border-radius:4px; font-weight:900; box-shadow:0 1px 2px rgba(0,0,0,0.1); margin-left:auto;">EXTRA: ₹${Math.round(d.extra).toLocaleString()} ↕</span>
                 </div>
             </td>
         </tr>
         `;
     }).join('');
 }
-function step(pIdx, dIdx, amt) { let el = document.getElementById(`l_${pIdx}_${dIdx}`); el.value = Math.max(0, parseInt(el.value) + amt); manual(pIdx, dIdx); }
 
 function manual(pIdx, dIdx) {
     let el = document.getElementById(`l_${pIdx}_${dIdx}`), loan = parseFloat(el.value) || 0, prod = current_products[pIdx], d = prod.calculatedData.find(x => x.dIdx === dIdx), inp = prod.inputs, type = customerQueue[activeCustomerIndex]?.type || 'NEW';
@@ -1531,13 +1557,11 @@ function manual(pIdx, dIdx) {
     let ltvCell = document.getElementById(`ltv_${pIdx}_${dIdx}`); if(ltvCell) ltvCell.innerText = Math.round(d.curLTV) + "%"; 
     let extraCell = document.getElementById(`extra_${pIdx}_${dIdx}`); if(extraCell) extraCell.innerHTML = "EXTRA: ₹" + Math.round(d.extra).toLocaleString() + " ↕";
     
-    let isB = (d.curLTV > ltvLimit) || (prod.isNonTieup && loan > 0 && (loan < d.minLoan || loan > d.maxLoan)) || (effectivePrice > 0 && loan < minAllowedLoanByInvoice); 
-    let rowEl = document.getElementById(`dp_${pIdx}_${dIdx}`); 
-    if(rowEl) { if (isB) { rowEl.style.color = "var(--danger)"; rowEl.style.textDecoration = "line-through"; } else { rowEl.style.color = "var(--success)"; rowEl.style.textDecoration = "none"; } }
-    
     let dbdCell = document.getElementById(`dbd_${pIdx}_${dIdx}`); if(dbdCell) dbdCell.innerHTML = `${+parseFloat(d.dbd).toFixed(3)}% (₹${Math.round(d.dbdAmt||0)})`; 
     let roiCell = document.getElementById(`roi_${pIdx}_${dIdx}`); if(roiCell) roiCell.innerHTML = `${+parseFloat(d.roi).toFixed(2)}% (₹${Math.round(d.roiAmt||0)})`;
-    customerQueue[activeCustomerIndex].products = current_products; saveQueueToLocal(); 
+    
+    // जर स्कीम inactive नसेल आणि breach करत असेल, तर ती लपवली जावी म्हणून पूर्ण री-रेंडर
+    renderRows(pIdx);
 }
 
 function sortM(pIdx, key) { 
@@ -1576,7 +1600,7 @@ async function executeManualAction() {
         let name = manNameInput !== "" ? manNameInput : "MANUAL MODEL"; 
         let comp = customerQueue[activeCustomerIndex].components || {}; 
         current_products.push({ name: name, schemes: [scheme], category: "MANUAL", inputs: { mrp: "", inv: "", cap: cCap, target: "", gtl: 0, rfc: 0, exw: comp.exw||"", margin: comp.margin||"", dealer: comp.dealer||"", surch: 0, manualLoans: {} }, isManual: true }); 
-        sortConfigs.push({ key: 'curLTV', dir: 'desc' }); 
+        sortConfigs.push({ key: 'default_ltv', dir: 'desc' }); 
         customerQueue[activeCustomerIndex].products = current_products; 
         customerQueue[activeCustomerIndex].sortConfigs = sortConfigs; 
         await saveQueueToLocal(); renderMatrix(); 
