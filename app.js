@@ -1314,22 +1314,13 @@ function renderRows(pIdx) {
         }
 
         let curLTV = d.curLTV; let isLtvB = (curLTV > ltvLimit); let isBoundB = false; if (isNT && prod.inputs.mrp > 0) { if (d.loan < d.minLoan || d.loan > d.maxLoan) isBoundB = true; } let isInactive = d.inactive; 
-
         if (d.isInv50Breach) { isBoundB = true; }
 
         let rowClass = (d.isFixed ? "fixed-row " : "") + (isLtvB || isBoundB ? "ltv-breach " : "") + (d.isExpired && !isInactive ? "expired-row " : "") + (isInactive ? "inactive-row " : "");
         
-        // Action Button Dropdown (Size reduced for mobile)
         let actionMenuBtnHtml = `
-        <div style="position:relative; display:inline-block;">
-            <button onclick="toggleActionMenu(${pIdx}, ${d.dIdx}, event)" style="background:var(--primary); color:white; border:none; padding:4px 6px; border-radius:4px; font-weight:bold; cursor:pointer; font-size: 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.2); min-width: 40px; letter-spacing:0;">ACT▼</button>
-            
-            <div id="actMenu_${pIdx}_${d.dIdx}" class="act-menu-dropdown" style="display:none; position:absolute; right:0; top:100%; background:white; border:1px solid #e2e8f0; box-shadow:0 10px 25px rgba(0,0,0,0.15); border-radius:8px; z-index:9999; min-width:120px; flex-direction:column; overflow:hidden; margin-top:5px;">
-                <button onclick="copySchemeText(${pIdx}, ${d.dIdx}, this); document.getElementById('actMenu_${pIdx}_${d.dIdx}').style.display='none';" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#fff'" style="background:#fff; border:none; padding:10px 12px; text-align:left; cursor:pointer; width:100%; border-bottom:1px solid #f1f5f9; font-size:11px; font-weight:bold; color:var(--dark); transition:0.2s;">📋 COPY</button>
-                <button onclick="openEditSchemeModal(${pIdx}, ${d.dIdx}); document.getElementById('actMenu_${pIdx}_${d.dIdx}').style.display='none';" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#fff'" style="background:#fff; border:none; padding:10px 12px; text-align:left; cursor:pointer; width:100%; border-bottom:1px solid #f1f5f9; font-size:11px; font-weight:bold; color:#d97706; transition:0.2s;">✏️ EDIT</button>
-                <button onclick="toggleInactive(${pIdx}, ${d.dIdx}); document.getElementById('actMenu_${pIdx}_${d.dIdx}').style.display='none';" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#fff'" style="background:#fff; border:none; padding:10px 12px; text-align:left; cursor:pointer; width:100%; font-size:11px; font-weight:bold; color:${isInactive ? '#059669' : '#dc2626'}; transition:0.2s;">${isInactive ? '✅ ADD' : '🚫 DISABLE'}</button>
-            </div>
-        </div>`;
+        <button onclick="openRowActionModal(${pIdx}, ${d.dIdx}, ${isInactive})" style="background:var(--primary); color:white; border:none; padding:6px 12px; border-radius:6px; font-weight:900; cursor:pointer; font-size: 11px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">ACT ⚙️</button>
+        `;
         
         let expInfo = d.expiryDateStr ? `<div style="font-size:9px; color:#555; margin-top:2px; font-weight:bold;">Exp: ${d.expiryDateStr}</div>` : ''; let expiredWarning = d.isExpired ? `<div style="color:#d35400; font-size:8px; font-weight:900; margin-top:3px; line-height:1.2; background:#ffeaa7; padding:2px; border-radius:3px;">⚠️ EXPIRED</div>` : '';
         
@@ -1337,7 +1328,6 @@ function renderRows(pIdx) {
             <td class="hidden-col">${d.category}</td><td class="hidden-col">${+parseFloat(d.dbd).toFixed(3)}%<br><span style="color:var(--danger); font-weight:900;">₹${Math.round(d.dbdAmt||0).toLocaleString()}</span></td><td class="hidden-col">₹${d.pf}</td><td class="hidden-col">${+parseFloat(d.roi).toFixed(2)}%<br><span style="color:var(--danger); font-weight:900;">₹${Math.round(d.roiAmt||0).toLocaleString()}</span></td><td class="hidden-col">${d.fixedEmi > 0 ? '₹'+d.fixedEmi : 'N/A'}</td><td class="hidden-col" id="ltv_${pIdx}_${d.dIdx}">${Math.round(d.curLTV)}%</td><td class="hidden-col" id="nd_${pIdx}_${d.dIdx}" style="font-weight:900; color:var(--bajaj-blue);">₹${Math.round(d.netDisb).toLocaleString()}</td><td class="hidden-col" id="extra_${pIdx}_${d.dIdx}" style="font-weight:900; color:var(--danger);">₹${Math.round(d.extra).toLocaleString()}</td>
             ${isNT ? `<td class="bound-col" style="padding:4px 1px; font-size:11px; white-space:nowrap;">${d.minLoan > 0 ? '₹' + d.minLoan : '0'}</td><td class="bound-col" style="padding:4px 1px; font-size:11px; white-space:nowrap;">${d.maxLoan < 9999999 ? '₹' + d.maxLoan : 'NO'}</td>` : `<td style="padding:4px 1px; color:#777; font-size:11px; white-space:nowrap;">₹${Math.floor(d.nbfcMaxL)}</td>`}
             
-            <!-- Loan Column Full Visibility Fix (Width and font updated) -->
             <td style="padding:4px 2px; text-align:center; vertical-align:middle; white-space:nowrap;" title="Click to Edit Loan Amount">
                 <div style="display:inline-flex; justify-content:center; align-items:center;">
                     <span style="color:var(--primary); font-weight:900; font-size:13px;">₹</span>
@@ -1493,22 +1483,22 @@ function proceedGenerateImageAndWhatsAppCopy() { requestWhatsAppDispatch = true;
 /* === NEW: DAILY INDIAN FESTIVAL THEME FUNCTION === */
 function getDailyTheme() {
     const festivalThemes = [
-        { bg: "linear-gradient(135deg, #D35400 0%, #F39C12 100%)", text: "#fff", accent: "#FFF", icon: "🪔" }, // Diwali
-        { bg: "linear-gradient(135deg, #C0392B 0%, #E74C3C 100%)", text: "#fff", accent: "#F1C40F", icon: "🌺" }, // Ganesh Chaturthi
-        { bg: "linear-gradient(135deg, #1E8449 0%, #2ECC71 100%)", text: "#fff", accent: "#F1C40F", icon: "🚩" }, // Gudi Padwa
-        { bg: "linear-gradient(135deg, #8E44AD 0%, #E74C3C 100%)", text: "#fff", accent: "#F1C40F", icon: "🎨" }, // Holi
-        { bg: "linear-gradient(135deg, #2980B9 0%, #6DD5FA 100%)", text: "#fff", accent: "#000", icon: "🪁" }, // Makar Sankranti
-        { bg: "linear-gradient(135deg, #B92B27 0%, #1565C0 100%)", text: "#fff", accent: "#F1C40F", icon: "🏹" }, // Dussehra
-        { bg: "linear-gradient(135deg, #e52d27 0%, #b31217 100%)", text: "#fff", accent: "#F1C40F", icon: "💃" }  // Navratri
+        { bg: "linear-gradient(135deg, #D35400 0%, #F39C12 100%)", text: "#fff", accent: "#FFF", icon: "🪔" },
+        { bg: "linear-gradient(135deg, #C0392B 0%, #E74C3C 100%)", text: "#fff", accent: "#F1C40F", icon: "🌺" },
+        { bg: "linear-gradient(135deg, #1E8449 0%, #2ECC71 100%)", text: "#fff", accent: "#F1C40F", icon: "🚩" },
+        { bg: "linear-gradient(135deg, #8E44AD 0%, #E74C3C 100%)", text: "#fff", accent: "#F1C40F", icon: "🎨" },
+        { bg: "linear-gradient(135deg, #2980B9 0%, #6DD5FA 100%)", text: "#fff", accent: "#000", icon: "🪁" },
+        { bg: "linear-gradient(135deg, #B92B27 0%, #1565C0 100%)", text: "#fff", accent: "#F1C40F", icon: "🏹" },
+        { bg: "linear-gradient(135deg, #e52d27 0%, #b31217 100%)", text: "#fff", accent: "#F1C40F", icon: "💃" } 
     ];
     const today = new Date().getDate(); 
     return festivalThemes[today % festivalThemes.length];
 }
 
-/* === PIXEL-PERFECT EXACT QUOTATION IMAGE GENERATOR (NO OUTER BOX, BLUE LINE, MASSIVE FONTS) === */
+/* === PIXEL-PERFECT EXACT QUOTATION IMAGE GENERATOR === */
 function doGenerateCustomerImage() {
     let quoteDiv = document.createElement('div'); 
-    quoteDiv.style.width = "780px"; /* रुंदी थोडी वाढवली जेणेकरून मोठे फॉन्ट छान बसतील */
+    quoteDiv.style.width = "780px"; 
     quoteDiv.style.padding = "16px"; 
     quoteDiv.style.background = "#f8fafc"; 
     quoteDiv.style.position = "absolute"; 
@@ -1519,31 +1509,21 @@ function doGenerateCustomerImage() {
     let c = customerQueue[activeCustomerIndex]; 
     let ltvLimit = c?.ltv || 100;
     
-    // Customer Name Formatting: Title Case
     let rawName = c?.name && c.name !== "-" ? c.name : "Valued Customer";
     let custName = rawName.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
     let custMobile = c?.mobile && c.mobile !== "" ? c.mobile : "N/A";
 
-    // 1. Top Modern Gradient Header
     let html = `
     <div style="background: #ffffff; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); overflow: hidden; border: 1px solid #e2e8f0;">
-        
-        <!-- Header Banner -->
         <div style="background: linear-gradient(180deg, #095797 0%, #153e75 100%); padding: 20px 16px 22px 16px; color: #ffffff; text-align: center; border-radius: 16px 16px 0 0;">
             <h2 style="margin: 0 0 14px 0; font-size: 30px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; text-shadow: 1px 1px 3px rgba(0,0,0,0.3);">
                 🎉 EXCLUSIVE OFFERS FOR YOU!
             </h2> 
-
-            <!-- Approved Eligibility Container -->
             <div style="display: block; width: 96%; margin: 0 auto; background: rgba(255, 255, 255, 0.08); border: 2px dashed rgba(255,255,255,0.4); border-radius: 10px; padding: 14px 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                
-                <!-- Customer Details -->
                 <div style="font-size: 21px; font-weight: 900; color: #ffffff; letter-spacing: 0.5px; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; display: flex; justify-content: space-between; text-shadow: 1px 1px 2px rgba(0,0,0,0.2);">
                     <span>🧑 Customer Name: <span style="color: #bfdbfe;">${custName}</span></span>
                     <span>📱 <span style="color: #bfdbfe;">${custMobile}</span></span>
                 </div>
-
-                <!-- Eligibility Details -->
                 <div style="display: flex; gap: 18px; font-size: 24px; font-weight: 900; align-items: center; justify-content: center; text-shadow: 1px 1px 2px rgba(0,0,0,0.3);">
                     <span>LIMIT: <b style="color: #34d399;">₹${c?.limit ? c.limit.toLocaleString() : 0}</b></span>
                     <span style="opacity: 0.5;">|</span>
@@ -1553,7 +1533,6 @@ function doGenerateCustomerImage() {
                 </div>
             </div>
         </div>
-
         <div style="padding: 20px;">
     `;
 
@@ -1574,7 +1553,6 @@ function doGenerateCustomerImage() {
         hasV = true; 
         let invAmt = prod.inputs.inv > 0 ? prod.inputs.inv : prod.inputs.mrp;
 
-        // Sorting Logic for Badges
         let sortedByDp = [...validS].sort((a,b) => a.dp - b.dp);
         let winDp = sortedByDp[0];
         
@@ -1585,7 +1563,6 @@ function doGenerateCustomerImage() {
         let highlightIds = [winDp?.dIdx, winEmi?.dIdx].filter(Boolean);
         let otherSchemes = validS.filter(s => !highlightIds.includes(s.dIdx)).sort((a,b) => a.dp - b.dp);
 
-        // Combine all schemes into one array
         let allSchemes = [];
         if (winDp) allSchemes.push({ ...winDp, isWinDp: true });
         if (winEmi && (!winDp || winEmi.dIdx !== winDp.dIdx)) allSchemes.push({ ...winEmi, isWinEmi: true });
@@ -1593,15 +1570,8 @@ function doGenerateCustomerImage() {
 
         let marginBottom = (index === productsToRender.length - 1) ? '0px' : '20px';
 
-        /* 
-           Product Card Frame 
-           बाहेरची करडी लाईन (Border) काढून टाकली आहे. 
-           फक्त डावीकडे जाड निळी (Blue) लाईन आणि हलकी शॅडो ठेवली आहे. 
-        */
         html += `
             <div style="border-left: 12px solid #034887; background: #ffffff; margin-bottom: ${marginBottom}; box-shadow: 0 4px 15px rgba(0,0,0,0.06);">
-                
-                <!-- Product Title Header -->
                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 22px 20px 20px 20px; border-bottom: 2px solid #e2e8f0; background: #ffffff;">
                     <div style="display: flex; align-items: center; gap: 14px; flex: 1;">
                         <span style="font-size: 32px;">📱</span>
@@ -1614,8 +1584,6 @@ function doGenerateCustomerImage() {
                         <div style="font-size: 22px; font-weight: 900;">₹${invAmt.toLocaleString()}</div>
                     </div>
                 </div>
-
-                <!-- SINGLE UNIFIED SCHEMES TABLE (Massive Fonts) -->
                 <table style="width: 100%; border-collapse: collapse; text-align: center;">
                     <thead style="background: #f8fafc; color: #334155; border-bottom: 2px solid #cbd5e1;">
                         <tr style="font-size: 18px; font-weight: 900; letter-spacing: 0.5px;">
@@ -1629,13 +1597,11 @@ function doGenerateCustomerImage() {
                     <tbody>
         `;
 
-        // Render all schemes uniformly with HUGE font sizes
         allSchemes.forEach((d, i) => {
             let isLast = (i === allSchemes.length - 1);
             let bBorder = isLast ? 'none' : '1px solid #e2e8f0';
             let bgCol = (d.isWinDp) ? '#f0fdf4' : (d.isWinEmi ? '#eff6ff' : (i % 2 === 0 ? '#ffffff' : '#f8fafc'));
             
-            // Build badges if applicable
             let badges = [];
             if (d.isWinDp) {
                 badges.push('<span style="background: #059669; color: white; font-size: 13px; font-weight: 900; padding: 5px 12px; border-radius: 6px; width: 85%;">▼ LOWEST DP</span>');
@@ -1646,7 +1612,6 @@ function doGenerateCustomerImage() {
             }
             let badgeHtml = badges.length > 0 ? `<div style="display: flex; flex-direction: column; gap: 4px; align-items: center; margin-top: 8px;">${badges.join('')}</div>` : '';
 
-            // Render Row with UNIFORM 30px FONT SIZE across all columns and rows
             html += `
                 <tr style="background: ${bgCol}; border-bottom: ${bBorder};">
                     <td style="padding: 22px 10px; text-align: center;">
@@ -1718,6 +1683,7 @@ function doGenerateCustomerImage() {
         }
     });
 }
+
 /* === DEALER LINKS WITH STAR (FAVORITES) & SECURE DIRECT LINK FEATURE === */
 let showingOnlyStarred = false;
 
@@ -1959,29 +1925,23 @@ async function forceRefreshMasterData() {
     if(updateDiv) updateDiv.style.display = 'none';
     showToast("✅ डेटा यशस्वीरित्या अपडेट झाला!", "success");
 }
-/* === ACTION DROPDOWN MENU CONTROLLER === */
-function toggleActionMenu(pIdx, dIdx, event) {
-    event.stopPropagation();
+
+/* === NEW USER-FRIENDLY ACTION MENU (BOTTOM SHEET) === */
+function openRowActionModal(pIdx, dIdx, isInactive) {
+    let container = document.getElementById('rowActionButtons');
     
-    // आधी सुरु असलेले इतर सगळे मेनू बंद करा
-    document.querySelectorAll('.act-menu-dropdown').forEach(el => {
-        if (el.id !== `actMenu_${pIdx}_${dIdx}`) {
-            el.style.display = 'none';
-        }
-    });
+    // Dynamic Buttons based on the selected row
+    container.innerHTML = `
+        <button onclick="copySchemeText(${pIdx}, ${dIdx}, this); closeRowActionModal();" style="background:#f8fafc; color:var(--dark); border:1px solid #cbd5e1; padding:14px; border-radius:8px; font-weight:900; font-size:14px; width:100%; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">📋 COPY SCHEME</button>
+        
+        <button onclick="openEditSchemeModal(${pIdx}, ${dIdx}); closeRowActionModal();" style="background:#fff7ed; color:#d97706; border:1px solid #fed7aa; padding:14px; border-radius:8px; font-weight:900; font-size:14px; width:100%; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">✏️ EDIT SCHEME</button>
+        
+        <button onclick="toggleInactive(${pIdx}, ${dIdx}); closeRowActionModal();" style="background:${isInactive ? '#ecfdf5' : '#fef2f2'}; color:${isInactive ? '#059669' : '#dc2626'}; border:1px solid ${isInactive ? '#a7f3d0' : '#fecaca'}; padding:14px; border-radius:8px; font-weight:900; font-size:14px; width:100%; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">${isInactive ? '✅ ADD TO ACTIVE' : '🚫 DISABLE SCHEME'}</button>
+    `;
     
-    // जो क्लिक केलाय तो टॉगल करा
-    let menu = document.getElementById(`actMenu_${pIdx}_${dIdx}`);
-    if(menu.style.display === 'none' || menu.style.display === '') {
-        menu.style.display = 'flex';
-    } else {
-        menu.style.display = 'none';
-    }
+    document.getElementById('rowActionModal').style.display = 'flex';
 }
 
-// स्क्रीनवर कुठेही बाहेर क्लिक केल्यास मेनू बंद होईल
-document.addEventListener('click', function() {
-    document.querySelectorAll('.act-menu-dropdown').forEach(el => {
-        el.style.display = 'none';
-    });
-});
+function closeRowActionModal() {
+    document.getElementById('rowActionModal').style.display = 'none';
+}
