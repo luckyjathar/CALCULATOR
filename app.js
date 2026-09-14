@@ -1120,7 +1120,53 @@ function selectModel(name) { if (!isLimitValid()) return; let raw = db_records.f
 function quickNonTieup() { if (!isLimitValid()) return; if(db_records.length === 0) { showToast("⚠️ Master database fetch me error hai!", "error"); return; } document.getElementById('addProductModal').style.display = 'none'; let tieup = db_records.filter(r => r.model === SPECIAL_MODEL); let cats = [...new Set(tieup.map(r => r.category))].sort(); document.getElementById('categoryGrid').innerHTML = cats.map(c => { let label = (c === 'PHONE(WEB-MOBILE)') ? 'PHONE, TABLET, SMART WATCH' : c; return `<div style="background:var(--indigo);color:white;padding:12px;border-radius:4px;cursor:pointer;font-weight:900;text-align:center;" onclick="selectCategory('${c}')">${label}</div>`; }).join(''); document.getElementById('catSelectionModal').style.display = 'flex'; }
 function selectCategory(catName) { document.getElementById('catSelectionModal').style.display = 'none'; let displayName = (catName === 'PHONE(WEB-MOBILE)') ? 'PHONE / TABLET / SMART WATCH' : catName; tempPendingProduct = { name: SPECIAL_MODEL + " - " + displayName, isNT: true, category: catName }; currentModalCategory = catName; finalizeProductAddition(); }
 
-function compMrpChanged() { let mrp = parseFloat(document.getElementById('compMrp').value) || 0; document.getElementById('compInv').value = mrp; let gtl = mrp > 100000 ? 2398 : (mrp > 50000 ? 1799 : (mrp > 30000 ? 1499 : (mrp > 10000 ? 1199 : (mrp > 0 ? 699 : 0)))); document.getElementById('compGtl').value = gtl; let rfcSlab = getRfcSlabValue(mrp); let rfcOpt = document.getElementById('compRfcOpt'); if(rfcOpt) { rfcOpt.value = rfcSlab; rfcOpt.innerText = rfcSlab; } if (isMobileDeviceCat(currentModalCategory)) { document.getElementById('compRfc').value = rfcSlab; } else { document.getElementById('compRfc').value = "0"; } }
+function compMrpChanged() { 
+    let mrp = parseFloat(document.getElementById('compMrp').value) || 0; 
+    document.getElementById('compInv').value = mrp; 
+    let gtl = mrp > 100000 ? 2398 : (mrp > 50000 ? 1799 : (mrp > 30000 ? 1499 : (mrp > 10000 ? 1199 : (mrp > 0 ? 699 : 0)))); 
+    document.getElementById('compGtl').value = gtl; 
+    let rfcSlab = getRfcSlabValue(mrp); 
+    let rfcOpt = document.getElementById('compRfcOpt'); 
+    
+    if(rfcOpt) { 
+        rfcOpt.value = rfcSlab; 
+        rfcOpt.innerText = rfcSlab; 
+    } 
+    
+    /* RFC Auto-select काढले आहे */
+    if (!isMobileDeviceCat(currentModalCategory)) { 
+        document.getElementById('compRfc').value = "0"; 
+    } 
+}
+
+function syncInsurance(pIdx, mrpVal, baseLoanVal, triggerType = 'NONE') {
+    let prod = current_products[pIdx]; 
+    let isPhoneWebMobile = isMobileDeviceCat(prod.category); 
+    let gtl = baseLoanVal > 100000 ? 2398 : (baseLoanVal > 50000 ? 1799 : (baseLoanVal > 30000 ? 1499 : (baseLoanVal > 10000 ? 1199 : (baseLoanVal > 0 ? 699 : 0)))); 
+    let rfcSlab = getRfcSlabValue(mrpVal); 
+    let inp = prod.inputs;
+    
+    if(triggerType === 'MRP' || triggerType === 'INV') { 
+        inp.gtl = gtl; 
+        /* MRP बदलल्यावर RFC Auto-update होणार नाही */
+    } else if (triggerType === 'LOAN') { 
+        inp.gtl = gtl; 
+    }
+    
+    let gSelect = document.getElementById(`gtl_${pIdx}`); 
+    let rOpt = document.getElementById(`rfc_opt_${pIdx}`); 
+    let rSelect = document.getElementById(`rfc_${pIdx}`); 
+    let exwInput = document.getElementById(`exw_${pIdx}`);
+    
+    if(gSelect) gSelect.value = inp.gtl; 
+    if(rOpt && isPhoneWebMobile) { rOpt.value = rfcSlab; rOpt.innerText = rfcSlab; } 
+    if(rSelect) { 
+        if(!isPhoneWebMobile) { 
+            rSelect.value = "0"; inp.rfc = 0; 
+        } 
+    } 
+    if(exwInput) { if(isPhoneWebMobile) { exwInput.value = ""; inp.exw = 0; } }
+}
 
 function showComponentsModal(baseMrp = "") {
     let c = customerQueue[activeCustomerIndex]; let rfcSelect = document.getElementById('compRfc'); let exwInput = document.getElementById('compExw'); let isMobileCat = isMobileDeviceCat(currentModalCategory);
@@ -1259,14 +1305,6 @@ function renderMatrix() {
     });
 }
 function instantSingleQuote(pIdx) { window.tempImageGenIndices = [pIdx]; requestWhatsAppDispatch = false; doGenerateCustomerImage(); }
-
-
-function syncInsurance(pIdx, mrpVal, baseLoanVal, triggerType = 'NONE') {
-    let prod = current_products[pIdx]; let isPhoneWebMobile = isMobileDeviceCat(prod.category); let gtl = baseLoanVal > 100000 ? 2398 : (baseLoanVal > 50000 ? 1799 : (baseLoanVal > 30000 ? 1499 : (baseLoanVal > 10000 ? 1199 : (baseLoanVal > 0 ? 699 : 0)))); let rfcSlab = getRfcSlabValue(mrpVal); let inp = prod.inputs;
-    if(triggerType === 'MRP' || triggerType === 'INV') { inp.gtl = gtl; if(triggerType === 'MRP') inp.rfc = isPhoneWebMobile ? rfcSlab : 0; } else if (triggerType === 'LOAN') { inp.gtl = gtl; }
-    let gSelect = document.getElementById(`gtl_${pIdx}`); let rOpt = document.getElementById(`rfc_opt_${pIdx}`); let rSelect = document.getElementById(`rfc_${pIdx}`); let exwInput = document.getElementById(`exw_${pIdx}`);
-    if(gSelect) gSelect.value = inp.gtl; if(rOpt && isPhoneWebMobile) { rOpt.value = rfcSlab; rOpt.innerText = rfcSlab; } if(rSelect) { if(isPhoneWebMobile) { rSelect.value = inp.rfc; } else { rSelect.value = "0"; inp.rfc = 0; } } if(exwInput) { if(isPhoneWebMobile) { exwInput.value = ""; inp.exw = 0; } }
-}
 
 function updateVal(pIdx, field, val) {
     let v = val === "" ? "" : parseFloat(val) || 0; current_products[pIdx].inputs[field] = v;
