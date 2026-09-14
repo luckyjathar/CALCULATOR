@@ -590,6 +590,9 @@ td.bound-col:nth-last-child(8) {
 .btn-remove { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; margin-left: auto; }
 
 .premium-model-panel .control-grid {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 15px !important;
     margin: 0;
     padding: 16px;
     background: #f8fafc;
@@ -598,6 +601,25 @@ td.bound-col:nth-last-child(8) {
     border-radius: 0;
 }
 
+.premium-model-panel .control-grid > div {
+    flex: 0 1 auto !important; /* बॉक्सला पूर्ण स्क्रीन पसरण्यापासून थांबवते */
+}
+
+/* इनपुट बॉक्सेसची जास्तीत जास्त लांबी सेट करणे */
+.premium-model-panel .control-grid input,
+.premium-model-panel .control-grid select {
+    width: 120px !important; 
+}
+
+@media (max-width: 768px) {
+    .premium-model-panel .control-grid {
+        justify-content: flex-start;
+    }
+    .premium-model-panel .control-grid input,
+    .premium-model-panel .control-grid select {
+        width: 140px !important; /* मोबाईलवर थोडे मोठे */
+    }
+}
 .pmp-table-wrapper {
     padding: 8px;
     background: #fff;
