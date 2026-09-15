@@ -77,6 +77,7 @@
     </div>
 </aside>
 
+<!-- ✅ एकमेव आणि योग्य हेडर (Single Clean Header) -->
 <header>
     <div style="display: flex; align-items: center; gap: 10px;">
         <button class="menu-toggle-btn" onclick="toggleSidebar()">☰ MENU</button>
@@ -84,7 +85,7 @@
     </div>
 </header>
 
-<!-- ⭐ NEW: TOP UTILITY QUICK TOOLS BAR ⭐ -->
+<!-- ⭐ TOP UTILITY QUICK TOOLS BAR ⭐ -->
 <div class="top-utility-bar">
     <button onclick="openZatpatCalcModal()" class="util-btn"><span>⚡</span> Zatpat Calc</button>
     <button onclick="openCustomerMessageModal()" class="util-btn"><span>💬</span> Send EMI</button>
@@ -92,11 +93,6 @@
     <button onclick="openDictionaryModal()" class="util-btn"><span>🔍</span> Dictionary</button>
     <button onclick="openFlyerGenModal()" class="util-btn"><span>📱</span> Flyer</button>
 </div>
-    <div style="display: flex; align-items: center; gap: 10px;">
-        <button class="menu-toggle-btn" onclick="toggleSidebar()">☰ MENU</button>
-        <h1>🚀 Persistent Portal Master</h1>
-    </div>
-</header>
 
 <main>
     <div id="unifiedHome">
@@ -488,7 +484,6 @@
             <h3 style="margin-top:0; color:var(--dark);">Add Manual Product (Up to 10 Schemes)</h3>
             <div style="margin-bottom: 12px; background: #f8f9fa; padding: 8px; border-radius: 6px; border: 1.5px solid #ccc;">
                 <label style="color: var(--indigo);">MODEL NAME (One for all schemes below)</label>
-                <!-- value काढून टाकले आहे -->
                 <input type="text" id="multiStackModelName" placeholder="Enter Product Model Name" value="">
             </div>
             <div class="stack-grid" id="stackInputsContainer"></div>
@@ -528,11 +523,9 @@
             <h3 id="modalTitle" style="margin-top:0;">Add Custom Scheme</h3>
             <div id="modelNameInputArea" style="display:none;">
                 <label>Model Name</label>
-                <!-- value काढून टाकले आहे -->
                 <input type="text" id="manName" placeholder="Enter Model Name" value="">
             </div>
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-top:8px;">
-                <!-- placeholders 0 केले आहेत -->
                 <div><label>TENURE (Max)</label><input type="number" id="manTen" placeholder="0"></div>
                 <div><label>ADVANCE</label><input type="number" id="manAdv" placeholder="0"></div>
                 <div><label>DBD %</label><input type="number" id="manDbd" placeholder="0"></div>
