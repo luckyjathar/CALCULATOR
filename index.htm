@@ -18,16 +18,50 @@
     
     <link rel="stylesheet" href="style.css?v=6.6">
 
-    <!-- 📱 MOBILE FRIENDLY RESPONSIVE CSS 📱 -->
+    <!-- 📱 MOBILE FRIENDLY & APP-NAV CSS 📱 -->
     <style>
-        /* सर्वसाधारण पेज सेटिंग */
-        body {
-            overflow-x: hidden; /* पेज आडवे सरकण्यापासून रोखते */
+        body { overflow-x: hidden; }
+
+        /* 🌟 App-like Navigation Bar for Header Options (Icon Only) 🌟 */
+        .top-utility-bar {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            background: #ffffff;
+            padding: 8px 5px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+            border-bottom: 2px solid #e2e8f0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        .top-utility-bar .util-btn {
+            background: transparent;
+            border: none;
+            font-size: 26px; /* मोठे आणि स्पष्ट आयकॉन्स */
+            padding: 8px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 50px;
+            height: 50px;
+        }
+        .top-utility-bar .util-btn:active {
+            background: #e0f2fe;
+            transform: scale(0.9);
+        }
+        @media (min-width: 769px) {
+            .top-utility-bar .util-btn:hover {
+                background: #f1f5f9;
+                transform: translateY(-3px);
+            }
         }
 
-        /* मोबाईल आणि टॅब्लेट स्क्रीनसाठी (७६८ पिक्सल्स पेक्षा कमी) */
+        /* मोबाईल आणि टॅब्लेट स्क्रीनसाठी */
         @media (max-width: 768px) {
-            /* मुख्य फॉर्म्स एकाखाली एक (Stack) करणे */
             .forms-row {
                 display: flex;
                 flex-direction: column !important;
@@ -38,8 +72,6 @@
                 margin: 0 !important;
                 min-width: unset !important;
             }
-            
-            /* हेडर मोबाईल फ्रेंडली करणे */
             header {
                 flex-direction: column;
                 align-items: flex-start !important;
@@ -50,46 +82,27 @@
                 font-size: 18px !important;
             }
             
-            /* टॉप युटिलिटी बार (मेनू) बटने ॲडजस्ट करणे */
-            .top-utility-bar {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 6px;
-                padding: 10px;
-                justify-content: center;
-            }
-            .top-utility-bar .util-btn {
-                flex: 1 1 30%; /* एका रांगेत ३ बटने */
-                padding: 10px 5px;
-                font-size: 12px !important;
-                border-radius: 6px;
-            }
-            
-            /* झटपट कॅल्क्युलेटरचे ग्रिड २ कॉलम्समध्ये करणे */
+            /* ग्रिड्स मोबाईलसाठी १ किंवा २ कॉलममध्ये बदलणे */
             #fastCalcContainer > div:nth-child(2) {
                 grid-template-columns: 1fr 1fr !important;
             }
-            
-            /* इतर मोडल मधील ग्रिड १ कॉलम करणे */
             #componentsModal .modal-content > div:nth-child(2),
             #manualModal .modal-content > div:nth-child(3),
             #editCustomerModal .modal-content > div:nth-child(5),
             #editSchemeModal .modal-content > div:nth-child(3) {
                 grid-template-columns: 1fr !important;
             }
-            
-            /* डिक्शनरीमधील सर्च बॉक्स एकाखाली एक करणे */
             #dictionarySearchModal .modal-content > div > div {
                 flex-direction: column !important;
             }
             
-            /* 👆 TOUCH TARGETS: बोटाने क्लिक करण्यासाठी इनपुट्स आणि बटने मोठी करणे */
+            /* Touch Targets: बोटाने क्लिक करायला सोपे */
             input[type="text"], input[type="number"], input[type="search"], input[type="date"], select, button {
                 min-height: 42px;
                 font-size: 14px;
             }
             
-            /* मॉडल्स (पॉपअप) मोबाईल स्क्रीनच्या ९५% रुंदीचे करणे */
+            /* मॉडल्स रुंदी ॲडजस्ट करणे */
             .modal-content {
                 width: 95% !important;
                 max-width: 100% !important;
@@ -98,8 +111,6 @@
                 max-height: 90vh;
                 overflow-y: auto;
             }
-
-            /* टेबल्स स्क्रीनच्या बाहेर जाऊ नयेत म्हणून हॉरिझॉन्टल स्क्रोल देणे */
             .table-wrapper {
                 width: 100%;
                 overflow-x: auto;
@@ -107,14 +118,15 @@
             }
         }
 
-        /* एकदम छोट्या मोबाईल स्क्रीनसाठी (४८० पिक्सल्स पेक्षा कमी) */
+        /* एकदम छोट्या स्क्रीनसाठी */
         @media (max-width: 480px) {
-            .top-utility-bar .util-btn {
-                flex: 1 1 45%; /* एका रांगेत फक्त २ बटने */
-            }
-            /* झटपट कॅल्क्युलेटर पूर्णपणे १ कॉलम (एकाखाली एक) करणे */
             #fastCalcContainer > div:nth-child(2) {
                 grid-template-columns: 1fr !important;
+            }
+            .top-utility-bar .util-btn {
+                font-size: 22px; /* छोट्या स्क्रीनवर थोडे ॲडजस्ट केले */
+                width: 45px;
+                height: 45px;
             }
         }
     </style>
@@ -152,7 +164,7 @@
 </div>
 
 <!-- ⭐ HEADER (Clean, Mobile Friendly) ⭐ -->
-<header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; padding: 12px 15px; background: #fff; border-bottom: 2px solid var(--bajaj-blue); gap: 15px;">
+<header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; padding: 12px 15px; background: #fff; border-bottom: 1px solid #e2e8f0; gap: 15px;">
     <h1 style="margin: 0; color: var(--bajaj-blue); font-size: 20px; display: flex; align-items: center; gap: 8px;">
         🚀 Persistent Portal
     </h1>
@@ -174,14 +186,14 @@
     </div>
 </header>
 
-<!-- ⭐ TOP UTILITY QUICK TOOLS BAR (Tab Switchers) ⭐ -->
+<!-- ⭐ TOP UTILITY QUICK TOOLS BAR (Icon Only App-Nav) ⭐ -->
 <div class="top-utility-bar">
-    <button onclick="toggleInline('unifiedHome')" class="util-btn"><span>👥</span> Customers</button>
-    <button onclick="toggleInline('zatpatCalcModal', openZatpatCalcModal)" class="util-btn"><span>⚡</span> Zatpat Calc</button>
-    <button onclick="toggleInline('customerMessageGenModal', openCustomerMessageModal)" class="util-btn"><span>💬</span> Send EMI</button>
-    <button onclick="toggleInline('dealerSearchModal', openDealerSearchModal)" class="util-btn"><span>🔗</span> Dealers</button>
-    <button onclick="toggleInline('dictionarySearchModal', openDictionaryModal)" class="util-btn"><span>🔍</span> Dictionary</button>
-    <button onclick="toggleInline('flyerGenModal', openFlyerGenModal)" class="util-btn"><span>📱</span> Flyer</button>
+    <button onclick="toggleInline('unifiedHome')" class="util-btn" title="Customers & Queue">👥</button>
+    <button onclick="toggleInline('zatpatCalcModal', openZatpatCalcModal)" class="util-btn" title="Zatpat Calculator">🧮</button>
+    <button onclick="toggleInline('customerMessageGenModal', openCustomerMessageModal)" class="util-btn" title="Send EMI Details">💬</button>
+    <button onclick="toggleInline('dealerSearchModal', openDealerSearchModal)" class="util-btn" title="Dealers Search">🏪</button>
+    <button onclick="toggleInline('dictionarySearchModal', openDictionaryModal)" class="util-btn" title="Schemes Dictionary">📖</button>
+    <button onclick="toggleInline('flyerGenModal', openFlyerGenModal)" class="util-btn" title="Generate Flyer">📢</button>
 </div>
 
 <main>
@@ -248,7 +260,6 @@
                 <h3 style="margin:0; color:var(--bajaj-blue); font-size:16px !important;"><span id="icon_fc">🧮</span> PRO ZATPAT CALCULATOR</h3>
                 <div style="display:flex; gap:10px; align-items:center;">
                     <button onclick="resetFastCalc()" style="background:var(--danger); color:white; padding:4px 10px; border-radius:4px; font-weight:bold; font-size:11px !important; letter-spacing:0.5px;">🔄 RESET</button>
-                    <!-- Close button goes back to 'Customers' tab -->
                     <button onclick="toggleInline('unifiedHome')" style="background:none; border:none; color:var(--danger); font-weight:bold; cursor:pointer; font-size:18px;">✖</button>
                 </div>
             </div>
