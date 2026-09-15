@@ -2,11 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <!-- App-like Viewport (झूम बंद करण्यासाठी) -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <!-- Android Chrome Theme Color (स्टेटस बारचा रंग) -->
     <meta name="theme-color" content="#1976D2">
-    <!-- iOS Safari App Mode -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Persistent Portal">
@@ -19,7 +16,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     
-    <!-- Link to our separate CSS file -->
     <link rel="stylesheet" href="style.css?v=6.6">
 </head>
 <body>
@@ -82,8 +78,11 @@
     </div>
 </header>
 
-<!-- ⭐ TOP UTILITY QUICK TOOLS BAR (Inline Toggles) ⭐ -->
+<!-- ⭐ TOP UTILITY QUICK TOOLS BAR (Tab Switchers) ⭐ -->
 <div class="top-utility-bar">
+    <!-- नवीन 'Customers' टॅब जो Add Customer आणि Queue उघडेल -->
+    <button onclick="toggleInline('unifiedHome')" class="util-btn"><span>👥</span> Customers</button>
+    
     <button onclick="toggleInline('zatpatCalcModal', openZatpatCalcModal)" class="util-btn"><span>⚡</span> Zatpat Calc</button>
     <button onclick="toggleInline('customerMessageGenModal', openCustomerMessageModal)" class="util-btn"><span>💬</span> Send EMI</button>
     <button onclick="toggleInline('dealerSearchModal', openDealerSearchModal)" class="util-btn"><span>🔗</span> Dealers</button>
@@ -94,8 +93,59 @@
 <main>
 
     <!-- ========================================== -->
-    <!-- ⭐ INLINE SECTIONS (INSTEAD OF POPUPS) ⭐ -->
+    <!-- ⭐ INLINE TABS (एकावेळी एकच उघडा राहील) ⭐ -->
     <!-- ========================================== -->
+
+    <!-- 0. CUSTOMERS / HOME INLINE (डिफॉल्ट चालू राहील) -->
+    <div id="unifiedHome" style="display: block;">
+        <div class="forms-row">
+            <div class="form-container" style="flex: 1; min-width: 250px; background: #e3f2fd; border: 2px solid var(--primary); margin-bottom:0; display: flex; flex-direction: column;">
+                <label style="color:var(--primary); font-size:13px !important; border-bottom:2px solid var(--primary); padding-bottom:4px; margin-bottom:8px; display:block;"><span id="icon_add">📝</span> ADD NEW CUSTOMER</label>
+                <div style="flex: 1;">
+                    <div style="display:none;">
+                        <label>MOBILE NO.</label>
+                        <input type="text" id="cqMobile" placeholder="10 Digits" maxlength="10" oninput="checkDuplicateMobile(this.value)">
+                        <div id="mobileDupWarning" style="color: var(--danger); font-size: 11px !important; font-weight: 900; display: none; margin-top: 3px; background: #ffebee; padding: 4px 6px; border-radius: 4px; border-left: 3px solid var(--danger);"></div>
+                    </div>
+                    <div style="margin-bottom:6px;"><label>CUSTOMER NAME</label><input type="text" id="cqName" placeholder="Enter Name"></div>
+                    <div style="margin-bottom:6px;"><label>CUSTOMER TYPE</label>
+                        <select id="cqType">
+                            <option value="NEW">NEW</option>
+                            <option value="EMI CARD">EMI CARD</option>
+                            <option value="VIRTUAL">VIRTUAL</option>
+                            <option value="W/O CARD">W/O CARD</option>
+                        </select>
+                    </div>
+                    <div style="margin-bottom:6px;"><label>NBFC LIMIT</label><input type="number" id="cqLimit" placeholder="₹ Amount"></div>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-bottom:10px;">
+                        <div><label>MAX LTV %</label><input type="number" id="cqLtv" value="100" max="100" oninput="if(this.value>100)this.value=100;"></div>
+                        <div><label>EMI CAPPING</label><input type="number" id="cqCap" placeholder="₹ Cap"></div>
+                    </div>
+                </div>
+                <button id="addToQueueBtn" onclick="addCustomerToQueue()" style="width:100%; background:var(--success); color:white; padding:10px; border-radius:4px; box-shadow: 0 2px 4px rgba(39, 174, 96, 0.3); margin-top: 8px;"><span id="icon_btn_add">➕</span> ADD TO QUEUE</button>
+            </div>
+            <div class="form-container" style="flex: 1.5; min-width: 280px; margin-bottom:0; border: 2px solid var(--bajaj-blue); box-sizing: border-box; display: flex; flex-direction: column;">
+                <label style="color:var(--bajaj-blue); font-size:13px !important; border-bottom:2px solid #ccc; padding-bottom:4px; margin-bottom:6px; display:block; text-align:center;">
+                    <span id="icon_queue">👥</span> SAVED CUSTOMERS QUEUE (<span id="queueCount">0</span>)
+                    <span onclick="openRecycleBin()" style="cursor:pointer; float:right; font-size:16px !important; background: #fff; border:1px solid #ccc; border-radius:4px; padding: 0 4px;" title="Recycle Bin">🗑️</span>
+                </label>
+                <input type="text" id="queueSearch" placeholder="🔍 Search saved customer by name, limit..." oninput="renderCustomerQueue()" style="margin-bottom: 6px; border-color:var(--bajaj-blue);">
+                <div id="customerQueueList" class="custom-scroll" style="display:flex; flex-direction:column; gap:6px; overflow-y:auto; flex:1; max-height: 250px; padding-right:4px;"></div>
+                <div style="display:flex; gap:4px; margin-top:8px; border-top:1px solid #ccc; padding-top:8px; flex-wrap:wrap;">
+                    <button id="uniCopyBtn" onclick="uniCopy()" style="flex:1; background:var(--warning); color:#000; opacity:0.5; pointer-events:none; padding:6px; font-size:11px !important;">📋 COPY</button>
+                    <button id="uniSelectBtn" onclick="uniSelect()" style="flex:1.2; background:var(--primary); color:white; opacity:0.5; pointer-events:none; padding:6px; font-size:11px !important;">▶ SELECT</button>
+                    <button id="uniEditBtn" onclick="uniEdit()" style="flex:1; background:var(--indigo); color:white; opacity:0.5; pointer-events:none; padding:6px; font-size:11px !important;">✏️ EDIT</button>
+                    <button id="uniDeleteBtn" onclick="uniDelete()" style="flex:1; background:var(--danger); color:white; opacity:0.5; pointer-events:none; padding:6px; font-size:11px !important;">✖ DEL</button>
+                    <button id="uniInviteBtn" onclick="uniInvite()" style="flex:1.2; background:#25D366; color:white; opacity:0.5; pointer-events:none; padding:6px; font-size:11px !important;">💬 INVITE</button>
+                </div>
+            </div>
+        </div>
+        <div class="action-box">
+            <div class="disclaimer-box">
+                <b>Disclaimer:</b> GitHub smart stream activated. System will only download files if updates are detected. Original application ke saath verify zaroor karein.
+            </div>
+        </div>
+    </div>
 
     <!-- 1. ZATPAT CALC INLINE -->
     <div id="zatpatCalcModal" style="display: none; width: 100%; margin-bottom: 15px; flex-direction: column; align-items: center;">
@@ -104,7 +154,8 @@
                 <h3 style="margin:0; color:var(--bajaj-blue); font-size:16px !important;"><span id="icon_fc">🧮</span> PRO ZATPAT CALCULATOR</h3>
                 <div style="display:flex; gap:10px; align-items:center;">
                     <button onclick="resetFastCalc()" style="background:var(--danger); color:white; padding:4px 10px; border-radius:4px; font-weight:bold; font-size:11px !important; letter-spacing:0.5px;">🔄 RESET</button>
-                    <button onclick="document.getElementById('zatpatCalcModal').style.display='none'" style="background:none; border:none; color:var(--danger); font-weight:bold; cursor:pointer; font-size:18px;">✖</button>
+                    <!-- Close button now goes back to 'Customers' tab -->
+                    <button onclick="toggleInline('unifiedHome')" style="background:none; border:none; color:var(--danger); font-weight:bold; cursor:pointer; font-size:18px;">✖</button>
                 </div>
             </div>
             
@@ -160,7 +211,7 @@
                     📥 DRAFTS <span id="draftBadge" style="background:var(--danger); color:white; border-radius:10px; padding:2px 6px; font-size:11px; line-height:1; min-width:12px; text-align:center;">0</span>
                 </button>
                 <h3 style="margin:0; color:var(--bajaj-blue); text-align:center; flex:1; position: absolute; width: 100%; left: 0; pointer-events: none;">💬 Send EMI Details</h3>
-                <button onclick="document.getElementById('customerMessageGenModal').style.display='none'" style="background:none; border:none; color:var(--danger); font-weight:bold; cursor:pointer; font-size:18px; margin-left: auto; z-index: 10;">✖</button>
+                <button onclick="toggleInline('unifiedHome')" style="background:none; border:none; color:var(--danger); font-weight:bold; cursor:pointer; font-size:18px; margin-left: auto; z-index: 10;">✖</button>
             </div>
             <div class="msg-section-title">1. Upload Delivery Order (PDF File):</div>
             <div class="msg-upload-box" onclick="document.getElementById('pdfInput').click()">
@@ -201,7 +252,7 @@
         <div style="background: #fff; padding: 20px; border: 2px solid var(--bajaj-blue); border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 440px; box-sizing: border-box;">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--bajaj-blue); padding-bottom: 8px; margin-bottom: 15px;">
                 <h3 style="margin:0; color:var(--bajaj-blue);">🔗 Generate Flyer Link</h3>
-                <button onclick="document.getElementById('flyerGenModal').style.display='none'" style="background:none; border:none; color:var(--danger); font-weight:bold; cursor:pointer; font-size:16px;">✖</button>
+                <button onclick="toggleInline('unifiedHome')" style="background:none; border:none; color:var(--danger); font-weight:bold; cursor:pointer; font-size:16px;">✖</button>
             </div>
             <div style="margin-bottom:10px;"><label>Salesman Name (Required)</label><input type="text" id="fgSalesName" placeholder="Lakshya"></div>
             <div style="display:none;"><label>WhatsApp Number (Required)</label><input type="text" id="fgSalesMobile" placeholder="10 Digit Mobile Number" maxlength="10"></div>
@@ -236,7 +287,7 @@
         <div style="background: #fff; padding: 20px; border: 2px solid var(--indigo); border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 950px; box-sizing: border-box; max-height: 80vh; overflow-y: auto;">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--indigo); padding-bottom: 8px; margin-bottom: 15px;">
                 <h3 style="margin:0; color:var(--indigo); font-size: 16px !important;">🔍 SMART SCHEMES DICTIONARY</h3>
-                <button onclick="document.getElementById('dictionarySearchModal').style.display='none'" style="background:none; border:none; color:var(--danger); font-weight:bold; cursor:pointer; font-size:18px; padding:0;">✖</button>
+                <button onclick="toggleInline('unifiedHome')" style="background:none; border:none; color:var(--danger); font-weight:bold; cursor:pointer; font-size:18px; padding:0;">✖</button>
             </div>
             
             <div style="background: #f0f7ff; border: 1.5px solid var(--primary); padding: 15px; border-radius: 6px; margin-bottom: 15px;">
@@ -315,7 +366,7 @@
         <div style="background: #fff; padding: 20px; border: 2px solid var(--bajaj-blue); border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 500px; box-sizing: border-box;">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--bajaj-blue); padding-bottom: 8px; margin-bottom: 15px;">
                 <h3 style="margin:0; color:var(--bajaj-blue);">🔗 Dealer Links Search</h3>
-                <button onclick="document.getElementById('dealerSearchModal').style.display='none'" style="background:none; border:none; color:var(--danger); font-weight:bold; cursor:pointer; font-size:18px;">✖</button>
+                <button onclick="toggleInline('unifiedHome')" style="background:none; border:none; color:var(--danger); font-weight:bold; cursor:pointer; font-size:18px;">✖</button>
             </div>
             
             <div style="display:flex; gap:8px; margin-bottom:12px;">
@@ -330,58 +381,7 @@
 
     <!-- ========================================== -->
 
-    <div id="unifiedHome">
-        <div class="forms-row">
-            <div class="form-container" style="flex: 1; min-width: 250px; background: #e3f2fd; border: 2px solid var(--primary); margin-bottom:0; display: flex; flex-direction: column;">
-                <label style="color:var(--primary); font-size:13px !important; border-bottom:2px solid var(--primary); padding-bottom:4px; margin-bottom:8px; display:block;"><span id="icon_add">📝</span> ADD NEW CUSTOMER</label>
-                <div style="flex: 1;">
-                    <div style="display:none;">
-                        <label>MOBILE NO.</label>
-                        <input type="text" id="cqMobile" placeholder="10 Digits" maxlength="10" oninput="checkDuplicateMobile(this.value)">
-                        <div id="mobileDupWarning" style="color: var(--danger); font-size: 11px !important; font-weight: 900; display: none; margin-top: 3px; background: #ffebee; padding: 4px 6px; border-radius: 4px; border-left: 3px solid var(--danger);"></div>
-                    </div>
-                    <div style="margin-bottom:6px;"><label>CUSTOMER NAME</label><input type="text" id="cqName" placeholder="Enter Name"></div>
-                    <div style="margin-bottom:6px;"><label>CUSTOMER TYPE</label>
-                        <select id="cqType">
-                            <option value="NEW">NEW</option>
-                            <option value="EMI CARD">EMI CARD</option>
-                            <option value="VIRTUAL">VIRTUAL</option>
-                            <option value="W/O CARD">W/O CARD</option>
-                        </select>
-                    </div>
-                    <div style="margin-bottom:6px;"><label>NBFC LIMIT</label><input type="number" id="cqLimit" placeholder="₹ Amount"></div>
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-bottom:10px;">
-                        <div><label>MAX LTV %</label><input type="number" id="cqLtv" value="100" max="100" oninput="if(this.value>100)this.value=100;"></div>
-                        <div><label>EMI CAPPING</label><input type="number" id="cqCap" placeholder="₹ Cap"></div>
-                    </div>
-                </div>
-                <button id="addToQueueBtn" onclick="addCustomerToQueue()" style="width:100%; background:var(--success); color:white; padding:10px; border-radius:4px; box-shadow: 0 2px 4px rgba(39, 174, 96, 0.3); margin-top: 8px;"><span id="icon_btn_add">➕</span> ADD TO QUEUE</button>
-            </div>
-            <div class="form-container" style="flex: 1.5; min-width: 280px; margin-bottom:0; border: 2px solid var(--bajaj-blue); box-sizing: border-box; display: flex; flex-direction: column;">
-                <label style="color:var(--bajaj-blue); font-size:13px !important; border-bottom:2px solid #ccc; padding-bottom:4px; margin-bottom:6px; display:block; text-align:center;">
-                    <span id="icon_queue">👥</span> SAVED CUSTOMERS QUEUE (<span id="queueCount">0</span>)
-                    <span onclick="openRecycleBin()" style="cursor:pointer; float:right; font-size:16px !important; background: #fff; border:1px solid #ccc; border-radius:4px; padding: 0 4px;" title="Recycle Bin">🗑️</span>
-                </label>
-                <input type="text" id="queueSearch" placeholder="🔍 Search saved customer by name, limit..." oninput="renderCustomerQueue()" style="margin-bottom: 6px; border-color:var(--bajaj-blue);">
-                <div id="customerQueueList" class="custom-scroll" style="display:flex; flex-direction:column; gap:6px; overflow-y:auto; flex:1; max-height: 250px; padding-right:4px;"></div>
-                <div style="display:flex; gap:4px; margin-top:8px; border-top:1px solid #ccc; padding-top:8px; flex-wrap:wrap;">
-                    <button id="uniCopyBtn" onclick="uniCopy()" style="flex:1; background:var(--warning); color:#000; opacity:0.5; pointer-events:none; padding:6px; font-size:11px !important;">📋 COPY</button>
-                    <button id="uniSelectBtn" onclick="uniSelect()" style="flex:1.2; background:var(--primary); color:white; opacity:0.5; pointer-events:none; padding:6px; font-size:11px !important;">▶ SELECT</button>
-                    <button id="uniEditBtn" onclick="uniEdit()" style="flex:1; background:var(--indigo); color:white; opacity:0.5; pointer-events:none; padding:6px; font-size:11px !important;">✏️ EDIT</button>
-                    <button id="uniDeleteBtn" onclick="uniDelete()" style="flex:1; background:var(--danger); color:white; opacity:0.5; pointer-events:none; padding:6px; font-size:11px !important;">✖ DEL</button>
-                    <button id="uniInviteBtn" onclick="uniInvite()" style="flex:1.2; background:#25D366; color:white; opacity:0.5; pointer-events:none; padding:6px; font-size:11px !important;">💬 INVITE</button>
-                </div>
-            </div>
-        </div>
-
-        <div class="action-box">
-            <div class="disclaimer-box">
-                <b>Disclaimer:</b> GitHub smart stream activated. System will only download files if updates are detected. Original application ke saath verify zaroor karein.
-            </div>
-        </div>
-    </div>
-
-    <!-- SEPARATE DRAFTS MODAL (He Modal thevlet karan te sub-menu ahe) -->
+    <!-- SEPARATE DRAFTS MODAL -->
     <div id="draftsModal" class="modal">
         <div class="modal-content" style="max-width: 500px; padding: 20px;">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--warning); padding-bottom: 8px; margin-bottom: 15px;">
@@ -578,7 +578,7 @@
             <button onclick="goHome()" style="flex:0.8; background:var(--danger); color:white;">✖ BACK</button>
         </div>
         
-        <!-- COMPACT ACTIVE CUSTOMER INFO CARD (For Web UI) -->
+        <!-- COMPACT ACTIVE CUSTOMER INFO CARD -->
         <div style="background: #253241; border-radius: 8px; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.2); margin-bottom: 12px; border: 1px solid #3b4b5e;">
             
             <div style="display: flex; align-items: center; gap: 12px;">
@@ -633,20 +633,23 @@
     </div>
 </footer>
 
-<!-- 🌟 INLINE TOGGLE LOGIC SCRIPT 🌟 -->
+<!-- 🌟 INLINE TAB SWITCHER LOGIC 🌟 -->
 <script>
     function toggleInline(id, openFunc) {
-        let el = document.getElementById(id);
-        let isCurrentlyOpen = (el.style.display === 'flex' || el.style.display === 'block');
-        
-        // आधी उघडे असलेले सगळे इन्लाईन विभाग लपवा (Hide all others)
-        ['zatpatCalcModal', 'customerMessageGenModal', 'dealerSearchModal', 'dictionarySearchModal', 'flyerGenModal'].forEach(modId => {
+        // सर्व इन्लाईन टॅब आधी लपवा (Hide all tabs)
+        ['unifiedHome', 'zatpatCalcModal', 'customerMessageGenModal', 'dealerSearchModal', 'dictionarySearchModal', 'flyerGenModal'].forEach(modId => {
             let mod = document.getElementById(modId);
             if(mod) mod.style.display = 'none';
         });
 
-        // जर तो विभाग आधीच बंद असेल, तर त्याला उघडण्यासाठी फंक्शन कॉल करा
-        if(!isCurrentlyOpen && typeof openFunc === 'function') {
+        // आता जो टॅब सिलेक्ट केलाय तो दाखवा
+        let el = document.getElementById(id);
+        if(el) {
+            el.style.display = (id === 'unifiedHome') ? 'block' : 'flex'; 
+        }
+
+        // सिलेक्ट केलेल्या टॅबचं विशेष फंक्शन रन करा
+        if(typeof openFunc === 'function') {
             openFunc();
         }
     }
