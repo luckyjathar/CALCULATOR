@@ -124,7 +124,7 @@
                 grid-template-columns: 1fr !important;
             }
             .top-utility-bar .util-btn {
-                font-size: 22px; 
+                font-size: 22px; /* छोट्या स्क्रीनवर थोडे ॲडजस्ट केले */
                 width: 45px;
                 height: 45px;
             }
@@ -147,8 +147,8 @@
         <h3 style="margin-top:0; color:var(--bajaj-blue);" id="confirmTitle">⚠️ Confirm</h3>
         <p id="confirmMessage" style="font-size:14px; margin-bottom:20px; color:#444; font-weight:bold;"></p>
         <div style="display:flex; gap:10px;">
-            <button id="confirmYesBtn" style="flex:1; background:var(--success); color:white; padding:10px; font-size:14px !important;">✅ YES</button>
-            <button id="confirmNoBtn" style="flex:1; background:var(--danger); color:white; padding:10px; font-size:14px !important;">❌ NO</button>
+            <button id="confirmYesBtn" style="flex:1; background:var(--success); color:white; padding:10px; font-size:14px !important;">YES</button>
+            <button id="confirmNoBtn" style="flex:1; background:var(--danger); color:white; padding:10px; font-size:14px !important;">NO</button>
         </div>
     </div>
 </div>
@@ -159,7 +159,7 @@
         <h3 style="margin-top:0; color:var(--danger);" id="alertTitle">⚠️ Notice</h3>
         <p id="alertMessage" style="font-size:14px; margin-bottom:10px; color:#444; font-weight:bold;"></p>
         <textarea id="alertTextarea" readonly style="width:100%; height:100px; font-size:12px; margin-bottom:10px; display:none; border:1px dashed #ccc; padding:5px; border-radius:4px;"></textarea>
-        <button onclick="document.getElementById('customAlertModal').style.display='none'" style="width:100%; background:var(--primary); color:white; padding:10px; font-size:14px !important;">👍 OK</button>
+        <button onclick="document.getElementById('customAlertModal').style.display='none'" style="width:100%; background:var(--primary); color:white; padding:10px; font-size:14px !important;">OK</button>
     </div>
 </div>
 
@@ -209,12 +209,12 @@
                 <label style="color:var(--primary); font-size:13px !important; border-bottom:2px solid var(--primary); padding-bottom:4px; margin-bottom:8px; display:block;"><span id="icon_add">📝</span> ADD NEW CUSTOMER</label>
                 <div style="flex: 1;">
                     <div style="display:none;">
-                        <label>📱 MOBILE NO.</label>
+                        <label>MOBILE NO.</label>
                         <input type="text" id="cqMobile" placeholder="10 Digits" maxlength="10" oninput="checkDuplicateMobile(this.value)">
                         <div id="mobileDupWarning" style="color: var(--danger); font-size: 11px !important; font-weight: 900; display: none; margin-top: 3px; background: #ffebee; padding: 4px 6px; border-radius: 4px; border-left: 3px solid var(--danger);"></div>
                     </div>
-                    <div style="margin-bottom:6px;"><label>👤 CUSTOMER NAME</label><input type="text" id="cqName" placeholder="Enter Name"></div>
-                    <div style="margin-bottom:6px;"><label>🏷️ CUSTOMER TYPE</label>
+                    <div style="margin-bottom:6px;"><label>CUSTOMER NAME</label><input type="text" id="cqName" placeholder="Enter Name"></div>
+                    <div style="margin-bottom:6px;"><label>CUSTOMER TYPE</label>
                         <select id="cqType">
                             <option value="NEW">NEW</option>
                             <option value="EMI CARD">EMI CARD</option>
@@ -222,10 +222,10 @@
                             <option value="W/O CARD">W/O CARD</option>
                         </select>
                     </div>
-                    <div style="margin-bottom:6px;"><label>💰 NBFC LIMIT (₹)</label><input type="number" id="cqLimit" placeholder="₹ Amount"></div>
+                    <div style="margin-bottom:6px;"><label>NBFC LIMIT</label><input type="number" id="cqLimit" placeholder="₹ Amount"></div>
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-bottom:10px;">
-                        <div><label>📈 MAX LTV %</label><input type="number" id="cqLtv" value="100" max="100" oninput="if(this.value>100)this.value=100;"></div>
-                        <div><label>🛑 EMI CAPPING</label><input type="number" id="cqCap" placeholder="₹ Cap"></div>
+                        <div><label>MAX LTV %</label><input type="number" id="cqLtv" value="100" max="100" oninput="if(this.value>100)this.value=100;"></div>
+                        <div><label>EMI CAPPING</label><input type="number" id="cqCap" placeholder="₹ Cap"></div>
                     </div>
                 </div>
                 <button id="addToQueueBtn" onclick="addCustomerToQueue()" style="width:100%; background:var(--success); color:white; padding:10px; border-radius:4px; box-shadow: 0 2px 4px rgba(39, 174, 96, 0.3); margin-top: 8px;"><span id="icon_btn_add">➕</span> ADD TO QUEUE</button>
@@ -239,16 +239,16 @@
                 <div id="customerQueueList" class="custom-scroll" style="display:flex; flex-direction:column; gap:6px; overflow-y:auto; flex:1; max-height: 250px; padding-right:4px;"></div>
                 <div style="display:flex; gap:4px; margin-top:8px; border-top:1px solid #ccc; padding-top:8px; flex-wrap:wrap;">
                     <button id="uniCopyBtn" onclick="uniCopy()" style="flex:1; background:var(--warning); color:#000; opacity:0.5; pointer-events:none; padding:6px; font-size:11px !important;">📋 COPY</button>
-                    <button id="uniSelectBtn" onclick="uniSelect()" style="flex:1.2; background:var(--primary); color:white; opacity:0.5; pointer-events:none; padding:6px; font-size:11px !important;">▶️ SELECT</button>
+                    <button id="uniSelectBtn" onclick="uniSelect()" style="flex:1.2; background:var(--primary); color:white; opacity:0.5; pointer-events:none; padding:6px; font-size:11px !important;">▶ SELECT</button>
                     <button id="uniEditBtn" onclick="uniEdit()" style="flex:1; background:var(--indigo); color:white; opacity:0.5; pointer-events:none; padding:6px; font-size:11px !important;">✏️ EDIT</button>
-                    <button id="uniDeleteBtn" onclick="uniDelete()" style="flex:1; background:var(--danger); color:white; opacity:0.5; pointer-events:none; padding:6px; font-size:11px !important;">🗑️ DEL</button>
+                    <button id="uniDeleteBtn" onclick="uniDelete()" style="flex:1; background:var(--danger); color:white; opacity:0.5; pointer-events:none; padding:6px; font-size:11px !important;">✖ DEL</button>
                     <button id="uniInviteBtn" onclick="uniInvite()" style="flex:1.2; background:#25D366; color:white; opacity:0.5; pointer-events:none; padding:6px; font-size:11px !important;">💬 INVITE</button>
                 </div>
             </div>
         </div>
         <div class="action-box">
             <div class="disclaimer-box">
-                <b>💡 Disclaimer:</b> GitHub smart stream activated. System will only download files if updates are detected. Original application ke saath verify zaroor karein.
+                <b>Disclaimer:</b> GitHub smart stream activated. System will only download files if updates are detected. Original application ke saath verify zaroor karein.
             </div>
         </div>
     </div>
@@ -260,42 +260,41 @@
                 <h3 style="margin:0; color:var(--bajaj-blue); font-size:16px !important;"><span id="icon_fc">🧮</span> PRO ZATPAT CALCULATOR</h3>
                 <div style="display:flex; gap:10px; align-items:center;">
                     <button onclick="resetFastCalc()" style="background:var(--danger); color:white; padding:4px 10px; border-radius:4px; font-weight:bold; font-size:11px !important; letter-spacing:0.5px;">🔄 RESET</button>
-                    <!-- Close button goes back to 'Customers' tab -->
-                    <button onclick="toggleInline('unifiedHome')" style="background:none; border:none; color:var(--danger); font-weight:bold; cursor:pointer; font-size:18px;">❌</button>
+                    <button onclick="toggleInline('unifiedHome')" style="background:none; border:none; color:var(--danger); font-weight:bold; cursor:pointer; font-size:18px;">✖</button>
                 </div>
             </div>
             
             <div id="fastCalcContainer">
                 <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:6px; margin-bottom:12px; background: #f8f9fa; padding: 10px; border-radius: 6px; border: 1px solid #eee;">
                     <div style="grid-column: span 3; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom:4px;">
-                        <div><label style="color:var(--primary);">🧾 INVOICE / MRP (₹)</label><input type="number" id="fcInv" placeholder="Enter Amount" style="border-color:var(--primary);" oninput="fcInvChanged();"></div>
-                        <div><label style="color:var(--primary);">💵 LOAN AMOUNT (₹)</label><input type="number" id="fcLoanInput" placeholder="Loan Amount (Default 100%)" style="border-color:var(--primary);" oninput="calculateFastData();" onchange="validateFastLoanMin();" onblur="validateFastLoanMin();"></div>
+                        <div><label style="color:var(--primary);">INVOICE AMOUNT / MRP (₹)</label><input type="number" id="fcInv" placeholder="Enter Amount" style="border-color:var(--primary);" oninput="fcInvChanged();"></div>
+                        <div><label style="color:var(--primary);">LOAN AMOUNT (₹)</label><input type="number" id="fcLoanInput" placeholder="Loan Amount (Default 100%)" style="border-color:var(--primary);" oninput="calculateFastData();" onchange="validateFastLoanMin();" onblur="validateFastLoanMin();"></div>
                     </div>
-                    <div><label>🗓️ TENURE (Max)</label><input type="number" id="fcTenure" placeholder="0" oninput="calculateFastData();"></div>
-                    <div><label>💸 ADVANCE EMI</label><input type="number" id="fcAdv" placeholder="0" oninput="calculateFastData();"></div>
-                    <div><label>📉 DBD (%)</label><input type="number" id="fcDbd" placeholder="0" step="0.01" oninput="calculateFastData();"></div>
-                    <div><label>⚙️ PF (₹)</label><input type="number" id="fcPf" placeholder="0" oninput="calculateFastData();"></div>
-                    <div><label>📈 ROI (%)</label><input type="number" id="fcRoi" placeholder="0" step="0.01" oninput="calculateFastData();"></div>
-                    <div><label>🏷️ CUSTOMER TYPE</label>
+                    <div><label>TENURE (Max)</label><input type="number" id="fcTenure" placeholder="0" oninput="calculateFastData();"></div>
+                    <div><label>ADVANCE EMI</label><input type="number" id="fcAdv" placeholder="0" oninput="calculateFastData();"></div>
+                    <div><label>DBD (%)</label><input type="number" id="fcDbd" placeholder="0" step="0.01" oninput="calculateFastData();"></div>
+                    <div><label>PF (₹)</label><input type="number" id="fcPf" placeholder="0" oninput="calculateFastData();"></div>
+                    <div><label>ROI (%)</label><input type="number" id="fcRoi" placeholder="0" step="0.01" oninput="calculateFastData();"></div>
+                    <div><label>CUSTOMER TYPE</label>
                         <select id="fcCustType" onchange="calculateFastData();">
                             <option value="NEW">NEW</option><option value="EMI CARD">EMI CARD</option><option value="VIRTUAL">VIRTUAL</option><option value="W/O CARD">W/O CARD</option>
                         </select>
                     </div>
                     <div style="grid-column: span 3; border-top: 1px dashed #ccc; margin-top:4px; padding-top:6px;"></div>
-                    <div><label>📌 FIXED EMI (₹)</label><input type="number" id="fcFixed" placeholder="Optional" oninput="calculateFastData();"></div>
-                    <div><label>🛑 EMI CAPPING</label><input type="number" id="fcCap" placeholder="MAX" oninput="calculateFastData();"></div>
-                    <div><label>🎯 TARGET DP (₹)</label><input type="number" id="fcTarget" placeholder="Reverse Calc" oninput="calculateFastData();"></div>
+                    <div><label>FIXED EMI (₹)</label><input type="number" id="fcFixed" placeholder="Optional" oninput="calculateFastData();"></div>
+                    <div><label>EMI CAPPING</label><input type="number" id="fcCap" placeholder="MAX" oninput="calculateFastData();"></div>
+                    <div><label>TARGET DP (₹)</label><input type="number" id="fcTarget" placeholder="Reverse Calc" oninput="calculateFastData();"></div>
                     <div style="grid-column: span 3; border-top: 1px dashed #ccc; margin-top:4px; padding-top:6px;"><label style="color:var(--indigo);">🛡️ INSURANCE & COMPONENTS</label></div>
-                    <div><label>📦 CATEGORY</label><select id="fcCat" onchange="fcCatChanged();"><option value="OTHER">OTHER</option><option value="PHONE(WEB-MOBILE)">PHONE, TABLET, SMART WATCH</option></select></div>
-                    <div><label>🛡️ GTL (₹)</label>
+                    <div><label>CATEGORY</label><select id="fcCat" onchange="fcCatChanged();"><option value="OTHER">OTHER</option><option value="PHONE(WEB-MOBILE)">PHONE, TABLET, SMART WATCH</option></select></div>
+                    <div><label>GTL (₹)</label>
                         <select id="fcGtl" onchange="calculateFastData();">
                             <option value="0">0</option><option value="699">699</option><option value="1099">1099</option><option value="1199">1199</option><option value="1499">1499</option><option value="1799">1799</option><option value="2398">2398</option>
                         </select>
                     </div>
-                    <div><label>📄 RFC (₹)</label><select id="fcRfc" onchange="calculateFastData();" disabled style="background:#e9ecef; cursor:not-allowed;"><option value="0">0</option><option id="fcRfcOpt" value="0">0</option></select></div>
-                    <div><label>🔧 EXW (₹)</label><input type="number" id="fcExw" placeholder="0" oninput="calculateFastData();"></div>
-                    <div><label>🤑 MARGIN (₹)</label><input type="number" id="fcMargin" placeholder="0" oninput="calculateFastData();"></div>
-                    <div><label>🏪 DEALER (₹)</label><input type="number" id="fcDealer" placeholder="0" oninput="calculateFastData();"></div>
+                    <div><label>RFC (₹)</label><select id="fcRfc" onchange="calculateFastData();" disabled style="background:#e9ecef; cursor:not-allowed;"><option value="0">0</option><option id="fcRfcOpt" value="0">0</option></select></div>
+                    <div><label>EXW (₹)</label><input type="number" id="fcExw" placeholder="0" oninput="calculateFastData();"></div>
+                    <div><label>MARGIN (₹)</label><input type="number" id="fcMargin" placeholder="0" oninput="calculateFastData();"></div>
+                    <div><label>DEALER (₹)</label><input type="number" id="fcDealer" placeholder="0" oninput="calculateFastData();"></div>
                 </div>
                 <div id="fcResult" style="display:none; margin-top:12px; background:#fff; border:2px solid var(--primary); padding:10px; border-radius:6px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
                     <div style="display:flex; justify-content:space-between; margin-bottom:6px; border-bottom:1px solid #eee; padding-bottom:4px;"><span style="font-weight:900; color:#555;">LOAN AMOUNT:</span> <span id="fcResLoan" style="color:var(--dark); font-weight:900;">₹0</span></div>
@@ -317,7 +316,7 @@
                     📥 DRAFTS <span id="draftBadge" style="background:var(--danger); color:white; border-radius:10px; padding:2px 6px; font-size:11px; line-height:1; min-width:12px; text-align:center;">0</span>
                 </button>
                 <h3 style="margin:0; color:var(--bajaj-blue); text-align:center; flex:1; position: absolute; width: 100%; left: 0; pointer-events: none;">💬 Send EMI Details</h3>
-                <button onclick="toggleInline('unifiedHome')" style="background:none; border:none; color:var(--danger); font-weight:bold; cursor:pointer; font-size:18px; margin-left: auto; z-index: 10;">❌</button>
+                <button onclick="toggleInline('unifiedHome')" style="background:none; border:none; color:var(--danger); font-weight:bold; cursor:pointer; font-size:18px; margin-left: auto; z-index: 10;">✖</button>
             </div>
             <div class="msg-section-title">1. Upload Delivery Order (PDF File):</div>
             <div class="msg-upload-box" onclick="document.getElementById('pdfInput').click()">
@@ -328,15 +327,15 @@
             <div id="pdfStatus" style="font-size: 12px; font-weight: bold; margin-bottom: 10px;"></div>
             <div class="msg-section-title">2. Customer Details (Verify & Edit if required):</div>
             <div class="msg-grid">
-                <div class="msg-form-group"><label>🏪 Dealer / Shop Name:</label><input type="text" id="msgShopName" value="" placeholder="Enter Dealer / Shop Name" oninput="generateMessage()"></div>
-                <div class="msg-form-group"><label>📦 Asset Category:</label><input type="text" id="msgAssetCategory" value="" placeholder="Enter Category (e.g. PHONE)" oninput="generateMessage()"></div>
-                <div class="msg-form-group"><label>👤 Customer Name:</label><input type="text" id="msgCustName" value="" placeholder="Enter Customer Name" oninput="generateMessage()"></div>
-                <div class="msg-form-group" style="display:none;"><label>📱 Mobile Number:</label><input type="text" id="msgCustMobile" value="" placeholder="10 Digits" maxlength="10" oninput="generateMessage()"></div>
-                <div class="msg-form-group"><label>💰 Monthly EMI (₹):</label><input type="number" id="msgCustEMI" value="" placeholder="0" oninput="generateMessage()"></div>
-                <div class="msg-form-group"><label>🗓️ Total Tenure (Months):</label><input type="number" id="msgCustTenure" value="" placeholder="0" oninput="generateMessage()"></div>
-                <div class="msg-form-group"><label>📅 Loan Approval Date:</label><input type="date" id="msgLoanDate" value="" onchange="calculateDates()"></div>
-                <div class="msg-form-group"><label>🟢 EMI Start Date:</label><input type="text" id="msgStartDate" value="" placeholder="Auto-calculated" readonly style="background:#e9ecef; font-weight:bold;"></div>
-                <div class="msg-form-group"><label>🔴 EMI End Date:</label><input type="text" id="msgEndDate" value="" placeholder="Auto-calculated" readonly style="background:#e9ecef; font-weight:bold;"></div>
+                <div class="msg-form-group"><label>Dealer / Shop Name:</label><input type="text" id="msgShopName" value="" placeholder="Enter Dealer / Shop Name" oninput="generateMessage()"></div>
+                <div class="msg-form-group"><label>Asset Category:</label><input type="text" id="msgAssetCategory" value="" placeholder="Enter Category (e.g. PHONE)" oninput="generateMessage()"></div>
+                <div class="msg-form-group"><label>Customer Name:</label><input type="text" id="msgCustName" value="" placeholder="Enter Customer Name" oninput="generateMessage()"></div>
+                <div class="msg-form-group" style="display:none;"><label>Mobile Number:</label><input type="text" id="msgCustMobile" value="" placeholder="10 Digits" maxlength="10" oninput="generateMessage()"></div>
+                <div class="msg-form-group"><label>Monthly EMI Amount (₹):</label><input type="number" id="msgCustEMI" value="" placeholder="0" oninput="generateMessage()"></div>
+                <div class="msg-form-group"><label>Total Tenure (Months):</label><input type="number" id="msgCustTenure" value="" placeholder="0" oninput="generateMessage()"></div>
+                <div class="msg-form-group"><label>Loan Approval Date:</label><input type="date" id="msgLoanDate" value="" onchange="calculateDates()"></div>
+                <div class="msg-form-group"><label>EMI Start Date:</label><input type="text" id="msgStartDate" value="" placeholder="Auto-calculated" readonly style="background:#e9ecef; font-weight:bold;"></div>
+                <div class="msg-form-group"><label>EMI End Date:</label><input type="text" id="msgEndDate" value="" placeholder="Auto-calculated" readonly style="background:#e9ecef; font-weight:bold;"></div>
             </div>
             <div class="msg-lang-selector">
                 <div class="msg-form-group"><label style="color: #856404; font-size: 13px;">🌐 Select WhatsApp Message Language:</label>
@@ -358,10 +357,10 @@
         <div style="background: #fff; padding: 20px; border: 2px solid var(--bajaj-blue); border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 440px; box-sizing: border-box;">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--bajaj-blue); padding-bottom: 8px; margin-bottom: 15px;">
                 <h3 style="margin:0; color:var(--bajaj-blue);">🔗 Generate Flyer Link</h3>
-                <button onclick="toggleInline('unifiedHome')" style="background:none; border:none; color:var(--danger); font-weight:bold; cursor:pointer; font-size:16px;">❌</button>
+                <button onclick="toggleInline('unifiedHome')" style="background:none; border:none; color:var(--danger); font-weight:bold; cursor:pointer; font-size:16px;">✖</button>
             </div>
-            <div style="margin-bottom:10px;"><label>👨‍💼 Salesman Name (Required)</label><input type="text" id="fgSalesName" placeholder="Lakshya"></div>
-            <div style="display:none;"><label>📱 WhatsApp Number (Required)</label><input type="text" id="fgSalesMobile" placeholder="10 Digit Mobile Number" maxlength="10"></div>
+            <div style="margin-bottom:10px;"><label>Salesman Name (Required)</label><input type="text" id="fgSalesName" placeholder="Lakshya"></div>
+            <div style="display:none;"><label>WhatsApp Number (Required)</label><input type="text" id="fgSalesMobile" placeholder="10 Digit Mobile Number" maxlength="10"></div>
             <div style="margin-bottom:10px; background: #f8f9fa; padding: 10px; border: 1.5px solid var(--bajaj-blue); border-radius: 6px;">
                 <label style="color:var(--bajaj-blue);">🏪 Select Dealer Shop (Compulsory)</label>
                 <input type="text" id="fgDealerSearch" placeholder="Search Dealer Name, City or Code..." oninput="searchFgDealer()">
@@ -379,7 +378,7 @@
                 <div id="fgModelList" class="custom-scroll" style="max-height:100px; overflow-y:auto; margin-top:5px;"></div>
                 <div id="fgSelectedModelBox" style="display:none; margin-top:8px; padding:8px; background:#fff; border:1px solid #9e9d24; border-radius:4px; font-weight:bold; color:#827717;"></div>
             </div>
-            <button onclick="generateFlyer()" style="width:100%; background:var(--primary); color:white; padding:10px; font-size:14px !important; margin-bottom:8px;">➡️ GENERATE & VIEW LINK</button>
+            <button onclick="generateFlyer()" style="width:100%; background:var(--primary); color:white; padding:10px; font-size:14px !important; margin-bottom:8px;">GENERATE & VIEW LINK</button>
             <div id="flyerGeneratedLinkBox" style="display:none; text-align:center;">
                 <textarea id="fgGeneratedLinkText" readonly style="width:100%; height:60px; padding:8px; font-size:12px; border:2px dashed var(--success); background:#f4fcf6; border-radius:4px; resize:none;"></textarea>
                 <button onclick="copyFlyerLink()" style="width:100%; background:var(--success); color:white; margin-top:5px; padding:8px; border-radius:4px;">📋 COPY LINK</button>
@@ -393,7 +392,7 @@
         <div style="background: #fff; padding: 20px; border: 2px solid var(--indigo); border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 950px; box-sizing: border-box; max-height: 80vh; overflow-y: auto;">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--indigo); padding-bottom: 8px; margin-bottom: 15px;">
                 <h3 style="margin:0; color:var(--indigo); font-size: 16px !important;">🔍 SMART SCHEMES DICTIONARY</h3>
-                <button onclick="toggleInline('unifiedHome')" style="background:none; border:none; color:var(--danger); font-weight:bold; cursor:pointer; font-size:18px; padding:0;">❌</button>
+                <button onclick="toggleInline('unifiedHome')" style="background:none; border:none; color:var(--danger); font-weight:bold; cursor:pointer; font-size:18px; padding:0;">✖</button>
             </div>
             
             <div style="background: #f0f7ff; border: 1.5px solid var(--primary); padding: 15px; border-radius: 6px; margin-bottom: 15px;">
@@ -401,7 +400,7 @@
                 
                 <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
                     <div style="flex: 1; min-width: 140px;">
-                        <label style="font-size:10px; font-weight:bold; color:var(--indigo); display:block; margin-bottom:3px;">🏷️ 1. CUSTOMER TYPE</label>
+                        <label style="font-size:10px; font-weight:bold; color:var(--indigo); display:block; margin-bottom:3px;">1. CUSTOMER TYPE</label>
                         <select id="calcCustType" onchange="recalcCurrentModel()" style="width:100%; padding:8px; font-size:13px; border:1px solid #ccc; border-radius:4px; font-weight:bold;">
                             <option value="NEW">NEW</option>
                             <option value="EMI CARD">EMI CARD</option>
@@ -410,38 +409,38 @@
                         </select>
                     </div>
                     <div style="flex: 1; min-width: 140px;">
-                        <label style="font-size:10px; font-weight:bold; color:var(--indigo); display:block; margin-bottom:3px;">💰 2. APPROVED LIMIT (₹)</label>
+                        <label style="font-size:10px; font-weight:bold; color:var(--indigo); display:block; margin-bottom:3px;">2. APPROVED LIMIT (₹)</label>
                         <input type="number" id="calcLimit" placeholder="E.g. 50000" oninput="recalcCurrentModel()" style="width:100%; padding:8px; font-size:13px; border:1px solid #ccc; border-radius:4px; font-weight:bold;">
                     </div>
                     <div style="flex: 1; min-width: 140px;">
-                        <label style="font-size:10px; font-weight:bold; color:var(--indigo); display:block; margin-bottom:3px;">📈 3. MAX LTV (%)</label>
+                        <label style="font-size:10px; font-weight:bold; color:var(--indigo); display:block; margin-bottom:3px;">3. MAX LTV (%)</label>
                         <input type="number" id="calcLtv" placeholder="100" value="100" oninput="recalcCurrentModel()" style="width:100%; padding:8px; font-size:13px; border:1px solid #ccc; border-radius:4px; font-weight:bold;">
                     </div>
                 </div>
 
                 <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
                     <div style="flex: 2; min-width: 200px; position:relative;">
-                        <label style="font-size:10px; font-weight:bold; color:var(--indigo); display:block; margin-bottom:3px;">🔍 4. SEARCH PRODUCT</label>
+                        <label style="font-size:10px; font-weight:bold; color:var(--indigo); display:block; margin-bottom:3px;">4. SEARCH PRODUCT</label>
                         <input type="search" id="globalModelSearch" oninput="doGlobalSearch()" placeholder="Type Brand or Model Name..." style="width:100%; padding:8px; font-size:13px; border:1px solid #ccc; border-radius:4px; font-weight:bold;">
                         <div id="globalModelDropdown" class="custom-scroll" style="position: absolute; width: 100%; background: #fff; z-index: 1000; border: 1px solid #ddd; display: none; box-shadow: 0 10px 20px rgba(0,0,0,0.15); border-radius: 4px; max-height: 250px; overflow-y: auto; margin-top: 2px;"></div>
                     </div>
                     <div style="flex: 1; min-width: 140px;">
-                        <label style="font-size:10px; font-weight:bold; color:var(--indigo); display:block; margin-bottom:3px;">🧾 5. INVOICE AMOUNT (₹)</label>
+                        <label style="font-size:10px; font-weight:bold; color:var(--indigo); display:block; margin-bottom:3px;">5. INVOICE AMOUNT (₹)</label>
                         <input type="number" id="calcInvoice" placeholder="E.g. 35000" oninput="recalcCurrentModel()" style="width:100%; padding:8px; font-size:13px; border:1px solid #ccc; border-radius:4px; font-weight:bold;">
                     </div>
                     <div style="flex: 1; min-width: 140px;">
-                        <label style="font-size:10px; font-weight:bold; color:var(--indigo); display:block; margin-bottom:3px;">🤑 6. MARGIN (₹)</label>
+                        <label style="font-size:10px; font-weight:bold; color:var(--indigo); display:block; margin-bottom:3px;">6. MARGIN (₹)</label>
                         <input type="number" id="calcMargin" placeholder="0" value="0" oninput="recalcCurrentModel()" style="width:100%; padding:8px; font-size:13px; border:1px solid #ccc; border-radius:4px; font-weight:bold;">
                     </div>
                 </div>
 
                 <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                     <div style="flex: 1; min-width: 140px;">
-                        <label style="font-size:10px; font-weight:bold; color:#d35400; display:block; margin-bottom:3px;">🎯 7. TARGET DP (₹) (OPTIONAL)</label>
+                        <label style="font-size:10px; font-weight:bold; color:#d35400; display:block; margin-bottom:3px;">7. TARGET DP (₹) (OPTIONAL)</label>
                         <input type="number" id="calcTarget" placeholder="Reverse Calc DP" oninput="recalcCurrentModel()" style="width:100%; padding:8px; font-size:13px; border:1px solid #ccc; border-radius:4px; font-weight:bold;">
                     </div>
                     <div style="flex: 1; min-width: 140px;">
-                        <label style="font-size:10px; font-weight:bold; color:#d35400; display:block; margin-bottom:3px;">🛑 8. EMI CAPPING (₹) (OPTIONAL)</label>
+                        <label style="font-size:10px; font-weight:bold; color:#d35400; display:block; margin-bottom:3px;">8. EMI CAPPING (₹) (OPTIONAL)</label>
                         <input type="number" id="calcCap" placeholder="Max EMI Limit" oninput="recalcCurrentModel()" style="width:100%; padding:8px; font-size:13px; border:1px solid #ccc; border-radius:4px; font-weight:bold;">
                     </div>
                 </div>
@@ -472,7 +471,7 @@
         <div style="background: #fff; padding: 20px; border: 2px solid var(--bajaj-blue); border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 500px; box-sizing: border-box;">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--bajaj-blue); padding-bottom: 8px; margin-bottom: 15px;">
                 <h3 style="margin:0; color:var(--bajaj-blue);">🔗 Dealer Links Search</h3>
-                <button onclick="toggleInline('unifiedHome')" style="background:none; border:none; color:var(--danger); font-weight:bold; cursor:pointer; font-size:18px;">❌</button>
+                <button onclick="toggleInline('unifiedHome')" style="background:none; border:none; color:var(--danger); font-weight:bold; cursor:pointer; font-size:18px;">✖</button>
             </div>
             
             <div style="display:flex; gap:8px; margin-bottom:12px;">
@@ -492,7 +491,7 @@
         <div class="modal-content" style="max-width: 500px; padding: 20px;">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--warning); padding-bottom: 8px; margin-bottom: 15px;">
                 <h3 style="margin:0; color:var(--warning); text-shadow: 0 1px 1px rgba(0,0,0,0.1);">📥 Saved Drafts</h3>
-                <button onclick="closeDraftsModal()" style="background:none; border:none; color:var(--danger); font-weight:bold; cursor:pointer; font-size:18px;">❌</button>
+                <button onclick="closeDraftsModal()" style="background:none; border:none; color:var(--danger); font-weight:bold; cursor:pointer; font-size:18px;">✖</button>
             </div>
             <div id="draftsContainer" style="display:flex; flex-direction:column; gap:10px; max-height: 400px; overflow-y:auto; padding-right: 5px;" class="custom-scroll"></div>
         </div>
@@ -502,11 +501,11 @@
         <div class="modal-content" style="max-width: 320px;">
             <h3 style="margin-top:0; color:#25D366; border-bottom: 2px solid #ddd; padding-bottom: 6px;">💬 Send Invitation</h3>
             <p style="font-size:12px; color:#555; margin-bottom:12px;">Customer ko WhatsApp se kharidari ke liye invite karein.</p>
-            <div style="margin-bottom:6px;"><label>👨‍💼 YOUR NAME (SALESPERSON)</label><input type="text" id="invSenderName" placeholder="E.g. Lakshya"></div>
-            <div style="display:none;"><label>📱 YOUR MOBILE NO.</label><input type="text" id="invSenderMobile" placeholder="10 Digits" maxlength="10"></div>
+            <div style="margin-bottom:6px;"><label>YOUR NAME (SALESPERSON)</label><input type="text" id="invSenderName" placeholder="E.g. Lakshya"></div>
+            <div style="display:none;"><label>YOUR MOBILE NO.</label><input type="text" id="invSenderMobile" placeholder="10 Digits" maxlength="10"></div>
             <div style="display:flex; gap:8px;">
                 <button onclick="sendWhatsAppInvite()" style="flex:2; background:#25D366; color:white;">SEND ON WHATSAPP ↗</button>
-                <button onclick="document.getElementById('inviteModal').style.display='none'" style="flex:1; background:var(--danger); color:white;">❌ CANCEL</button>
+                <button onclick="document.getElementById('inviteModal').style.display='none'" style="flex:1; background:var(--danger); color:white;">CANCEL</button>
             </div>
         </div>
     </div>
@@ -514,19 +513,19 @@
     <div id="editCustomerModal" class="modal">
         <div class="modal-content" style="max-width:300px;">
             <h3 style="margin-top:0; color:var(--indigo); border-bottom: 2px solid #ddd; padding-bottom: 6px;">✏️ Edit Customer Details</h3>
-            <div style="margin-bottom:6px;"><label>👤 CUSTOMER NAME</label><input type="text" id="ecName"></div>
-            <div style="display:none;"><label>📱 MOBILE NO.</label><input type="text" id="ecMobile" maxlength="10"></div>
-            <div style="margin-bottom:6px;"><label>💰 NBFC LIMIT</label><input type="number" id="ecLimit"></div>
-            <div style="margin-bottom:6px;"><label>🏷️ CUSTOMER TYPE</label>
+            <div style="margin-bottom:6px;"><label>CUSTOMER NAME</label><input type="text" id="ecName"></div>
+            <div style="display:none;"><label>MOBILE NO.</label><input type="text" id="ecMobile" maxlength="10"></div>
+            <div style="margin-bottom:6px;"><label>NBFC LIMIT</label><input type="number" id="ecLimit"></div>
+            <div style="margin-bottom:6px;"><label>CUSTOMER TYPE</label>
                 <select id="ecType"><option value="NEW">NEW</option><option value="EMI CARD">EMI CARD</option><option value="VIRTUAL">VIRTUAL</option><option value="W/O CARD">W/O CARD</option></select>
             </div>
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-bottom:12px;">
-                <div><label>📈 MAX LTV %</label><input type="number" id="ecLtv" max="100" oninput="if(this.value>100)this.value=100;"></div>
-                <div><label>🛑 EMI CAPPING</label><input type="number" id="ecCap"></div>
+                <div><label>MAX LTV %</label><input type="number" id="ecLtv" max="100" oninput="if(this.value>100)this.value=100;"></div>
+                <div><label>EMI CAPPING</label><input type="number" id="ecCap"></div>
             </div>
             <div style="display:flex; gap:8px;">
-                <button onclick="saveCustomerEdit()" style="flex:2; background:var(--success); color:white;">💾 SAVE CHANGES</button>
-                <button onclick="closeCustomerEdit()" style="flex:1; background:var(--danger); color:white;">❌ CANCEL</button>
+                <button onclick="saveCustomerEdit()" style="flex:2; background:var(--success); color:white;">SAVE CHANGES</button>
+                <button onclick="closeCustomerEdit()" style="flex:1; background:var(--danger); color:white;">CANCEL</button>
             </div>
         </div>
     </div>
@@ -538,7 +537,7 @@
                 <button onclick="emptyRecycleBin()" style="background:var(--danger); color:white; padding:4px 8px; border-radius:3px; border:none; font-weight:bold; cursor:pointer;">EMPTY ALL</button>
             </div>
             <div id="recycleBinList" class="custom-scroll" style="display:flex; flex-direction:column; gap:6px; max-height: 250px; overflow-y: auto; margin-bottom: 12px; padding-right: 4px;"></div>
-            <button onclick="closeRecycleBin()" style="width:100%; background:var(--dark); color:white; padding:8px;">❌ CLOSE</button>
+            <button onclick="closeRecycleBin()" style="width:100%; background:var(--dark); color:white; padding:8px;">CLOSE</button>
         </div>
     </div>
 
@@ -546,15 +545,15 @@
         <div class="modal-content" style="max-width: 350px;">
             <h3 style="margin-top:0; color:var(--bajaj-blue); border-bottom: 2px solid #ddd; padding-bottom: 6px;">🔍 ADD NEW PRODUCT</h3>
             <div style="position:relative; margin-bottom: 12px;">
-                <label style="color:var(--indigo); margin-bottom:4px; display:block;">🔍 SEARCH MODEL</label>
+                <label style="color:var(--indigo); margin-bottom:4px; display:block;">SEARCH MODEL</label>
                 <input type="search" id="modalMatrixSearch" oninput="doSearch('modalMatrixSearch', 'modalMatrixSearchDropdown')" placeholder="Type model, brand or category..." style="width:100%;">
                 <div id="modalMatrixSearchDropdown" style="position: absolute; width: 100%; background: #fff; z-index: 1000; border: 1px solid #ddd; display: none; box-shadow: 0 10px 20px rgba(0,0,0,0.15); border-radius: 4px; max-height: 200px; overflow-y: auto;"></div>
             </div>
             <div style="display:flex; gap:8px;">
                 <button onclick="quickNonTieup();" style="flex:1; background:var(--warning); color:#000;">⚡ NON TIEUP</button>
-                <button onclick="openMultiStackModal();" style="flex:1.2; background:var(--indigo); color:white;">➕ MANUAL (10 SCHEMES)</button>
+                <button onclick="openMultiStackModal();" style="flex:1.2; background:var(--indigo); color:white;">+ MANUAL (10 SCHEMES)</button>
             </div>
-            <button onclick="document.getElementById('addProductModal').style.display='none'" style="width:100%; background:var(--danger); color:white; margin-top:12px;">❌ CANCEL</button>
+            <button onclick="document.getElementById('addProductModal').style.display='none'" style="width:100%; background:var(--danger); color:white; margin-top:12px;">CANCEL</button>
         </div>
     </div>
 
@@ -563,8 +562,8 @@
             <h3 style="margin-top:0; color:var(--bajaj-blue);">🖼️ Select Models for Quotation</h3>
             <div id="quoteModelCheckboxes" style="display:flex; flex-direction:column; gap:6px; max-height:220px; overflow-y:auto; margin-bottom:15px; padding-right:5px;" class="custom-scroll"></div>
             <div style="display:flex; gap:10px;">
-                <button onclick="promptForSelectedImageGeneration()" style="flex:2; background:var(--bajaj-blue); color:white;">➡️ PROCEED</button>
-                <button onclick="document.getElementById('quoteSelectionModal').style.display='none'" style="flex:1; background:var(--danger); color:white;">❌ CANCEL</button>
+                <button onclick="promptForSelectedImageGeneration()" style="flex:2; background:var(--bajaj-blue); color:white;">PROCEED</button>
+                <button onclick="document.getElementById('quoteSelectionModal').style.display='none'" style="flex:1; background:var(--danger); color:white;">CANCEL</button>
             </div>
         </div>
     </div>
@@ -573,19 +572,19 @@
         <div class="modal-content" style="max-width: 350px;">
             <h3 style="margin-top:0; color:var(--indigo); border-bottom: 2px solid #ddd; padding-bottom: 6px;">⚙️ Fill Components</h3>
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:12px;">
-                <div><label>🏷️ MRP (₹)</label><input type="number" id="compMrp" placeholder="0" oninput="compMrpChanged()"></div>
-                <div><label>🧾 INV (₹)</label><input type="number" id="compInv" placeholder="0"></div>
-                <div><label>🛑 EMI CAPPING (₹)</label><input type="number" id="compCap" placeholder="MAX"></div>
-                <div><label>🎯 TARGET DP (₹)</label><input type="number" id="compTarget" placeholder="0"></div>
-                <div><label>🛡️ GTL (₹)</label><select id="compGtl"><option value="0">0</option><option value="699">699</option><option value="1099">1099</option><option value="1199">1199</option><option value="1499">1499</option><option value="1799">1799</option><option value="2398">2398</option></select></div>
-                <div><label>📄 RFC (₹)</label><select id="compRfc"><option value="0">0</option><option id="compRfcOpt" value="0">0</option></select></div>
-                <div><label>🔧 EXW (₹)</label><input type="number" id="compExw" placeholder="0"></div>
-                <div><label>🤑 MARGIN (₹)</label><input type="number" id="compMargin" placeholder="0"></div>
-                <div><label>🏪 DEALER CONTRI (₹)</label><input type="number" id="compDealer" placeholder="0"></div>
+                <div><label>MRP (₹)</label><input type="number" id="compMrp" placeholder="0" oninput="compMrpChanged()"></div>
+                <div><label>INV (₹)</label><input type="number" id="compInv" placeholder="0"></div>
+                <div><label>EMI CAPPING (₹)</label><input type="number" id="compCap" placeholder="MAX"></div>
+                <div><label>TARGET DP (₹)</label><input type="number" id="compTarget" placeholder="0"></div>
+                <div><label>GTL (₹)</label><select id="compGtl"><option value="0">0</option><option value="699">699</option><option value="1099">1099</option><option value="1199">1199</option><option value="1499">1499</option><option value="1799">1799</option><option value="2398">2398</option></select></div>
+                <div><label>RFC (₹)</label><select id="compRfc"><option value="0">0</option><option id="compRfcOpt" value="0">0</option></select></div>
+                <div><label>EXW (₹)</label><input type="number" id="compExw" placeholder="0"></div>
+                <div><label>MARGIN (₹)</label><input type="number" id="compMargin" placeholder="0"></div>
+                <div><label>DEALER CONTRI (₹)</label><input type="number" id="compDealer" placeholder="0"></div>
             </div>
             <div style="display:flex; gap:8px;">
-                <button onclick="proceedToMatrixFromComponents()" style="flex:2; background:var(--success); color:white;">➡️ CONTINUE</button>
-                <button onclick="document.getElementById('componentsModal').style.display='none'" style="flex:1; background:var(--danger); color:white;">❌ CANCEL</button>
+                <button onclick="proceedToMatrixFromComponents()" style="flex:2; background:var(--success); color:white;">CONTINUE</button>
+                <button onclick="document.getElementById('componentsModal').style.display='none'" style="flex:1; background:var(--danger); color:white;">CANCEL</button>
             </div>
         </div>
     </div>
@@ -594,17 +593,17 @@
         <div class="modal-content" style="max-width:320px;">
             <h3 style="margin-top:0; color:var(--bajaj-blue); text-align: center;">👤 Verify Details Before Export</h3>
             <div style="margin-bottom:8px;">
-                <label style="color:var(--indigo);">👤 CUSTOMER NAME</label>
+                <label style="color:var(--indigo);">CUSTOMER NAME</label>
                 <input type="text" id="promptCustName" readonly style="background:#f0f0f0; cursor:not-allowed;">
             </div>
             <div style="display:none;">
-                <label style="color:var(--indigo);">📱 MOBILE NUMBER</label>
+                <label style="color:var(--indigo);">MOBILE NUMBER</label>
                 <input type="text" id="promptCustMobile" readonly style="background:#f0f0f0; cursor:not-allowed;">
             </div>
             <div style="display:flex; flex-direction:column; gap:6px;">
                 <button onclick="proceedGenerateImage()" style="width:100%; background:var(--bajaj-blue); color:white;">🖼️ GENERATE IMAGE ONLY</button>
                 <button onclick="proceedGenerateImageAndWhatsAppCopy()" style="width:100%; background:#25D366; color:white; display:flex; align-items:center; justify-content:center; gap:6px;">📋 COPY IMAGE & OPEN WHATSAPP</button>
-                <button onclick="document.getElementById('custInfoPromptModal').style.display='none'" style="width:100%; background:var(--danger); color:white;">❌ CANCEL</button>
+                <button onclick="document.getElementById('custInfoPromptModal').style.display='none'" style="width:100%; background:var(--danger); color:white;">CANCEL</button>
             </div>
         </div>
     </div>
@@ -613,43 +612,43 @@
         <div class="modal-content" style="max-width: 350px; max-height: 80vh; overflow-y: auto;">
             <h3 style="margin-top:0; color:var(--indigo);">⚡ SELECT NON-TIEUP CATEGORY</h3>
             <div id="categoryGrid" style="display:grid; grid-template-columns:1fr 1fr; gap:6px;"></div>
-            <button onclick="document.getElementById('catSelectionModal').style.display='none'" style="width:100%; margin-top:12px; background:var(--danger); color:white;">❌ CANCEL</button>
+            <button onclick="document.getElementById('catSelectionModal').style.display='none'" style="width:100%; margin-top:12px; background:var(--danger); color:white;">CANCEL</button>
         </div>
     </div>
 
     <div id="multiStackModal" class="modal">
         <div class="modal-content">
-            <h3 style="margin-top:0; color:var(--dark);">➕ Add Manual Product (Up to 10 Schemes)</h3>
+            <h3 style="margin-top:0; color:var(--dark);">Add Manual Product (Up to 10 Schemes)</h3>
             <div style="margin-bottom: 12px; background: #f8f9fa; padding: 8px; border-radius: 6px; border: 1.5px solid #ccc;">
-                <label style="color: var(--indigo);">📱 MODEL NAME (One for all schemes below)</label>
+                <label style="color: var(--indigo);">MODEL NAME (One for all schemes below)</label>
                 <input type="text" id="multiStackModelName" placeholder="Enter Product Model Name" value="">
             </div>
             <div class="stack-grid" id="stackInputsContainer"></div>
             <div style="margin-top:12px; display:flex; flex-direction:column; gap:8px; position:sticky; bottom:-15px; background:white; padding-top:8px;">
-                <button onclick="processMultiStack()" style="width:100%; background:var(--success); color:white;">➡️ PROCEED</button>
-                <button onclick="closeMultiStackModal()" style="width:100%; background:var(--danger); color:white;">❌ CANCEL</button>
+                <button onclick="processMultiStack()" style="width:100%; background:var(--success); color:white;">PROCEED</button>
+                <button onclick="closeMultiStackModal()" style="width:100%; background:var(--danger); color:white;">CANCEL</button>
             </div>
         </div>
     </div>
 
     <div id="editSchemeModal" class="modal">
         <div class="modal-content" style="max-width: 280px;">
-            <h3 style="margin-top:0; color:var(--indigo);">✏️ Modify Scheme Components</h3>
+            <h3 style="margin-top:0; color:var(--indigo);">Modify Scheme Components</h3>
             <input type="hidden" id="editPIdx"><input type="hidden" id="editDIdx">
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:12px;">
-                <div><label>🗓️ TENURE (Max)</label><input type="number" id="editTen"></div><div><label>💸 ADVANCE</label><input type="number" id="editAdv"></div>
-                <div><label>📉 DBD %</label><input type="number" id="editDbd" step="0.01"></div><div><label>⚙️ PF (₹)</label><input type="number" id="editPf"></div>
-                <div><label>📈 ROI %</label><input type="number" id="editRoi" step="0.01"></div><div><label>📌 FIXED EMI (₹)</label><input type="number" id="editFixed"></div>
+                <div><label>TENURE (Max)</label><input type="number" id="editTen"></div><div><label>ADVANCE</label><input type="number" id="editAdv"></div>
+                <div><label>DBD %</label><input type="number" id="editDbd" step="0.01"></div><div><label>PF (₹)</label><input type="number" id="editPf"></div>
+                <div><label>ROI %</label><input type="number" id="editRoi" step="0.01"></div><div><label>FIXED EMI (₹)</label><input type="number" id="editFixed"></div>
             </div>
             <div style="display:flex; gap:8px;">
-                <button onclick="saveSchemeEdit()" style="flex:2; background:var(--success); color:white;">💾 SAVE</button>
-                <button onclick="closeEditSchemeModal()" style="flex:1; background:var(--danger); color:white;">❌ CANCEL</button>
+                <button onclick="saveSchemeEdit()" style="flex:2; background:var(--success); color:white;">SAVE</button>
+                <button onclick="closeEditSchemeModal()" style="flex:1; background:var(--danger); color:white;">CANCEL</button>
             </div>
         </div>
     </div>
 
     <div id="imageViewerModal" class="modal">
-        <button class="close-img-btn" onclick="closeImageViewer()">❌</button>
+        <button class="close-img-btn" onclick="closeImageViewer()">X</button>
         <div id="clipboardStatusAlert" style="color:#25D366; font-size:14px !important; font-weight:bold; text-align:center; width:100%; display:none;">✅ COPIED TO CLIPBOARD!</div>
         <div style="color:#f39c12; font-size:14px !important; font-weight:bold; text-align:center; margin-top:5px; width:100%;">⚠️ Long press or Right-click image to Save directly 👇</div>
         <img id="generatedImage" src="" alt="Quotation">
@@ -658,22 +657,22 @@
     <!-- MANUAL MODAL -->
     <div id="manualModal" class="modal">
         <div class="modal-content" style="max-width:300px;">
-            <h3 id="modalTitle" style="margin-top:0;">➕ Add Custom Scheme</h3>
+            <h3 id="modalTitle" style="margin-top:0;">Add Custom Scheme</h3>
             <div id="modelNameInputArea" style="display:none;">
-                <label>📱 Model Name</label>
+                <label>Model Name</label>
                 <input type="text" id="manName" placeholder="Enter Model Name" value="">
             </div>
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-top:8px;">
-                <div><label>🗓️ TENURE (Max)</label><input type="number" id="manTen" placeholder="0"></div>
-                <div><label>💸 ADVANCE</label><input type="number" id="manAdv" placeholder="0"></div>
-                <div><label>📉 DBD %</label><input type="number" id="manDbd" placeholder="0"></div>
-                <div><label>⚙️ PF (₹)</label><input type="number" id="manPf" placeholder="0"></div>
-                <div><label>📈 ROI %</label><input type="number" id="manRoi" placeholder="0"></div>
-                <div><label>📌 FIXED EMI (₹)</label><input type="number" id="manFixed" placeholder="0"></div>
+                <div><label>TENURE (Max)</label><input type="number" id="manTen" placeholder="0"></div>
+                <div><label>ADVANCE</label><input type="number" id="manAdv" placeholder="0"></div>
+                <div><label>DBD %</label><input type="number" id="manDbd" placeholder="0"></div>
+                <div><label>PF (₹)</label><input type="number" id="manPf" placeholder="0"></div>
+                <div><label>ROI %</label><input type="number" id="manRoi" placeholder="0"></div>
+                <div><label>FIXED EMI (₹)</label><input type="number" id="manFixed" placeholder="0"></div>
             </div>
             <input type="hidden" id="targetPIdx" value="">
-            <button onclick="executeManualAction()" style="width:100%; background:var(--success); color:white; margin-top:12px;">➕ ADD SCHEME</button>
-            <button onclick="closeManualModal()" style="width:100%; background:var(--danger); color:white; margin-top:6px;">❌ CANCEL</button>
+            <button onclick="executeManualAction()" style="width:100%; background:var(--success); color:white; margin-top:12px;">ADD SCHEME</button>
+            <button onclick="closeManualModal()" style="width:100%; background:var(--danger); color:white; margin-top:6px;">CANCEL</button>
         </div>
     </div>
 
@@ -681,7 +680,7 @@
         <div class="top-nav-box" style="margin-top: 4px; border-top: 2px dashed #ccc; padding-top: 8px;">
             <button id="genQuoteBtn" onclick="openQuoteSelectionModal()" style="flex:1; background:var(--bajaj-blue); color:white;">GEN QUOTE</button>
             <select id="finalCustomerSwitcher" onchange="switchCustomerFinal(this.value)" style="flex:1.5; font-weight:bold; color:var(--indigo); padding:2px;"></select>
-            <button onclick="goHome()" style="flex:0.8; background:var(--danger); color:white;">❌ BACK</button>
+            <button onclick="goHome()" style="flex:0.8; background:var(--danger); color:white;">✖ BACK</button>
         </div>
         
         <!-- COMPACT ACTIVE CUSTOMER INFO CARD -->
@@ -726,7 +725,7 @@
             <h3 style="margin-top:0; color:var(--bajaj-blue); text-align:center;">⚙️ Select Action</h3>
             <div id="rowActionButtons" style="display:flex; flex-direction:column; gap:12px; margin-top:15px;">
             </div>
-            <button onclick="closeRowActionModal()" style="width:100%; margin-top:15px; background:var(--danger); color:white; padding:12px; border-radius:8px; font-weight:900; font-size:15px !important; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">❌ CANCEL</button>
+            <button onclick="closeRowActionModal()" style="width:100%; margin-top:15px; background:var(--danger); color:white; padding:12px; border-radius:8px; font-weight:900; font-size:15px !important; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">CANCEL</button>
         </div>
     </div>
 
