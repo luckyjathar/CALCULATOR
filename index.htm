@@ -2,13 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <!-- App-like Viewport (झूम बंद करण्यासाठी) -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
-    <!-- Android Chrome Theme Color (स्टेटस बारचा रंग) -->
     <meta name="theme-color" content="#1976D2">
-
-    <!-- iOS Safari App Mode -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Persistent Portal">
@@ -21,7 +16,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     
-    <!-- Link to our separate CSS file -->
     <link rel="stylesheet" href="style.css?v=6.6">
 </head>
 <body>
@@ -142,6 +136,7 @@
             <div class="disclaimer-box">
                 <b>Disclaimer:</b> GitHub smart stream activated. System will only download files if updates are detected. Original application ke saath verify zaroor karein.
             </div>
+            <!-- ✅ येथून जुना डुप्लिकेट फास्ट कॅल्क्युलेटर काढून टाकला आहे! -->
         </div>
     </div>
 
@@ -603,18 +598,16 @@
             </div>
             
             <div id="dealerSearchResults" class="custom-scroll" style="display:flex; flex-direction:column; gap:8px; max-height:350px; overflow-y:auto; padding-right:5px;">
-                <!-- JavaScript will populate the results here -->
             </div>
         </div>
     </div>
     
-    <!-- NEW ROW ACTION MODAL (Bottom Sheet for Mobile, Centered for Desktop) -->
+    <!-- NEW ROW ACTION MODAL -->
     <div id="rowActionModal" class="modal" style="z-index: 99999;">
         <div class="modal-content action-sheet">
             <div class="sheet-handle"></div>
             <h3 style="margin-top:0; color:var(--bajaj-blue); text-align:center;">⚙️ Select Action</h3>
             <div id="rowActionButtons" style="display:flex; flex-direction:column; gap:12px; margin-top:15px;">
-                <!-- Buttons will be injected here via JS -->
             </div>
             <button onclick="closeRowActionModal()" style="width:100%; margin-top:15px; background:var(--danger); color:white; padding:12px; border-radius:8px; font-weight:900; font-size:15px !important; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">CANCEL</button>
         </div>
@@ -629,7 +622,6 @@
     </div>
 </footer>
 
-<!-- Link to our separate JS file -->
 <script src="app.js"></script>
 </body>
 </html>
