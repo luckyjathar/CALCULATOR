@@ -2077,3 +2077,10 @@ function openRowActionModal(pIdx, dIdx, isInactive) {
 }
 
 function closeRowActionModal() { document.getElementById('rowActionModal').style.display = 'none'; }
+// Zatpat Calc Modal उघडण्यासाठी फंक्शन
+function openZatpatCalcModal() {
+    var modal = document.getElementById('zatpatCalcModal');
+    if(modal) {
+        modal.style.display = 'flex'; // जर UI मध्ये काही अडचण आली तर 'flex' ऐवजी 'block' वापरून पहा.
+    }
+}
