@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Persistent Portal">
 
-    <title>Persistent Portal V76.20 - Pro Edition</title>
+    <title>Persistent Portal V76.21 - Pro Edition</title>
 
     <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -38,16 +38,17 @@
         .top-utility-bar .util-btn {
             background: transparent;
             border: none;
-            font-size: 26px;
-            padding: 8px;
+            font-size: 24px;
+            padding: 6px;
             border-radius: 12px;
             cursor: pointer;
             transition: all 0.2s ease-in-out;
             display: flex;
             justify-content: center;
             align-items: center;
-            width: 50px;
-            height: 50px;
+            width: 46px;
+            height: 46px;
+            position: relative;
         }
         .top-utility-bar .util-btn:active {
             background: #e0f2fe;
@@ -60,7 +61,7 @@
             }
         }
 
-        /* मोबाईल आणि टॅब्लेट स्क्रीनसाठी */
+        /* Mobile Responsive UI */
         @media (max-width: 768px) {
             .forms-row {
                 display: flex;
@@ -93,8 +94,8 @@
             }
 
             input[type="text"], input[type="number"], input[type="search"], input[type="date"], select, button {
-                min-height: 42px;
-                font-size: 14px;
+                min-height: 40px;
+                font-size: 13px;
             }
 
             .modal-content {
@@ -117,9 +118,9 @@
                 grid-template-columns: 1fr !important;
             }
             .top-utility-bar .util-btn {
-                font-size: 22px;
-                width: 45px;
-                height: 45px;
+                font-size: 20px;
+                width: 40px;
+                height: 40px;
             }
         }
     </style>
@@ -156,14 +157,14 @@
     </div>
 </div>
 
-<!-- ⭐ HEADER (Clean, Mobile Friendly) ⭐ -->
+<!-- ⭐ HEADER ⭐ -->
 <header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; padding: 12px 15px; background: #fff; border-bottom: 1px solid #e2e8f0; gap: 15px;">
     <h1 style="margin: 0; color: var(--bajaj-blue); font-size: 20px; display: flex; align-items: center; gap: 8px;">
         🚀 Persistent Portal
     </h1>
 
     <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-        <!-- Git Status / Cache Badge -->
+        <!-- Git Status Badge -->
         <div id="gitStatusBadge" style="font-weight: 950; font-size: 11px; background: rgba(39, 174, 96, 0.15); color: var(--success); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--success); letter-spacing: 0.5px; text-align: center; white-space: nowrap; cursor: pointer;" title="Click to refresh live data">
             ⚙️ GITHUB CONNECTED
         </div>
@@ -186,6 +187,9 @@
     <button onclick="toggleInline('customerMessageGenModal', openCustomerMessageModal)" class="util-btn" title="Send EMI Details">💬</button>
     <button onclick="toggleInline('dealerSearchModal', openDealerSearchModal)" class="util-btn" title="Dealers Search">🏪</button>
     <button onclick="toggleInline('dictionarySearchModal', openDictionaryModal)" class="util-btn" title="Schemes Dictionary">📖</button>
+    <button onclick="openCustomSchemesStagingModal()" class="util-btn" title="Custom Schemes Staging (Excel Format)">
+        📦<span id="stagingBadge" style="position:absolute; top:2px; right:2px; background:var(--danger); color:white; font-size:10px; padding:1px 5px; border-radius:10px; display:none; font-weight:bold;">0</span>
+    </button>
     <button onclick="toggleInline('flyerGenModal', openFlyerGenModal)" class="util-btn" title="Generate Flyer">📢</button>
 </div>
 
@@ -239,7 +243,7 @@
         </div>
         <div class="action-box">
             <div class="disclaimer-box">
-                <b>Disclaimer:</b> GitHub smart stream activated. System will only download files if updates are detected. Original application ke saath verify zaroor karein.
+                <b>Disclaimer:</b> GitHub smart stream activated. Master data downloads 2 times per day to keep things fast. Verify with actual calculations.
             </div>
         </div>
     </div>
@@ -337,7 +341,7 @@
                     <select id="msgLang" onchange="calculateDates()" style="font-weight: bold;"><option value="mr">Marathi (मराठी)</option><option value="hi">Hindi (हिंदी)</option><option value="en">English</option></select>
                 </div>
             </div>
-            <div class="msg-section-title">3. Generated Customer Message (With all 12 T&C points):</div>
+            <div class="msg-section-title">3. Generated Customer Message:</div>
             <textarea id="finalMessage"></textarea>
             <div style="display:flex; gap:10px; margin-top:12px; flex-wrap: wrap;">
                 <button onclick="copyMsgText()" style="flex:1; background:var(--primary); color:white; padding:10px; min-width: 140px;">📋 COPY MESSAGE</button>
@@ -449,8 +453,9 @@
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:6px;">
                     <h4 style="margin:0; color:var(--primary); font-size: 14px;">⚡ 1. Eligibility & Product Setup</h4>
                     <div style="display:flex; gap:6px;">
-                        <button onclick="dictOpenNonTieupModal()" style="background:var(--warning); color:#000; border:none; padding:4px 8px; border-radius:4px; font-weight:900; font-size:11px; cursor:pointer;">⚡ NON-TIEUP</button>
-                        <button onclick="dictOpenManualSchemeModal()" style="background:var(--indigo); color:white; border:none; padding:4px 8px; border-radius:4px; font-weight:900; font-size:11px; cursor:pointer;">+ MANUAL SCHEME</button>
+                        <button onclick="dictValidateAndTriggerNonTieup()" style="background:var(--warning); color:#000; border:none; padding:4px 8px; border-radius:4px; font-weight:900; font-size:11px; cursor:pointer;">⚡ NON-TIEUP</button>
+                        <button onclick="dictValidateAndTriggerManual()" style="background:var(--indigo); color:white; border:none; padding:4px 8px; border-radius:4px; font-weight:900; font-size:11px; cursor:pointer;">+ MANUAL MODEL</button>
+                        <button onclick="dictOpenSingleSchemeModal()" style="background:#0284c7; color:white; border:none; padding:4px 8px; border-radius:4px; font-weight:900; font-size:11px; cursor:pointer;">➕ ADD SINGLE SCHEME</button>
                     </div>
                 </div>
 
@@ -486,7 +491,7 @@
                     </div>
                 </div>
 
-                <!-- 🛡️ COMPONENTS (GTL Auto, RFC Default 0 with Slab Options, EXW, Margin) -->
+                <!-- 🛡️ COMPONENTS -->
                 <div style="border-top: 1px dashed #cbd5e1; padding-top: 8px; margin-top: 8px;">
                     <label style="font-size:10px; font-weight:900; color:var(--indigo); display:block; margin-bottom:4px;">🛡️ COMPONENTS & INSURANCE RULES</label>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(125px, 1fr)); gap: 6px;">
@@ -528,14 +533,14 @@
                     </div>
                 </div>
 
-                <!-- 🛒 BASKET CHIPS CONTAINER (Tap on chip loads table) -->
+                <!-- 🛒 BASKET CHIPS CONTAINER -->
                 <div id="dictProductsBasket" style="display:none; margin-top:10px; padding:8px; background:#fff; border:1.5px solid #94a3b8; border-radius:6px;">
                     <div style="font-size:11px; font-weight:900; color:var(--bajaj-blue); margin-bottom:4px;">🛒 BASKET (Tap model to view schemes):</div>
                     <div id="dictBasketChips" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
                 </div>
             </div>
 
-            <!-- 📊 RESULTS TAB & CONTROLS -->
+            <!-- 📊 RESULTS TAB & CONTROLS (Copy Image Kadhun Takla) -->
             <div id="schemeResultArea" style="display: none; border: 1.5px solid var(--indigo); padding: 14px; border-radius: 6px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--indigo); padding-bottom: 8px; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
                     <h3 id="globalViewerTitle" style="margin:0; color:var(--bajaj-blue); font-size: 15px !important;">Model Schemes</h3>
@@ -543,7 +548,6 @@
                         <button onclick="addCurrentModelToDictBasket()" style="background: var(--warning); color: #000; border:none; padding:7px 11px; border-radius:4px; font-size:11px; font-weight:900; cursor:pointer;">➕ ADD TO BASKET</button>
                         <button onclick="transferDictModelToFinalQueue()" style="background: var(--indigo); color: white; border:none; padding:7px 11px; border-radius:4px; font-size:11px; font-weight:900; cursor:pointer;">🚀 TRANSFER TO FINAL</button>
                         <button onclick="exportDictCustomerQuoteImage()" style="background: #2563eb; color: white; border:none; padding:7px 11px; border-radius:4px; font-size:11px; font-weight:900; cursor:pointer;">🖼️ QUOTE IMAGE</button>
-                        <button onclick="exportDictSchemeImage('copy')" style="background: var(--primary); color: white; border:none; padding:7px 11px; border-radius:4px; font-size:11px; font-weight:bold; cursor:pointer;">📋 COPY TABLE</button>
                     </div>
                 </div>
                 <div class="table-wrapper">
@@ -577,7 +581,7 @@
         </div>
     </div>
 
-    <!-- SEPARATE DRAFTS MODAL -->
+    <!-- DRAFTS MODAL -->
     <div id="draftsModal" class="modal">
         <div class="modal-content" style="max-width: 500px; padding: 20px;">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--warning); padding-bottom: 8px; margin-bottom: 15px;">
@@ -588,6 +592,7 @@
         </div>
     </div>
 
+    <!-- INVITE MODAL -->
     <div id="inviteModal" class="modal">
         <div class="modal-content" style="max-width: 320px;">
             <h3 style="margin-top:0; color:#25D366; border-bottom: 2px solid #ddd; padding-bottom: 6px;">💬 Send Invitation</h3>
@@ -601,6 +606,7 @@
         </div>
     </div>
 
+    <!-- EDIT CUSTOMER MODAL -->
     <div id="editCustomerModal" class="modal">
         <div class="modal-content" style="max-width:300px;">
             <h3 style="margin-top:0; color:var(--indigo); border-bottom: 2px solid #ddd; padding-bottom: 6px;">✏️ Edit Customer Details</h3>
@@ -621,6 +627,7 @@
         </div>
     </div>
 
+    <!-- RECYCLE BIN MODAL -->
     <div id="recycleBinModal" class="modal">
         <div class="modal-content" style="max-width:350px;">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ddd; padding-bottom: 6px; margin-bottom: 8px;">
@@ -632,6 +639,7 @@
         </div>
     </div>
 
+    <!-- ADD PRODUCT MODAL -->
     <div id="addProductModal" class="modal">
         <div class="modal-content" style="max-width: 350px;">
             <h3 style="margin-top:0; color:var(--bajaj-blue); border-bottom: 2px solid #ddd; padding-bottom: 6px;">🔍 ADD NEW PRODUCT</h3>
@@ -648,6 +656,7 @@
         </div>
     </div>
 
+    <!-- QUOTE SELECTION MODAL -->
     <div id="quoteSelectionModal" class="modal">
         <div class="modal-content" style="max-width:350px;">
             <h3 style="margin-top:0; color:var(--bajaj-blue);">🖼️ Select Models for Quotation</h3>
@@ -659,6 +668,7 @@
         </div>
     </div>
 
+    <!-- COMPONENTS MODAL -->
     <div id="componentsModal" class="modal">
         <div class="modal-content" style="max-width: 350px;">
             <h3 style="margin-top:0; color:var(--indigo); border-bottom: 2px solid #ddd; padding-bottom: 6px;">⚙️ Fill Components</h3>
@@ -738,6 +748,7 @@
         </div>
     </div>
 
+    <!-- IMAGE VIEWER MODAL -->
     <div id="imageViewerModal" class="modal">
         <button class="close-img-btn" onclick="closeImageViewer()">X</button>
         <div id="clipboardStatusAlert" style="color:#25D366; font-size:14px !important; font-weight:bold; text-align:center; width:100%; display:none;">✅ COPIED TO CLIPBOARD!</div>
@@ -767,6 +778,7 @@
         </div>
     </div>
 
+    <!-- FINAL ELIGIBLE AREA -->
     <div id="finalEligibleArea" style="display: none; flex-direction: column;">
         <div class="top-nav-box" style="margin-top: 4px; border-top: 2px dashed #ccc; padding-top: 8px;">
             <button id="genQuoteBtn" onclick="openQuoteSelectionModal()" style="flex:1; background:var(--bajaj-blue); color:white;">GEN QUOTE</button>
@@ -776,7 +788,6 @@
 
         <!-- COMPACT ACTIVE CUSTOMER INFO CARD -->
         <div style="background: #253241; border-radius: 8px; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.2); margin-bottom: 12px; border: 1px solid #3b4b5e;">
-
             <div style="display: flex; align-items: center; gap: 12px;">
                 <div style="width: 38px; height: 38px; background: rgba(0,0,0,0.3); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 18px;">👤</div>
                 <div style="display: flex; flex-direction: column; gap: 4px;">
@@ -814,9 +825,72 @@
         <div class="modal-content action-sheet">
             <div class="sheet-handle"></div>
             <h3 style="margin-top:0; color:var(--bajaj-blue); text-align:center;">⚙️ Select Action</h3>
-            <div id="rowActionButtons" style="display:flex; flex-direction:column; gap:12px; margin-top:15px;">
-            </div>
+            <div id="rowActionButtons" style="display:flex; flex-direction:column; gap:12px; margin-top:15px;"></div>
             <button onclick="closeRowActionModal()" style="width:100%; margin-top:15px; background:var(--danger); color:white; padding:12px; border-radius:8px; font-weight:900; font-size:15px !important; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">CANCEL</button>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 📦 CUSTOM SCHEMES STAGING MODAL (MASTER DATA FORMAT) -->
+    <!-- ========================================== -->
+    <div id="customSchemesStagingModal" class="modal" style="z-index: 99999;">
+        <div class="modal-content" style="max-width: 650px; padding: 16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid var(--primary); padding-bottom:6px; margin-bottom:10px;">
+                <h3 style="margin:0; color:var(--primary); font-size:16px;">📦 CUSTOM SCHEMES STAGING</h3>
+                <button onclick="closeCustomSchemesStagingModal()" style="background:none; border:none; color:var(--danger); font-size:18px; font-weight:bold; cursor:pointer;">✖</button>
+            </div>
+            <p style="font-size:11px; color:#555; margin-bottom:8px;">या स्कीम्स सध्या Master Excel मध्ये नाहीत. तुम्ही हा डेटा कॉपी करून <code>master_data.xlsx</code> मध्ये टाकू शकता. एकदा ती Excel मध्ये आली की इथून आपोआप निघून जाईल.</p>
+            <div class="table-wrapper" style="max-height: 280px; overflow-y: auto;">
+                <table style="width:100%; font-size:11px;">
+                    <thead style="background:#f1f5f9;">
+                        <tr><th>MODEL</th><th>T/A</th><th>DBD%</th><th>PF</th><th>ROI%</th><th>FIXED</th><th>ACT</th></tr>
+                    </thead>
+                    <tbody id="stagingTableBody"></tbody>
+                </table>
+            </div>
+            <div style="display:flex; gap:8px; margin-top:12px;">
+                <button onclick="copyStagingDataForExcel()" style="flex:2; background:var(--success); color:white; padding:10px; border-radius:4px; font-weight:bold; border:none; cursor:pointer;">📋 COPY IN MASTER DATA FORMAT (TSV)</button>
+                <button onclick="clearAllStagingSchemes()" style="flex:1; background:var(--danger); color:white; padding:10px; border-radius:4px; font-weight:bold; border:none; cursor:pointer;">🗑️ CLEAR ALL</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ➕ ADD SINGLE CUSTOM SCHEME MODAL -->
+    <div id="dictSingleSchemeModal" class="modal" style="z-index: 99999;">
+        <div class="modal-content" style="max-width: 320px;">
+            <h3 style="margin-top:0; color:var(--indigo);">Add Single Custom Scheme</h3>
+            <p style="font-size:11px; color:#555;">Current Model: <b id="dssModelLabel" style="color:var(--dark);">-</b></p>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px;">
+                <div><label style="font-size:10px;">TENURE</label><input type="number" id="dssTen" placeholder="0"></div>
+                <div><label style="font-size:10px;">ADVANCE</label><input type="number" id="dssAdv" placeholder="0"></div>
+                <div><label style="font-size:10px;">DBD %</label><input type="number" id="dssDbd" placeholder="0" step="0.01"></div>
+                <div><label style="font-size:10px;">PF (₹)</label><input type="number" id="dssPf" placeholder="0"></div>
+                <div><label style="font-size:10px;">ROI %</label><input type="number" id="dssRoi" placeholder="0" step="0.01"></div>
+                <div><label style="font-size:10px;">FIXED (₹)</label><input type="number" id="dssFix" placeholder="0"></div>
+            </div>
+            <div style="display:flex; gap:8px; margin-top:12px;">
+                <button onclick="saveDictSingleScheme()" style="flex:2; background:var(--success); color:white; padding:8px; border:none; border-radius:4px; font-weight:bold;">SAVE SCHEME</button>
+                <button onclick="document.getElementById('dictSingleSchemeModal').style.display='none'" style="flex:1; background:var(--danger); color:white; padding:8px; border:none; border-radius:4px;">CANCEL</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ⚠️ QUICK CRITERIA POPUP MODAL (For Non-tieup / Manual when limit missing) -->
+    <div id="dictCriteriaPromptModal" class="modal" style="z-index: 99999;">
+        <div class="modal-content" style="max-width: 300px;">
+            <h3 style="margin-top:0; color:var(--warning); font-size:15px;">⚠️ Customer Criteria Required</h3>
+            <p style="font-size:11px; color:#555; margin-bottom:8px;">Non-Tieup / Manual scheme sathi khilil goshti bharne aavashyak ahe:</p>
+            <div style="display:flex; flex-direction:column; gap:6px;">
+                <div><label style="font-size:10px; font-weight:bold;">CUSTOMER TYPE</label>
+                    <select id="critType" style="width:100%;"><option value="NEW">NEW</option><option value="EMI CARD">EMI CARD</option><option value="VIRTUAL">VIRTUAL</option><option value="W/O CARD">W/O CARD</option></select>
+                </div>
+                <div><label style="font-size:10px; font-weight:bold;">NBFC LIMIT (₹)</label><input type="number" id="critLimit" placeholder="E.g. 50000" style="width:100%;"></div>
+                <div><label style="font-size:10px; font-weight:bold;">MAX LTV (%)</label><input type="number" id="critLtv" value="100" max="100" style="width:100%;"></div>
+            </div>
+            <div style="display:flex; gap:8px; margin-top:12px;">
+                <button onclick="dictSubmitCriteriaPrompt()" style="flex:2; background:var(--success); color:white; padding:8px; border:none; border-radius:4px; font-weight:bold;">PROCEED</button>
+                <button onclick="document.getElementById('dictCriteriaPromptModal').style.display='none'" style="flex:1; background:var(--danger); color:white; padding:8px; border:none; border-radius:4px;">CANCEL</button>
+            </div>
         </div>
     </div>
 
@@ -848,6 +922,6 @@
     }
 </script>
 
-<script src="app.js?v=76.20"></script>
+<script src="app.js?v=76.21"></script>
 </body>
 </html>
