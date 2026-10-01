@@ -97,7 +97,7 @@ async function fetchCloudDataOnLogin(userName) {
             activeCustomerIndex = -1;
             renderCustomerQueue();
             updateUniversalActionButtons();
-            showToast("✅ डेटा यशस्वीरित्या सिंक (Sync) झाला!", "success");
+            showToast("✅ डेटा यशस्वीरित्या सिंक झाला!", "success");
         } else {
             await triggerSilentCloudSync();
             showToast("✅ Local डेटा Cloud वर सिंक झाला!", "success");
@@ -105,7 +105,7 @@ async function fetchCloudDataOnLogin(userName) {
         updateLoginUI(userName, true);
     } catch(e) {
         console.error("Cloud Fetch Error", e);
-        showToast("⚠️ Cloud सिंक करताना एरर आला. तुम्ही ऑफलाइन मोडमध्ये काम करू शकता.", "warning");
+        showToast("⚠️ Cloud सिंक करताना एरर आला. ऑफलाइन मोड सुरू राहील.", "warning");
     }
 }
 
@@ -150,7 +150,7 @@ if (pdfInputEl) {
                 const pdf = await pdfjsLib.getDocument(typedarray).promise; let fullText = "";
                 for (let i = 1; i <= pdf.numPages; i++) { const page = await pdf.getPage(i); const textContent = await page.getTextContent(); fullText += " " + textContent.items.map(item => item.str).join(" "); }
                 parsePDFText(fullText); statusEl.style.color = 'var(--success)'; statusEl.innerText = '✔ PDF data extracted successfully!';
-            } catch (error) { statusEl.style.color = 'var(--danger)'; statusEl.innerText = '⚠️ Error reading PDF. Please verify details manually.'; }
+            } catch (error) { statusEl.style.color = 'var(--danger)'; statusEl.innerText = '⚠️️ Error reading PDF. Please verify details manually.'; }
         };
         fileReader.readAsArrayBuffer(file);
     });
@@ -237,9 +237,9 @@ function renderEmiDrafts() {
                 📅 पहिला हप्ता सुरू होण्याची तारीख: <b style="color:#d35400;">${d.startDate || '-'}</b><br>
                 📅 शेवटचा हप्ता संपण्याची तारीख: <b style="color:#d35400;">${d.endDate || '-'}</b>
                 <div style="display:flex; gap:6px; margin-top:10px; border-top:1px solid #eee; padding-top:10px;">
-                    <button onclick="loadEmiDraft(${index})" style="flex:1; background:var(--indigo); color:white; padding:8px; border-radius:4px; border:none; cursor:pointer; font-weight:bold; font-size: 11px;">✏️ LOAD</button>
+                    <button onclick="loadEmiDraft(${index})" style="flex:1; background:var(--indigo); color:white; padding:8px; border-radius:4px; border:none; cursor:pointer; font-weight:bold; font-size: 11px;">✏️️ LOAD</button>
                     <button onclick="sendDraftNow(${index})" style="flex:1.2; background:#25D366; color:white; padding:8px; border-radius:4px; border:none; cursor:pointer; font-weight:bold; font-size: 11px;">💬 SEND NOW</button>
-                    <button onclick="markDraftAsSent(${index})" style="flex:0.8; background:var(--danger); color:white; padding:8px; border-radius:4px; border:none; cursor:pointer; font-weight:bold; font-size: 11px;">🗑️️ DELETE</button>
+                    <button onclick="markDraftAsSent(${index})" style="flex:0.8; background:var(--danger); color:white; padding:8px; border-radius:4px; border:none; cursor:pointer; font-weight:bold; font-size: 11px;">🗑 DELETE</button>
                 </div>
             </div>
         </div>
@@ -297,7 +297,7 @@ function parseExcelDate(val) { if (!val) return null; if (typeof val === 'number
 
 async function saveQueueToLocal(shouldCloudSync = true) { try { let compactQueue = customerQueue.map(c => { let cp = (c.products || []).map(p => { let { calculatedData, allSchemes, ...keepProduct } = p; return keepProduct; }); return { ...c, products: cp }; }); localStorage.setItem('persistent_queue_backup', JSON.stringify(compactQueue)); localStorage.setItem('persistent_active_idx_backup', activeCustomerIndex); await saveToDB('persistent_queue', compactQueue); await saveToDB('persistent_active_idx', activeCustomerIndex); if(shouldCloudSync && loggedInUserEmail) { triggerSilentCloudSync(); } } catch(e) { console.error("Local Save Interrupted", e); } }
 
-// ⚡ CACHE DURATION: १२ तासांवरून ५ मिनिटे केली आहे, ज्यामुळे नवीन डेटा पटकन रिफ्लेक्ट होईल
+// ⚡ CACHE DURATION: ५ मिनिटे
 const CACHE_DURATION_MS = 5 * 60 * 1000; 
 
 async function fetchFromMasterStream(forceSync = false) {
@@ -373,7 +373,7 @@ async function fetchFromMasterStream(forceSync = false) {
             if (!seenDB.has(key)) { seenDB.add(key); uniqueDB.push(r); } 
         });
 
-        // 🌟 एक्सपायरी फिल्टर काढून सर्व मॉडेल्स डेटाबेसमध्ये सेव्ह केली जात आहेत
+        // एक्सपायरी फिल्टर काढून सर्व मॉडेल्स डेटाबेसमध्ये सेव्ह केली जात आहेत
         db_records = uniqueDB;
 
         await saveToDB('cached_db_records', db_records);
@@ -423,7 +423,6 @@ window.onload = async function() {
     } 
     generateStackCards(); 
 
-    // बॅजवर क्लिक केल्यावर मॅन्युअली डाऊनलोड सुरू होईल
     let statusBadge = document.getElementById('gitStatusBadge');
     if(statusBadge) {
         statusBadge.style.cursor = 'pointer';
@@ -481,7 +480,7 @@ function generateFlyer() {
     let sName = document.getElementById('fgSalesName').value.trim(); let sMob = document.getElementById('fgSalesMobile').value.trim(); let oType = document.getElementById('fgOfferType').value; let oVal = document.getElementById('fgOfferValue').value.trim();
     if(!sName || !sMob || sMob.length !== 10) { showToast("⚠️ Kripya Salesman Name aur 10-Digit Mobile Number barabar dalein!", "error"); return; }
     if(!tempFgDealerId) { showToast("⚠️ Kadak Niyam: Dealer Shop select karna Compulsory hai!", "error"); return; }
-    if(!tempFgBitly) { showToast("⚠️️ Is Dealer ki Bitly Link master data mein nahi mili!", "error"); return; }
+    if(!tempFgBitly) { showToast("⚠️ Is Dealer ki Bitly Link master data mein nahi mili!", "error"); return; }
     if(oType !== "NONE" && !oVal) { showToast("⚠️ Agar Offer select ki hai toh Amount ya Gift ka naam dalein!", "error"); return; }
     let baseUrl = window.location.href.split('?')[0]; baseUrl = baseUrl.replace(/index\.html?$/i, ''); if(!baseUrl.endsWith('/')) baseUrl += '/';
     let url = `${baseUrl}flyer.html?sn=${encodeURIComponent(sName)}&sm=${sMob}&did=${encodeURIComponent(tempFgDealerId)}&dn=${encodeURIComponent(tempFgDealerName)}&bl=${encodeURIComponent(tempFgBitly)}`;
@@ -490,31 +489,6 @@ function generateFlyer() {
 }
 function copyFlyerLink() { let copyText = document.getElementById('fgGeneratedLinkText'); copyText.select(); copyText.setSelectionRange(0, 99999); document.execCommand("copy"); showToast("✅ Link Copied!", "success"); }
 function shareOnWhatsAppStatus() { let generatedLink = document.getElementById('fgGeneratedLinkText').value; if (!generatedLink) { showToast("⚠️ Pehle link generate karein!", "error"); return; } let statusMessage = "🔥 *Festival Special Offers!* 🔥\n\nNaya Mobile, Laptop ya TV lene ka soch rahe ho? Zero percent interest (0% EMI) par kharidi karein!\n\n" + generatedLink; let encodedMessage = encodeURIComponent(statusMessage); window.open(`https://wa.me/?text=${encodedMessage}`, '_blank'); }
-
-function openDictionaryModal() { 
-    if(!db_records || db_records.length === 0) { showToast("⚠️ Schemes Dictionary load ho rahi hai, kripya 2 second wait karein...", "warning"); return; } 
-    document.getElementById('globalModelSearch').value = ''; 
-    document.getElementById('globalModelDropdown').style.display = 'none'; 
-    document.getElementById('schemeResultArea').style.display = 'none';
-
-    if (activeCustomerIndex !== -1 && customerQueue[activeCustomerIndex]) {
-        let c = customerQueue[activeCustomerIndex];
-        document.getElementById('calcCustType').value = c.type || "NEW";
-        document.getElementById('calcLimit').value = c.limit || "";
-        document.getElementById('calcLtv').value = c.ltv || 100;
-        document.getElementById('calcCap').value = c.cap || "";
-    } else {
-        document.getElementById('calcCustType').value = "NEW";
-        document.getElementById('calcLimit').value = "";
-        document.getElementById('calcLtv').value = "100";
-        document.getElementById('calcCap').value = "";
-    }
-
-    document.getElementById('dictionarySearchModal').style.display = 'flex'; 
-    setTimeout(() => document.getElementById('globalModelSearch').focus(), 100); 
-}
-
-function closeDictionaryModal() { document.getElementById('dictionarySearchModal').style.display = 'none'; }
 
 function doGlobalSearch() { 
     let q = document.getElementById('globalModelSearch').value.toUpperCase().trim(); 
@@ -533,204 +507,10 @@ function doGlobalSearch() {
     dd.style.display = 'block'; 
 }
 
-function viewGlobalModel(name) {
-    document.getElementById('globalModelSearch').value = name;
-    document.getElementById('globalModelDropdown').style.display = 'none';
-    currentViewedModel = name;
-
-    let rec = db_records.find(r => r.model === name);
-    if(rec && rec.mrp > 0) {
-        document.getElementById('calcInvoice').value = rec.mrp;
-    } else {
-        document.getElementById('calcInvoice').value = "";
-    }
-
-    recalcCurrentModel();
-
-    setTimeout(() => {
-        let resultArea = document.getElementById('schemeResultArea');
-        if(resultArea) resultArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
-}
-
 function recalcCurrentModel() {
     if(currentViewedModel !== "") {
         renderTableModel();
     }
-}
-
-function renderTableModel() {
-    let schemes = db_records.filter(r => r.model === currentViewedModel);
-    if(schemes.length === 0) return;
-
-    document.getElementById('globalViewerTitle').innerText = '📱 ' + currentViewedModel;
-
-    let custType = document.getElementById('calcCustType').value;
-    let ltvLimit = parseFloat(document.getElementById('calcLtv').value) || 100;
-    let limit = parseFloat(document.getElementById('calcLimit').value) || 0;
-    let invoice = parseFloat(document.getElementById('calcInvoice').value) || 0;
-    let margin = parseFloat(document.getElementById('calcMargin').value) || 0;
-    let targetDp = parseFloat(document.getElementById('calcTarget').value) || 0;
-    let emiCap = parseFloat(document.getElementById('calcCap').value) || 0;
-
-    let gtl = invoice > 100000 ? 2398 : (invoice > 50000 ? 1799 : (invoice > 30000 ? 1499 : (invoice > 10000 ? 1199 : (invoice > 0 ? 699 : 0))));
-
-    let isCalculatedMode = (limit > 0 && invoice > 0);
-    let fee = (custType === 'EMI CARD') ? 270 : (custType === 'W/O CARD' ? 320 : 850);
-
-    let validSchemes = schemes.filter(s => s.tenure > 0 || s.fixedEmi > 0);
-
-    let thead = document.getElementById('tableHead');
-    if (isCalculatedMode) {
-        thead.innerHTML = `<tr>
-            <th style="display: table-cell !important; background:#e3f2fd; padding:10px 4px; font-size:12px;">T/A</th>
-            <th style="background:#e3f2fd; padding:10px 4px; font-size:12px;">LTV%</th>
-            <th style="background:#e8f5e9; color:var(--success); padding:10px 4px; font-size:12px;">LOAN</th>
-            <th style="background:#fff3e0; color:#d35400; padding:10px 4px; font-size:12px;">DIFF</th>
-            <th style="background:#e8f5e9; color:var(--success); padding:10px 4px; font-size:12px;">NET DP</th>
-            <th style="background:#e3f2fd; color:var(--primary); padding:10px 4px; font-size:12px;">EMI</th>
-            <th style="background:#e3f2fd; color:var(--primary); padding:10px 4px; font-size:12px;">M</th>
-            <th style="padding:10px 4px; font-size:12px;">ACT</th>
-        </tr>`;
-    } else {
-        thead.innerHTML = `<tr>
-            <th style="display: table-cell !important; background:#e3f2fd;">T/A</th>
-            <th style="background:#e3f2fd;">LTV%</th>
-            <th style="background:#e3f2fd;">FIXED EMI</th>
-            <th style="background:#e3f2fd;">DBD%</th>
-            <th style="background:#e3f2fd;">ROI%</th>
-            <th style="background:#e3f2fd;">PF</th>
-        </tr>`;
-    }
-
-    validSchemes.forEach(s => { 
-        s.calcLTV = s.tenure > 0 ? ((s.tenure - s.advEmi)/s.tenure)*100 : 0; 
-
-        if (isCalculatedMode) {
-            let nbfcMax = (limit * s.tenure) / (s.tenure - s.advEmi || 1);
-            let finalLoan = 0, emi = 0, dp = 0, diff = 0;
-            let dbdRate = (s.dbd * 1.18 / 100);
-            let roiRate = s.roi / 1200;
-            let roiRateDP = roiRate * s.advEmi;
-            let inst = s.tenure - s.advEmi;
-            if (inst < 1) inst = 1;
-
-            if (s.fixedEmi > 0) {
-                let maxTotalTenure = Math.floor(limit / s.fixedEmi) + s.advEmi;
-                let currentTenure = Math.floor(invoice / s.fixedEmi);
-                if(currentTenure > maxTotalTenure) currentTenure = maxTotalTenure;
-                if(currentTenure < 1) currentTenure = 1;
-
-                finalLoan = currentTenure * s.fixedEmi;
-
-                if (targetDp > 0) {
-                    let numerator = targetDp - invoice - (s.fixedEmi * s.advEmi) - s.pf - fee - margin;
-                    let denominator = dbdRate + roiRateDP - 1;
-                    let solvedLoan = numerator / denominator;
-                    let solvedTenure = Math.floor(solvedLoan / s.fixedEmi);
-                    if (solvedTenure > maxTotalTenure) solvedTenure = maxTotalTenure;
-                    finalLoan = Math.max(0, solvedTenure * s.fixedEmi);
-                }
-
-                if (finalLoan > invoice) finalLoan = Math.floor(invoice/s.fixedEmi)*s.fixedEmi;
-                currentTenure = Math.floor(finalLoan / s.fixedEmi) || 1;
-                inst = currentTenure - s.advEmi;
-                if(inst < 1) inst = 1;
-
-                let roiInEmi = finalLoan * roiRate;
-                emi = s.fixedEmi + (gtl / inst) + roiInEmi;
-
-                let roiInDp = finalLoan * roiRateDP;
-                dp = invoice - finalLoan + (s.fixedEmi * s.advEmi) + s.pf + fee + (finalLoan * dbdRate) + margin + roiInDp;
-                s.currentTenure = currentTenure;
-                s.calcInst = inst;
-            } else {
-                finalLoan = Math.min(nbfcMax, invoice);
-
-                if (targetDp > 0) {
-                    let advRate = s.advEmi / s.tenure; 
-                    let numerator = targetDp - invoice - s.pf - fee - margin; 
-                    let denominator = advRate + dbdRate + roiRateDP - 1; 
-                    let solvedLoan = numerator / denominator; 
-                    finalLoan = Math.min(finalLoan, Math.max(0, Math.floor(solvedLoan)));
-                }
-
-                if (invoice > 0 && finalLoan > invoice) {
-                    finalLoan = invoice;
-                }
-
-                let baseEmi = finalLoan / s.tenure;
-                if (baseEmi > 0 && baseEmi < 900) baseEmi = 900; 
-
-                let roiInEmi = finalLoan * roiRate;
-                emi = baseEmi + (gtl / inst) + roiInEmi;
-
-                if (emiCap > 0 && emi > emiCap) {
-                    finalLoan = (emiCap - (gtl / inst)) / ((1 / s.tenure) + roiRate);
-                    if(finalLoan < 0) finalLoan = 0;
-                    if (invoice > 0 && finalLoan > invoice) finalLoan = invoice; 
-
-                    baseEmi = finalLoan / s.tenure;
-                    if (baseEmi > 0 && baseEmi < 900) baseEmi = 900;
-
-                    roiInEmi = finalLoan * roiRate;
-                    emi = baseEmi + (gtl / inst) + roiInEmi;
-                }
-
-                let roiInDp = finalLoan * roiRateDP;
-                dp = invoice - finalLoan + (baseEmi * s.advEmi) + s.pf + fee + (finalLoan * dbdRate) + margin + roiInDp;
-                s.currentTenure = s.tenure;
-                s.calcInst = inst;
-            }
-
-            s.calcLoan = finalLoan;
-            s.isInvalidLoan = (isCalculatedMode && invoice > 0 && (finalLoan < (invoice * 0.5)));
-
-            diff = invoice - finalLoan;
-            s.calcDiff = diff > 0 ? diff : 0;
-            s.calcDp = Math.ceil(dp/10)*10;
-            s.calcEmi = emi;
-        }
-    });
-
-    validSchemes = validSchemes.filter(s => (s.fixedEmi > 0 || s.calcLTV <= ltvLimit) && !s.isInvalidLoan);
-
-    if (isCalculatedMode) {
-        validSchemes.sort((a,b) => a.calcDp - b.calcDp);
-    } else {
-        validSchemes.sort((a,b) => b.calcLTV - a.calcLTV);
-    }
-
-    let tbody = document.getElementById('globalViewerBody');
-    tbody.innerHTML = validSchemes.map(s => {
-        let displayTenure = s.currentTenure ? s.currentTenure : s.tenure;
-        if (isCalculatedMode) {
-            return `<tr>
-                <td style="display: table-cell !important; font-weight:900; color:var(--indigo); border-bottom:1px solid #eee; padding:10px 4px; font-size:13px;">${displayTenure}/${s.advEmi}</td>
-                <td style="font-weight:bold; color:var(--bajaj-blue); border-bottom:1px solid #eee; padding:10px 4px; font-size:13px;">${Math.round(s.calcLTV)}%</td>
-                <td style="border-bottom:1px solid #eee; background:#f4fcf6; color:var(--success); font-weight:900; padding:10px 4px; font-size:13px;">₹${Math.floor(s.calcLoan).toLocaleString()}</td>
-                <td style="border-bottom:1px solid #eee; background:#fff3e0; color:#d35400; font-weight:900; padding:10px 4px; font-size:13px;">₹${Math.floor(s.calcDiff).toLocaleString()}</td>
-                <td style="border-bottom:1px solid #eee; background:#f4fcf6; color:var(--success); font-weight:900; padding:10px 4px; font-size:13px;">₹${Math.round(s.calcDp).toLocaleString()}</td>
-                <td style="border-bottom:1px solid #eee; background:#eef6ff; color:var(--primary); font-weight:900; padding:10px 4px; font-size:13px;">₹${Math.round(s.calcEmi).toLocaleString()}</td>
-                <td style="font-weight:900; color:var(--primary); background:#eef6ff; border-bottom:1px solid #eee; padding:10px 4px; font-size:13px;">${s.calcInst}</td>
-                <td style="border-bottom:1px solid #eee; padding:10px 4px;"><button style="padding:4px 6px; font-size:10px !important; background:var(--primary); color:white; border:none; border-radius:3px; cursor:pointer;" onclick="copySingleScheme('${displayTenure}', '${s.advEmi}', '${s.calcLoan}', '${s.calcDp}', '${s.calcEmi}', '${s.fixedEmi}', '${s.dbd}', '${s.roi}', '${s.pf}', this)">COPY</button></td>
-            </tr>`;
-        } else {
-            let dbdAmtPreview = invoice > 0 ? invoice * (s.dbd * 1.18 / 100) : 0;
-            let dbdStr = invoice > 0 ? `${+parseFloat(s.dbd).toFixed(3)}%<br><span style="color:var(--danger); font-weight:900;">₹${Math.round(dbdAmtPreview).toLocaleString()}</span>` : `${+parseFloat(s.dbd).toFixed(3)}%`;
-
-            return `<tr>
-                <td style="display: table-cell !important; font-weight:900; color:var(--indigo); border-bottom:1px solid #eee;">${displayTenure}/${s.advEmi}</td>
-                <td style="font-weight:bold; color:var(--bajaj-blue); border-bottom:1px solid #eee;">${Math.round(s.calcLTV)}%</td>
-                <td style="font-weight:900; color:var(--primary); border-bottom:1px solid #eee;">${s.fixedEmi > 0 ? '₹'+s.fixedEmi : 'N/A'}</td>
-                <td style="border-bottom:1px solid #eee;">${dbdStr}</td>
-                <td style="border-bottom:1px solid #eee;">${+parseFloat(s.roi).toFixed(2)}%</td>
-                <td style="font-weight:900; border-bottom:1px solid #eee;">₹${s.pf}</td>
-            </tr>`;
-        }
-    }).join('');
-
-    document.getElementById('schemeResultArea').style.display = 'block';
 }
 
 function copySingleScheme(tenure, advEmi, loan, dp, emi, fixedEmi, dbd, roi, pf, btn) {
@@ -1074,7 +854,7 @@ function renderCustomerQueue() {
         </div>`; 
     }).join(''); 
 }
-async function setActiveCustomer(idx) { if(db_records.length === 0) { showToast("⚠️ Master Stream se data fetch nahi hua hai. Kripya connection check karein!", "error"); return; } activeCustomerIndex = idx; await saveQueueToLocal(); document.getElementById('queueSearch').value = ''; goToFinalPage(); }
+async function setActiveCustomer(idx) { if(db_records.length === 0) { showToast("⚠️️ Master Stream se data fetch nahi hua hai. Kripya connection check karein!", "error"); return; } activeCustomerIndex = idx; await saveQueueToLocal(); document.getElementById('queueSearch').value = ''; goToFinalPage(); }
 function isLimitValid() { if (activeCustomerIndex === -1 || !customerQueue[activeCustomerIndex]) { showToast("⚠️ Kripya pehle queue mein ek customer add karein aur use 'ACTIVE' rakhein.", "warning"); return false; } return true; }
 
 function generateStackCards() { let container = document.getElementById('stackInputsContainer'); if(!container) return; container.innerHTML = ""; for(let i=1; i<=10; i++) { container.innerHTML += ` <div class="stack-card"><div style="font-weight:900; color:var(--primary); margin-bottom:4px; border-bottom:1px solid #eee; padding-bottom:2px;">SCHEME #${i}</div> <div class="inner-grid"> <div><label>TENURE (MAX)</label><input type="number" id="msTen_${i}" placeholder="0"></div> <div><label>ADVANCE</label><input type="number" id="msAdv_${i}" placeholder="0"></div> <div><label>DBD %</label><input type="number" id="msDbd_${i}" placeholder="0"></div> <div><label>PF (₹)</label><input type="number" id="msPf_${i}" placeholder="0"></div> <div><label>ROI %</label><input type="number" id="msRoi_${i}" placeholder="0"></div> <div><label>FIXED EMI (₹)</label><input type="number" id="msFix_${i}" placeholder="0"></div> </div> </div>`; } }
@@ -1091,7 +871,6 @@ async function processMultiStack() {
 
 function findValLocal(row, targets) { let key = Object.keys(row).find(k => targets.includes(k.toUpperCase().replace(/\s/g, ''))); return key ? row[key] : null; }
 
-// 🌟 सुधारित mapData: एक्सपायरी तारीखचे कोणतेही बंधन उरलेले नाही
 function mapData(row, type) { 
     if(!row) return null; 
     let expVal = findValLocal(row, ['EXPIRY', 'EXPIRYDATE', 'VALIDTILL', 'SCHEMEEXPIRY', 'ENDDATE']); 
@@ -2078,4 +1857,529 @@ function openZatpatCalcModal() {
     if(modal) {
         modal.style.display = 'flex';
     }
+}
+
+/* ========================================================== */
+/* 🔍 SMART SCHEMES DICTIONARY ADVANCED LOGIC                 */
+/* ========================================================== */
+
+let dictBasketProducts = [];
+let dictManualLoans = {};
+
+function openDictionaryModal() { 
+    if(!db_records || db_records.length === 0) { 
+        showToast("⚠️ Schemes Dictionary load होत आहे, कृपया २ सेकंद थांबा...", "warning"); 
+        return; 
+    } 
+    document.getElementById('globalModelSearch').value = ''; 
+    document.getElementById('globalModelDropdown').style.display = 'none'; 
+    document.getElementById('schemeResultArea').style.display = 'none';
+    dictManualLoans = {};
+
+    dictPopulateCustomerDropdown();
+
+    if (activeCustomerIndex !== -1 && customerQueue[activeCustomerIndex]) {
+        let c = customerQueue[activeCustomerIndex];
+        document.getElementById('dictCustSelect').value = activeCustomerIndex;
+        dictLoadCustomerToInputs(c);
+    } else {
+        document.getElementById('dictCustSelect').value = "-1";
+        document.getElementById('calcCustType').value = "NEW";
+        document.getElementById('calcLimit').value = "";
+        document.getElementById('calcLtv').value = "100";
+        document.getElementById('calcCap').value = "";
+    }
+
+    renderDictBasketChips();
+    document.getElementById('dictionarySearchModal').style.display = 'flex'; 
+    setTimeout(() => document.getElementById('globalModelSearch').focus(), 100); 
+}
+
+function closeDictionaryModal() { 
+    document.getElementById('dictionarySearchModal').style.display = 'none'; 
+}
+
+function dictPopulateCustomerDropdown() {
+    let sel = document.getElementById('dictCustSelect');
+    if (!sel) return;
+    let html = `<option value="-1">-- Direct Calculate (No Customer) --</option>`;
+    customerQueue.forEach((c, idx) => {
+        html += `<option value="${idx}">👤 ${c.name} (Limit: ₹${c.limit} | LTV: ${c.ltv}%)</option>`;
+    });
+    sel.innerHTML = html;
+}
+
+function dictFilterCustomerDropdown() {
+    let q = document.getElementById('dictCustSearch').value.toLowerCase().trim();
+    let sel = document.getElementById('dictCustSelect');
+    let filtered = customerQueue.map((c, idx) => ({ ...c, idx })).filter(c => {
+        if (!q) return true;
+        return c.name.toLowerCase().includes(q) || (c.mobile && c.mobile.includes(q)) || c.limit.toString().includes(q);
+    });
+    let html = `<option value="-1">-- Direct Calculate (No Customer) --</option>`;
+    filtered.forEach(c => {
+        html += `<option value="${c.idx}">👤 ${c.name} (Limit: ₹${c.limit} | LTV: ${c.ltv}%)</option>`;
+    });
+    sel.innerHTML = html;
+}
+
+function dictOnCustomerSelected() {
+    let val = parseInt(document.getElementById('dictCustSelect').value);
+    if (val !== -1 && customerQueue[val]) {
+        activeCustomerIndex = val;
+        dictLoadCustomerToInputs(customerQueue[val]);
+        saveQueueToLocal(false);
+    }
+    recalcCurrentModel();
+}
+
+function dictLoadCustomerToInputs(c) {
+    document.getElementById('calcCustType').value = c.type || "NEW";
+    document.getElementById('calcLimit').value = c.limit || "";
+    document.getElementById('calcLtv').value = c.ltv || 100;
+    document.getElementById('calcCap').value = c.cap || "";
+}
+
+function dictToggleNewCustMode() {
+    let box = document.getElementById('dictNewCustBox');
+    let btn = document.getElementById('dictCustModeBtn');
+    if (box.style.display === 'none' || box.style.display === '') {
+        box.style.display = 'grid';
+        btn.innerText = '✖ CLOSE';
+    } else {
+        box.style.display = 'none';
+        btn.innerText = '+ ADD NEW TO QUEUE';
+    }
+}
+
+async function dictSaveNewCustomerToQueue() {
+    let name = document.getElementById('dictNewName').value.trim() || `Cust ${customerQueue.length + 1}`;
+    let mobile = document.getElementById('dictNewMobile').value.trim() || "";
+    let limit = parseFloat(document.getElementById('dictNewLimit').value);
+    let type = document.getElementById('dictNewType').value;
+    let ltv = parseFloat(document.getElementById('calcLtv').value) || 100;
+    let cap = parseFloat(document.getElementById('calcCap').value) || "";
+
+    if (!limit || limit <= 0 || isNaN(limit)) {
+        showToast("⚠️ कृपया NBFC Limit भरा!", "error");
+        return;
+    }
+
+    let now = new Date();
+    let ts = now.toLocaleDateString('en-GB', { day:'2-digit', month:'short' }) + ' ' + now.toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit' });
+    let newCustObj = { name, mobile, limit, ltv, type, cap, timestamp: ts, components: {}, products: [], sortConfigs: [] };
+
+    customerQueue.unshift(newCustObj);
+    activeCustomerIndex = 0;
+    await saveQueueToLocal();
+
+    dictPopulateCustomerDropdown();
+    document.getElementById('dictCustSelect').value = "0";
+    dictLoadCustomerToInputs(newCustObj);
+    dictToggleNewCustMode();
+
+    renderCustomerQueue();
+    updateUniversalActionButtons();
+    showToast(`✅ ${name} Queue मध्ये सेव्ह झाला आणि सिलेक्ट केला!`, "success");
+    recalcCurrentModel();
+}
+
+function dictInvoiceChanged() {
+    let inv = parseFloat(document.getElementById('calcInvoice').value) || 0;
+    let rec = db_records.find(r => r.model === currentViewedModel);
+    let isPhone = rec ? isMobileDeviceCat(rec.category) : false;
+
+    let gtl = inv > 100000 ? 2398 : (inv > 50000 ? 1799 : (inv > 30000 ? 1499 : (inv > 10000 ? 1199 : (inv > 0 ? 699 : 0))));
+    document.getElementById('calcGtl').value = gtl;
+
+    let rfcSlab = getRfcSlabValue(inv);
+    let rfcOpt = document.getElementById('calcRfcOpt');
+    let rfcSel = document.getElementById('calcRfc');
+    let exwInp = document.getElementById('calcExw');
+
+    if (rfcOpt) { rfcOpt.value = rfcSlab; rfcOpt.innerText = rfcSlab; }
+
+    if (isPhone) {
+        rfcSel.disabled = false;
+        rfcSel.style.background = '#fff';
+        rfcSel.style.cursor = 'default';
+        rfcSel.value = rfcSlab;
+        exwInp.value = "";
+        exwInp.disabled = true;
+        exwInp.style.background = '#e9ecef';
+        exwInp.style.cursor = 'not-allowed';
+    } else {
+        rfcSel.value = "0";
+        rfcSel.disabled = true;
+        rfcSel.style.background = '#e9ecef';
+        rfcSel.style.cursor = 'not-allowed';
+        exwInp.disabled = false;
+        exwInp.style.background = '#fff';
+        exwInp.style.cursor = 'text';
+    }
+
+    dictManualLoans = {};
+    recalcCurrentModel();
+}
+
+function viewGlobalModel(name) {
+    document.getElementById('globalModelSearch').value = name;
+    document.getElementById('globalModelDropdown').style.display = 'none';
+    currentViewedModel = name;
+    dictManualLoans = {};
+
+    let rec = db_records.find(r => r.model === name);
+    if(rec && rec.mrp > 0) {
+        document.getElementById('calcInvoice').value = rec.mrp;
+    } else {
+        document.getElementById('calcInvoice').value = "";
+    }
+
+    dictInvoiceChanged();
+
+    setTimeout(() => {
+        let resultArea = document.getElementById('schemeResultArea');
+        if(resultArea) resultArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+}
+
+function renderTableModel() {
+    let schemes = db_records.filter(r => r.model === currentViewedModel);
+    if(schemes.length === 0) return;
+
+    document.getElementById('globalViewerTitle').innerText = '📱 ' + currentViewedModel;
+
+    let custType = document.getElementById('calcCustType').value;
+    let ltvLimit = parseFloat(document.getElementById('calcLtv').value) || 100;
+    let limit = parseFloat(document.getElementById('calcLimit').value) || 0;
+    let invoice = parseFloat(document.getElementById('calcInvoice').value) || 0;
+    let margin = parseFloat(document.getElementById('calcMargin').value) || 0;
+    let targetDp = parseFloat(document.getElementById('calcTarget').value) || 0;
+    let emiCap = parseFloat(document.getElementById('calcCap').value) || 0;
+
+    let gtl = parseFloat(document.getElementById('calcGtl').value) || 0;
+    let rfc = parseFloat(document.getElementById('calcRfc').value) || 0;
+    let exw = parseFloat(document.getElementById('calcExw').value) || 0;
+    let insTotal = gtl + rfc + exw;
+
+    let isCalculatedMode = (limit > 0 && invoice > 0);
+    let fee = (custType === 'EMI CARD') ? 270 : (custType === 'W/O CARD' ? 320 : 850);
+    let totalFees = fee + margin;
+
+    let validSchemes = schemes.filter(s => s.tenure > 0 || s.fixedEmi > 0);
+    let minAllowedLoan = invoice > 0 ? invoice * 0.50 : 0;
+
+    let thead = document.getElementById('tableHead');
+    if (isCalculatedMode) {
+        thead.innerHTML = `<tr>
+            <th style="background:#e3f2fd; padding:10px 4px; font-size:12px;">T/A</th>
+            <th style="background:#e3f2fd; padding:10px 4px; font-size:12px;">LTV%</th>
+            <th style="background:#e8f5e9; color:var(--success); padding:10px 4px; font-size:12px;">LOAN (EDIT)</th>
+            <th style="background:#fff3e0; color:#d35400; padding:10px 4px; font-size:12px;">DIFF</th>
+            <th style="background:#e8f5e9; color:var(--success); padding:10px 4px; font-size:12px;">NET DP</th>
+            <th style="background:#e3f2fd; color:var(--primary); padding:10px 4px; font-size:12px;">EMI</th>
+            <th style="background:#e3f2fd; color:var(--primary); padding:10px 4px; font-size:12px;">M</th>
+            <th style="padding:10px 4px; font-size:12px;">ACT</th>
+        </tr>`;
+    } else {
+        thead.innerHTML = `<tr>
+            <th style="background:#e3f2fd;">T/A</th>
+            <th style="background:#e3f2fd;">LTV%</th>
+            <th style="background:#e3f2fd;">FIXED EMI</th>
+            <th style="background:#e3f2fd;">DBD%</th>
+            <th style="background:#e3f2fd;">ROI%</th>
+            <th style="background:#e3f2fd;">PF</th>
+        </tr>`;
+    }
+
+    validSchemes.forEach((s, idx) => { 
+        s.calcLTV = s.tenure > 0 ? ((s.tenure - s.advEmi)/s.tenure)*100 : 0; 
+
+        if (isCalculatedMode) {
+            let nbfcMax = (limit * s.tenure) / (s.tenure - s.advEmi || 1);
+            let finalLoan = 0, emi = 0, dp = 0, diff = 0;
+            let dbdRate = (s.dbd * 1.18 / 100);
+            let roiRate = s.roi / 1200;
+            let roiRateDP = roiRate * s.advEmi;
+            let inst = s.tenure - s.advEmi;
+            if (inst < 1) inst = 1;
+
+            if (s.fixedEmi > 0) {
+                let maxTotalTenure = Math.floor(limit / s.fixedEmi) + s.advEmi;
+                let currentTenure = Math.floor(invoice / s.fixedEmi);
+                if(currentTenure > maxTotalTenure) currentTenure = maxTotalTenure;
+                if(currentTenure < 1) currentTenure = 1;
+
+                finalLoan = currentTenure * s.fixedEmi;
+
+                if (targetDp > 0) {
+                    let numerator = targetDp - invoice - (s.fixedEmi * s.advEmi) - s.pf - totalFees;
+                    let denominator = dbdRate + roiRateDP - 1;
+                    let solvedLoan = numerator / denominator;
+                    let solvedTenure = Math.floor(solvedLoan / s.fixedEmi);
+                    if (solvedTenure > maxTotalTenure) solvedTenure = maxTotalTenure;
+                    finalLoan = Math.max(0, solvedTenure * s.fixedEmi);
+                }
+
+                if (finalLoan > invoice) finalLoan = Math.floor(invoice/s.fixedEmi)*s.fixedEmi;
+                
+                if (dictManualLoans[idx] !== undefined) {
+                    finalLoan = dictManualLoans[idx];
+                }
+
+                currentTenure = Math.floor(finalLoan / s.fixedEmi) || 1;
+                inst = currentTenure - s.advEmi;
+                if(inst < 1) inst = 1;
+
+                let roiInEmi = finalLoan * roiRate;
+                emi = s.fixedEmi + (insTotal / inst) + roiInEmi;
+
+                let roiInDp = finalLoan * roiRateDP;
+                dp = invoice - finalLoan + (s.fixedEmi * s.advEmi) + s.pf + totalFees + (finalLoan * dbdRate) + roiInDp;
+                s.currentTenure = currentTenure;
+                s.calcInst = inst;
+            } else {
+                finalLoan = Math.min(nbfcMax, invoice);
+
+                if (targetDp > 0) {
+                    let advRate = s.advEmi / s.tenure; 
+                    let numerator = targetDp - invoice - s.pf - totalFees; 
+                    let denominator = advRate + dbdRate + roiRateDP - 1; 
+                    let solvedLoan = numerator / denominator; 
+                    finalLoan = Math.min(finalLoan, Math.max(0, Math.floor(solvedLoan)));
+                }
+
+                if (dictManualLoans[idx] !== undefined) {
+                    finalLoan = dictManualLoans[idx];
+                }
+
+                if (invoice > 0 && finalLoan > invoice) finalLoan = invoice;
+
+                let baseEmi = finalLoan / s.tenure;
+                if (baseEmi > 0 && baseEmi < 900) baseEmi = 900; 
+
+                let roiInEmi = finalLoan * roiRate;
+                emi = baseEmi + (insTotal / inst) + roiInEmi;
+
+                if (emiCap > 0 && emi > emiCap && dictManualLoans[idx] === undefined) {
+                    finalLoan = (emiCap - (insTotal / inst)) / ((1 / s.tenure) + roiRate);
+                    if(finalLoan < 0) finalLoan = 0;
+                    if (invoice > 0 && finalLoan > invoice) finalLoan = invoice; 
+
+                    baseEmi = finalLoan / s.tenure;
+                    if (baseEmi > 0 && baseEmi < 900) baseEmi = 900; 
+
+                    roiInEmi = finalLoan * roiRate;
+                    emi = baseEmi + (insTotal / inst) + roiInEmi;
+                }
+
+                let roiInDp = finalLoan * roiRateDP;
+                dp = invoice - finalLoan + (baseEmi * s.advEmi) + s.pf + totalFees + (finalLoan * dbdRate) + roiInDp;
+                s.currentTenure = s.tenure;
+                s.calcInst = inst;
+            }
+
+            s.calcLoan = finalLoan;
+            s.isInvalidLoan = (isCalculatedMode && invoice > 0 && (finalLoan < minAllowedLoan));
+
+            diff = invoice - finalLoan;
+            s.calcDiff = diff > 0 ? diff : 0;
+            s.calcDp = Math.ceil(dp/10)*10;
+            s.calcEmi = emi;
+            s.schemeIdx = idx;
+        }
+    });
+
+    validSchemes = validSchemes.filter(s => (s.fixedEmi > 0 || s.calcLTV <= ltvLimit) && !s.isInvalidLoan);
+
+    if (isCalculatedMode) {
+        validSchemes.sort((a,b) => a.calcDp - b.calcDp);
+    } else {
+        validSchemes.sort((a,b) => b.calcLTV - a.calcLTV);
+    }
+
+    let tbody = document.getElementById('globalViewerBody');
+    tbody.innerHTML = validSchemes.map(s => {
+        let displayTenure = s.currentTenure ? s.currentTenure : s.tenure;
+        if (isCalculatedMode) {
+            return `<tr>
+                <td style="font-weight:900; color:var(--indigo); border-bottom:1px solid #eee; padding:10px 4px; font-size:13px;">${displayTenure}/${s.advEmi}</td>
+                <td style="font-weight:bold; color:var(--bajaj-blue); border-bottom:1px solid #eee; padding:10px 4px; font-size:13px;">${Math.round(s.calcLTV)}%</td>
+                <td style="border-bottom:1px solid #eee; background:#f4fcf6; padding:10px 4px;">
+                    <input type="number" value="${Math.floor(s.calcLoan)}" onchange="dictManualLoanChange(${s.schemeIdx}, this.value)" style="width:75px; font-weight:900; color:var(--success); border:1px solid #a7f3d0; border-radius:4px; padding:4px; text-align:center;">
+                </td>
+                <td style="border-bottom:1px solid #eee; background:#fff3e0; color:#d35400; font-weight:900; padding:10px 4px; font-size:13px;">₹${Math.floor(s.calcDiff).toLocaleString()}</td>
+                <td style="border-bottom:1px solid #eee; background:#f4fcf6; color:var(--success); font-weight:900; padding:10px 4px; font-size:13px;">₹${Math.round(s.calcDp).toLocaleString()}</td>
+                <td style="border-bottom:1px solid #eee; background:#eef6ff; color:var(--primary); font-weight:900; padding:10px 4px; font-size:13px;">₹${Math.round(s.calcEmi).toLocaleString()}</td>
+                <td style="font-weight:900; color:var(--primary); background:#eef6ff; border-bottom:1px solid #eee; padding:10px 4px; font-size:13px;">${s.calcInst}</td>
+                <td style="border-bottom:1px solid #eee; padding:10px 4px;">
+                    <button style="padding:4px 6px; font-size:10px !important; background:var(--primary); color:white; border:none; border-radius:3px; cursor:pointer;" onclick="copySingleScheme('${displayTenure}', '${s.advEmi}', '${s.calcLoan}', '${s.calcDp}', '${s.calcEmi}', '${s.fixedEmi}', '${s.dbd}', '${s.roi}', '${s.pf}', this)">COPY</button>
+                </td>
+            </tr>`;
+        } else {
+            let dbdAmtPreview = invoice > 0 ? invoice * (s.dbd * 1.18 / 100) : 0;
+            let dbdStr = invoice > 0 ? `${+parseFloat(s.dbd).toFixed(3)}%<br><span style="color:var(--danger); font-weight:900;">₹${Math.round(dbdAmtPreview).toLocaleString()}</span>` : `${+parseFloat(s.dbd).toFixed(3)}%`;
+
+            return `<tr>
+                <td style="font-weight:900; color:var(--indigo); border-bottom:1px solid #eee;">${displayTenure}/${s.advEmi}</td>
+                <td style="font-weight:bold; color:var(--bajaj-blue); border-bottom:1px solid #eee;">${Math.round(s.calcLTV)}%</td>
+                <td style="font-weight:900; color:var(--primary); border-bottom:1px solid #eee;">${s.fixedEmi > 0 ? '₹'+s.fixedEmi : 'N/A'}</td>
+                <td style="border-bottom:1px solid #eee;">${dbdStr}</td>
+                <td style="border-bottom:1px solid #eee;">${+parseFloat(s.roi).toFixed(2)}%</td>
+                <td style="font-weight:900; border-bottom:1px solid #eee;">₹${s.pf}</td>
+            </tr>`;
+        }
+    }).join('');
+
+    document.getElementById('schemeResultArea').style.display = 'block';
+}
+
+function dictManualLoanChange(schemeIdx, val) {
+    let invoice = parseFloat(document.getElementById('calcInvoice').value) || 0;
+    let minAllowed = invoice > 0 ? invoice * 0.50 : 0;
+    let loan = parseFloat(val) || 0;
+
+    if (invoice > 0 && loan < minAllowed) {
+        loan = minAllowed;
+        showToast("⚠️ लोन इन्व्हॉइसच्या ५०% पेक्षा कमी असू शकत नाही!", "error");
+    }
+    if (invoice > 0 && loan > invoice) {
+        loan = invoice;
+        showToast("⚠️ लोन इन्व्हॉइसपेक्षा जास्त असू शकत नाही!", "warning");
+    }
+
+    dictManualLoans[schemeIdx] = loan;
+    renderTableModel();
+}
+
+function addCurrentModelToDictBasket() {
+    if (!currentViewedModel) return;
+    let inv = parseFloat(document.getElementById('calcInvoice').value) || 0;
+    let gtl = parseFloat(document.getElementById('calcGtl').value) || 0;
+    let rfc = parseFloat(document.getElementById('calcRfc').value) || 0;
+    let exw = parseFloat(document.getElementById('calcExw').value) || 0;
+    let margin = parseFloat(document.getElementById('calcMargin').value) || 0;
+    let cap = parseFloat(document.getElementById('calcCap').value) || "";
+    let target = parseFloat(document.getElementById('calcTarget').value) || "";
+
+    let rec = db_records.find(r => r.model === currentViewedModel);
+    let category = rec ? rec.category : "OTHER";
+
+    let exist = dictBasketProducts.find(p => p.name === currentViewedModel);
+    if (exist) {
+        exist.inv = inv;
+        exist.gtl = gtl;
+        exist.rfc = rfc;
+        exist.exw = exw;
+        exist.margin = margin;
+    } else {
+        dictBasketProducts.push({
+            name: currentViewedModel,
+            category: category,
+            inv: inv,
+            gtl: gtl,
+            rfc: rfc,
+            exw: exw,
+            margin: margin,
+            cap: cap,
+            target: target
+        });
+    }
+
+    renderDictBasketChips();
+    showToast(`✅ ${currentViewedModel} बास्केटमध्ये ॲड झाले!`, "success");
+}
+
+function renderDictBasketChips() {
+    let box = document.getElementById('dictProductsBasket');
+    let chips = document.getElementById('dictBasketChips');
+    if (!box || !chips) return;
+
+    if (dictBasketProducts.length === 0) {
+        box.style.display = 'none';
+        return;
+    }
+
+    box.style.display = 'block';
+    chips.innerHTML = dictBasketProducts.map((p, idx) => `
+        <span style="background:#e0f2fe; color:var(--bajaj-blue); padding:4px 8px; border-radius:15px; font-size:11px; font-weight:900; border:1px solid #bae6fd; display:flex; align-items:center; gap:4px;">
+            📱 ${p.name} (₹${p.inv})
+            <span onclick="removeDictBasketProduct(${idx})" style="cursor:pointer; color:red; font-size:13px; font-weight:bold;">&times;</span>
+        </span>
+    `).join('');
+}
+
+function removeDictBasketProduct(idx) {
+    dictBasketProducts.splice(idx, 1);
+    renderDictBasketChips();
+}
+
+async function transferDictModelToFinalQueue() {
+    if (activeCustomerIndex === -1 || !customerQueue[activeCustomerIndex]) {
+        showToast("⚠️ कृपया आधी कस्टमर सिलेक्ट करा किंवा '+ ADD NEW' वरून ॲड करा!", "error");
+        return;
+    }
+
+    if (dictBasketProducts.length === 0 && currentViewedModel) {
+        addCurrentModelToDictBasket();
+    }
+
+    if (dictBasketProducts.length === 0) {
+        showToast("⚠️ ट्रान्सफर करण्यासाठी एकही प्रॉडक्ट नाही!", "warning");
+        return;
+    }
+
+    let cust = customerQueue[activeCustomerIndex];
+    if (!cust.products) cust.products = [];
+
+    dictBasketProducts.forEach(prod => {
+        let rawSchemes = db_records.filter(r => r.model === prod.name);
+        let ltvLimit = cust.ltv || 100;
+        let eligible = rawSchemes.filter(s => s.fixedEmi > 0 || (s.tenure > 0 && ((s.tenure - s.advEmi)/s.tenure)*100 <= ltvLimit));
+        
+        let uniqueSchemes = [];
+        let seen = new Set();
+        eligible.forEach(s => {
+            let key = `${s.tenure}_${s.advEmi}_${s.fixedEmi}_${s.minLoan}_${s.maxLoan}`;
+            if(!seen.has(key)) { seen.add(key); s.inactive = false; uniqueSchemes.push(s); }
+        });
+
+        let pIndex = cust.products.findIndex(p => p.name === prod.name);
+        let prodObj = {
+            name: prod.name,
+            isNonTieup: false,
+            schemes: uniqueSchemes,
+            category: prod.category,
+            inputs: {
+                mrp: prod.inv,
+                inv: prod.inv,
+                cap: prod.cap || cust.cap || "",
+                target: prod.target || "",
+                gtl: prod.gtl || 0,
+                rfc: prod.rfc || 0,
+                exw: prod.exw || 0,
+                margin: prod.margin || 0,
+                dealer: 0,
+                surch: 0,
+                manualLoans: {}
+            },
+            isManual: false
+        };
+
+        if (pIndex !== -1) {
+            cust.products[pIndex] = prodObj;
+        } else {
+            cust.products.push(prodObj);
+            if (!cust.sortConfigs) cust.sortConfigs = [];
+            cust.sortConfigs.push({ key: 'default_ltv', dir: 'desc' });
+        }
+    });
+
+    dictBasketProducts = [];
+    renderDictBasketChips();
+    await saveQueueToLocal();
+
+    closeDictionaryModal();
+    goToFinalPage();
+    showToast(`✅ प्रॉडक्ट्स फायनल स्क्रीनवर ट्रान्सफर झाले!`, "success");
 }
