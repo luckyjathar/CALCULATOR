@@ -7,15 +7,15 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Persistent Portal">
-    
-    <title>Persistent Portal V76.19 - User Friendly Edition</title>
-    
+
+    <title>Persistent Portal V76.20 - Pro Edition</title>
+
     <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-    
+
     <link rel="stylesheet" href="style.css?v=6.6">
 
     <!-- 📱 MOBILE FRIENDLY & APP-NAV CSS 📱 -->
@@ -38,7 +38,7 @@
         .top-utility-bar .util-btn {
             background: transparent;
             border: none;
-            font-size: 26px; /* मोठे आणि स्पष्ट आयकॉन्स */
+            font-size: 26px;
             padding: 8px;
             border-radius: 12px;
             cursor: pointer;
@@ -81,8 +81,7 @@
             header h1 {
                 font-size: 18px !important;
             }
-            
-            /* ग्रिड्स मोबाईलसाठी १ किंवा २ कॉलममध्ये बदलणे */
+
             #fastCalcContainer > div:nth-child(2) {
                 grid-template-columns: 1fr 1fr !important;
             }
@@ -92,17 +91,12 @@
             #editSchemeModal .modal-content > div:nth-child(3) {
                 grid-template-columns: 1fr !important;
             }
-            #dictionarySearchModal .modal-content > div > div {
-                flex-direction: column !important;
-            }
-            
-            /* Touch Targets: बोटाने क्लिक करायला सोपे */
+
             input[type="text"], input[type="number"], input[type="search"], input[type="date"], select, button {
                 min-height: 42px;
                 font-size: 14px;
             }
-            
-            /* मॉडल्स रुंदी ॲडजस्ट करणे */
+
             .modal-content {
                 width: 95% !important;
                 max-width: 100% !important;
@@ -118,13 +112,12 @@
             }
         }
 
-        /* एकदम छोट्या स्क्रीनसाठी */
         @media (max-width: 480px) {
             #fastCalcContainer > div:nth-child(2) {
                 grid-template-columns: 1fr !important;
             }
             .top-utility-bar .util-btn {
-                font-size: 22px; /* छोट्या स्क्रीनवर थोडे ॲडजस्ट केले */
+                font-size: 22px;
                 width: 45px;
                 height: 45px;
             }
@@ -168,17 +161,17 @@
     <h1 style="margin: 0; color: var(--bajaj-blue); font-size: 20px; display: flex; align-items: center; gap: 8px;">
         🚀 Persistent Portal
     </h1>
-    
+
     <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
         <!-- Git Status / Cache Badge -->
-        <div id="gitStatusBadge" style="font-weight: 950; font-size: 11px; background: rgba(39, 174, 96, 0.15); color: var(--success); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--success); letter-spacing: 0.5px; text-align: center; white-space: nowrap;">
+        <div id="gitStatusBadge" style="font-weight: 950; font-size: 11px; background: rgba(39, 174, 96, 0.15); color: var(--success); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--success); letter-spacing: 0.5px; text-align: center; white-space: nowrap; cursor: pointer;" title="Click to refresh live data">
             ⚙️ GITHUB CONNECTED
         </div>
-        
+
         <!-- Google Sign-In -->
         <div id="g_id_onload" data-client_id="777001839486-tqii6kb1hjig7qnreme74vjbm9utavvd.apps.googleusercontent.com" data-callback="handleGoogleLogin" data-auto_select="false" data-auto_prompt="false"></div>
         <div class="g_id_signin" data-type="standard" data-shape="rectangular" data-theme="outline" data-text="signin_with" data-size="large" data-logo_alignment="left"></div>
-        
+
         <!-- Force Cloud Sync Button -->
         <button onclick="forceCloudSync()" id="syncBtn" style="background: #3498db; color: white; border: none; padding: 8px 15px; border-radius: 6px; font-weight: 900; cursor: pointer; display: none; align-items: center; gap: 6px; font-size: 12px; white-space: nowrap; box-shadow: 0 2px 4px rgba(52, 152, 219, 0.3);">
             <span>🔄</span> SYNC CLOUD
@@ -199,10 +192,8 @@
 <main>
 
     <!-- ========================================== -->
-    <!-- ⭐ INLINE TABS (एकावेळी एकच उघडा राहील) ⭐ -->
-    <!-- ========================================== -->
-
     <!-- 0. CUSTOMERS / HOME INLINE -->
+    <!-- ========================================== -->
     <div id="unifiedHome" style="display: block;">
         <div class="forms-row">
             <div class="form-container" style="flex: 1; min-width: 250px; background: #e3f2fd; border: 2px solid var(--primary); margin-bottom:0; display: flex; flex-direction: column;">
@@ -253,7 +244,9 @@
         </div>
     </div>
 
+    <!-- ========================================== -->
     <!-- 1. ZATPAT CALC INLINE -->
+    <!-- ========================================== -->
     <div id="zatpatCalcModal" style="display: none; width: 100%; margin-bottom: 15px; flex-direction: column; align-items: center;">
         <div style="background: #fff; padding: 15px; border: 2px solid var(--bajaj-blue); border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 800px; box-sizing: border-box;">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--bajaj-blue); padding-bottom: 8px; margin-bottom: 12px;">
@@ -263,7 +256,7 @@
                     <button onclick="toggleInline('unifiedHome')" style="background:none; border:none; color:var(--danger); font-weight:bold; cursor:pointer; font-size:18px;">✖</button>
                 </div>
             </div>
-            
+
             <div id="fastCalcContainer">
                 <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:6px; margin-bottom:12px; background: #f8f9fa; padding: 10px; border-radius: 6px; border: 1px solid #eee;">
                     <div style="grid-column: span 3; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom:4px;">
@@ -308,7 +301,9 @@
         </div>
     </div>
 
+    <!-- ========================================== -->
     <!-- 2. SEND EMI INLINE -->
+    <!-- ========================================== -->
     <div id="customerMessageGenModal" style="display: none; width: 100%; margin-bottom: 15px; flex-direction: column; align-items: center;">
         <div style="background: #fff; padding: 20px; border: 2px solid var(--bajaj-blue); border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 850px; box-sizing: border-box;">
             <div style="display: flex; align-items: center; border-bottom: 2px solid var(--bajaj-blue); padding-bottom: 8px; margin-bottom: 10px; position: relative;">
@@ -352,7 +347,9 @@
         </div>
     </div>
 
+    <!-- ========================================== -->
     <!-- 3. FLYER GEN INLINE -->
+    <!-- ========================================== -->
     <div id="flyerGenModal" style="display: none; width: 100%; margin-bottom: 15px; flex-direction: column; align-items: center;">
         <div style="background: #fff; padding: 20px; border: 2px solid var(--bajaj-blue); border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 440px; box-sizing: border-box;">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--bajaj-blue); padding-bottom: 8px; margin-bottom: 15px;">
@@ -387,168 +384,198 @@
         </div>
     </div>
 
-    <!-- 4. DICTIONARY INLINE (UPDATED WITH ADVANCED CONTROLS) -->
-<div id="dictionarySearchModal" style="display: none; width: 100%; margin-bottom: 15px; flex-direction: column; align-items: center;">
-    <div style="background: #fff; padding: 20px; border: 2px solid var(--indigo); border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 950px; box-sizing: border-box; max-height: 85vh; overflow-y: auto;">
-        
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--indigo); padding-bottom: 8px; margin-bottom: 15px;">
-            <h3 style="margin:0; color:var(--indigo); font-size: 16px !important;">🔍 SMART SCHEMES DICTIONARY</h3>
-            <button onclick="toggleInline('unifiedHome')" style="background:none; border:none; color:var(--danger); font-weight:bold; cursor:pointer; font-size:18px; padding:0;">✖</button>
-        </div>
-
-        <!-- 👤 CUSTOMER QUEUE SYNC SECTION -->
-        <div style="background: #eef2ff; border: 1.5px solid var(--indigo); padding: 12px; border-radius: 6px; margin-bottom: 12px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                <label style="font-size:12px; font-weight:900; color:var(--indigo);">👤 CUSTOMER SELECTION & QUEUE SYNC</label>
-                <button onclick="dictToggleNewCustMode()" id="dictCustModeBtn" style="background:var(--primary); color:white; border:none; padding:4px 8px; border-radius:4px; font-size:11px; font-weight:bold; cursor:pointer;">+ ADD NEW TO QUEUE</button>
+    <!-- ========================================== -->
+    <!-- 4. DICTIONARY INLINE (UPDATED WITH ALL NEW FEATURES) -->
+    <!-- ========================================== -->
+    <div id="dictionarySearchModal" style="display: none; width: 100%; margin-bottom: 15px; flex-direction: column; align-items: center;">
+        <div style="background: #fff; padding: 18px; border: 2px solid var(--indigo); border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 950px; box-sizing: border-box; max-height: 85vh; overflow-y: auto;">
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--indigo); padding-bottom: 8px; margin-bottom: 15px;">
+                <h3 style="margin:0; color:var(--indigo); font-size: 16px !important;">🔍 SMART SCHEMES DICTIONARY</h3>
+                <button onclick="toggleInline('unifiedHome')" style="background:none; border:none; color:var(--danger); font-weight:bold; cursor:pointer; font-size:18px; padding:0;">✖</button>
             </div>
 
-            <!-- Existing Customer Search & Select -->
-            <div id="dictSelectCustBox" style="display: flex; gap: 8px; flex-wrap: wrap;">
-                <input type="text" id="dictCustSearch" placeholder="🔍 Search saved customer by name, limit..." oninput="dictFilterCustomerDropdown()" style="flex: 1; min-width: 200px; padding: 8px; font-size: 13px; font-weight: bold; border: 1px solid #ccc; border-radius: 4px;">
-                <select id="dictCustSelect" onchange="dictOnCustomerSelected()" style="flex: 1.5; min-width: 240px; padding: 8px; font-size: 13px; font-weight: bold; border: 1px solid #ccc; border-radius: 4px; color: var(--bajaj-blue);">
-                    <option value="-1">-- Direct Calculate (No Customer) --</option>
-                </select>
-            </div>
+            <!-- 👤 CUSTOMER SELECTION & QUEUE SYNC SECTION -->
+            <div style="background: #eef2ff; border: 1.5px solid var(--indigo); padding: 12px; border-radius: 6px; margin-bottom: 12px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <label style="font-size:12px; font-weight:900; color:var(--indigo);">👤 CUSTOMER SELECTION & QUEUE SYNC</label>
+                    <button onclick="dictToggleNewCustMode()" id="dictCustModeBtn" style="background:var(--primary); color:white; border:none; padding:5px 10px; border-radius:4px; font-size:11px; font-weight:bold; cursor:pointer;">+ ADD NEW TO QUEUE</button>
+                </div>
 
-            <!-- New Customer Quick Form (Hidden by default) -->
-            <div id="dictNewCustBox" style="display: none; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-top: 8px; background: #fff; padding: 10px; border-radius: 6px; border: 1px dashed var(--indigo);">
-                <div><label style="font-size:10px; font-weight:bold;">NAME</label><input type="text" id="dictNewName" placeholder="Enter Name"></div>
-                <div><label style="font-size:10px; font-weight:bold;">MOBILE (OPT)</label><input type="text" id="dictNewMobile" maxlength="10" placeholder="10 Digits"></div>
-                <div><label style="font-size:10px; font-weight:bold;">LIMIT (₹)</label><input type="number" id="dictNewLimit" placeholder="₹ Amount"></div>
-                <div><label style="font-size:10px; font-weight:bold;">TYPE</label>
-                    <select id="dictNewType"><option value="NEW">NEW</option><option value="EMI CARD">EMI CARD</option><option value="VIRTUAL">VIRTUAL</option><option value="W/O CARD">W/O CARD</option></select>
+                <!-- Customer Search with Live Dropdown Suggestions -->
+                <div id="dictSelectCustBox" style="position:relative; display:flex; gap:8px;">
+                    <div style="position:relative; flex:1;">
+                        <input type="text" id="dictCustSearch" placeholder="🔍 Search saved customer by name, limit..." oninput="dictFilterCustomerSuggestions()" onfocus="dictFilterCustomerSuggestions()" style="width:100%; padding: 8px 10px; font-size: 13px; font-weight: bold; border: 1.5px solid #cbd5e1; border-radius: 4px; box-sizing:border-box;">
+                        <div id="dictCustSuggestionsList" class="custom-scroll" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--indigo); border-radius:4px; max-height:220px; overflow-y:auto; z-index:2000; box-shadow:0 10px 25px rgba(0,0,0,0.2);"></div>
+                    </div>
+                    <button onclick="dictResetAllToDirectCalc()" style="background:#64748b; color:white; border:none; padding:8px 12px; border-radius:4px; font-size:11px; font-weight:bold; cursor:pointer; white-space:nowrap;">🔄 DIRECT CALC (RESET)</button>
                 </div>
-                <div style="display:flex; align-items:flex-end;">
-                    <button onclick="dictSaveNewCustomerToQueue()" style="width:100%; background:var(--success); color:white; padding:8px; border-radius:4px; font-weight:bold; font-size:12px; cursor:pointer;">💾 SAVE & USE</button>
-                </div>
-            </div>
-        </div>
 
-        <!-- ⚡ ELIGIBILITY & INVOICE -->
-        <div style="background: #f0f7ff; border: 1.5px solid var(--primary); padding: 15px; border-radius: 6px; margin-bottom: 15px;">
-            <h4 style="margin-top:0; color:var(--primary); font-size: 14px; margin-bottom: 12px;">⚡ 1. Eligibility & Product Setup</h4>
-
-            <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
-                <div style="flex: 1; min-width: 140px;">
-                    <label style="font-size:10px; font-weight:bold; color:var(--indigo); display:block; margin-bottom:3px;">1. CUSTOMER TYPE</label>
-                    <select id="calcCustType" onchange="recalcCurrentModel()" style="width:100%; padding:8px; font-size:13px; border:1px solid #ccc; border-radius:4px; font-weight:bold;">
-                        <option value="NEW">NEW</option>
-                        <option value="EMI CARD">EMI CARD</option>
-                        <option value="VIRTUAL">VIRTUAL</option>
-                        <option value="W/O CARD">W/O CARD</option>
-                    </select>
-                </div>
-                <div style="flex: 1; min-width: 140px;">
-                    <label style="font-size:10px; font-weight:bold; color:var(--indigo); display:block; margin-bottom:3px;">2. APPROVED LIMIT (₹)</label>
-                    <input type="number" id="calcLimit" placeholder="E.g. 50000" oninput="recalcCurrentModel()" style="width:100%; padding:8px; font-size:13px; border:1px solid #ccc; border-radius:4px; font-weight:bold;">
-                </div>
-                <div style="flex: 1; min-width: 140px;">
-                    <label style="font-size:10px; font-weight:bold; color:var(--indigo); display:block; margin-bottom:3px;">3. MAX LTV (%)</label>
-                    <input type="number" id="calcLtv" placeholder="100" value="100" oninput="recalcCurrentModel()" style="width:100%; padding:8px; font-size:13px; border:1px solid #ccc; border-radius:4px; font-weight:bold;">
-                </div>
-            </div>
-
-            <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
-                <div style="flex: 2; min-width: 220px; position:relative;">
-                    <label style="font-size:10px; font-weight:bold; color:var(--indigo); display:block; margin-bottom:3px;">4. SEARCH PRODUCT</label>
-                    <input type="search" id="globalModelSearch" oninput="doGlobalSearch()" placeholder="Type Brand or Model Name..." style="width:100%; padding:8px; font-size:13px; border:1px solid #ccc; border-radius:4px; font-weight:bold;">
-                    <div id="globalModelDropdown" class="custom-scroll" style="position: absolute; width: 100%; background: #fff; z-index: 1000; border: 1px solid #ddd; display: none; box-shadow: 0 10px 20px rgba(0,0,0,0.15); border-radius: 4px; max-height: 250px; overflow-y: auto; margin-top: 2px;"></div>
-                </div>
-                <div style="flex: 1; min-width: 140px;">
-                    <label style="font-size:10px; font-weight:bold; color:var(--indigo); display:block; margin-bottom:3px;">5. INVOICE AMOUNT (₹)</label>
-                    <input type="number" id="calcInvoice" placeholder="E.g. 35000" oninput="dictInvoiceChanged()" style="width:100%; padding:8px; font-size:13px; border:1px solid #ccc; border-radius:4px; font-weight:bold;">
-                </div>
-            </div>
-
-            <!-- 🛡️️ COMPONENTS & INSURANCE (GTL, RFC, EXW, MARGIN) -->
-            <div style="border-top: 1px dashed #cbd5e1; padding-top: 10px; margin-top: 10px;">
-                <label style="font-size:11px; font-weight:900; color:var(--indigo); display:block; margin-bottom:6px;">🛡️ COMPONENTS & INSURANCE RULES</label>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px;">
+                <!-- New Customer Form (NO MOBILE, With LTV & Capping) -->
+                <div id="dictNewCustBox" style="display: none; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin-top: 10px; background: #fff; padding: 12px; border-radius: 6px; border: 1.5px dashed var(--indigo);">
                     <div>
-                        <label style="font-size:10px; font-weight:bold; color:#555;">GTL (₹)</label>
-                        <select id="calcGtl" onchange="recalcCurrentModel()" style="width:100%; padding:8px; font-size:12px; font-weight:bold; border-radius:4px; border:1px solid #ccc;">
-                            <option value="0">0</option>
-                            <option value="699">699</option>
-                            <option value="1099">1099</option>
-                            <option value="1199">1199</option>
-                            <option value="1499">1499</option>
-                            <option value="1799">1799</option>
-                            <option value="2398">2398</option>
+                        <label style="font-size:10px; font-weight:900; color:var(--indigo);">CUSTOMER NAME</label>
+                        <input type="text" id="dictNewName" placeholder="Customer Name">
+                    </div>
+                    <div>
+                        <label style="font-size:10px; font-weight:900; color:var(--indigo);">NBFC LIMIT (₹)</label>
+                        <input type="number" id="dictNewLimit" placeholder="₹ Limit">
+                    </div>
+                    <div>
+                        <label style="font-size:10px; font-weight:900; color:var(--indigo);">CUSTOMER TYPE</label>
+                        <select id="dictNewType">
+                            <option value="NEW">NEW</option>
+                            <option value="EMI CARD">EMI CARD</option>
+                            <option value="VIRTUAL">VIRTUAL</option>
+                            <option value="W/O CARD">W/O CARD</option>
                         </select>
                     </div>
                     <div>
-                        <label style="font-size:10px; font-weight:bold; color:#555;">RFC (₹)</label>
-                        <select id="calcRfc" onchange="recalcCurrentModel()" disabled style="width:100%; padding:8px; font-size:12px; font-weight:bold; border-radius:4px; border:1px solid #ccc; background:#e9ecef; cursor:not-allowed;">
-                            <option value="0">0</option>
-                            <option id="calcRfcOpt" value="0">0</option>
+                        <label style="font-size:10px; font-weight:900; color:var(--indigo);">MAX LTV (%)</label>
+                        <input type="number" id="dictNewLtv" value="100" max="100" oninput="if(this.value>100)this.value=100;">
+                    </div>
+                    <div>
+                        <label style="font-size:10px; font-weight:900; color:var(--indigo);">EMI CAPPING (₹)</label>
+                        <input type="number" id="dictNewCap" placeholder="Optional Cap">
+                    </div>
+                    <div style="display:flex; align-items:flex-end;">
+                        <button onclick="dictSaveNewCustomerToQueue()" style="width:100%; background:var(--success); color:white; padding:9px; border-radius:4px; font-weight:900; font-size:12px; cursor:pointer; border:none;">💾 SAVE & ACTIVATE</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ⚡ ELIGIBILITY & PRODUCT INVOICE -->
+            <div style="background: #f0f7ff; border: 1.5px solid var(--primary); padding: 14px; border-radius: 6px; margin-bottom: 12px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:6px;">
+                    <h4 style="margin:0; color:var(--primary); font-size: 14px;">⚡ 1. Eligibility & Product Setup</h4>
+                    <div style="display:flex; gap:6px;">
+                        <button onclick="dictOpenNonTieupModal()" style="background:var(--warning); color:#000; border:none; padding:4px 8px; border-radius:4px; font-weight:900; font-size:11px; cursor:pointer;">⚡ NON-TIEUP</button>
+                        <button onclick="dictOpenManualSchemeModal()" style="background:var(--indigo); color:white; border:none; padding:4px 8px; border-radius:4px; font-weight:900; font-size:11px; cursor:pointer;">+ MANUAL SCHEME</button>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px;">
+                    <div style="flex: 1; min-width: 130px;">
+                        <label style="font-size:10px; font-weight:bold; color:var(--indigo);">CUSTOMER TYPE</label>
+                        <select id="calcCustType" onchange="recalcCurrentModel()" style="width:100%; padding:7px; font-size:12px; border:1px solid #ccc; border-radius:4px; font-weight:bold;">
+                            <option value="NEW">NEW</option>
+                            <option value="EMI CARD">EMI CARD</option>
+                            <option value="VIRTUAL">VIRTUAL</option>
+                            <option value="W/O CARD">W/O CARD</option>
                         </select>
                     </div>
-                    <div>
-                        <label style="font-size:10px; font-weight:bold; color:#555;">EXW (₹)</label>
-                        <input type="number" id="calcExw" placeholder="0" oninput="recalcCurrentModel()" style="width:100%; padding:8px; font-size:12px; font-weight:bold; border-radius:4px; border:1px solid #ccc;">
+                    <div style="flex: 1; min-width: 130px;">
+                        <label style="font-size:10px; font-weight:bold; color:var(--indigo);">LIMIT (₹)</label>
+                        <input type="number" id="calcLimit" placeholder="E.g. 50000" oninput="recalcCurrentModel()" style="width:100%; padding:7px; font-size:12px; border:1px solid #ccc; border-radius:4px; font-weight:bold;">
                     </div>
-                    <div>
-                        <label style="font-size:10px; font-weight:bold; color:#555;">MARGIN (₹)</label>
-                        <input type="number" id="calcMargin" placeholder="0" value="0" oninput="recalcCurrentModel()" style="width:100%; padding:8px; font-size:12px; font-weight:bold; border-radius:4px; border:1px solid #ccc;">
+                    <div style="flex: 1; min-width: 130px;">
+                        <label style="font-size:10px; font-weight:bold; color:var(--indigo);">MAX LTV (%)</label>
+                        <input type="number" id="calcLtv" placeholder="100" value="100" oninput="recalcCurrentModel()" style="width:100%; padding:7px; font-size:12px; border:1px solid #ccc; border-radius:4px; font-weight:bold;">
                     </div>
-                    <div>
-                        <label style="font-size:10px; font-weight:bold; color:#d35400;">TARGET DP (₹)</label>
-                        <input type="number" id="calcTarget" placeholder="Reverse Calc DP" oninput="recalcCurrentModel()" style="width:100%; padding:8px; font-size:12px; font-weight:bold; border-radius:4px; border:1px solid #ccc;">
+                </div>
+
+                <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px;">
+                    <div style="flex: 2; min-width: 220px; position:relative;">
+                        <label style="font-size:10px; font-weight:bold; color:var(--indigo);">SEARCH PRODUCT</label>
+                        <input type="search" id="globalModelSearch" oninput="doGlobalSearch()" placeholder="Type Brand or Model Name..." style="width:100%; padding:7px; font-size:12px; border:1px solid #ccc; border-radius:4px; font-weight:bold;">
+                        <div id="globalModelDropdown" class="custom-scroll" style="position: absolute; width: 100%; background: #fff; z-index: 1000; border: 1px solid #ddd; display: none; box-shadow: 0 10px 20px rgba(0,0,0,0.15); border-radius: 4px; max-height: 220px; overflow-y: auto; margin-top: 2px;"></div>
                     </div>
-                    <div>
-                        <label style="font-size:10px; font-weight:bold; color:#d35400;">EMI CAPPING (₹)</label>
-                        <input type="number" id="calcCap" placeholder="Max EMI Limit" oninput="recalcCurrentModel()" style="width:100%; padding:8px; font-size:12px; font-weight:bold; border-radius:4px; border:1px solid #ccc;">
+                    <div style="flex: 1; min-width: 130px;">
+                        <label style="font-size:10px; font-weight:bold; color:var(--indigo);">INVOICE AMOUNT (₹)</label>
+                        <input type="number" id="calcInvoice" placeholder="E.g. 35000" oninput="dictInvoiceChanged()" style="width:100%; padding:7px; font-size:12px; border:1px solid #ccc; border-radius:4px; font-weight:bold;">
                     </div>
+                </div>
+
+                <!-- 🛡️ COMPONENTS (GTL Auto, RFC Default 0 with Slab Options, EXW, Margin) -->
+                <div style="border-top: 1px dashed #cbd5e1; padding-top: 8px; margin-top: 8px;">
+                    <label style="font-size:10px; font-weight:900; color:var(--indigo); display:block; margin-bottom:4px;">🛡️ COMPONENTS & INSURANCE RULES</label>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(125px, 1fr)); gap: 6px;">
+                        <div>
+                            <label style="font-size:9px; font-weight:bold; color:#555;">GTL (AUTO ₹)</label>
+                            <select id="calcGtl" onchange="recalcCurrentModel()" style="width:100%; padding:6px; font-size:12px; font-weight:bold; border-radius:4px; border:1px solid #ccc;">
+                                <option value="0">0</option>
+                                <option value="699">699</option>
+                                <option value="1099">1099</option>
+                                <option value="1199">1199</option>
+                                <option value="1499">1499</option>
+                                <option value="1799">1799</option>
+                                <option value="2398">2398</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size:9px; font-weight:bold; color:#555;">RFC (DEFAULT 0 ₹)</label>
+                            <select id="calcRfc" onchange="recalcCurrentModel()" style="width:100%; padding:6px; font-size:12px; font-weight:bold; border-radius:4px; border:1px solid #ccc; background:#fff;">
+                                <option value="0" selected>0</option>
+                                <option id="calcRfcOpt" value="0">0</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size:9px; font-weight:bold; color:#555;">EXW (₹)</label>
+                            <input type="number" id="calcExw" placeholder="0" oninput="recalcCurrentModel()" style="width:100%; padding:6px; font-size:12px; font-weight:bold; border-radius:4px; border:1px solid #ccc;">
+                        </div>
+                        <div>
+                            <label style="font-size:9px; font-weight:bold; color:#555;">MARGIN (₹)</label>
+                            <input type="number" id="calcMargin" placeholder="0" value="0" oninput="recalcCurrentModel()" style="width:100%; padding:6px; font-size:12px; font-weight:bold; border-radius:4px; border:1px solid #ccc;">
+                        </div>
+                        <div>
+                            <label style="font-size:9px; font-weight:bold; color:#d35400;">TARGET DP (₹)</label>
+                            <input type="number" id="calcTarget" placeholder="Reverse DP" oninput="recalcCurrentModel()" style="width:100%; padding:6px; font-size:12px; font-weight:bold; border-radius:4px; border:1px solid #ccc;">
+                        </div>
+                        <div>
+                            <label style="font-size:9px; font-weight:bold; color:#d35400;">EMI CAPPING (₹)</label>
+                            <input type="number" id="calcCap" placeholder="Cap limit" oninput="recalcCurrentModel()" style="width:100%; padding:6px; font-size:12px; font-weight:bold; border-radius:4px; border:1px solid #ccc;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 🛒 BASKET CHIPS CONTAINER (Tap on chip loads table) -->
+                <div id="dictProductsBasket" style="display:none; margin-top:10px; padding:8px; background:#fff; border:1.5px solid #94a3b8; border-radius:6px;">
+                    <div style="font-size:11px; font-weight:900; color:var(--bajaj-blue); margin-bottom:4px;">🛒 BASKET (Tap model to view schemes):</div>
+                    <div id="dictBasketChips" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
                 </div>
             </div>
 
-            <!-- MULTIPLE PRODUCTS BASKET -->
-            <div id="dictProductsBasket" style="display:none; margin-top:12px; padding:8px; background:#fff; border:1px solid #94a3b8; border-radius:6px;">
-                <div style="font-size:11px; font-weight:900; color:var(--bajaj-blue); margin-bottom:6px;">🛒 SELECTED PRODUCTS BASKET:</div>
-                <div id="dictBasketChips" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
-            </div>
-        </div>
-
-        <!-- RESULTS TAB -->
-        <div id="schemeResultArea" style="display: none; border: 1.5px solid var(--indigo); padding: 15px; border-radius: 6px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--indigo); padding-bottom: 8px; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
-                <h3 id="globalViewerTitle" style="margin:0; color:var(--bajaj-blue); font-size: 16px !important;">Model Schemes</h3>
-                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                    <button onclick="addCurrentModelToDictBasket()" style="background: var(--warning); color: #000; border:none; padding:8px 12px; border-radius:4px; font-size:12px; font-weight:bold; cursor:pointer;">➕ ADD TO BASKET</button>
-                    <button onclick="transferDictModelToFinalQueue()" style="background: var(--indigo); color: white; border:none; padding:8px 12px; border-radius:4px; font-size:12px; font-weight:bold; cursor:pointer;">🚀 TRANSFER TO FINAL SCREEN</button>
-                    <button onclick="exportDictSchemeImage('copy')" style="background: var(--primary); color: white; border:none; padding:8px 12px; border-radius:4px; font-size:12px; font-weight:bold; cursor:pointer;">📋 COPY IMAGE</button>
+            <!-- 📊 RESULTS TAB & CONTROLS -->
+            <div id="schemeResultArea" style="display: none; border: 1.5px solid var(--indigo); padding: 14px; border-radius: 6px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--indigo); padding-bottom: 8px; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+                    <h3 id="globalViewerTitle" style="margin:0; color:var(--bajaj-blue); font-size: 15px !important;">Model Schemes</h3>
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                        <button onclick="addCurrentModelToDictBasket()" style="background: var(--warning); color: #000; border:none; padding:7px 11px; border-radius:4px; font-size:11px; font-weight:900; cursor:pointer;">➕ ADD TO BASKET</button>
+                        <button onclick="transferDictModelToFinalQueue()" style="background: var(--indigo); color: white; border:none; padding:7px 11px; border-radius:4px; font-size:11px; font-weight:900; cursor:pointer;">🚀 TRANSFER TO FINAL</button>
+                        <button onclick="exportDictCustomerQuoteImage()" style="background: #2563eb; color: white; border:none; padding:7px 11px; border-radius:4px; font-size:11px; font-weight:900; cursor:pointer;">🖼️ QUOTE IMAGE</button>
+                        <button onclick="exportDictSchemeImage('copy')" style="background: var(--primary); color: white; border:none; padding:7px 11px; border-radius:4px; font-size:11px; font-weight:bold; cursor:pointer;">📋 COPY TABLE</button>
+                    </div>
+                </div>
+                <div class="table-wrapper">
+                    <table style="width:100%;">
+                        <thead id="tableHead"></thead>
+                        <tbody id="globalViewerBody"></tbody>
+                    </table>
                 </div>
             </div>
-            <div class="table-wrapper">
-                <table style="width:100%;">
-                    <thead id="tableHead"></thead>
-                    <tbody id="globalViewerBody"></tbody>
-                </table>
-            </div>
+
         </div>
     </div>
-</div>
 
+    <!-- ========================================== -->
     <!-- 5. DEALER SEARCH INLINE -->
+    <!-- ========================================== -->
     <div id="dealerSearchModal" style="display: none; width: 100%; margin-bottom: 15px; flex-direction: column; align-items: center;">
         <div style="background: #fff; padding: 20px; border: 2px solid var(--bajaj-blue); border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 500px; box-sizing: border-box;">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--bajaj-blue); padding-bottom: 8px; margin-bottom: 15px;">
                 <h3 style="margin:0; color:var(--bajaj-blue);">🔗 Dealer Links Search</h3>
                 <button onclick="toggleInline('unifiedHome')" style="background:none; border:none; color:var(--danger); font-weight:bold; cursor:pointer; font-size:18px;">✖</button>
             </div>
-            
+
             <div style="display:flex; gap:8px; margin-bottom:12px;">
                 <input type="text" id="dealerSearchInput" placeholder="Type Dealer Name, City or Code..." oninput="searchDealer()" style="flex:1;">
                 <button id="filterStarBtn" onclick="showOnlyStarredDealers()" style="background:#fff3cd; color:#856404; border:1px solid #ffeeba; font-weight:bold; padding:0 10px; border-radius:4px; font-size:11px !important;">★ FAVORITES</button>
             </div>
-            
+
             <div id="dealerSearchResults" class="custom-scroll" style="display:flex; flex-direction:column; gap:8px; max-height:350px; overflow-y:auto; padding-right:5px;">
             </div>
         </div>
     </div>
-
-    <!-- ========================================== -->
 
     <!-- SEPARATE DRAFTS MODAL -->
     <div id="draftsModal" class="modal">
@@ -746,10 +773,10 @@
             <select id="finalCustomerSwitcher" onchange="switchCustomerFinal(this.value)" style="flex:1.5; font-weight:bold; color:var(--indigo); padding:2px;"></select>
             <button onclick="goHome()" style="flex:0.8; background:var(--danger); color:white;">✖ BACK</button>
         </div>
-        
+
         <!-- COMPACT ACTIVE CUSTOMER INFO CARD -->
         <div style="background: #253241; border-radius: 8px; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.2); margin-bottom: 12px; border: 1px solid #3b4b5e;">
-            
+
             <div style="display: flex; align-items: center; gap: 12px;">
                 <div style="width: 38px; height: 38px; background: rgba(0,0,0,0.3); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 18px;">👤</div>
                 <div style="display: flex; flex-direction: column; gap: 4px;">
@@ -770,19 +797,19 @@
                     <div style="font-size: 9px; color: #94a3b8; font-weight: 900; letter-spacing: 0.5px;">APPROVED LIMIT</div>
                     <div id="infoLimit" style="font-size: 18px; font-weight: 900; color: #2ecc71; text-shadow: 0 0 5px rgba(46,204,113,0.3);">₹0</div>
                 </div>
-                
+
                 <div style="display: flex; gap: 6px;">
                     <button onclick="let mob=document.getElementById('infoMobile').innerText; if(mob && mob!=='-') window.open('tel:+91'+mob)" style="width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.1); border: none; cursor: pointer; font-size: 14px;">📞</button>
                     <button onclick="let mob=document.getElementById('infoMobile').innerText; if(mob && mob!=='-') window.open('https://wa.me/91'+mob)" style="width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.1); border: none; cursor: pointer; font-size: 14px;">💬</button>
                 </div>
             </div>
         </div>
-        
+
         <button onclick="openAddProductModal()" style="width: 100%; background:var(--warning); color:#000; padding:10px; border-radius:6px; font-weight:900; margin-bottom:8px; border: 1.5px solid #d35400; box-shadow: 0 2px 5px rgba(0,0,0,0.1); cursor:pointer;">➕ ADD NEW PRODUCT (SEARCH / NON-TIEUP / MANUAL)</button>
         <div id="multiModelContainer"></div>
     </div>
-    
-    <!-- NEW ROW ACTION MODAL -->
+
+    <!-- ROW ACTION MODAL -->
     <div id="rowActionModal" class="modal" style="z-index: 99999;">
         <div class="modal-content action-sheet">
             <div class="sheet-handle"></div>
@@ -805,19 +832,16 @@
 <!-- 🌟 INLINE TAB SWITCHER LOGIC 🌟 -->
 <script>
     function toggleInline(id, openFunc) {
-        // सर्व इन्लाईन टॅब आधी लपवा
         ['unifiedHome', 'zatpatCalcModal', 'customerMessageGenModal', 'dealerSearchModal', 'dictionarySearchModal', 'flyerGenModal'].forEach(modId => {
             let mod = document.getElementById(modId);
             if(mod) mod.style.display = 'none';
         });
 
-        // जो टॅब सिलेक्ट केलाय तो दाखवा
         let el = document.getElementById(id);
         if(el) {
             el.style.display = (id === 'unifiedHome') ? 'block' : 'flex'; 
         }
 
-        // सिलेक्ट केलेल्या टॅबचं विशेष फंक्शन रन करा
         if(typeof openFunc === 'function') {
             openFunc();
         }
@@ -825,6 +849,5 @@
 </script>
 
 <script src="app.js?v=76.20"></script>
-
 </body>
 </html>
