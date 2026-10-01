@@ -150,7 +150,7 @@ if (pdfInputEl) {
                 const pdf = await pdfjsLib.getDocument(typedarray).promise; let fullText = "";
                 for (let i = 1; i <= pdf.numPages; i++) { const page = await pdf.getPage(i); const textContent = await page.getTextContent(); fullText += " " + textContent.items.map(item => item.str).join(" "); }
                 parsePDFText(fullText); statusEl.style.color = 'var(--success)'; statusEl.innerText = '✔ PDF data extracted successfully!';
-            } catch (error) { statusEl.style.color = 'var(--danger)'; statusEl.innerText = '⚠️️ Error reading PDF. Please verify details manually.'; }
+            } catch (error) { statusEl.style.color = 'var(--danger)'; statusEl.innerText = '⚠️ Error reading PDF. Please verify details manually.'; }
         };
         fileReader.readAsArrayBuffer(file);
     });
@@ -212,7 +212,7 @@ function closeDraftsModal() { document.getElementById('draftsModal').style.displ
 function saveEmiDraft() {
     const name = document.getElementById('msgCustName').value.trim(); const mobile = document.getElementById('msgCustMobile').value.trim(); const shop = document.getElementById('msgShopName').value.trim();
     const finalMsg = document.getElementById('finalMessage').value; const startDate = document.getElementById('msgStartDate').value; const endDate = document.getElementById('msgEndDate').value;
-    if (!name) { showToast("⚠️ कृपया कस्टमरचे नाव (Name) एंटर करा!", "error"); return; }
+    if (!name) { showToast("⚠️ कृपया कस्टमरचे नाव एंटर करा!", "error"); return; }
     const draftObj = { id: Date.now(), shop: shop, asset: document.getElementById('msgAssetCategory').value, name: name, mobile: mobile, emi: document.getElementById('msgCustEMI').value, tenure: document.getElementById('msgCustTenure').value, loanDate: document.getElementById('msgLoanDate').value, startDate: startDate, endDate: endDate, lang: document.getElementById('msgLang').value, finalMessage: finalMsg, timestamp: new Date().toLocaleString() };
     let drafts = JSON.parse(localStorage.getItem('persistent_emi_drafts') || '[]'); drafts.unshift(draftObj); localStorage.setItem('persistent_emi_drafts', JSON.stringify(drafts));
     updateDraftBadgeCount(); showToast("✅ Draft Successfully Saved!", "success");
@@ -230,16 +230,16 @@ function renderEmiDrafts() {
                 <span style="font-size:11px; color:#666;">${d.timestamp}</span>
             </div>
             <div id="draftDetails_${index}" style="display:none; font-size:12px; color:#444; background:#fff; padding:10px; border-radius:4px; border:1px dashed #aaa; line-height:1.6; margin-top:4px;">
-                🏬 दुकानाचे नाव (Dealer/Shop): <b style="color:var(--indigo);">${d.shop || '-'}</b><br>
-                📱 वस्तूचा प्रकार (Asset): <b style="color:var(--indigo);">${d.asset || '-'}</b><br>
-                📌 मासिक हप्ता (EMI): <b style="color:var(--primary);">₹${d.emi || '0'}</b><br>
-                📌 एकूण हप्ते (Months): <b style="color:var(--primary);">${d.tenure || '0'}</b><br>
-                📅 पहिला हप्ता सुरू होण्याची तारीख: <b style="color:#d35400;">${d.startDate || '-'}</b><br>
+                🏬 दुकानाचे नाव: <b style="color:var(--indigo);">${d.shop || '-'}</b><br>
+                📱 वस्तूचा प्रकार: <b style="color:var(--indigo);">${d.asset || '-'}</b><br>
+                📌 मासिक हप्ता: <b style="color:var(--primary);">₹${d.emi || '0'}</b><br>
+                📌 एकूण हप्ते: <b style="color:var(--primary);">${d.tenure || '0'}</b><br>
+                📅 पहिला हप्ता सुरू: <b style="color:#d35400;">${d.startDate || '-'}</b><br>
                 📅 शेवटचा हप्ता संपण्याची तारीख: <b style="color:#d35400;">${d.endDate || '-'}</b>
                 <div style="display:flex; gap:6px; margin-top:10px; border-top:1px solid #eee; padding-top:10px;">
-                    <button onclick="loadEmiDraft(${index})" style="flex:1; background:var(--indigo); color:white; padding:8px; border-radius:4px; border:none; cursor:pointer; font-weight:bold; font-size: 11px;">✏️️ LOAD</button>
+                    <button onclick="loadEmiDraft(${index})" style="flex:1; background:var(--indigo); color:white; padding:8px; border-radius:4px; border:none; cursor:pointer; font-weight:bold; font-size: 11px;">✏️ LOAD</button>
                     <button onclick="sendDraftNow(${index})" style="flex:1.2; background:#25D366; color:white; padding:8px; border-radius:4px; border:none; cursor:pointer; font-weight:bold; font-size: 11px;">💬 SEND NOW</button>
-                    <button onclick="markDraftAsSent(${index})" style="flex:0.8; background:var(--danger); color:white; padding:8px; border-radius:4px; border:none; cursor:pointer; font-weight:bold; font-size: 11px;">🗑 DELETE</button>
+                    <button onclick="markDraftAsSent(${index})" style="flex:0.8; background:var(--danger); color:white; padding:8px; border-radius:4px; border:none; cursor:pointer; font-weight:bold; font-size: 11px;">🗑️ DELETE</button>
                 </div>
             </div>
         </div>
@@ -251,7 +251,7 @@ function sendDraftNow(index) { let drafts = JSON.parse(localStorage.getItem('per
 function loadEmiDraft(index) { let drafts = JSON.parse(localStorage.getItem('persistent_emi_drafts') || '[]'); let d = drafts[index]; if (!d) return; document.getElementById('msgShopName').value = d.shop || ''; document.getElementById('msgAssetCategory').value = d.asset || ''; document.getElementById('msgCustName').value = d.name || ''; document.getElementById('msgCustMobile').value = d.mobile || ''; document.getElementById('msgCustEMI').value = d.emi || ''; document.getElementById('msgCustTenure').value = d.tenure || ''; document.getElementById('msgLoanDate').value = d.loanDate || ''; document.getElementById('msgLang').value = d.lang || 'en'; calculateDates(); closeDraftsModal(); }
 
 function markDraftAsSent(index) {
-    showCustomConfirm("हा ड्राफ्ट लिस्ट मधून कायमचा डिलीट होईल. पुढे जायचे?", () => { let drafts = JSON.parse(localStorage.getItem('persistent_emi_drafts') || '[]'); drafts.splice(index, 1); localStorage.setItem('persistent_emi_drafts', JSON.stringify(drafts)); renderEmiDrafts(); showToast("🗑️ ड्राफ्ट डिलीट झाला!", "success"); });
+    showCustomConfirm("हा ड्राफ्ट कायमचा डिलीट होईल. पुढे जायचे?", () => { let drafts = JSON.parse(localStorage.getItem('persistent_emi_drafts') || '[]'); drafts.splice(index, 1); localStorage.setItem('persistent_emi_drafts', JSON.stringify(drafts)); renderEmiDrafts(); showToast("🗑️ ड्राफ्ट डिलीट झाला!", "success"); });
 }
 
 window.isFestiveMode = false; let currentModalCategory = ""; let tempFgDealerId = ""; let tempFgDealerName = ""; let tempFgModel = ""; let tempFgBitly = ""; 
@@ -297,8 +297,8 @@ function parseExcelDate(val) { if (!val) return null; if (typeof val === 'number
 
 async function saveQueueToLocal(shouldCloudSync = true) { try { let compactQueue = customerQueue.map(c => { let cp = (c.products || []).map(p => { let { calculatedData, allSchemes, ...keepProduct } = p; return keepProduct; }); return { ...c, products: cp }; }); localStorage.setItem('persistent_queue_backup', JSON.stringify(compactQueue)); localStorage.setItem('persistent_active_idx_backup', activeCustomerIndex); await saveToDB('persistent_queue', compactQueue); await saveToDB('persistent_active_idx', activeCustomerIndex); if(shouldCloudSync && loggedInUserEmail) { triggerSilentCloudSync(); } } catch(e) { console.error("Local Save Interrupted", e); } }
 
-// ⚡ CACHE DURATION: ५ मिनिटे
-const CACHE_DURATION_MS = 5 * 60 * 1000; 
+// ⚡ CACHE DURATION: दिवसातून फक्त २ वेळा (२४ तास / २ = १२ तास)
+const CACHE_DURATION_MS = 12 * 60 * 60 * 1000; 
 
 async function fetchFromMasterStream(forceSync = false) {
     let statusBadge = document.getElementById('gitStatusBadge'); 
@@ -330,7 +330,7 @@ async function fetchFromMasterStream(forceSync = false) {
                 if (activeCustomerIndex !== -1) { loadCurrentProducts(); renderMatrix(); }
 
                 if(statusBadge) { 
-                    statusBadge.innerHTML = '⚡ LOADED FROM CACHE (CLICK TO REFRESH)'; 
+                    statusBadge.innerHTML = '⚡ LOADED FROM CACHE (2X/DAY)'; 
                     statusBadge.style.color = 'var(--success)'; 
                     statusBadge.style.background = 'rgba(39, 174, 96, 0.15)'; 
                 }
@@ -338,7 +338,6 @@ async function fetchFromMasterStream(forceSync = false) {
                 if(globalLoader) globalLoader.style.display = 'none'; 
                 if(searchInput1) { searchInput1.disabled = false; searchInput1.placeholder = "Type model, brand or category..."; }
                 if(searchInput2) { searchInput2.disabled = false; searchInput2.placeholder = "Type Brand or Model Name..."; }
-
                 return;
             }
         }
@@ -352,7 +351,6 @@ async function fetchFromMasterStream(forceSync = false) {
 
         let cacheBusterUrl = GITHUB_RAW_URL + '?t=' + now; 
         let res = await fetch(cacheBusterUrl); 
-
         if (!res.ok) throw new Error("Master file missing or deleted from GitHub."); 
 
         let dataBuffer = await res.arrayBuffer(); 
@@ -373,7 +371,6 @@ async function fetchFromMasterStream(forceSync = false) {
             if (!seenDB.has(key)) { seenDB.add(key); uniqueDB.push(r); } 
         });
 
-        // एक्सपायरी फिल्टर काढून सर्व मॉडेल्स डेटाबेसमध्ये सेव्ह केली जात आहेत
         db_records = uniqueDB;
 
         await saveToDB('cached_db_records', db_records);
@@ -405,14 +402,11 @@ async function fetchFromMasterStream(forceSync = false) {
             statusBadge.style.color = 'var(--danger)'; 
             statusBadge.style.background = 'rgba(214, 48, 49, 0.15)'; 
         } 
-
         if(globalLoader) {
             globalLoader.style.background = 'var(--danger)';
             globalLoader.style.color = '#fff';
             globalLoader.innerHTML = '⚠️ Failed to Load Data!';
         }
-        if(searchInput1) { searchInput1.placeholder = "⚠️ Error loading data"; }
-        if(searchInput2) { searchInput2.placeholder = "⚠️ Error loading data"; }
     }
 }
 
@@ -798,7 +792,7 @@ function uniCopy() { if(selectedQueueIndex !== -1) copyCustomerDetails(selectedQ
 function uniSelect() { if(selectedQueueIndex !== -1) setActiveCustomer(selectedQueueIndex); }
 function uniEdit() { if(selectedQueueIndex === -1) return; let c = customerQueue[selectedQueueIndex]; document.getElementById('ecName').value = c.name; document.getElementById('ecMobile').value = c.mobile || ''; document.getElementById('ecLimit').value = c.limit; document.getElementById('ecLtv').value = c.ltv || 100; document.getElementById('ecType').value = c.type; document.getElementById('ecCap').value = c.cap || ''; document.getElementById('editCustomerModal').style.display='flex'; }
 function uniInvite() { if(selectedQueueIndex === -1) return; let c = customerQueue[selectedQueueIndex]; if(!c.mobile || c.mobile.length < 10) { showToast("⚠️ Kripya Customer ka valid 10 digit mobile number update karein!", "error"); return; } document.getElementById('invSenderName').value = localStorage.getItem('portal_sales_name') || ""; document.getElementById('invSenderMobile').value = localStorage.getItem('portal_sales_mobile') || ""; document.getElementById('inviteModal').style.display = 'flex'; }
-function sendWhatsAppInvite() { let sName = document.getElementById('invSenderName').value.trim(); let sMobile = document.getElementById('invSenderMobile').value.trim(); if(!sName || !sMobile) { showToast("⚠️ Kripya apna Naam aur Number dalein!", "error"); return; } localStorage.setItem('portal_sales_name', sName); localStorage.setItem('portal_sales_mobile', sMobile); let c = customerQueue[selectedQueueIndex]; let msg = `Namaskar ${c.name} sir/madam! 🎉\n\nAapki Bajaj Finance ki *₹${c.limit}* ki limit approve ho gayi hai! 🥳\n\nAb intezaar kis baat ka? Aaj hi apni pasand ki cheez kharidne ke liye dukan par zaroor visit karein. 🛍️✨\n\n👤 *${sName}*\n📞 ${sMobile}`; let encMsg = encodeURIComponent(msg); window.open(`https://wa.me/91${c.mobile}?text=${encMsg}`, '_blank'); document.getElementById('inviteModal').style.display = 'none'; }
+function sendWhatsAppInvite() { let sName = document.getElementById('invSenderName').value.trim(); let sMobile = document.getElementById('invSenderMobile').value.trim(); if(!sName || !sMobile) { showToast("⚠️️ Kripya apna Naam aur Number dalein!", "error"); return; } localStorage.setItem('portal_sales_name', sName); localStorage.setItem('portal_sales_mobile', sMobile); let c = customerQueue[selectedQueueIndex]; let msg = `Namaskar ${c.name} sir/madam! 🎉\n\nAapki Bajaj Finance ki *₹${c.limit}* ki limit approve ho gayi hai! 🥳\n\nAb intezaar kis baat ka? Aaj hi apni pasand ki cheez kharidne ke liye dukan par zaroor visit karein. 🛍️✨\n\n👤 *${sName}*\n📞 ${sMobile}`; let encMsg = encodeURIComponent(msg); window.open(`https://wa.me/91${c.mobile}?text=${encMsg}`, '_blank'); document.getElementById('inviteModal').style.display = 'none'; }
 function closeCustomerEdit() { document.getElementById('editCustomerModal').style.display='none'; }
 
 async function saveCustomerEdit() { if(selectedQueueIndex === -1) return; let c = customerQueue[selectedQueueIndex]; c.name = document.getElementById('ecName').value || 'Customer'; c.mobile = document.getElementById('ecMobile').value; c.limit = parseFloat(document.getElementById('ecLimit').value) || 0; c.ltv = parseFloat(document.getElementById('ecLtv').value) || 100; c.type = document.getElementById('ecType').value; let cap = parseFloat(document.getElementById('ecCap').value); c.cap = cap > 0 ? cap : ''; await saveQueueToLocal(); renderCustomerQueue(); if(activeCustomerIndex === selectedQueueIndex) { updateMatrixTopCard(); current_products.forEach((_, idx) => recalcModel(idx)); } closeCustomerEdit(); }
@@ -854,7 +848,7 @@ function renderCustomerQueue() {
         </div>`; 
     }).join(''); 
 }
-async function setActiveCustomer(idx) { if(db_records.length === 0) { showToast("⚠️️ Master Stream se data fetch nahi hua hai. Kripya connection check karein!", "error"); return; } activeCustomerIndex = idx; await saveQueueToLocal(); document.getElementById('queueSearch').value = ''; goToFinalPage(); }
+async function setActiveCustomer(idx) { if(db_records.length === 0) { showToast("⚠️ Master Stream se data fetch nahi hua hai. Kripya connection check karein!", "error"); return; } activeCustomerIndex = idx; await saveQueueToLocal(); document.getElementById('queueSearch').value = ''; goToFinalPage(); }
 function isLimitValid() { if (activeCustomerIndex === -1 || !customerQueue[activeCustomerIndex]) { showToast("⚠️ Kripya pehle queue mein ek customer add karein aur use 'ACTIVE' rakhein.", "warning"); return false; } return true; }
 
 function generateStackCards() { let container = document.getElementById('stackInputsContainer'); if(!container) return; container.innerHTML = ""; for(let i=1; i<=10; i++) { container.innerHTML += ` <div class="stack-card"><div style="font-weight:900; color:var(--primary); margin-bottom:4px; border-bottom:1px solid #eee; padding-bottom:2px;">SCHEME #${i}</div> <div class="inner-grid"> <div><label>TENURE (MAX)</label><input type="number" id="msTen_${i}" placeholder="0"></div> <div><label>ADVANCE</label><input type="number" id="msAdv_${i}" placeholder="0"></div> <div><label>DBD %</label><input type="number" id="msDbd_${i}" placeholder="0"></div> <div><label>PF (₹)</label><input type="number" id="msPf_${i}" placeholder="0"></div> <div><label>ROI %</label><input type="number" id="msRoi_${i}" placeholder="0"></div> <div><label>FIXED EMI (₹)</label><input type="number" id="msFix_${i}" placeholder="0"></div> </div> </div>`; } }
@@ -1162,7 +1156,7 @@ function recalcModel(pIdx) {
 
                 roiInEmi = loan * roiRate; emi = baseEmi + (insTotal / inst) + roiInEmi; 
             } 
-            let roiInDp = loan * roiRateDP; dpExact = effectivePrice - loan + (baseEmi * s.advEmi) + (loan * dbdRate) + dynamicPf + totalFees + roiInDp;
+            let roiInDp = loan * roiRateDP; dpExact = effectivePrice - loan + ((loan/d.tenure) * adv) + (loan * dbdRate) + dynamicPf + totalFees + roiInDp;
         }
 
         if(dpExact > 0) dpRounded = Math.ceil(dpExact / 10) * 10; else dpRounded = dpExact; let extraVal = effectivePrice > 0 ? (((emi * inst) + dpRounded) - effectivePrice) : 0; let dbdAmt = loan * dbdRate; let roiAmt = (loan * roiRateDP) + (loan * roiRate * inst); let curLTV = currentTenure > 0 ? ((currentTenure - s.advEmi) / currentTenure) * 100 : 0; let marginMoney = parseFloat(inp.margin) || 0; let roundupAdj = (dpRounded > dpExact) ? (dpRounded - dpExact) : 0; let netDisb = effectivePrice > 0 ? (effectivePrice - dpRounded - marginMoney - roundupAdj) : 0;
@@ -1860,7 +1854,7 @@ function openZatpatCalcModal() {
 }
 
 /* ========================================================== */
-/* 🔍 SMART SCHEMES DICTIONARY ADVANCED LOGIC                 */
+/* 🔍 SMART SCHEMES DICTIONARY COMPLETE CONTROLLER           */
 /* ========================================================== */
 
 let dictBasketProducts = [];
@@ -1868,7 +1862,7 @@ let dictManualLoans = {};
 
 function openDictionaryModal() { 
     if(!db_records || db_records.length === 0) { 
-        showToast("⚠️ Schemes Dictionary load होत आहे, कृपया २ सेकंद थांबा...", "warning"); 
+        showToast("⚠️ Schemes Dictionary लोड होत आहे, कृपया २ सेकंद थांबा...", "warning"); 
         return; 
     } 
     document.getElementById('globalModelSearch').value = ''; 
@@ -1876,18 +1870,13 @@ function openDictionaryModal() {
     document.getElementById('schemeResultArea').style.display = 'none';
     dictManualLoans = {};
 
-    dictPopulateCustomerDropdown();
-
+    let searchInp = document.getElementById('dictCustSearch');
     if (activeCustomerIndex !== -1 && customerQueue[activeCustomerIndex]) {
         let c = customerQueue[activeCustomerIndex];
-        document.getElementById('dictCustSelect').value = activeCustomerIndex;
+        if (searchInp) searchInp.value = `👤 ${c.name} (Limit: ₹${c.limit})`;
         dictLoadCustomerToInputs(c);
     } else {
-        document.getElementById('dictCustSelect').value = "-1";
-        document.getElementById('calcCustType').value = "NEW";
-        document.getElementById('calcLimit').value = "";
-        document.getElementById('calcLtv').value = "100";
-        document.getElementById('calcCap').value = "";
+        dictResetAllToDirectCalc();
     }
 
     renderDictBasketChips();
@@ -1899,38 +1888,66 @@ function closeDictionaryModal() {
     document.getElementById('dictionarySearchModal').style.display = 'none'; 
 }
 
-function dictPopulateCustomerDropdown() {
-    let sel = document.getElementById('dictCustSelect');
-    if (!sel) return;
-    let html = `<option value="-1">-- Direct Calculate (No Customer) --</option>`;
-    customerQueue.forEach((c, idx) => {
-        html += `<option value="${idx}">👤 ${c.name} (Limit: ₹${c.limit} | LTV: ${c.ltv}%)</option>`;
-    });
-    sel.innerHTML = html;
+// 🔄 DIRECT CALCULATE: सर्व व्हॅल्यूज रीसेट करणे
+function dictResetAllToDirectCalc() {
+    activeCustomerIndex = -1;
+    let sInp = document.getElementById('dictCustSearch');
+    if(sInp) sInp.value = '';
+    
+    document.getElementById('calcCustType').value = "NEW";
+    document.getElementById('calcLimit').value = "";
+    document.getElementById('calcLtv').value = "100";
+    document.getElementById('calcCap').value = "";
+    document.getElementById('calcInvoice').value = "";
+    document.getElementById('calcGtl').value = "0";
+    document.getElementById('calcRfc').value = "0";
+    document.getElementById('calcExw').value = "";
+    document.getElementById('calcMargin').value = "0";
+    document.getElementById('calcTarget').value = "";
+    
+    dictManualLoans = {};
+    let suggBox = document.getElementById('dictCustSuggestionsList');
+    if(suggBox) suggBox.style.display = 'none';
+
+    recalcCurrentModel();
+    showToast("🔄 सर्व व्हॅल्यूज Direct Calculate साठी रीसेट झाल्या!", "warning");
 }
 
-function dictFilterCustomerDropdown() {
+// 🔍 Customer Live Suggestion Dropdown
+function dictFilterCustomerSuggestions() {
     let q = document.getElementById('dictCustSearch').value.toLowerCase().trim();
-    let sel = document.getElementById('dictCustSelect');
+    let suggBox = document.getElementById('dictCustSuggestionsList');
+    if(!suggBox) return;
+
     let filtered = customerQueue.map((c, idx) => ({ ...c, idx })).filter(c => {
-        if (!q) return true;
+        if(!q) return true;
         return c.name.toLowerCase().includes(q) || (c.mobile && c.mobile.includes(q)) || c.limit.toString().includes(q);
     });
-    let html = `<option value="-1">-- Direct Calculate (No Customer) --</option>`;
-    filtered.forEach(c => {
-        html += `<option value="${c.idx}">👤 ${c.name} (Limit: ₹${c.limit} | LTV: ${c.ltv}%)</option>`;
-    });
-    sel.innerHTML = html;
+
+    if(filtered.length === 0) {
+        suggBox.innerHTML = `<div style="padding:10px; color:#888; font-size:12px; text-align:center;">कोणताही सेव्ह केलेला कस्टमर सापडला नाही.</div>`;
+        suggBox.style.display = 'block';
+        return;
+    }
+
+    suggBox.innerHTML = filtered.map(c => `
+        <div onclick="dictSelectCustomerFromSuggestion(${c.idx})" style="padding:10px; border-bottom:1px solid #eee; cursor:pointer; font-size:12px; font-weight:bold; color:var(--dark);" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#fff'">
+            👤 ${c.name} <span style="color:var(--success); float:right;">LMT: ₹${c.limit} | LTV: ${c.ltv}%</span>
+        </div>
+    `).join('');
+    suggBox.style.display = 'block';
 }
 
-function dictOnCustomerSelected() {
-    let val = parseInt(document.getElementById('dictCustSelect').value);
-    if (val !== -1 && customerQueue[val]) {
-        activeCustomerIndex = val;
-        dictLoadCustomerToInputs(customerQueue[val]);
-        saveQueueToLocal(false);
-    }
+function dictSelectCustomerFromSuggestion(idx) {
+    let c = customerQueue[idx];
+    if(!c) return;
+    activeCustomerIndex = idx;
+    document.getElementById('dictCustSearch').value = `👤 ${c.name} (Limit: ₹${c.limit})`;
+    document.getElementById('dictCustSuggestionsList').style.display = 'none';
+    dictLoadCustomerToInputs(c);
+    saveQueueToLocal(false);
     recalcCurrentModel();
+    showToast(`✅ ${c.name} सिलेक्ट केला!`, "success");
 }
 
 function dictLoadCustomerToInputs(c) {
@@ -1952,70 +1969,69 @@ function dictToggleNewCustMode() {
     }
 }
 
+// ➕ Add New Customer (NO MOBILE, LTV & Capping समाविष्ट)
 async function dictSaveNewCustomerToQueue() {
     let name = document.getElementById('dictNewName').value.trim() || `Cust ${customerQueue.length + 1}`;
-    let mobile = document.getElementById('dictNewMobile').value.trim() || "";
     let limit = parseFloat(document.getElementById('dictNewLimit').value);
     let type = document.getElementById('dictNewType').value;
-    let ltv = parseFloat(document.getElementById('calcLtv').value) || 100;
-    let cap = parseFloat(document.getElementById('calcCap').value) || "";
+    let ltv = parseFloat(document.getElementById('dictNewLtv').value) || 100;
+    let cap = parseFloat(document.getElementById('dictNewCap').value) || "";
 
     if (!limit || limit <= 0 || isNaN(limit)) {
-        showToast("⚠️ कृपया NBFC Limit भरा!", "error");
+        showToast("⚠️ कृपया वैध NBFC Limit भरा!", "error");
         return;
     }
 
     let now = new Date();
     let ts = now.toLocaleDateString('en-GB', { day:'2-digit', month:'short' }) + ' ' + now.toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit' });
-    let newCustObj = { name, mobile, limit, ltv, type, cap, timestamp: ts, components: {}, products: [], sortConfigs: [] };
+    let newCustObj = { name, mobile: "", limit, ltv, type, cap, timestamp: ts, components: {}, products: [], sortConfigs: [] };
 
     customerQueue.unshift(newCustObj);
     activeCustomerIndex = 0;
     await saveQueueToLocal();
 
-    dictPopulateCustomerDropdown();
-    document.getElementById('dictCustSelect').value = "0";
+    document.getElementById('dictCustSearch').value = `👤 ${name} (Limit: ₹${limit})`;
     dictLoadCustomerToInputs(newCustObj);
     dictToggleNewCustMode();
 
     renderCustomerQueue();
     updateUniversalActionButtons();
-    showToast(`✅ ${name} Queue मध्ये सेव्ह झाला आणि सिलेक्ट केला!`, "success");
+    showToast(`✅ ${name} Queue मध्ये ॲड झाला व ॲक्टिव्हेट केला!`, "success");
     recalcCurrentModel();
 }
 
+// 🛡️ GTL Auto & RFC Default 0 (Slabwise options)
 function dictInvoiceChanged() {
     let inv = parseFloat(document.getElementById('calcInvoice').value) || 0;
     let rec = db_records.find(r => r.model === currentViewedModel);
     let isPhone = rec ? isMobileDeviceCat(rec.category) : false;
 
+    // GTL Auto Selection
     let gtl = inv > 100000 ? 2398 : (inv > 50000 ? 1799 : (inv > 30000 ? 1499 : (inv > 10000 ? 1199 : (inv > 0 ? 699 : 0))));
     document.getElementById('calcGtl').value = gtl;
 
+    // RFC Slabwise Calculation (By Default 0)
     let rfcSlab = getRfcSlabValue(inv);
     let rfcOpt = document.getElementById('calcRfcOpt');
     let rfcSel = document.getElementById('calcRfc');
     let exwInp = document.getElementById('calcExw');
 
-    if (rfcOpt) { rfcOpt.value = rfcSlab; rfcOpt.innerText = rfcSlab; }
+    if (rfcOpt) { 
+        rfcOpt.value = rfcSlab; 
+        rfcOpt.innerText = `${rfcSlab} (Phone Slab)`; 
+    }
 
     if (isPhone) {
         rfcSel.disabled = false;
-        rfcSel.style.background = '#fff';
-        rfcSel.style.cursor = 'default';
-        rfcSel.value = rfcSlab;
+        rfcSel.value = "0"; // नियमानुसार By Default 0
         exwInp.value = "";
         exwInp.disabled = true;
         exwInp.style.background = '#e9ecef';
-        exwInp.style.cursor = 'not-allowed';
     } else {
         rfcSel.value = "0";
         rfcSel.disabled = true;
-        rfcSel.style.background = '#e9ecef';
-        rfcSel.style.cursor = 'not-allowed';
         exwInp.disabled = false;
         exwInp.style.background = '#fff';
-        exwInp.style.cursor = 'text';
     }
 
     dictManualLoans = {};
@@ -2043,6 +2059,7 @@ function viewGlobalModel(name) {
     }, 100);
 }
 
+// 🧮 Table Renderer (Loan Edit With Rules)
 function renderTableModel() {
     let schemes = db_records.filter(r => r.model === currentViewedModel);
     if(schemes.length === 0) return;
@@ -2252,6 +2269,7 @@ function dictManualLoanChange(schemeIdx, val) {
     renderTableModel();
 }
 
+// 🛒 MULTIPLE PRODUCTS BASKET (Tap on chip to load table)
 function addCurrentModelToDictBasket() {
     if (!currentViewedModel) return;
     let inv = parseFloat(document.getElementById('calcInvoice').value) || 0;
@@ -2302,11 +2320,27 @@ function renderDictBasketChips() {
 
     box.style.display = 'block';
     chips.innerHTML = dictBasketProducts.map((p, idx) => `
-        <span style="background:#e0f2fe; color:var(--bajaj-blue); padding:4px 8px; border-radius:15px; font-size:11px; font-weight:900; border:1px solid #bae6fd; display:flex; align-items:center; gap:4px;">
+        <span onclick="dictViewBasketProduct(${idx})" style="background:#e0f2fe; color:var(--bajaj-blue); padding:5px 10px; border-radius:15px; font-size:11px; font-weight:900; border:1px solid #bae6fd; display:flex; align-items:center; gap:6px; cursor:pointer;" title="Tap to view table">
             📱 ${p.name} (₹${p.inv})
-            <span onclick="removeDictBasketProduct(${idx})" style="cursor:pointer; color:red; font-size:13px; font-weight:bold;">&times;</span>
+            <span onclick="event.stopPropagation(); removeDictBasketProduct(${idx});" style="color:red; font-size:14px; font-weight:bold;">&times;</span>
         </span>
     `).join('');
+}
+
+// 📱 बास्केटमधील मॉडेलवर टॅप केल्यावर त्याचे स्कीम्स टेबल उघडेल
+function dictViewBasketProduct(idx) {
+    let p = dictBasketProducts[idx];
+    if(!p) return;
+    currentViewedModel = p.name;
+    document.getElementById('globalModelSearch').value = p.name;
+    document.getElementById('calcInvoice').value = p.inv || "";
+    document.getElementById('calcGtl').value = p.gtl || 0;
+    document.getElementById('calcRfc').value = p.rfc || 0;
+    document.getElementById('calcExw').value = p.exw || "";
+    document.getElementById('calcMargin').value = p.margin || 0;
+    dictManualLoans = {};
+    recalcCurrentModel();
+    showToast(`📱 ${p.name} चे स्कीम्स लोड झाले!`, "success");
 }
 
 function removeDictBasketProduct(idx) {
@@ -2314,6 +2348,74 @@ function removeDictBasketProduct(idx) {
     renderDictBasketChips();
 }
 
+// 🖼️ DICTIONARY QUOTE IMAGE GENERATOR
+function exportDictCustomerQuoteImage() {
+    let cust = (activeCustomerIndex !== -1 && customerQueue[activeCustomerIndex]) ? customerQueue[activeCustomerIndex] : null;
+    let custName = cust ? cust.name : "Valued Customer";
+    let custLimit = cust ? cust.limit : (parseFloat(document.getElementById('calcLimit').value) || 0);
+    let custLtv = cust ? cust.ltv : (parseFloat(document.getElementById('calcLtv').value) || 100);
+    let custType = cust ? cust.type : document.getElementById('calcCustType').value;
+
+    let invoice = parseFloat(document.getElementById('calcInvoice').value) || 0;
+
+    let quoteDiv = document.createElement('div'); 
+    quoteDiv.style.width = "780px"; 
+    quoteDiv.style.padding = "16px"; 
+    quoteDiv.style.background = "#f8fafc"; 
+    quoteDiv.style.position = "absolute"; 
+    quoteDiv.style.top = "-9999px"; 
+    quoteDiv.style.boxSizing = "border-box";
+    quoteDiv.style.fontFamily = "sans-serif";
+
+    let tableHtml = document.querySelector('#schemeResultArea table').outerHTML;
+
+    quoteDiv.innerHTML = `
+    <div style="background: #ffffff; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); overflow: hidden; border: 1px solid #e2e8f0;">
+        <div style="background: linear-gradient(180deg, #095797 0%, #153e75 100%); padding: 20px 16px; color: #ffffff; text-align: center;">
+            <h2 style="margin: 0 0 10px 0; font-size: 26px; font-weight: 900; letter-spacing: 1px;">🎉 SPECIAL LOAN OFFER</h2> 
+            <div style="display: flex; gap: 14px; font-size: 16px; font-weight: 900; justify-content: center; background: rgba(255,255,255,0.1); padding: 8px; border-radius: 8px;">
+                <span>👤 ${custName}</span>
+                <span>| LIMIT: ₹${custLimit.toLocaleString()}</span>
+                <span>| LTV: ${custLtv}%</span>
+                <span>| ${custType}</span>
+            </div>
+        </div>
+        <div style="padding: 16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; border-bottom:2px solid #034887; padding-bottom:6px;">
+                <h3 style="margin:0; color:#034887; font-size:20px;">📱 ${currentViewedModel}</h3>
+                <span style="background:#034887; color:#fff; padding:6px 14px; border-radius:6px; font-weight:900;">INV: ₹${invoice.toLocaleString()}</span>
+            </div>
+            ${tableHtml}
+        </div>
+    </div>`;
+
+    document.body.appendChild(quoteDiv);
+    let clonedTable = quoteDiv.querySelector('table');
+    let actCells = clonedTable.querySelectorAll('th:last-child, td:last-child');
+    actCells.forEach(cell => cell.remove());
+    clonedTable.style.width = "100%";
+    clonedTable.style.borderCollapse = "collapse";
+    quoteDiv.querySelectorAll('th, td').forEach(cell => { cell.style.padding = "10px 4px"; cell.style.textAlign = "center"; });
+
+    html2canvas(quoteDiv, { scale: 2, useCORS: true }).then(canvas => {
+        document.body.removeChild(quoteDiv);
+        let imgDataUrl = canvas.toDataURL("image/png");
+        document.getElementById('generatedImage').src = imgDataUrl;
+        document.getElementById('imageViewerModal').style.display = 'flex';
+        showToast("🖼️ कोटेशन इमेज तयार झाली!", "success");
+    });
+}
+
+// ⚡ NON-TIEUP & MANUAL SCHEMES ENTRY FROM DICTIONARY
+function dictOpenNonTieupModal() {
+    quickNonTieup();
+}
+
+function dictOpenManualSchemeModal() {
+    openMultiStackModal();
+}
+
+// 🚀 TRANSFER TO FINAL SCREEN
 async function transferDictModelToFinalQueue() {
     if (activeCustomerIndex === -1 || !customerQueue[activeCustomerIndex]) {
         showToast("⚠️ कृपया आधी कस्टमर सिलेक्ट करा किंवा '+ ADD NEW' वरून ॲड करा!", "error");
