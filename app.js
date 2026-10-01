@@ -243,7 +243,7 @@ function renderEmiDrafts() {
 }
 
 function toggleDraftDetails(index) { const detailsDiv = document.getElementById(`draftDetails_${index}`); if (detailsDiv.style.display === 'none') { detailsDiv.style.display = 'block'; } else { detailsDiv.style.display = 'none'; } }
-function sendDraftNow(index) { let drafts = JSON.parse(localStorage.getItem('persistent_emi_drafts') || '[]'); let d = drafts[index]; if (!d) return; let mobile = d.mobile || ''; let text = encodeURIComponent(d.finalMessage || ''); let url = `https://api.whatsapp.com/send?text=${text}`; if (mobile && mobile.length === 10) { url = `https://api.whatsapp.com/send?phone=91${mobile}&text=${text}`; } window.open(url, '_blank'); }
+function sendDraftNow(index) { let drafts = JSON.parse(localStorage.getItem('persistent_emi_drafts') || '[]'); let d = drafts[index]; if (!d) return; let mobile = d.mobile || ''; let text = encodeURIComponent(d.finalMessage || ''); if(!text) { showToast("⚠️ हा जुना ड्राफ्ट आहे. कृपया आधी 'LOAD' वर क्लिक करा आणि मग मेसेज पाठवा.", "warning"); return; } let url = `https://api.whatsapp.com/send?text=${text}`; if (mobile && mobile.length === 10) { url = `https://api.whatsapp.com/send?phone=91${mobile}&text=${text}`; } window.open(url, '_blank'); }
 function loadEmiDraft(index) { let drafts = JSON.parse(localStorage.getItem('persistent_emi_drafts') || '[]'); let d = drafts[index]; if (!d) return; document.getElementById('msgShopName').value = d.shop || ''; document.getElementById('msgAssetCategory').value = d.asset || ''; document.getElementById('msgCustName').value = d.name || ''; document.getElementById('msgCustEMI').value = d.emi || ''; document.getElementById('msgCustTenure').value = d.tenure || ''; document.getElementById('msgLoanDate').value = d.loanDate || ''; document.getElementById('msgLang').value = d.lang || 'en'; calculateDates(); closeDraftsModal(); }
 function markDraftAsSent(index) { showCustomConfirm("Ha draft कायमचा delete hoil. Pudhe jayche?", () => { let drafts = JSON.parse(localStorage.getItem('persistent_emi_drafts') || '[]'); drafts.splice(index, 1); localStorage.setItem('persistent_emi_drafts', JSON.stringify(drafts)); renderEmiDrafts(); showToast("Draft delete jhala!", "success"); }); }
 
@@ -1354,7 +1354,6 @@ async function saveDictSingleScheme() {
     showToast(`Custom Scheme ${currentViewedModel} madhe add jhali!`, "success");
 }
 
-// 🖼️ DICTIONARY QUOTE IMAGE GENERATOR (Exact 5 Columns: T/A, DP, EMI, MONTHS, PER DAY with Big Fonts & Dynamic Height)[span_0](start_span)[span_0](end_span)
 function exportDictCustomerQuoteImage() {
     let cust = (activeCustomerIndex !== -1 && customerQueue[activeCustomerIndex]) ? customerQueue[activeCustomerIndex] : null;
     let custName = cust ? cust.name : "Valued Customer";
@@ -1463,7 +1462,6 @@ function exportDictCustomerQuoteImage() {
     });
 }
 
-// 📦 CUSTOM SCHEMES STAGING MODAL CONTROLS (Master Data TSV Copy)
 function openCustomSchemesStagingModal() {
     renderStagingTable();
     document.getElementById('customSchemesStagingModal').style.display = 'flex';
@@ -1529,7 +1527,6 @@ function copyStagingDataForExcel() {
     });
 }
 
-// 🚀 TRANSFER TO FINAL SCREEN
 async function transferDictModelToFinalQueue() {
     if (activeCustomerIndex === -1 || !customerQueue[activeCustomerIndex]) {
         showToast("Aadhi customer select kinva add kara!", "error");
