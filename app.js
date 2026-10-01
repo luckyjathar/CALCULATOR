@@ -1599,3 +1599,4 @@ async function transferDictModelToFinalQueue() {
     goToFinalPage();
     showToast("Products final screen var transfer jhale!", "success");
 }
+
