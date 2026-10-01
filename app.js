@@ -129,7 +129,12 @@ if (typeof pdfjsLib !== 'undefined') {
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 }
 
-function toggleSidebar() { document.getElementById('appSidebar').classList.toggle('open'); document.getElementById('sidebarOverlay').classList.toggle('show'); }
+function toggleSidebar() { 
+    let sb = document.getElementById('appSidebar'); 
+    let ol = document.getElementById('sidebarOverlay'); 
+    if(sb) sb.classList.toggle('open'); 
+    if(ol) ol.classList.toggle('show'); 
+}
 function openCustomerMessageModal() { document.getElementById('customerMessageGenModal').style.display = 'flex'; calculateDates(); updateDraftBadgeCount(); }
 function closeCustomerMessageModal() { document.getElementById('customerMessageGenModal').style.display = 'none'; }
 
@@ -234,7 +239,7 @@ function renderEmiDrafts() {
                 <div style="display:flex; gap:6px; margin-top:10px; border-top:1px solid #eee; padding-top:10px;">
                     <button onclick="loadEmiDraft(${index})" style="flex:1; background:var(--indigo); color:white; padding:8px; border-radius:4px; border:none; cursor:pointer; font-weight:bold; font-size: 11px;">✏️ LOAD</button>
                     <button onclick="sendDraftNow(${index})" style="flex:1.2; background:#25D366; color:white; padding:8px; border-radius:4px; border:none; cursor:pointer; font-weight:bold; font-size: 11px;">💬 SEND NOW</button>
-                    <button onclick="markDraftAsSent(${index})" style="flex:0.8; background:var(--danger); color:white; padding:8px; border-radius:4px; border:none; cursor:pointer; font-weight:bold; font-size: 11px;">🗑️ DELETE</button>
+                    <button onclick="markDraftAsSent(${index})" style="flex:0.8; background:var(--danger); color:white; padding:8px; border-radius:4px; border:none; cursor:pointer; font-weight:bold; font-size: 11px;">🗑️️ DELETE</button>
                 </div>
             </div>
         </div>
@@ -274,7 +279,11 @@ function standardizeCategoryName(cat) { if (!cat) return "OTHER"; let c = String
 function getRfcSlabValue(val) { let amount = parseFloat(val) || 0; if (amount < 8000) return 0; if (amount <= 10000) return 1109; if (amount <= 15000) return 1631; if (amount <= 20000) return 2147; if (amount <= 25000) return 2695; if (amount <= 30000) return 3215; if (amount <= 35000) return 3648; if (amount <= 40000) return 4219; if (amount <= 50000) return 5720; if (amount <= 60000) return 8686; if (amount <= 100000) return 11438; if (amount <= 200000) return 16677; return 0; }
 function getNonTieupPfValue(category, amount) { let cat = String(category || "").toUpperCase().replace(/\s+/g, '').trim(); let val = parseFloat(amount) || 0; if (cat.includes('DESKTOP') || cat.includes('LAPTOP')) { return 699; } if (cat === 'PHONE(WEB-MOBILE)' || cat.includes('PHONE') || cat.includes('TABLET') || cat.includes('WATCH') || cat.includes('PRINTER') || cat.includes('HEADPHONE') || cat === 'SMARTPHONES' || cat === 'MOBILE') { if (val <= 30000) return 499; if (val <= 50000) return 599; return 699; } return null; }
 
-const GITHUB_RAW_URL = "https://raw.githubusercontent.com/luckyjathar/testcalculator/main/master_data.xlsx";const DB_NAME = "PersistentPortalDB"; const DB_VERSION = 2; const STORE_NAME = "dataStore"; let dbInstance;
+const GITHUB_RAW_URL = "https://raw.githubusercontent.com/luckyjathar/testcalculator/main/master_data.xlsx";
+const DB_NAME = "PersistentPortalDB"; 
+const DB_VERSION = 2; 
+const STORE_NAME = "dataStore"; 
+let dbInstance;
 
 function initDB() { return new Promise((resolve, reject) => { let request = indexedDB.open(DB_NAME, DB_VERSION); request.onupgradeneeded = function(e) { let db = e.target.result; if (!db.objectStoreNames.contains(STORE_NAME)) { db.createObjectStore(STORE_NAME); } }; request.onsuccess = function(e) { dbInstance = e.target.result; resolve(dbInstance); }; request.onerror = function(e) { reject(e); }; }); }
 function saveToDB(key, data) { return new Promise((resolve, reject) => { if (!dbInstance) return reject("DB not initialized"); try { let tx = dbInstance.transaction(STORE_NAME, 'readwrite'); let store = tx.objectStore(STORE_NAME); let req = store.put(JSON.stringify(data), key); req.onsuccess = () => resolve(); req.onerror = (e) => reject(e.target.error); } catch(e) { reject(e); } }); }
@@ -288,8 +297,8 @@ function parseExcelDate(val) { if (!val) return null; if (typeof val === 'number
 
 async function saveQueueToLocal(shouldCloudSync = true) { try { let compactQueue = customerQueue.map(c => { let cp = (c.products || []).map(p => { let { calculatedData, allSchemes, ...keepProduct } = p; return keepProduct; }); return { ...c, products: cp }; }); localStorage.setItem('persistent_queue_backup', JSON.stringify(compactQueue)); localStorage.setItem('persistent_active_idx_backup', activeCustomerIndex); await saveToDB('persistent_queue', compactQueue); await saveToDB('persistent_active_idx', activeCustomerIndex); if(shouldCloudSync && loggedInUserEmail) { triggerSilentCloudSync(); } } catch(e) { console.error("Local Save Interrupted", e); } }
 
-// === FETCH MASTER DATA FUNCTION ===
-const CACHE_DURATION_MS = 12 * 60 * 60 * 1000; 
+// ⚡ CACHE DURATION: १२ तासांवरून ५ मिनिटे केली आहे, ज्यामुळे नवीन डेटा पटकन रिफ्लेक्ट होईल
+const CACHE_DURATION_MS = 5 * 60 * 1000; 
 
 async function fetchFromMasterStream(forceSync = false) {
     let statusBadge = document.getElementById('gitStatusBadge'); 
@@ -308,28 +317,28 @@ async function fetchFromMasterStream(forceSync = false) {
 
     try {
         let now = new Date().getTime();
-        
+
         if (!forceSync) {
             let cachedTime = await getFromDB('master_data_time');
             let cachedDbRecords = await getFromDB('cached_db_records');
             let cachedDealerRecords = await getFromDB('cached_dealer_records');
-            
+
             if (cachedTime && cachedDbRecords && cachedDealerRecords && (now - cachedTime < CACHE_DURATION_MS)) {
                 db_records = cachedDbRecords;
                 dealer_records = cachedDealerRecords;
-                
+
                 if (activeCustomerIndex !== -1) { loadCurrentProducts(); renderMatrix(); }
-                
+
                 if(statusBadge) { 
-                    statusBadge.innerHTML = '⚡ LOADED FROM CACHE'; 
+                    statusBadge.innerHTML = '⚡ LOADED FROM CACHE (CLICK TO REFRESH)'; 
                     statusBadge.style.color = 'var(--success)'; 
                     statusBadge.style.background = 'rgba(39, 174, 96, 0.15)'; 
                 }
-                
+
                 if(globalLoader) globalLoader.style.display = 'none'; 
                 if(searchInput1) { searchInput1.disabled = false; searchInput1.placeholder = "Type model, brand or category..."; }
                 if(searchInput2) { searchInput2.disabled = false; searchInput2.placeholder = "Type Brand or Model Name..."; }
-                
+
                 return;
             }
         }
@@ -340,45 +349,39 @@ async function fetchFromMasterStream(forceSync = false) {
             statusBadge.style.color = '#f39c12'; 
             statusBadge.style.background = 'rgba(243, 156, 18, 0.15)'; 
         }
-        
+
         let cacheBusterUrl = GITHUB_RAW_URL + '?t=' + now; 
         let res = await fetch(cacheBusterUrl); 
-        
+
         if (!res.ok) throw new Error("Master file missing or deleted from GitHub."); 
-        
+
         let dataBuffer = await res.arrayBuffer(); 
         let wb = XLSX.read(new Uint8Array(dataBuffer), { type: 'array' });
-        
+
         tempSheet1Data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { raw: false, defval: "" }); 
         parsedSheet2Data = wb.SheetNames.length > 1 ? XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[1]], { raw: false, defval: "" }).map(r => mapData(r, SPECIAL_MODEL)).filter(x => x && x.model && x.model.trim() !== "") : [];
-        
+
         if (wb.SheetNames.length > 2) { dealer_records = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[2]], { raw: false, defval: "" }); } 
         else { dealer_records = []; }
-        
+
         let filteredSheet1 = tempSheet1Data.map(r => mapData(r, "REG")).filter(m => m && m.model && m.model.trim() !== ""); 
         let rawCombined = [...filteredSheet1, ...parsedSheet2Data]; 
         let uniqueDB = []; let seenDB = new Set();
-        
+
         rawCombined.forEach(r => { 
             let key = `${r.model}_${r.category}_${r.tenure}_${r.advEmi}_${r.fixedEmi}_${r.minLoan}_${r.maxLoan}`; 
             if (!seenDB.has(key)) { seenDB.add(key); uniqueDB.push(r); } 
         });
-        
-        let today = new Date(); today.setHours(0,0,0,0);
-        db_records = uniqueDB.filter(r => {
-            if(!r.expiryDateStr) return true;
-            let p = r.expiryDateStr.split('/');
-            if(p.length !== 3) return true;
-            let expD = new Date(p[2], p[1]-1, p[0]);
-            return expD >= today;
-        });
+
+        // 🌟 एक्सपायरी फिल्टर काढून सर्व मॉडेल्स डेटाबेसमध्ये सेव्ह केली जात आहेत
+        db_records = uniqueDB;
 
         await saveToDB('cached_db_records', db_records);
         await saveToDB('cached_dealer_records', dealer_records);
         await saveToDB('master_data_time', now);
 
         if (activeCustomerIndex !== -1) { loadCurrentProducts(); renderMatrix(); }
-        
+
         if(statusBadge) { 
             statusBadge.innerHTML = '✅ LIVE DATA SYNCED'; 
             statusBadge.style.color = 'var(--success)'; 
@@ -402,7 +405,7 @@ async function fetchFromMasterStream(forceSync = false) {
             statusBadge.style.color = 'var(--danger)'; 
             statusBadge.style.background = 'rgba(214, 48, 49, 0.15)'; 
         } 
-        
+
         if(globalLoader) {
             globalLoader.style.background = 'var(--danger)';
             globalLoader.style.color = '#fff';
@@ -419,31 +422,42 @@ window.onload = async function() {
         updateLoginUI(savedName, true); 
     } 
     generateStackCards(); 
-    
+
+    // बॅजवर क्लिक केल्यावर मॅन्युअली डाऊनलोड सुरू होईल
+    let statusBadge = document.getElementById('gitStatusBadge');
+    if(statusBadge) {
+        statusBadge.style.cursor = 'pointer';
+        statusBadge.title = "Click to refresh master data";
+        statusBadge.onclick = async function() {
+            showToast("⏳ Live Excel डेटा डाऊनलोड सुरू आहे...", "warning");
+            await forceRefreshMasterData();
+        };
+    }
+
     try {
         await initDB(); 
-        
+
         let savedQ = await getFromDB('persistent_queue'); 
         if (!savedQ || savedQ.length === 0) { 
             let lsQ = localStorage.getItem('persistent_queue_backup'); 
             if (lsQ) savedQ = JSON.parse(lsQ); 
         }
         if (savedQ) { customerQueue = savedQ.map(c => ({ ...c, components: c.components || {}, products: c.products || [], sortConfigs: c.sortConfigs || [] })); }
-        
+
         let savedRecycle = await getFromDB('persistent_recycle'); 
         if (!savedRecycle || savedRecycle.length === 0) { 
             let lsRec = localStorage.getItem('persistent_recycle_backup'); 
             if (lsRec) savedRecycle = JSON.parse(lsRec); 
         }
         if (savedRecycle) recycleBin = savedRecycle;
-        
+
         let savedIdx = await getFromDB('persistent_active_idx'); 
         if (savedIdx === null || savedIdx === undefined) { 
             savedIdx = localStorage.getItem('persistent_active_idx_backup'); 
         }
         if (savedIdx !== null && savedIdx !== undefined) activeCustomerIndex = parseInt(savedIdx); 
         if(activeCustomerIndex >= customerQueue.length) activeCustomerIndex = -1;
-        
+
         renderCustomerQueue(); 
         updateUniversalActionButtons();
 
@@ -467,7 +481,7 @@ function generateFlyer() {
     let sName = document.getElementById('fgSalesName').value.trim(); let sMob = document.getElementById('fgSalesMobile').value.trim(); let oType = document.getElementById('fgOfferType').value; let oVal = document.getElementById('fgOfferValue').value.trim();
     if(!sName || !sMob || sMob.length !== 10) { showToast("⚠️ Kripya Salesman Name aur 10-Digit Mobile Number barabar dalein!", "error"); return; }
     if(!tempFgDealerId) { showToast("⚠️ Kadak Niyam: Dealer Shop select karna Compulsory hai!", "error"); return; }
-    if(!tempFgBitly) { showToast("⚠️ Is Dealer ki Bitly Link master data mein nahi mili!", "error"); return; }
+    if(!tempFgBitly) { showToast("⚠️️ Is Dealer ki Bitly Link master data mein nahi mili!", "error"); return; }
     if(oType !== "NONE" && !oVal) { showToast("⚠️ Agar Offer select ki hai toh Amount ya Gift ka naam dalein!", "error"); return; }
     let baseUrl = window.location.href.split('?')[0]; baseUrl = baseUrl.replace(/index\.html?$/i, ''); if(!baseUrl.endsWith('/')) baseUrl += '/';
     let url = `${baseUrl}flyer.html?sn=${encodeURIComponent(sName)}&sm=${sMob}&did=${encodeURIComponent(tempFgDealerId)}&dn=${encodeURIComponent(tempFgDealerName)}&bl=${encodeURIComponent(tempFgBitly)}`;
@@ -548,9 +562,9 @@ function recalcCurrentModel() {
 function renderTableModel() {
     let schemes = db_records.filter(r => r.model === currentViewedModel);
     if(schemes.length === 0) return;
-    
+
     document.getElementById('globalViewerTitle').innerText = '📱 ' + currentViewedModel;
-    
+
     let custType = document.getElementById('calcCustType').value;
     let ltvLimit = parseFloat(document.getElementById('calcLtv').value) || 100;
     let limit = parseFloat(document.getElementById('calcLimit').value) || 0;
@@ -558,25 +572,14 @@ function renderTableModel() {
     let margin = parseFloat(document.getElementById('calcMargin').value) || 0;
     let targetDp = parseFloat(document.getElementById('calcTarget').value) || 0;
     let emiCap = parseFloat(document.getElementById('calcCap').value) || 0;
-    
+
     let gtl = invoice > 100000 ? 2398 : (invoice > 50000 ? 1799 : (invoice > 30000 ? 1499 : (invoice > 10000 ? 1199 : (invoice > 0 ? 699 : 0))));
-    
+
     let isCalculatedMode = (limit > 0 && invoice > 0);
     let fee = (custType === 'EMI CARD') ? 270 : (custType === 'W/O CARD' ? 320 : 850);
 
     let validSchemes = schemes.filter(s => s.tenure > 0 || s.fixedEmi > 0);
-    
-    let today = new Date(); today.setHours(0,0,0,0);
-    validSchemes = validSchemes.filter(s => {
-        if(!s.expiryDateStr) return true;
-        let p = s.expiryDateStr.trim().split('/');
-        if(p.length === 3) {
-            let expD = new Date(p[2], p[1]-1, p[0]);
-            if(expD < today) return false;
-        }
-        return true;
-    });
-    
+
     let thead = document.getElementById('tableHead');
     if (isCalculatedMode) {
         thead.innerHTML = `<tr>
@@ -602,7 +605,7 @@ function renderTableModel() {
 
     validSchemes.forEach(s => { 
         s.calcLTV = s.tenure > 0 ? ((s.tenure - s.advEmi)/s.tenure)*100 : 0; 
-        
+
         if (isCalculatedMode) {
             let nbfcMax = (limit * s.tenure) / (s.tenure - s.advEmi || 1);
             let finalLoan = 0, emi = 0, dp = 0, diff = 0;
@@ -611,15 +614,15 @@ function renderTableModel() {
             let roiRateDP = roiRate * s.advEmi;
             let inst = s.tenure - s.advEmi;
             if (inst < 1) inst = 1;
-            
+
             if (s.fixedEmi > 0) {
                 let maxTotalTenure = Math.floor(limit / s.fixedEmi) + s.advEmi;
                 let currentTenure = Math.floor(invoice / s.fixedEmi);
                 if(currentTenure > maxTotalTenure) currentTenure = maxTotalTenure;
                 if(currentTenure < 1) currentTenure = 1;
-                
+
                 finalLoan = currentTenure * s.fixedEmi;
-                
+
                 if (targetDp > 0) {
                     let numerator = targetDp - invoice - (s.fixedEmi * s.advEmi) - s.pf - fee - margin;
                     let denominator = dbdRate + roiRateDP - 1;
@@ -628,22 +631,22 @@ function renderTableModel() {
                     if (solvedTenure > maxTotalTenure) solvedTenure = maxTotalTenure;
                     finalLoan = Math.max(0, solvedTenure * s.fixedEmi);
                 }
-                
+
                 if (finalLoan > invoice) finalLoan = Math.floor(invoice/s.fixedEmi)*s.fixedEmi;
                 currentTenure = Math.floor(finalLoan / s.fixedEmi) || 1;
                 inst = currentTenure - s.advEmi;
                 if(inst < 1) inst = 1;
-                
+
                 let roiInEmi = finalLoan * roiRate;
                 emi = s.fixedEmi + (gtl / inst) + roiInEmi;
-                
+
                 let roiInDp = finalLoan * roiRateDP;
                 dp = invoice - finalLoan + (s.fixedEmi * s.advEmi) + s.pf + fee + (finalLoan * dbdRate) + margin + roiInDp;
                 s.currentTenure = currentTenure;
                 s.calcInst = inst;
             } else {
                 finalLoan = Math.min(nbfcMax, invoice);
-                
+
                 if (targetDp > 0) {
                     let advRate = s.advEmi / s.tenure; 
                     let numerator = targetDp - invoice - s.pf - fee - margin; 
@@ -655,18 +658,18 @@ function renderTableModel() {
                 if (invoice > 0 && finalLoan > invoice) {
                     finalLoan = invoice;
                 }
-                
+
                 let baseEmi = finalLoan / s.tenure;
                 if (baseEmi > 0 && baseEmi < 900) baseEmi = 900; 
 
                 let roiInEmi = finalLoan * roiRate;
                 emi = baseEmi + (gtl / inst) + roiInEmi;
-                
+
                 if (emiCap > 0 && emi > emiCap) {
                     finalLoan = (emiCap - (gtl / inst)) / ((1 / s.tenure) + roiRate);
                     if(finalLoan < 0) finalLoan = 0;
                     if (invoice > 0 && finalLoan > invoice) finalLoan = invoice; 
-                    
+
                     baseEmi = finalLoan / s.tenure;
                     if (baseEmi > 0 && baseEmi < 900) baseEmi = 900;
 
@@ -679,7 +682,7 @@ function renderTableModel() {
                 s.currentTenure = s.tenure;
                 s.calcInst = inst;
             }
-            
+
             s.calcLoan = finalLoan;
             s.isInvalidLoan = (isCalculatedMode && invoice > 0 && (finalLoan < (invoice * 0.5)));
 
@@ -697,7 +700,7 @@ function renderTableModel() {
     } else {
         validSchemes.sort((a,b) => b.calcLTV - a.calcLTV);
     }
-    
+
     let tbody = document.getElementById('globalViewerBody');
     tbody.innerHTML = validSchemes.map(s => {
         let displayTenure = s.currentTenure ? s.currentTenure : s.tenure;
@@ -726,7 +729,7 @@ function renderTableModel() {
             </tr>`;
         }
     }).join('');
-    
+
     document.getElementById('schemeResultArea').style.display = 'block';
 }
 
@@ -836,14 +839,14 @@ function validateFastLoanMin() {
 function calculateFastData() {
     let inv = parseFloat(document.getElementById('fcInv').value) || 0; let loanInput = parseFloat(document.getElementById('fcLoanInput').value) || 0; let tenure = parseInt(document.getElementById('fcTenure').value) || 0; let adv = parseInt(document.getElementById('fcAdv').value) || 0; let roi = parseFloat(document.getElementById('fcRoi').value) || 0; let pf = parseFloat(document.getElementById('fcPf').value) || 0; let dbd = parseFloat(document.getElementById('fcDbd').value) || 0; let custType = document.getElementById('fcCustType').value; let fixedEmi = parseFloat(document.getElementById('fcFixed').value) || 0; let cap = parseFloat(document.getElementById('fcCap').value) || 0; let target = parseFloat(document.getElementById('fcTarget').value) || 0; let gtl = parseFloat(document.getElementById('fcGtl').value) || 0; let rfc = parseFloat(document.getElementById('fcRfc').value) || 0; let exw = parseFloat(document.getElementById('fcExw').value) || 0; let margin = parseFloat(document.getElementById('fcMargin').value) || 0; let dealer = parseFloat(document.getElementById('fcDealer').value) || 0;
     if (inv <= 0 && loanInput <= 0) { document.getElementById('fcResult').style.display = 'none'; return; }
-    
+
     let minFastLoan = inv > 0 ? inv * 0.50 : 0;
     if (loanInput > 0 && loanInput < minFastLoan) {
         loanInput = minFastLoan;
     }
-    
+
     let fee = (custType === 'EMI CARD') ? 270 : (custType === 'W/O CARD' ? 320 : 850); let totalFees = fee + margin + dealer; let insTotal = gtl + rfc + exw; let dbdRate = (dbd * 1.18 / 100); let roiRate = roi / 1200; let roiRateDP = roiRate * adv; let loan = loanInput > 0 ? loanInput : inv;
-    
+
     let emi = 0; let dpRounded = 0; let inst = 0; let finalTenure = tenure;
     if (fixedEmi > 0) { 
         finalTenure = Math.floor(loan / fixedEmi) || 1; 
@@ -874,7 +877,7 @@ function calculateFastData() {
         if (loan < minLoanFor900Emi) {
             loan = minLoanFor900Emi;
         }
-        
+
         if (inv > 0 && loan > inv) {
             loan = inv;
         }
@@ -969,22 +972,22 @@ async function addCustomerToQueue() {
     let ltv = parseFloat(document.getElementById('cqLtv').value) || 100; 
     let type = document.getElementById('cqType').value; 
     let cap = parseFloat(document.getElementById('cqCap').value) || "";
-    
+
     if(!limit || limit <= 0 || isNaN(limit)) { 
         showToast("⚠️ Customer add karne ke liye pehle ek valid NBFC LIMIT enter karein!", "error"); 
         return; 
     }
-    
+
     let now = new Date(); 
     let ts = now.toLocaleDateString('en-GB', {day:'2-digit', month:'short'}) + ' ' + now.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
     let newCustObj = { name, mobile, limit, ltv, type, cap, timestamp: ts, components: {}, products: [], sortConfigs: [] };
-    
+
     customerQueue.unshift(newCustObj); 
     silentLeadDispatcher(newCustObj);
-    
+
     if (activeCustomerIndex !== -1) activeCustomerIndex++; 
     if (selectedQueueIndex !== -1) selectedQueueIndex++;
-    
+
     await saveQueueToLocal(); 
 
     document.getElementById('cqName').value = ''; 
@@ -1027,30 +1030,30 @@ function closeRecycleBin() { document.getElementById('recycleBinModal').style.di
 async function restoreCustomer(idx) { let c = recycleBin.splice(idx, 1)[0]; customerQueue.unshift(c); if(activeCustomerIndex !== -1) activeCustomerIndex++; if(selectedQueueIndex !== -1) selectedQueueIndex++; await saveQueueToLocal(); await saveToDB('persistent_recycle', recycleBin); localStorage.setItem('persistent_recycle_backup', JSON.stringify(recycleBin)); openRecycleBin(); renderCustomerQueue(); updateUniversalActionButtons(); }
 
 async function emptyRecycleBin() {
-    if(recycleBin.length === 0) { showToast("⚠️ Recycle bin pehle से hi empty hai!", "warning"); return; }
+    if(recycleBin.length === 0) { showToast("⚠️ Recycle bin pehle se hi empty hai!", "warning"); return; }
     showCustomConfirm("Are you sure you want to permanently delete all items in the Recycle Bin?", async () => { recycleBin = []; await saveToDB('persistent_recycle', recycleBin); localStorage.setItem('persistent_recycle_backup', JSON.stringify(recycleBin)); openRecycleBin(); showToast("🗑️ Recycle Bin completely emptied!", "success"); });
 }
 
 function renderCustomerQueue() { 
     let documentCount = document.getElementById('queueCount'); 
     if(documentCount) documentCount.innerText = customerQueue.length; 
-    
+
     let list = document.getElementById('customerQueueList'); 
     if(!list) return; 
-    
+
     let qSearch = document.getElementById('queueSearch').value.toLowerCase().trim(); 
     let isSearching = qSearch !== ""; 
-    
+
     let filtered = customerQueue.map((c, idx) => ({...c, originalIdx: idx})).filter(c => { 
         if(!isSearching) return true; 
         return c.name.toLowerCase().includes(qSearch) || (c.mobile && c.mobile.includes(qSearch)) || c.limit.toString().includes(qSearch) || (c.cap && c.cap.toString().includes(qSearch)) || c.type.toLowerCase().includes(qSearch); 
     }); 
-    
+
     if(filtered.length === 0) { 
         list.innerHTML = `<div style="text-align:center; color:#888;">No customers found.</div>`; 
         return; 
     } 
-    
+
     list.innerHTML = filtered.map((c) => { 
         let idx = c.originalIdx; 
         let isSelected = (selectedQueueIndex === idx); 
@@ -1059,7 +1062,7 @@ function renderCustomerQueue() {
         let bgStyle = isSelected ? '#e3f2fd' : (isActive ? '#f0f8ff' : '#fff'); 
         let borderStyle = isSelected ? 'var(--primary)' : (isActive ? '#0088cc' : '#ddd'); 
         let shadowStyle = isSelected ? '0 0 5px rgba(9, 132, 227, 0.5)' : (isActive ? '0 0 5px rgba(0, 136, 204, 0.3)' : 'none'); 
-        
+
         return ` <div onclick="handleCustomerTap(${idx})" style="cursor:pointer; display:flex; flex-direction:column; background:${bgStyle}; padding:8px; border-radius:4px; border:1px solid ${borderStyle}; box-shadow:${shadowStyle}; transition:0.2s;"> 
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;"> 
                 <strong style="color:var(--indigo);">👤 ${displayName} ${c.mobile ? `<span style="color:#d35400; cursor:text;" title="Double-click to select" ondblclick="highlightNumber(event, this.querySelector('.mob-num'))">(📞 <span class="mob-num">${c.mobile}</span>)</span>` : ''}</strong> 
@@ -1087,18 +1090,35 @@ async function processMultiStack() {
 }
 
 function findValLocal(row, targets) { let key = Object.keys(row).find(k => targets.includes(k.toUpperCase().replace(/\s/g, ''))); return key ? row[key] : null; }
+
+// 🌟 सुधारित mapData: एक्सपायरी तारीखचे कोणतेही बंधन उरलेले नाही
 function mapData(row, type) { 
     if(!row) return null; 
     let expVal = findValLocal(row, ['EXPIRY', 'EXPIRYDATE', 'VALIDTILL', 'SCHEMEEXPIRY', 'ENDDATE']); 
     let expDate = parseExcelDate(expVal); 
     let isExp = false; let expiryDateStr = ""; 
-    if(expDate) { 
+    if(expDate && !isNaN(expDate.getTime())) { 
         let today = new Date(); today.setHours(0,0,0,0); 
         if(expDate < today) isExp = true; 
         let dd = String(expDate.getDate()).padStart(2, '0'); let mm = String(expDate.getMonth() + 1).padStart(2, '0'); let yyyy = expDate.getFullYear(); expiryDateStr = `${dd}/${mm}/${yyyy}`; 
     } 
-    if(isExp) return null; 
-    return { model: type === SPECIAL_MODEL ? SPECIAL_MODEL : String(findValLocal(row,['MODEL','BRANDMODEL'])||"").toUpperCase(), brand: String(findValLocal(row, ['BRAND', 'MAKE', 'MANUFACTURER'])||"").toUpperCase(), mrp: parseFloat(findValLocal(row, ['MRP', 'PRICE', 'M.R.P'])) || 0, tenure: parseInt(findValLocal(row, ['TOTALTENURE', 'TENURE', 'TA'])) || 0, advEmi: parseInt(findValLocal(row, ['ADVANCEEMI', 'ADV'])) || 0, dbd: parseFloat(findValLocal(row,['DBD','DBD%'])||0), pf: parseInt(findValLocal(row,['PF','PROCESSINGFEE'])||0), roi: parseFloat(findValLocal(row,['ROI','ROI%'])||0), fixedEmi: parseFloat(findValLocal(row,['FIXEDEMI', 'FIXED'])||0), category: standardizeCategoryName(findValLocal(row,['CATEGORY','CAT'])||""), minLoan: parseFloat(findValLocal(row, ['MINLOAN', 'MINL'])) || 0, maxLoan: parseFloat(findValLocal(row, ['MAXLOAN', 'MAXL'])) || 9999999, isExpired: isExp, expiryDateStr: expiryDateStr, inactive: false }; 
+    return { 
+        model: type === SPECIAL_MODEL ? SPECIAL_MODEL : String(findValLocal(row,['MODEL','BRANDMODEL'])||"").toUpperCase(), 
+        brand: String(findValLocal(row, ['BRAND', 'MAKE', 'MANUFACTURER'])||"").toUpperCase(), 
+        mrp: parseFloat(findValLocal(row, ['MRP', 'PRICE', 'M.R.P'])) || 0, 
+        tenure: parseInt(findValLocal(row, ['TOTALTENURE', 'TENURE', 'TA'])) || 0, 
+        advEmi: parseInt(findValLocal(row, ['ADVANCEEMI', 'ADV'])) || 0, 
+        dbd: parseFloat(findValLocal(row,['DBD','DBD%'])||0), 
+        pf: parseInt(findValLocal(row,['PF','PROCESSINGFEE'])||0), 
+        roi: parseFloat(findValLocal(row,['ROI','ROI%'])||0), 
+        fixedEmi: parseFloat(findValLocal(row,['FIXEDEMI', 'FIXED'])||0), 
+        category: standardizeCategoryName(findValLocal(row,['CATEGORY','CAT'])||""), 
+        minLoan: parseFloat(findValLocal(row, ['MINLOAN', 'MINL'])) || 0, 
+        maxLoan: parseFloat(findValLocal(row, ['MAXLOAN', 'MAXL'])) || 9999999, 
+        isExpired: isExp, 
+        expiryDateStr: expiryDateStr, 
+        inactive: false 
+    }; 
 }
 
 function goHome() { document.getElementById('finalEligibleArea').style.display='none'; document.getElementById('catSelectionModal').style.display='none'; document.getElementById('unifiedHome').style.display='flex'; activeCustomerIndex = -1; selectedQueueIndex = -1; renderCustomerQueue(); updateUniversalActionButtons(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
@@ -1122,16 +1142,12 @@ function quickNonTieup() { if (!isLimitValid()) return; if(db_records.length ===
 function selectCategory(catName) { 
     document.getElementById('catSelectionModal').style.display = 'none'; 
     let displayName = (catName === 'PHONE(WEB-MOBILE)') ? 'PHONE / TABLET / SMART WATCH' : catName; 
-    
-    // नॉन-टाईअप प्रॉडक्टसाठी टेम्पोरेरी ऑब्जेक्ट सेट करणे
     tempPendingProduct = { 
         name: SPECIAL_MODEL + " - " + displayName, 
         isNT: true, 
         category: catName 
     }; 
     currentModalCategory = catName; 
-    
-    // आता थेट पुढे जाण्याऐवजी MRP/INV टाकायचा कॉम्पोनंट्स बॉक्स ओपन होईल
     showComponentsModal(""); 
 }
 
@@ -1142,12 +1158,12 @@ function compMrpChanged() {
     document.getElementById('compGtl').value = gtl; 
     let rfcSlab = getRfcSlabValue(mrp); 
     let rfcOpt = document.getElementById('compRfcOpt'); 
-    
+
     if(rfcOpt) { 
         rfcOpt.value = rfcSlab; 
         rfcOpt.innerText = rfcSlab; 
     } 
-    
+
     if (!isMobileDeviceCat(currentModalCategory)) { 
         document.getElementById('compRfc').value = "0"; 
     } 
@@ -1276,24 +1292,25 @@ function renderMatrix() {
         container.appendChild(div); recalcModel(pIdx);
     });
 }
+
 function syncInsurance(pIdx, mrpVal, baseLoanVal, triggerType = 'NONE') {
     let prod = current_products[pIdx]; 
     let isPhoneWebMobile = isMobileDeviceCat(prod.category); 
     let gtl = baseLoanVal > 100000 ? 2398 : (baseLoanVal > 50000 ? 1799 : (baseLoanVal > 30000 ? 1499 : (baseLoanVal > 10000 ? 1199 : (baseLoanVal > 0 ? 699 : 0)))); 
     let rfcSlab = getRfcSlabValue(mrpVal); 
     let inp = prod.inputs;
-    
+
     if(triggerType === 'MRP' || triggerType === 'INV') { 
         inp.gtl = gtl; 
     } else if (triggerType === 'LOAN') { 
         inp.gtl = gtl; 
     }
-    
+
     let gSelect = document.getElementById(`gtl_${pIdx}`); 
     let rOpt = document.getElementById(`rfc_opt_${pIdx}`); 
     let rSelect = document.getElementById(`rfc_${pIdx}`); 
     let exwInput = document.getElementById(`exw_${pIdx}`);
-    
+
     if(gSelect) gSelect.value = inp.gtl; 
     if(rOpt && isPhoneWebMobile) { rOpt.value = rfcSlab; rOpt.innerText = rfcSlab; } 
     if(rSelect) { 
@@ -1316,15 +1333,6 @@ function updateVal(pIdx, field, val) {
 
 function recalcModel(pIdx) {
     if(!current_products[pIdx]) return; 
-
-    let today = new Date(); today.setHours(0,0,0,0);
-    current_products[pIdx].schemes = current_products[pIdx].schemes.filter(s => {
-        if(!s.expiryDateStr) return true;
-        let p = s.expiryDateStr.split('/');
-        if(p.length !== 3) return true;
-        let expD = new Date(p[2], p[1]-1, p[0]);
-        return expD >= today;
-    });
 
     let prod = current_products[pIdx], limit = customerQueue[activeCustomerIndex]?.limit || 0, type = customerQueue[activeCustomerIndex]?.type || 'NEW'; let fee = (type === 'EMI CARD') ? 270 : (type === 'W/O CARD' ? 320 : 850), inp = prod.inputs; let totalFees = fee + (parseFloat(inp.margin)||0) + (parseFloat(inp.dealer)||0); let currentLimit = limit > 0 ? limit : 9999999; let inputMrp = parseFloat(inp.mrp) || 0; let inputInv = parseFloat(inp.inv) || 0; let effectivePrice = inputInv > 0 ? inputInv : (inputMrp > 0 ? inputMrp : 0); let loanCapPrice = (inputMrp > 0 && inputInv > 0) ? Math.min(inputMrp, inputInv) : effectivePrice;
 
@@ -1361,7 +1369,7 @@ function recalcModel(pIdx) {
             let roiInDp = loan * roiRateDP; dpExact = effectivePrice - loan + (s.fixedEmi * s.advEmi) + (loan * dbdRate) + dynamicPf + totalFees + roiInDp;
         } else {
             inst = s.tenure - s.advEmi; if(inst < 1) inst = 1; let insTotal = (parseFloat(inp.gtl)||0)+(parseFloat(inp.rfc)||0)+(parseFloat(inp.exw)||0); 
-            
+
             let baseEmi = loan / s.tenure;
             if (baseEmi > 0 && baseEmi < 900) baseEmi = 900; 
 
@@ -1369,7 +1377,7 @@ function recalcModel(pIdx) {
             if(!isManuallyOverridden && emi > parseFloat(inp.cap) && parseFloat(inp.cap) > 0) { 
                 loan = (parseFloat(inp.cap) - (insTotal/inst)) / ( (1/s.tenure) + roiRate ); 
                 if (effectivePrice > 0 && loan > effectivePrice) loan = effectivePrice; 
-                
+
                 baseEmi = loan / s.tenure;
                 if (baseEmi > 0 && baseEmi < 900) baseEmi = 900; 
 
@@ -1391,20 +1399,11 @@ function renderRows(pIdx) {
     let prod = current_products[pIdx]; 
     if(!sortConfigs[pIdx]) sortConfigs[pIdx] = {key: 'default_ltv', dir: 'desc'}; 
     let conf = sortConfigs[pIdx]; 
-    
+
     let ltvLimit = customerQueue[activeCustomerIndex]?.ltv || 100; 
     let isNT = prod.isNonTieup;
-    let today = new Date(); today.setHours(0,0,0,0);
 
-    /* --- लपवण्याचे लॉजिक (Hide Ineligible) --- */
     let visibleSchemes = prod.calculatedData.filter(d => {
-        if(d.expiryDateStr) {
-            let p = d.expiryDateStr.trim().split('/');
-            if(p.length === 3) {
-                let expD = new Date(p[2], p[1]-1, p[0]);
-                if(expD < today) return false; 
-            }
-        }
         let curLTV = d.curLTV; 
         let isLtvB = (curLTV > ltvLimit); 
         let isBoundB = false; 
@@ -1413,19 +1412,16 @@ function renderRows(pIdx) {
         }
         if (d.isInv50Breach) { isBoundB = true; }
 
-        // जर स्कीम inactive नसेल आणि breach करत असेल, तर लपवा.
         if ((isLtvB || isBoundB) && !d.inactive) {
             return false;
         }
         return true;
     });
 
-    /* --- सॉर्टिंग लॉजिक --- */
     visibleSchemes.sort((a,b) => {
         if (conf.key === 'extra') {
             return conf.dir === 'asc' ? a.extra - b.extra : b.extra - a.extra;
         } else {
-            // Default Sort: LTV (Desc) -> DP (Asc) -> EMI (Asc)
             if (Math.round(b.curLTV) !== Math.round(a.curLTV)) {
                 return b.curLTV - a.curLTV;
             }
@@ -1443,7 +1439,7 @@ function renderRows(pIdx) {
         let bgCol = isInactive ? '#f8f9fa' : (d.isExpired ? '#fff4e6' : '#ffffff');
         let textOpacity = isInactive ? '0.5' : '1';
         let subRowBg = isInactive ? '#f8f9fa' : '#f8fafc';
-        
+
         let dbdStr = `${+parseFloat(d.dbd).toFixed(3)}% (₹${Math.round(d.dbdAmt||0)})`;
         let roiStr = `${+parseFloat(d.roi).toFixed(2)}% (₹${Math.round(d.roiAmt||0)})`;
         let limitStr = isNT ? `MIN:₹${d.minLoan} MAX:${d.maxLoan < 9999999 ? d.maxLoan : 'NO'}` : `LMT:₹${Math.floor(d.nbfcMaxL)}`;
@@ -1490,7 +1486,7 @@ function manual(pIdx, dIdx) {
     let ltvLimit = customerQueue[activeCustomerIndex]?.ltv || 100; let limit = customerQueue[activeCustomerIndex]?.limit || 0; 
     let currentLimit = limit > 0 ? limit : 9999999; let inputMrp = parseFloat(inp.mrp) || 0; let inputInv = parseFloat(inp.inv) || 0; 
     let effectivePrice = inputInv > 0 ? inputInv : (inputMrp > 0 ? inputMrp : 0); let loanCapPrice = (inputMrp > 0 && inputInv > 0) ? Math.min(inputMrp, inputInv) : effectivePrice;
-    
+
     let minAllowedLoanByInvoice = effectivePrice > 0 ? effectivePrice * 0.50 : 0;
     if (effectivePrice > 0 && loan < minAllowedLoanByInvoice) {
         loan = minAllowedLoanByInvoice;
@@ -1505,14 +1501,14 @@ function manual(pIdx, dIdx) {
     syncInsurance(pIdx, inputMrp, loan, 'LOAN'); 
     let appliedPf = d.pf; if (prod.isNonTieup) { let checkAmount = effectivePrice > 0 ? effectivePrice : loan; let slabPf = getNonTieupPfValue(prod.category, checkAmount); if (slabPf !== null) appliedPf = slabPf; d.pf = appliedPf; let pfCell = document.getElementById(`pf_${pIdx}_${dIdx}`); if(pfCell) pfCell.innerText = appliedPf; }
     let dbdRate = (d.dbd * 1.18 / 100); let roiRate = d.roi / 1200; let roiRateDP = roiRate * d.advEmi; let dpE = 0; let dpR = 0;
-    
+
     if (d.isFixed) { 
         let calcTenure = Math.floor(loan / d.fixedEmi) || 1; 
-        
+
         if (effectivePrice > 0 && (calcTenure * d.fixedEmi) < minAllowedLoanByInvoice) {
             calcTenure = Math.ceil(minAllowedLoanByInvoice / d.fixedEmi);
         }
-        
+
         loan = calcTenure * d.fixedEmi; 
 
         let maxBoundary = Math.min(d.nbfcMaxL, prod.isNonTieup ? d.maxLoan : 9999999, loanCapPrice > 0 ? loanCapPrice : 9999999); 
@@ -1521,7 +1517,7 @@ function manual(pIdx, dIdx) {
             calcTenure = Math.floor(loan / d.fixedEmi) || 1; 
         } 
         el.value = loan; 
-        
+
         let roiInEmi = loan * roiRate; let roiInDp = loan * roiRateDP; 
         dpE = effectivePrice - loan + (d.fixedEmi * d.advEmi) + (loan * dbdRate) + appliedPf + totalFees + roiInDp; dpR = Math.ceil(dpE / 10) * 10; 
         let inst = calcTenure - d.advEmi; if(inst < 1) inst = 1; 
@@ -1532,7 +1528,7 @@ function manual(pIdx, dIdx) {
         let nbfcMaxL = (currentLimit * d.tenure) / (d.tenure - d.advEmi || 1); 
         let maxBoundary = Math.min(loanCapPrice > 0 ? loanCapPrice : 999999, nbfcMaxL, prod.isNonTieup ? d.maxLoan : 9999999); 
         if(loan > maxBoundary) { loan = maxBoundary; } 
-        
+
         if (effectivePrice > 0 && loan < minAllowedLoanByInvoice) {
             loan = minAllowedLoanByInvoice;
         }
@@ -1540,25 +1536,25 @@ function manual(pIdx, dIdx) {
         if (effectivePrice > 0 && loan > effectivePrice) {
             loan = effectivePrice;
         }
-        
+
         el.value = Math.floor(loan); 
-        
+
         let roiInEmi = loan * roiRate; let roiInDp = loan * roiRateDP; 
         dpE = effectivePrice - loan + ((loan/d.tenure) * d.advEmi) + (loan * dbdRate) + appliedPf + totalFees + roiInDp; 
         dpR = Math.ceil(dpE / 10) * 10; let inst = d.tenure - d.advEmi; if(inst < 1) inst = 1; 
         let insTotal = (parseFloat(inp.gtl)||0)+(parseFloat(inp.rfc)||0)+(parseFloat(inp.exw)||0); 
-        
+
         let baseEmi = loan / d.tenure;
         if (baseEmi > 0 && baseEmi < 900) baseEmi = 900; 
 
         let emi = baseEmi + (insTotal / inst) + roiInEmi; 
         d.loan = loan; d.dp = dpR; d.emi = emi; 
     }
-    
+
     d.extra = effectivePrice > 0 ? (((d.emi * d.inst) + d.dp) - effectivePrice) : 0; d.dbdAmt = loan * dbdRate; d.roiAmt = (loan * roiRateDP) + (loan * roiRate * d.inst); 
     let marginMoney = parseFloat(inp.margin) || 0; let roundupAdj = (dpR > dpE) ? (dpR - dpE) : 0; 
     d.netDisb = effectivePrice > 0 ? (effectivePrice - dpR - marginMoney - roundupAdj) : 0;
-    
+
     prod.inputs.manualLoans = prod.inputs.manualLoans || {};
     prod.inputs.manualLoans[dIdx] = loan;
 
@@ -1570,11 +1566,10 @@ function manual(pIdx, dIdx) {
     d.curLTV = d.currentTenure > 0 ? ((d.currentTenure - d.advEmi) / d.currentTenure) * 100 : 0; 
     let ltvCell = document.getElementById(`ltv_${pIdx}_${dIdx}`); if(ltvCell) ltvCell.innerText = Math.round(d.curLTV) + "%"; 
     let extraCell = document.getElementById(`extra_${pIdx}_${dIdx}`); if(extraCell) extraCell.innerHTML = "EXTRA: ₹" + Math.round(d.extra).toLocaleString() + " ↕";
-    
+
     let dbdCell = document.getElementById(`dbd_${pIdx}_${dIdx}`); if(dbdCell) dbdCell.innerHTML = `${+parseFloat(d.dbd).toFixed(3)}% (₹${Math.round(d.dbdAmt||0)})`; 
     let roiCell = document.getElementById(`roi_${pIdx}_${dIdx}`); if(roiCell) roiCell.innerHTML = `${+parseFloat(d.roi).toFixed(2)}% (₹${Math.round(d.roiAmt||0)})`;
-    
-    // जर स्कीम inactive नसेल आणि breach करत असेल, तर ती लपवली जावी म्हणून पूर्ण री-रेंडर
+
     renderRows(pIdx);
 }
 
@@ -1665,7 +1660,7 @@ function doGenerateCustomerImage() {
 
     let c = customerQueue[activeCustomerIndex]; 
     let ltvLimit = c?.ltv || 100;
-    
+
     let rawName = c?.name && c.name !== "-" ? c.name : "Valued Customer";
     let custName = rawName.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
     let custMobile = c?.mobile && c.mobile !== "" ? c.mobile : "N/A";
@@ -1695,7 +1690,7 @@ function doGenerateCustomerImage() {
 
     let hasV = false; 
     let productsToRender = window.tempImageGenIndices.map(idx => current_products[idx]);
-    
+
     productsToRender.forEach((prod, index) => {
         let validS = prod.calculatedData.filter(d => { 
             let isLtvB = (d.curLTV > ltvLimit); 
@@ -1705,18 +1700,18 @@ function doGenerateCustomerImage() {
             } 
             return !isLtvB && !isBoundB && !d.inactive && !d.isInv50Breach && d.loan > 0; 
         });
-        
+
         if(validS.length === 0) return; 
         hasV = true; 
         let invAmt = prod.inputs.inv > 0 ? prod.inputs.inv : prod.inputs.mrp;
 
         let sortedByDp = [...validS].sort((a,b) => a.dp - b.dp);
         let winDp = sortedByDp[0];
-        
+
         let remainingAfterDp = validS.filter(s => s.dIdx !== winDp.dIdx);
         let sortedByEmi = [...remainingAfterDp].sort((a,b) => a.emi - b.emi);
         let winEmi = sortedByEmi[0] || sortedByDp[1] || winDp;
-        
+
         let highlightIds = [winDp?.dIdx, winEmi?.dIdx].filter(Boolean);
         let otherSchemes = validS.filter(s => !highlightIds.includes(s.dIdx)).sort((a,b) => a.dp - b.dp);
 
@@ -1758,7 +1753,7 @@ function doGenerateCustomerImage() {
             let isLast = (i === allSchemes.length - 1);
             let bBorder = isLast ? 'none' : '1px solid #e2e8f0';
             let bgCol = (d.isWinDp) ? '#f0fdf4' : (d.isWinEmi ? '#eff6ff' : (i % 2 === 0 ? '#ffffff' : '#f8fafc'));
-            
+
             let badges = [];
             if (d.isWinDp) {
                 badges.push('<span style="background: #059669; color: white; font-size: 13px; font-weight: 900; padding: 5px 12px; border-radius: 6px; width: 85%;">▼ LOWEST DP</span>');
@@ -1798,7 +1793,7 @@ function doGenerateCustomerImage() {
     html += `
         </div>
     </div>`;
-    
+
     quoteDiv.innerHTML = html; 
     document.body.appendChild(quoteDiv);
 
@@ -1807,7 +1802,7 @@ function doGenerateCustomerImage() {
         document.getElementById('generatedImage').src = imgDataUrl; 
         document.getElementById('imageViewerModal').style.display = 'flex'; 
         document.body.removeChild(quoteDiv); 
-        
+
         if(requestWhatsAppDispatch) {
             const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
             if (isMobile) {
@@ -2077,10 +2072,10 @@ function openRowActionModal(pIdx, dIdx, isInactive) {
 }
 
 function closeRowActionModal() { document.getElementById('rowActionModal').style.display = 'none'; }
-// Zatpat Calc Modal उघडण्यासाठी फंक्शन
+
 function openZatpatCalcModal() {
     var modal = document.getElementById('zatpatCalcModal');
     if(modal) {
-        modal.style.display = 'flex'; // जर UI मध्ये काही अडचण आली तर 'flex' ऐवजी 'block' वापरून पहा.
+        modal.style.display = 'flex';
     }
 }
