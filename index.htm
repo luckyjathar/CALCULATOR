@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Persistent Portal">
 
-    <title>Persistent Portal V76.21 - Pro Edition</title>
+    <title>Persistent Portal V76.22 - Pro Edition</title>
 
     <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -540,7 +540,7 @@
                 </div>
             </div>
 
-            <!-- 📊 RESULTS TAB & CONTROLS (Copy Image Kadhun Takla) -->
+            <!-- 📊 RESULTS TAB & CONTROLS -->
             <div id="schemeResultArea" style="display: none; border: 1.5px solid var(--indigo); padding: 14px; border-radius: 6px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--indigo); padding-bottom: 8px; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
                     <h3 id="globalViewerTitle" style="margin:0; color:var(--bajaj-blue); font-size: 15px !important;">Model Schemes</h3>
@@ -639,14 +639,18 @@
         </div>
     </div>
 
-    <!-- ADD PRODUCT MODAL -->
+    <!-- 🔍 ADD PRODUCT MODAL (UPDATED FOR FULL DROPDOWN VISIBILITY) -->
     <div id="addProductModal" class="modal">
-        <div class="modal-content" style="max-width: 350px;">
+        <div class="modal-content" style="max-width: 360px; overflow: visible;">
             <h3 style="margin-top:0; color:var(--bajaj-blue); border-bottom: 2px solid #ddd; padding-bottom: 6px;">🔍 ADD NEW PRODUCT</h3>
             <div style="position:relative; margin-bottom: 12px;">
                 <label style="color:var(--indigo); margin-bottom:4px; display:block;">SEARCH MODEL</label>
-                <input type="search" id="modalMatrixSearch" oninput="doSearch('modalMatrixSearch', 'modalMatrixSearchDropdown')" placeholder="Type model, brand or category..." style="width:100%;">
-                <div id="modalMatrixSearchDropdown" style="position: absolute; width: 100%; background: #fff; z-index: 1000; border: 1px solid #ddd; display: none; box-shadow: 0 10px 20px rgba(0,0,0,0.15); border-radius: 4px; max-height: 200px; overflow-y: auto;"></div>
+                <input type="text" id="modalMatrixSearch" autocomplete="off"
+                    oninput="doSearch('modalMatrixSearch', 'modalMatrixSearchDropdown')"
+                    onkeyup="doSearch('modalMatrixSearch', 'modalMatrixSearchDropdown')"
+                    onfocus="doSearch('modalMatrixSearch', 'modalMatrixSearchDropdown')"
+                    placeholder="Type model, brand or category..." style="width:100%;">
+                <div id="modalMatrixSearchDropdown" class="custom-scroll" style="position: relative; width: 100%; background: #fff; z-index: 9999; border: 1.5px solid var(--primary); display: none; box-shadow: 0 6px 15px rgba(0,0,0,0.15); border-radius: 6px; max-height: 220px; overflow-y: auto; margin-top: 6px;"></div>
             </div>
             <div style="display:flex; gap:8px;">
                 <button onclick="quickNonTieup();" style="flex:1; background:var(--warning); color:#000;">⚡ NON TIEUP</button>
@@ -903,7 +907,7 @@
     </div>
 </footer>
 
-<!-- 🌟 INLINE TAB SWITCHER LOGIC 🌟 -->
+<!-- 🌟 INLINE TAB SWITCHER & UNIVERSAL SEARCH LOGIC 🌟 -->
 <script>
     function toggleInline(id, openFunc) {
         ['unifiedHome', 'zatpatCalcModal', 'customerMessageGenModal', 'dealerSearchModal', 'dictionarySearchModal', 'flyerGenModal'].forEach(modId => {
@@ -920,8 +924,60 @@
             openFunc();
         }
     }
+
+    // 🔍 UNIVERSAL MODEL SEARCH FOR ADD PRODUCT MODAL
+    function doSearch(inputId, dropdownId) {
+        let inp = document.getElementById(inputId);
+        let dd = document.getElementById(dropdownId);
+        if (!inp || !dd) return;
+
+        let q = inp.value.toUpperCase().trim();
+        if (!q) {
+            dd.style.display = 'none';
+            return;
+        }
+
+        let allRecords = [
+            ...(typeof db_records !== 'undefined' ? db_records : []),
+            ...(typeof customStagingSchemes !== 'undefined' ? customStagingSchemes : [])
+        ];
+
+        let validRecords = allRecords.filter(r => r && r.model && r.model !== "NON TIEUP");
+        if (validRecords.length === 0) {
+            dd.innerHTML = `<div style="padding:10px; color:var(--danger); font-weight:bold; text-align:center;">Master Data अजून लोड झाला नाही, कृपया थोडा वेळ थांबा.</div>`;
+            dd.style.display = 'block';
+            return;
+        }
+
+        let matches = validRecords.filter(r => {
+            let m = String(r.model || "").toUpperCase();
+            let b = String(r.brand || "").toUpperCase();
+            let c = String(r.category || "").toUpperCase();
+            return m.includes(q) || b.includes(q) || c.includes(q);
+        }).map(r => r.model);
+
+        matches = [...new Set(matches)].slice(0, 30);
+
+        if (matches.length === 0) {
+            dd.innerHTML = `<div style="padding:10px; color:#d35400; font-weight:bold; text-align:center;">कोणतेही मॉडेल सापडले नाही.</div>`;
+            dd.style.display = 'block';
+            return;
+        }
+
+        dd.innerHTML = matches.map(m => {
+            let rec = validRecords.find(x => x.model === m);
+            let catTag = rec && rec.category ? `<span style="font-size:10px; background:#e0e0e0; color:#333; padding:2px 6px; border-radius:4px; float:right;">📁 ${rec.category}</span>` : '';
+            let brandTag = rec && rec.brand ? `<span style="font-size:10px; color:#0984e3; font-weight:900; margin-right:5px;">[${rec.brand}]</span>` : '';
+            let safeModel = String(m).replace(/'/g, "\\'");
+            return `<div style="padding:10px; border-bottom:1px solid #eee; cursor:pointer; font-weight:800; color:var(--dark); display:flex; justify-content:space-between; align-items:center;" onmouseover="this.style.background='#e3f2fd'" onmouseout="this.style.background='#fff'" onclick="selectModel('${safeModel}')">
+                <span style="flex:1; font-size:12px;">${brandTag}📱 ${m}</span> ${catTag}
+            </div>`;
+        }).join('');
+
+        dd.style.display = 'block';
+    }
 </script>
 
-<script src="app.js?v=76.21"></script>
+<script src="app.js?v=76.22"></script>
 </body>
 </html>
