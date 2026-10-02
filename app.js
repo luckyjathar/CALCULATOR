@@ -9,6 +9,28 @@ function showToast(message, type = 'success') {
     toastTimeout = setTimeout(function(){ toast.className = "toast-notification"; }, 3000);
 }
 
+/* === SINGLE-VIEW NAVIGATION HELPER === */
+const INLINE_VIEW_IDS = [
+    'unifiedHome',
+    'finalEligibleArea',
+    'zatpatCalcModal',
+    'customerMessageGenModal',
+    'dealerSearchModal',
+    'dictionarySearchModal',
+    'flyerGenModal'
+];
+
+function showOnlyOneInlineView(targetId, displayType = 'flex') {
+    INLINE_VIEW_IDS.forEach(id => {
+        let el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+    });
+    let targetEl = document.getElementById(targetId);
+    if (targetEl) {
+        targetEl.style.display = (targetId === 'unifiedHome') ? 'block' : displayType;
+    }
+}
+
 /* === CUSTOM CONFIRM FUNCTION === */
 function showCustomConfirm(msg, yesCallback, noCallback) {
     let confirmEl = document.getElementById('confirmMessage');
@@ -135,8 +157,15 @@ function toggleSidebar() {
     if(sb) sb.classList.toggle('open'); 
     if(ol) ol.classList.toggle('show'); 
 }
-function openCustomerMessageModal() { document.getElementById('customerMessageGenModal').style.display = 'flex'; calculateDates(); updateDraftBadgeCount(); }
-function closeCustomerMessageModal() { document.getElementById('customerMessageGenModal').style.display = 'none'; }
+
+function openCustomerMessageModal() { 
+    showOnlyOneInlineView('customerMessageGenModal', 'flex'); 
+    calculateDates(); 
+    updateDraftBadgeCount(); 
+}
+function closeCustomerMessageModal() { 
+    showOnlyOneInlineView('unifiedHome', 'block'); 
+}
 
 let pdfInputEl = document.getElementById('pdfInput');
 if (pdfInputEl) {
@@ -444,7 +473,6 @@ async function fetchFromMasterStream(forceSync = false) {
     }
 }
 
-// ड्रॉपडाउन बाहेर क्लिक केल्यावर आपोआप बंद होण्यासाठी
 document.addEventListener('click', function(e) {
     let gSearch = document.getElementById('globalModelSearch');
     let gDd = document.getElementById('globalModelDropdown');
@@ -571,7 +599,20 @@ function doSearch(inputId, dropdownId) {
     dd.style.display = 'block';
 }
 
-function openFlyerGenModal() { document.getElementById('fgSalesName').value = localStorage.getItem('portal_sales_name') || ''; document.getElementById('fgSalesMobile').value = localStorage.getItem('portal_sales_mobile') || ''; document.getElementById('fgDealerSearch').value = ''; document.getElementById('fgDealerList').innerHTML = ''; tempFgDealerId = ""; tempFgDealerName = ""; tempFgBitly = ""; clearFgModel(); document.getElementById('fgOfferType').value = 'NONE'; toggleFgOfferInput(); document.getElementById('fgSelectedDealerBox').style.display = 'none'; document.getElementById('flyerGeneratedLinkBox').style.display = 'none'; document.getElementById('flyerGenModal').style.display = 'flex'; }
+function openFlyerGenModal() { 
+    showOnlyOneInlineView('flyerGenModal', 'flex');
+    document.getElementById('fgSalesName').value = localStorage.getItem('portal_sales_name') || ''; 
+    document.getElementById('fgSalesMobile').value = localStorage.getItem('portal_sales_mobile') || ''; 
+    document.getElementById('fgDealerSearch').value = ''; 
+    document.getElementById('fgDealerList').innerHTML = ''; 
+    tempFgDealerId = ""; tempFgDealerName = ""; tempFgBitly = ""; 
+    clearFgModel(); 
+    document.getElementById('fgOfferType').value = 'NONE'; 
+    toggleFgOfferInput(); 
+    document.getElementById('fgSelectedDealerBox').style.display = 'none'; 
+    document.getElementById('flyerGeneratedLinkBox').style.display = 'none'; 
+}
+
 function toggleFgOfferInput() { let type = document.getElementById('fgOfferType').value; let box = document.getElementById('fgOfferValBox'); let label = document.getElementById('fgOfferValLabel'); let inp = document.getElementById('fgOfferValue'); if(type === "NONE") { box.style.display = 'none'; inp.value = ''; } else if(type === "FREEBIE") { box.style.display = 'block'; label.innerText = "ENTER GIFT NAME"; inp.placeholder = "E.g. Earbuds"; } else { box.style.display = 'block'; label.innerText = "ENTER UPTO AMOUNT (₹)"; inp.placeholder = "E.g. 2500"; } }
 function searchFgDealer() { let q = document.getElementById('fgDealerSearch').value.toLowerCase().trim(); let list = document.getElementById('fgDealerList'); if(!q) { list.innerHTML = ''; return; } let matches = dealer_records.map(d => parseDealerObj(d)).filter(p => p.name.toLowerCase().includes(q) || p.code.toLowerCase().includes(q) || p.city.toLowerCase().includes(q)).slice(0, 10); list.innerHTML = matches.map(p => { let displayStr = `${p.name}${p.city ? ' - ' + p.city : ''} (${p.code})`; return `<div onclick="selectFgDealer('${p.code}', '${p.name.replace(/'/g, "\\'")}', '${p.city.replace(/'/g, "\\'")}', '${encodeURIComponent(p.bitly||'')}')" style="padding:8px; border-bottom:1px solid #eee; cursor:pointer; background:#fff; font-size:12px; font-weight:bold; color:var(--bajaj-blue);">🏪 ${displayStr}</div>`; }).join(''); }
 function selectFgDealer(code, name, city, bitlyEnc) { tempFgDealerId = code; tempFgDealerName = `${name}${city ? ' - ' + city : ''}`; tempFgBitly = decodeURIComponent(bitlyEnc); document.getElementById('fgDealerSearch').value = ''; document.getElementById('fgDealerList').innerHTML = ''; document.getElementById('fgSelectedDealerBox').innerHTML = `✅ ${tempFgDealerName} [Code: ${code}] <span onclick="clearFgDealer()" style="color:red; cursor:pointer; float:right;">✖</span>`; document.getElementById('fgSelectedDealerBox').style.display = 'block'; }
@@ -879,7 +920,20 @@ function renderCustomerQueue() {
 }
 
 async function setActiveCustomer(idx) { if(db_records.length === 0) { showToast("Master डेटा उपलब्ध नाही!", "error"); return; } activeCustomerIndex = idx; await saveQueueToLocal(); if(document.getElementById('queueSearch')) document.getElementById('queueSearch').value = ''; goToFinalPage(); }
-function isLimitValid() { if (activeCustomerIndex === -1 || !customerQueue[activeCustomerIndex]) { showToast("आधी Queue मध्ये Customer सिलेक्ट किंवा ॲड करा!", "warning"); return false; } return true; }
+
+function isDictionaryViewActive() {
+    let dictEl = document.getElementById('dictionarySearchModal');
+    return dictEl && dictEl.style.display !== 'none';
+}
+
+function isLimitValid() { 
+    if (isDictionaryViewActive() && hasValidCriteria()) return true;
+    if (activeCustomerIndex === -1 || !customerQueue[activeCustomerIndex]) { 
+        showToast("आधी Queue मध्ये Customer सिलेक्ट किंवा ॲड करा!", "warning"); 
+        return false; 
+    } 
+    return true; 
+}
 
 function generateStackCards() { let container = document.getElementById('stackInputsContainer'); if(!container) return; container.innerHTML = ""; for(let i=1; i<=10; i++) { container.innerHTML += ` <div class="stack-card"><div style="font-weight:900; color:var(--primary); margin-bottom:4px; border-bottom:1px solid #eee; padding-bottom:2px;">SCHEME #${i}</div> <div class="inner-grid"> <div><label>TENURE (MAX)</label><input type="number" id="msTen_${i}" placeholder="0"></div> <div><label>ADVANCE</label><input type="number" id="msAdv_${i}" placeholder="0"></div> <div><label>DBD %</label><input type="number" id="msDbd_${i}" placeholder="0"></div> <div><label>PF (₹)</label><input type="number" id="msPf_${i}" placeholder="0"></div> <div><label>ROI %</label><input type="number" id="msRoi_${i}" placeholder="0"></div> <div><label>FIXED EMI (₹)</label><input type="number" id="msFix_${i}" placeholder="0"></div> </div> </div>`; } }
 function openMultiStackModal() { if (!isLimitValid()) return; document.getElementById('addProductModal').style.display='none'; document.getElementById('multiStackModal').style.display='flex'; }
@@ -889,22 +943,53 @@ async function processMultiStack() {
     let msNameInput = document.getElementById('multiStackModelName').value.trim().toUpperCase();
     if (!msNameInput) { showToast("Model Name भरा!", "error"); return; } 
     let validSchemes = [];
-    for(let i=1; i<=10; i++) { let ten = parseInt(document.getElementById(`msTen_${i}`).value) || 0; let fix = parseInt(document.getElementById(`msFix_${i}`).value) || 0; if(ten > 0 || fix > 0) { validSchemes.push({ tenure: ten, advEmi: parseInt(document.getElementById(`msAdv_${i}`).value) || 0, dbd: parseFloat(document.getElementById(`msDbd_${i}`).value) || 0, pf: parseInt(document.getElementById(`msPf_${i}`).value) || 0, roi: parseFloat(document.getElementById(`msRoi_${i}`).value) || 0, fixedEmi: fix, minLoan: 0, maxLoan: 9999999, category: "MANUAL", inactive: false, isExpired: false, expiryDateStr: "" }); } }
+    for(let i=1; i<=10; i++) { 
+        let ten = parseInt(document.getElementById(`msTen_${i}`).value) || 0; 
+        let fix = parseInt(document.getElementById(`msFix_${i}`).value) || 0; 
+        if(ten > 0 || fix > 0) { 
+            validSchemes.push({ 
+                model: msNameInput,
+                brand: "MANUAL",
+                tenure: ten, 
+                advEmi: parseInt(document.getElementById(`msAdv_${i}`).value) || 0, 
+                dbd: parseFloat(document.getElementById(`msDbd_${i}`).value) || 0, 
+                pf: parseInt(document.getElementById(`msPf_${i}`).value) || 0, 
+                roi: parseFloat(document.getElementById(`msRoi_${i}`).value) || 0, 
+                fixedEmi: fix, 
+                minLoan: 0, 
+                maxLoan: 9999999, 
+                category: "MANUAL", 
+                inactive: false, 
+                isExpired: false, 
+                expiryDateStr: "",
+                isCustomAdded: true,
+                timestamp: new Date().toLocaleString()
+            }); 
+        } 
+    }
     if(validSchemes.length > 0) { 
-        let comp = customerQueue[activeCustomerIndex]?.components || {}; 
-        current_products.push({ name: msNameInput, schemes: validSchemes, category: "MANUAL", inputs: { mrp: comp.mrp||"", inv: comp.inv||"", cap: comp.cap||(customerQueue[activeCustomerIndex]?.cap || ""), target: comp.target||"", gtl: comp.gtl||0, rfc: comp.rfc||0, exw: comp.exw||"", margin: comp.margin||"", dealer: comp.dealer||"", surch: 0, manualLoans: {} }, isManual: true, isNonTieup: false }); 
-        sortConfigs.push({ key: 'default_ltv', dir: 'desc' }); 
-        customerQueue[activeCustomerIndex].products = current_products; 
-        customerQueue[activeCustomerIndex].sortConfigs = sortConfigs; 
-        await saveQueueToLocal(); 
+        validSchemes.forEach(vs => customStagingSchemes.push(vs));
+        await saveCustomStagingSchemes();
+
+        if (activeCustomerIndex !== -1 && customerQueue[activeCustomerIndex]) {
+            let comp = customerQueue[activeCustomerIndex]?.components || {}; 
+            current_products.push({ name: msNameInput, schemes: validSchemes, category: "MANUAL", inputs: { mrp: comp.mrp||"", inv: comp.inv||"", cap: comp.cap||(customerQueue[activeCustomerIndex]?.cap || ""), target: comp.target||"", gtl: comp.gtl||0, rfc: comp.rfc||0, exw: comp.exw||"", margin: comp.margin||"", dealer: comp.dealer||"", surch: 0, manualLoans: {} }, isManual: true, isNonTieup: false }); 
+            sortConfigs.push({ key: 'default_ltv', dir: 'desc' }); 
+            customerQueue[activeCustomerIndex].products = current_products; 
+            customerQueue[activeCustomerIndex].sortConfigs = sortConfigs; 
+            await saveQueueToLocal(); 
+        }
+
         closeMultiStackModal(); 
-        
+
         currentViewedModel = msNameInput;
         let sm = document.getElementById('globalModelSearch');
         if(sm) sm.value = msNameInput;
         recalcCurrentModel();
 
-        renderMatrix(); 
+        if (!isDictionaryViewActive() && activeCustomerIndex !== -1) {
+            renderMatrix();
+        }
     } else { showToast("किमान एक Scheme भरा!", "error"); }
 }
 
@@ -939,7 +1024,16 @@ function mapData(row, type) {
     }; 
 }
 
-function goHome() { document.getElementById('finalEligibleArea').style.display='none'; document.getElementById('catSelectionModal').style.display='none'; document.getElementById('unifiedHome').style.display='block'; activeCustomerIndex = -1; selectedQueueIndex = -1; renderCustomerQueue(); updateUniversalActionButtons(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+function goHome() { 
+    document.getElementById('catSelectionModal').style.display = 'none'; 
+    showOnlyOneInlineView('unifiedHome', 'block'); 
+    activeCustomerIndex = -1; 
+    selectedQueueIndex = -1; 
+    renderCustomerQueue(); 
+    updateUniversalActionButtons(); 
+    window.scrollTo({ top: 0, behavior: 'smooth' }); 
+}
+
 function closeImageViewer() { document.getElementById('imageViewerModal').style.display='none'; }
 
 function openAddProductModal() { 
@@ -972,7 +1066,19 @@ function selectModel(name) {
     showComponentsModal(baseMrp); 
 }
 
-function quickNonTieup() { if (!isLimitValid()) return; if(db_records.length === 0) { showToast("Master डेटा उपलब्ध नाही!", "error"); return; } document.getElementById('addProductModal').style.display = 'none'; let tieup = db_records.filter(r => r.model === SPECIAL_MODEL); let cats = [...new Set(tieup.map(r => r.category))].sort(); document.getElementById('categoryGrid').innerHTML = cats.map(c => { let label = (c === 'PHONE(WEB-MOBILE)') ? 'PHONE, TABLET, SMART WATCH' : c; return `<div style="background:var(--indigo);color:white;padding:12px;border-radius:4px;cursor:pointer;font-weight:900;text-align:center;" onclick="selectCategory('${c}')">${label}</div>`; }).join(''); document.getElementById('catSelectionModal').style.display = 'flex'; }
+function quickNonTieup() { 
+    if (!isLimitValid()) return; 
+    if(db_records.length === 0) { showToast("Master डेटा उपलब्ध नाही!", "error"); return; } 
+    document.getElementById('addProductModal').style.display = 'none'; 
+    let tieup = db_records.filter(r => r.model === SPECIAL_MODEL); 
+    let cats = [...new Set(tieup.map(r => r.category))].sort(); 
+    document.getElementById('categoryGrid').innerHTML = cats.map(c => { 
+        let label = (c === 'PHONE(WEB-MOBILE)') ? 'PHONE, TABLET, SMART WATCH' : c; 
+        return `<div style="background:var(--indigo);color:white;padding:12px;border-radius:4px;cursor:pointer;font-weight:900;text-align:center;" onclick="selectCategory('${c}')">${label}</div>`; 
+    }).join(''); 
+    document.getElementById('catSelectionModal').style.display = 'flex'; 
+}
+
 function selectCategory(catName) { 
     document.getElementById('catSelectionModal').style.display = 'none'; 
     let displayName = (catName === 'PHONE(WEB-MOBILE)') ? 'PHONE / TABLET / SMART WATCH' : catName; 
@@ -980,10 +1086,13 @@ function selectCategory(catName) {
     tempPendingProduct = { name: fullName, isNT: true, category: catName }; 
     currentModalCategory = catName; 
 
-    currentViewedModel = fullName;
-    let sm = document.getElementById('globalModelSearch');
-    if(sm) sm.value = fullName;
-    recalcCurrentModel();
+    if (isDictionaryViewActive()) {
+        currentViewedModel = fullName;
+        let sm = document.getElementById('globalModelSearch');
+        if(sm) sm.value = fullName;
+        dictInvoiceChanged();
+        return;
+    }
 
     showComponentsModal(""); 
 }
@@ -1026,7 +1135,16 @@ function updateMatrixTopCard() { let c = customerQueue[activeCustomerIndex]; doc
 function loadCurrentProducts() { let c = customerQueue[activeCustomerIndex]; current_products = c?.products || []; sortConfigs = c?.sortConfigs || []; }
 
 function goToFinalPage() {
-    if(activeCustomerIndex === -1) return; loadCurrentProducts(); updateMatrixTopCard(); updateFinalSwitcher(); document.getElementById('unifiedHome').style.display = 'none'; document.getElementById('finalEligibleArea').style.display = 'flex'; renderMatrix(); setTimeout(() => { document.getElementById('finalEligibleArea').scrollIntoView({ behavior: 'smooth', block: 'start' }); if(current_products.length === 0) openAddProductModal(); }, 150);
+    if(activeCustomerIndex === -1) return; 
+    loadCurrentProducts(); 
+    updateMatrixTopCard(); 
+    updateFinalSwitcher(); 
+    showOnlyOneInlineView('finalEligibleArea', 'flex');
+    renderMatrix(); 
+    setTimeout(() => { 
+        document.getElementById('finalEligibleArea').scrollIntoView({ behavior: 'smooth', block: 'start' }); 
+        if(current_products.length === 0) openAddProductModal(); 
+    }, 150);
 }
 
 function toggleModelView(pIdx) { 
@@ -1580,16 +1698,16 @@ function copyThreeDealerItems(dId, dName, encBitly, btnEl, event) {
 }
 
 function openDealerSearchModal() { 
+    showOnlyOneInlineView('dealerSearchModal', 'flex');
     document.getElementById('dealerSearchInput').value = ''; 
     showingOnlyStarred = false;
     let btn = document.getElementById('filterStarBtn');
     if(btn) { btn.style.background = "#fff3cd"; btn.style.color = "#856404"; btn.innerText = "★ FAVORITES"; }
     searchDealer();
-    document.getElementById('dealerSearchModal').style.display = 'flex'; 
     setTimeout(() => document.getElementById('dealerSearchInput').focus(), 100); 
 }
 
-function closeDealerSearchModal() { document.getElementById('dealerSearchModal').style.display = 'none'; }
+function closeDealerSearchModal() { showOnlyOneInlineView('unifiedHome', 'block'); }
 
 function openBitlyLink(url) { 
     if (url && url !== '#' && url.trim() !== '') { 
@@ -1726,7 +1844,7 @@ function openRowActionModal(pIdx, dIdx, isInactive) {
 }
 
 function closeRowActionModal() { document.getElementById('rowActionModal').style.display = 'none'; }
-function openZatpatCalcModal() { var modal = document.getElementById('zatpatCalcModal'); if(modal) { modal.style.display = 'flex'; } }
+function openZatpatCalcModal() { showOnlyOneInlineView('zatpatCalcModal', 'flex'); }
 
 /* ========================================================== */
 /* 🔍 SMART SCHEMES DICTIONARY & CUSTOM STAGING CONTROLLER    */
@@ -1782,6 +1900,7 @@ function openDictionaryModal() {
         showToast("Schemes Dictionary लोड होत आहे, थांबा...", "warning"); 
         return; 
     } 
+    showOnlyOneInlineView('dictionarySearchModal', 'flex');
     document.getElementById('globalModelSearch').value = ''; 
     document.getElementById('globalModelDropdown').style.display = 'none'; 
     document.getElementById('schemeResultArea').style.display = 'none';
@@ -1800,7 +1919,6 @@ function openDictionaryModal() {
     }
 
     renderDictBasketChips();
-    document.getElementById('dictionarySearchModal').style.display = 'flex'; 
     setTimeout(() => document.getElementById('globalModelSearch').focus(), 100); 
 }
 
@@ -2034,7 +2152,14 @@ async function saveDictSingleScheme() {
 function dictInvoiceChanged() {
     let inv = parseFloat(document.getElementById('calcInvoice').value) || 0;
     let allRecords = [...db_records, ...customStagingSchemes];
-    let rec = allRecords.find(r => r.model === currentViewedModel);
+    let rec = null;
+    if (currentViewedModel && currentViewedModel.startsWith(SPECIAL_MODEL + " - ")) {
+        let catDisplay = currentViewedModel.replace(SPECIAL_MODEL + " - ", "").trim();
+        let catActual = (catDisplay === 'PHONE / TABLET / SMART WATCH') ? 'PHONE(WEB-MOBILE)' : catDisplay;
+        rec = allRecords.find(r => r.model === SPECIAL_MODEL && r.category === catActual);
+    } else {
+        rec = allRecords.find(r => r.model === currentViewedModel);
+    }
     let isPhone = rec ? isMobileDeviceCat(rec.category) : false;
 
     let gtl = inv > 100000 ? 2398 : (inv > 50000 ? 1799 : (inv > 30000 ? 1499 : (inv > 10000 ? 1199 : (inv > 0 ? 699 : 0))));
@@ -2090,7 +2215,14 @@ function viewGlobalModel(name) {
 }
 
 function renderTableModel() {
-    let masterSchemes = db_records.filter(r => r.model === currentViewedModel);
+    let masterSchemes = [];
+    if (currentViewedModel && currentViewedModel.startsWith(SPECIAL_MODEL + " - ")) {
+        let catDisplay = currentViewedModel.replace(SPECIAL_MODEL + " - ", "").trim();
+        let catActual = (catDisplay === 'PHONE / TABLET / SMART WATCH') ? 'PHONE(WEB-MOBILE)' : catDisplay;
+        masterSchemes = db_records.filter(r => r.model === SPECIAL_MODEL && r.category === catActual);
+    } else {
+        masterSchemes = db_records.filter(r => r.model === currentViewedModel);
+    }
     let stagingForThis = customStagingSchemes.filter(s => s.model === currentViewedModel);
     let schemes = [...masterSchemes, ...stagingForThis];
 
@@ -2153,6 +2285,12 @@ function renderTableModel() {
             let inst = s.tenure - s.advEmi;
             if (inst < 1) inst = 1;
 
+            let appliedPf = s.pf;
+            if (currentViewedModel.startsWith(SPECIAL_MODEL)) {
+                let slabPf = getNonTieupPfValue(s.category, invoice);
+                if (slabPf !== null) appliedPf = slabPf;
+            }
+
             if (s.fixedEmi > 0) {
                 let maxTotalTenure = Math.floor(limit / s.fixedEmi) + s.advEmi;
                 let currentTenure = Math.floor(invoice / s.fixedEmi);
@@ -2162,7 +2300,7 @@ function renderTableModel() {
                 finalLoan = currentTenure * s.fixedEmi;
 
                 if (targetDp > 0) {
-                    let numerator = targetDp - invoice - (s.fixedEmi * s.advEmi) - s.pf - totalFees;
+                    let numerator = targetDp - invoice - (s.fixedEmi * s.advEmi) - appliedPf - totalFees;
                     let denominator = dbdRate + roiRateDP - 1;
                     let solvedLoan = numerator / denominator;
                     let solvedTenure = Math.floor(solvedLoan / s.fixedEmi);
@@ -2180,15 +2318,18 @@ function renderTableModel() {
                 let roiInEmi = finalLoan * roiRate;
                 emi = s.fixedEmi + (insTotal / inst) + roiInEmi;
                 let roiInDp = finalLoan * roiRateDP;
-                dp = invoice - finalLoan + (s.fixedEmi * s.advEmi) + s.pf + totalFees + (finalLoan * dbdRate) + roiInDp;
+                dp = invoice - finalLoan + (s.fixedEmi * s.advEmi) + appliedPf + totalFees + (finalLoan * dbdRate) + roiInDp;
                 s.currentTenure = currentTenure;
                 s.calcInst = inst;
             } else {
                 finalLoan = Math.min(nbfcMax, invoice);
+                if (currentViewedModel.startsWith(SPECIAL_MODEL) && s.maxLoan < 9999999) {
+                    finalLoan = Math.min(finalLoan, s.maxLoan);
+                }
 
                 if (targetDp > 0) {
                     let advRate = s.advEmi / s.tenure; 
-                    let numerator = targetDp - invoice - s.pf - totalFees; 
+                    let numerator = targetDp - invoice - appliedPf - totalFees; 
                     let denominator = advRate + dbdRate + roiRateDP - 1; 
                     let solvedLoan = numerator / denominator; 
                     finalLoan = Math.min(finalLoan, Math.max(0, Math.floor(solvedLoan)));
@@ -2215,19 +2356,21 @@ function renderTableModel() {
                 }
 
                 let roiInDp = finalLoan * roiRateDP;
-                dp = invoice - finalLoan + (baseEmi * s.advEmi) + s.pf + totalFees + (finalLoan * dbdRate) + roiInDp;
+                dp = invoice - finalLoan + (baseEmi * s.advEmi) + appliedPf + totalFees + (finalLoan * dbdRate) + roiInDp;
                 s.currentTenure = s.tenure;
                 s.calcInst = inst;
             }
 
             s.calcLoan = finalLoan;
-            s.isInvalidLoan = (isCalculatedMode && invoice > 0 && (finalLoan < minAllowedLoan));
+            let boundBreach = currentViewedModel.startsWith(SPECIAL_MODEL) && (finalLoan < s.minLoan || finalLoan > s.maxLoan);
+            s.isInvalidLoan = (isCalculatedMode && invoice > 0 && (finalLoan < minAllowedLoan || boundBreach));
 
             diff = invoice - finalLoan;
             s.calcDiff = diff > 0 ? diff : 0;
             s.calcDp = Math.ceil(dp/10)*10;
             s.calcEmi = emi;
             s.schemeIdx = idx;
+            s.appliedPf = appliedPf;
         }
     });
 
@@ -2258,7 +2401,7 @@ function renderTableModel() {
                 <td style="border-bottom:1px solid #eee; background:#eef6ff; color:var(--primary); font-weight:900; padding:10px 4px; font-size:13px;">₹${Math.round(s.calcEmi).toLocaleString()}</td>
                 <td style="font-weight:900; color:var(--primary); background:#eef6ff; border-bottom:1px solid #eee; padding:10px 4px; font-size:13px;">${s.calcInst}</td>
                 <td style="border-bottom:1px solid #eee; padding:10px 4px;">
-                    <button style="padding:4px 6px; font-size:10px !important; background:var(--primary); color:white; border:none; border-radius:3px; cursor:pointer;" onclick="copySingleScheme('${displayTenure}', '${s.advEmi}', '${s.calcLoan}', '${s.calcDp}', '${s.calcEmi}', '${s.fixedEmi}', '${s.dbd}', '${s.roi}', '${s.pf}', this)">COPY</button>
+                    <button style="padding:4px 6px; font-size:10px !important; background:var(--primary); color:white; border:none; border-radius:3px; cursor:pointer;" onclick="copySingleScheme('${displayTenure}', '${s.advEmi}', '${s.calcLoan}', '${s.calcDp}', '${s.calcEmi}', '${s.fixedEmi}', '${s.dbd}', '${s.roi}', '${s.appliedPf || s.pf}', this)">COPY</button>
                 </td>
             </tr>`;
         } else {
@@ -2308,8 +2451,14 @@ function addCurrentModelToDictBasket() {
     let target = parseFloat(document.getElementById('calcTarget').value) || "";
 
     let allRecords = [...db_records, ...customStagingSchemes];
-    let rec = allRecords.find(r => r.model === currentViewedModel);
-    let category = rec ? rec.category : "OTHER";
+    let category = "OTHER";
+    if (currentViewedModel.startsWith(SPECIAL_MODEL + " - ")) {
+        let catDisplay = currentViewedModel.replace(SPECIAL_MODEL + " - ", "").trim();
+        category = (catDisplay === 'PHONE / TABLET / SMART WATCH') ? 'PHONE(WEB-MOBILE)' : catDisplay;
+    } else {
+        let rec = allRecords.find(r => r.model === currentViewedModel);
+        if (rec) category = rec.category;
+    }
 
     let exist = dictBasketProducts.find(p => p.name === currentViewedModel);
     if (exist) {
@@ -2550,7 +2699,12 @@ async function transferDictModelToFinalQueue() {
     if (!cust.products) cust.products = [];
 
     dictBasketProducts.forEach(prod => {
-        let rawMaster = db_records.filter(r => r.model === prod.name);
+        let rawMaster = [];
+        if (prod.name.startsWith(SPECIAL_MODEL + " - ")) {
+            rawMaster = db_records.filter(r => r.model === SPECIAL_MODEL && r.category === prod.category);
+        } else {
+            rawMaster = db_records.filter(r => r.model === prod.name);
+        }
         let rawCustom = customStagingSchemes.filter(s => s.model === prod.name);
         let combined = [...rawMaster, ...rawCustom];
 
