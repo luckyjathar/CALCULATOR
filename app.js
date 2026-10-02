@@ -58,10 +58,24 @@ function showCustomAlert(msg, text = null) {
     document.getElementById('customAlertModal').style.display = 'flex';
 }
 
-/* === GOOGLE SHEETS CLOUD SYNC & SILENT AUTO-SYNC API === */
+/* ========================================================================= */
+/* ☁️ MULTI-DEVICE REALTIME CLOUD SYNC ENGINE (SAME EMAIL = SAME DATA)      */
+/* ========================================================================= */
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwWt4xbbEYWpSwtOSY1jqGJauljwPWojqfpxL4Bk2aRE8gJMpAzanAmNQ1OGNzKYHZfGg/exec";
 let loggedInUserEmail = localStorage.getItem('persistent_user_email') || "";
 let isSilentSyncing = false;
+let pendingCloudPush = false;
+let isPullingFromCloud = false;
+
+function markLocalDataModified() {
+    let ts = Date.now();
+    localStorage.setItem('persistent_local_updated_at', String(ts));
+    return ts;
+}
+
+function getLocalDataModifiedTime() {
+    return parseInt(localStorage.getItem('persistent_local_updated_at') || '0', 10);
+}
 
 async function handleGoogleLogin(response) {
     try {
@@ -69,11 +83,12 @@ async function handleGoogleLogin(response) {
         const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
         const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) { return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2); }).join(''));
         const userData = JSON.parse(jsonPayload);
-        loggedInUserEmail = userData.email; 
+        loggedInUserEmail = userData.email.trim().toLowerCase(); 
         localStorage.setItem('persistent_user_email', loggedInUserEmail);
         localStorage.setItem('persistent_user_name', userData.name);
-        updateLoginUI(userData.name, true);
-        await fetchCloudDataOnLogin(userData.name);
+        updateLoginUI(userData.name, false);
+        // नवीन लॉगिन झाल्यावर Cloud वरील डेटाला प्राधान्य देऊन सर्व डिव्हाइससारखा सेम डेटा लोड करा
+        await fetchCloudDataOnLogin(userData.name, false, true);
     } catch(e) { console.error("Google Login Parsing Error:", e); }
     toggleSidebar();
 }
@@ -82,70 +97,205 @@ function updateLoginUI(userName, isOnline) {
     let statusBadge = document.getElementById('gitStatusBadge');
     let syncBtn = document.getElementById('syncBtn');
     if(syncBtn) syncBtn.style.display = 'flex';
-    if(statusBadge) {
+    if(statusBadge && loggedInUserEmail) {
+        let displayName = userName || localStorage.getItem('persistent_user_name') || loggedInUserEmail.split('@')[0];
         if(isOnline) {
-            statusBadge.innerHTML = '🟢 ' + userName.toUpperCase() + ' (CLOUD SYNC ON)';
+            statusBadge.innerHTML = '🟢 ' + displayName.toUpperCase() + ' (CLOUD SYNC ON)';
             statusBadge.style.background = 'rgba(39, 174, 96, 0.15)';
             statusBadge.style.color = 'var(--success)';
         } else {
-            statusBadge.innerHTML = '🔄 ' + userName + ' - SYNCING...';
+            statusBadge.innerHTML = '🔄 ' + displayName.toUpperCase() + ' - SYNCING...';
             statusBadge.style.background = 'rgba(243, 156, 18, 0.15)';
             statusBadge.style.color = '#f39c12';
         }
     }
 }
 
-async function fetchCloudDataOnLogin(userName) {
+async function fetchCloudDataOnLogin(userName, isSilent = false, forceCloudPriority = false) {
+    if (!loggedInUserEmail || isPullingFromCloud || isSilentSyncing) return;
     try {
-        let res = await fetch(APPS_SCRIPT_URL + "?email=" + encodeURIComponent(loggedInUserEmail));
+        isPullingFromCloud = true;
+        if (!isSilent) updateLoginUI(userName, false);
+
+        // Cache-buster (?t=Date.now()) मुळे मोबाईल व पीसीवर नेहमी ताजा डेटा मिळतो
+        let url = APPS_SCRIPT_URL + "?email=" + encodeURIComponent(loggedInUserEmail.trim().toLowerCase()) + "&t=" + Date.now();
+        let res = await fetch(url, { cache: "no-store" });
         let cloudData = await res.json();
 
-        if(cloudData && cloudData.length > 0) {
-            let combined = [...cloudData, ...customerQueue];
-            let uniqueQueue = [];
-            let seen = new Set();
+        if (Array.isArray(cloudData) && cloudData.length > 0) {
+            let metaItem = cloudData.find(item => item && item._isPortalSyncMeta === true);
+            let cloudCustomers = cloudData.filter(item => item && !item._isPortalSyncMeta);
 
-            combined.forEach(c => {
-                let key = c.timestamp + "_" + c.name; 
-                if(!seen.has(key)) {
-                    seen.add(key);
-                    uniqueQueue.push(c);
+            let cloudUpdatedAt = metaItem ? (parseInt(metaItem.updatedAt, 10) || 0) : 0;
+            let localUpdatedAt = getLocalDataModifiedTime();
+
+            // जर Cloud वर नवीन डेटा असेल किंवा युझरने लॉगिन/मॅन्युअल सिंक केले असेल, तर Cloud चा डेटा सेम-टू-सेम लागू करा
+            if (forceCloudPriority || localUpdatedAt === 0 || cloudUpdatedAt >= localUpdatedAt || customerQueue.length === 0) {
+                customerQueue = cloudCustomers.map(c => ({
+                    ...c,
+                    components: c.components || {},
+                    products: c.products || [],
+                    sortConfigs: c.sortConfigs || []
+                }));
+
+                if (metaItem) {
+                    if (Array.isArray(metaItem.recycleBin)) {
+                        recycleBin = metaItem.recycleBin;
+                        await saveToDB('persistent_recycle', recycleBin);
+                        localStorage.setItem('persistent_recycle_backup', JSON.stringify(recycleBin));
+                    }
+                    if (Array.isArray(metaItem.customStagingSchemes)) {
+                        customStagingSchemes = metaItem.customStagingSchemes;
+                        await saveToDB('custom_staging_schemes', customStagingSchemes);
+                        autoCleanStagingSchemesAgainstMaster();
+                        updateStagingBadge();
+                    }
+                    if (Array.isArray(metaItem.starredDealers)) {
+                        localStorage.setItem('persistent_starred_dealers', JSON.stringify(metaItem.starredDealers));
+                    }
+                    if (Array.isArray(metaItem.emiDrafts)) {
+                        localStorage.setItem('persistent_emi_drafts', JSON.stringify(metaItem.emiDrafts));
+                        updateDraftBadgeCount();
+                    }
+                    if (metaItem.salesName) localStorage.setItem('portal_sales_name', metaItem.salesName);
+                    if (metaItem.salesMobile) localStorage.setItem('portal_sales_mobile', metaItem.salesMobile);
+                    if (cloudUpdatedAt > 0) {
+                        localStorage.setItem('persistent_local_updated_at', String(cloudUpdatedAt));
+                    }
                 }
-            });
 
-            customerQueue = uniqueQueue;
-            await saveQueueToLocal(true); 
+                if (activeCustomerIndex >= customerQueue.length) {
+                    activeCustomerIndex = -1;
+                }
 
-            activeCustomerIndex = -1;
-            renderCustomerQueue();
-            updateUniversalActionButtons();
-            showToast("डेटा यशस्वीरित्या सिंक झाला!", "success");
+                await saveQueueToLocal(false);
+                renderCustomerQueue();
+                updateUniversalActionButtons();
+                updateFinalSwitcher();
+
+                // जर फायनल स्क्रीन उघडी असेल तर तिथला डेटाही लगेच रिफ्रेश करा
+                let finalArea = document.getElementById('finalEligibleArea');
+                if (finalArea && finalArea.style.display !== 'none' && activeCustomerIndex !== -1 && customerQueue[activeCustomerIndex]) {
+                    loadCurrentProducts();
+                    updateMatrixTopCard();
+                    renderMatrix();
+                }
+
+                if (!isSilent) showToast("सर्व डिव्हाइसवरील डेटा यशस्वीरित्या सिंक झाला!", "success");
+            } else {
+                // जर लोकल डिव्हाइसवर ऑफलाइन असताना नवीन बदल केले असतील तर ते Cloud वर पाठवा
+                await triggerSilentCloudSync();
+            }
         } else {
-            await triggerSilentCloudSync();
-            showToast("Local डेटा Cloud वर सिंक झाला!", "success");
+            // जर Cloud पूर्णपणे रिकामा असेल आणि लोकलला डेटा असेल तर तो Cloud वर अपलोड करा
+            if (customerQueue.length > 0 || customStagingSchemes.length > 0 || recycleBin.length > 0) {
+                await triggerSilentCloudSync();
+                if (!isSilent) showToast("Local डेटा Cloud वर सिंक झाला!", "success");
+            }
         }
         updateLoginUI(userName, true);
     } catch(e) {
         console.error("Cloud Fetch Error", e);
-        showToast("Cloud सिंक करताना अडचण आली. ऑफलाइन मोड सुरू राहील.", "warning");
+        if (!isSilent) showToast("Cloud सिंक करताना अडचण आली. ऑफलाइन मोड सुरू राहील.", "warning");
+        updateLoginUI(userName, true);
+    } finally {
+        isPullingFromCloud = false;
     }
 }
 
 async function forceCloudSync() {
     if(!loggedInUserEmail) { showToast("कृपया आधी Google Sign In करा!", "error"); return; }
-    let btn = document.getElementById('syncBtn'); let originalText = btn.innerHTML; btn.innerHTML = '<span>⏳</span> SYNCING...';
-    await triggerSilentCloudSync();
-    setTimeout(() => { btn.innerHTML = '<span>✅</span> SYNC COMPLETE'; setTimeout(() => { btn.innerHTML = originalText; }, 2000); }, 1200);
+    let btn = document.getElementById('syncBtn');
+    let originalText = btn ? btn.innerHTML : '<span>🔄</span> SYNC CLOUD';
+    if (btn) btn.innerHTML = '<span>⏳</span> SYNCING...';
+
+    let savedName = localStorage.getItem('persistent_user_name') || "User";
+    // आधी तपासा की Cloud वर दुसऱ्या डिव्हाइसवरून काही नवीन आले आहे का, किंवा आपला डेटा पाठवा
+    await fetchCloudDataOnLogin(savedName, false, true);
+
+    if (btn) {
+        btn.innerHTML = '<span>✅</span> SYNC COMPLETE';
+        setTimeout(() => { btn.innerHTML = originalText; }, 2000);
+    }
 }
 
 async function triggerSilentCloudSync() {
-    if(!loggedInUserEmail || isSilentSyncing) return;
+    if(!loggedInUserEmail) return;
+    if(isSilentSyncing) {
+        // जर आधीचा सिंक चालू असेल तर नवीन बदल हरवू नये म्हणून pending ठेवा
+        pendingCloudPush = true;
+        return;
+    }
     try {
         isSilentSyncing = true;
-        let compactQueue = customerQueue.map(c => { let cp = (c.products || []).map(p => { let { calculatedData, allSchemes, ...keepProduct } = p; return keepProduct; }); return { ...c, products: cp }; });
-        await fetch(APPS_SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ email: loggedInUserEmail, queue: compactQueue }) });
-    } catch(err) { console.log("Silent Cloud Sync Error:", err); } finally { isSilentSyncing = false; }
+        pendingCloudPush = false;
+
+        let updatedAt = markLocalDataModified();
+        let compactQueue = customerQueue.map(c => {
+            let cp = (c.products || []).map(p => {
+                let { calculatedData, allSchemes, ...keepProduct } = p;
+                return keepProduct;
+            });
+            return { ...c, products: cp };
+        });
+
+        let syncMeta = {
+            _isPortalSyncMeta: true,
+            updatedAt: updatedAt,
+            recycleBin: recycleBin || [],
+            customStagingSchemes: customStagingSchemes || [],
+            starredDealers: JSON.parse(localStorage.getItem('persistent_starred_dealers') || '[]'),
+            emiDrafts: JSON.parse(localStorage.getItem('persistent_emi_drafts') || '[]'),
+            salesName: localStorage.getItem('portal_sales_name') || '',
+            salesMobile: localStorage.getItem('portal_sales_mobile') || ''
+        };
+
+        let payloadQueue = [...compactQueue, syncMeta];
+
+        await fetch(APPS_SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({
+                email: loggedInUserEmail.trim().toLowerCase(),
+                queue: payloadQueue
+            })
+        });
+    } catch(err) {
+        console.log("Silent Cloud Sync Error:", err);
+    } finally {
+        isSilentSyncing = false;
+        if (pendingCloudPush) {
+            pendingCloudPush = false;
+            setTimeout(() => triggerSilentCloudSync(), 300);
+        }
+    }
 }
+
+// दुसऱ्या डिव्हाइसवर केलेला बदल टॅब उघडताच किंवा दर २५ सेकंदांनी आपोआप दिसण्यासाठी:
+document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'visible' && loggedInUserEmail) {
+        let savedName = localStorage.getItem('persistent_user_name') || "User";
+        fetchCloudDataOnLogin(savedName, true, false);
+    }
+});
+
+window.addEventListener('focus', function() {
+    if (loggedInUserEmail) {
+        let savedName = localStorage.getItem('persistent_user_name') || "User";
+        fetchCloudDataOnLogin(savedName, true, false);
+    }
+});
+
+setInterval(function() {
+    if (document.visibilityState === 'visible' && loggedInUserEmail && !isSilentSyncing && !isPullingFromCloud) {
+        let activeTag = document.activeElement ? document.activeElement.tagName : '';
+        if (activeTag !== 'INPUT' && activeTag !== 'TEXTAREA' && activeTag !== 'SELECT') {
+            let savedName = localStorage.getItem('persistent_user_name') || "User";
+            fetchCloudDataOnLogin(savedName, true, false);
+        }
+    }
+}, 25000);
 
 if (typeof pdfjsLib !== 'undefined') {
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
@@ -244,7 +394,9 @@ function saveEmiDraft() {
     if (!name) { showToast("कृपया कस्टमरचे नाव भरा!", "error"); return; }
     const draftObj = { id: Date.now(), shop: shop, asset: document.getElementById('msgAssetCategory').value, name: name, mobile: mobile, emi: document.getElementById('msgCustEMI').value, tenure: document.getElementById('msgCustTenure').value, loanDate: document.getElementById('msgLoanDate').value, startDate: startDate, endDate: endDate, lang: document.getElementById('msgLang').value, finalMessage: finalMsg, timestamp: new Date().toLocaleString() };
     let drafts = JSON.parse(localStorage.getItem('persistent_emi_drafts') || '[]'); drafts.unshift(draftObj); localStorage.setItem('persistent_emi_drafts', JSON.stringify(drafts));
-    updateDraftBadgeCount(); showToast("ड्राफ्ट सेव्ह झाला!", "success");
+    updateDraftBadgeCount(); 
+    triggerSilentCloudSync();
+    showToast("ड्राफ्ट सेव्ह झाला!", "success");
 }
 
 function renderEmiDrafts() {
@@ -274,7 +426,7 @@ function renderEmiDrafts() {
 function toggleDraftDetails(index) { const detailsDiv = document.getElementById(`draftDetails_${index}`); if (detailsDiv.style.display === 'none') { detailsDiv.style.display = 'block'; } else { detailsDiv.style.display = 'none'; } }
 function sendDraftNow(index) { let drafts = JSON.parse(localStorage.getItem('persistent_emi_drafts') || '[]'); let d = drafts[index]; if (!d) return; let mobile = d.mobile || ''; let text = encodeURIComponent(d.finalMessage || ''); let url = `https://api.whatsapp.com/send?text=${text}`; if (mobile && mobile.length === 10) { url = `https://api.whatsapp.com/send?phone=91${mobile}&text=${text}`; } window.open(url, '_blank'); }
 function loadEmiDraft(index) { let drafts = JSON.parse(localStorage.getItem('persistent_emi_drafts') || '[]'); let d = drafts[index]; if (!d) return; document.getElementById('msgShopName').value = d.shop || ''; document.getElementById('msgAssetCategory').value = d.asset || ''; document.getElementById('msgCustName').value = d.name || ''; document.getElementById('msgCustEMI').value = d.emi || ''; document.getElementById('msgCustTenure').value = d.tenure || ''; document.getElementById('msgLoanDate').value = d.loanDate || ''; document.getElementById('msgLang').value = d.lang || 'en'; calculateDates(); closeDraftsModal(); }
-function markDraftAsSent(index) { showCustomConfirm("हा ड्राफ्ट कायमचा डिलीट होईल. पुढे जायचे?", () => { let drafts = JSON.parse(localStorage.getItem('persistent_emi_drafts') || '[]'); drafts.splice(index, 1); localStorage.setItem('persistent_emi_drafts', JSON.stringify(drafts)); renderEmiDrafts(); showToast("ड्राफ्ट डिलीट झाला!", "success"); }); }
+function markDraftAsSent(index) { showCustomConfirm("हा ड्राफ्ट कायमचा डिलीट होईल. पुढे जायचे?", () => { let drafts = JSON.parse(localStorage.getItem('persistent_emi_drafts') || '[]'); drafts.splice(index, 1); localStorage.setItem('persistent_emi_drafts', JSON.stringify(drafts)); renderEmiDrafts(); triggerSilentCloudSync(); showToast("ड्राफ्ट डिलीट झाला!", "success"); }); }
 
 window.isFestiveMode = false; let currentModalCategory = ""; let tempFgDealerId = ""; let tempFgDealerName = ""; let tempFgModel = ""; let tempFgBitly = ""; 
 
@@ -325,7 +477,25 @@ let currentViewedModel = "";
 function highlightNumber(e, el) { if (e) e.stopPropagation(); let range = document.createRange(); range.selectNodeContents(el); let sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range); try { document.execCommand('copy'); } catch(err) {} }
 function parseExcelDate(val) { if (!val) return null; if (typeof val === 'number') { return new Date(Math.round((val - 25569) * 86400 * 1000)); } if (typeof val === 'string') { let d = new Date(val); if (!isNaN(d.getTime())) return d; let parts = val.split(/[\/\-\.]/); if (parts.length === 3) { let y = parts[2].length === 2 ? '20' + parts[2] : parts[2]; return new Date(y, parts[1] - 1, parts[0]); } } return null; }
 
-async function saveQueueToLocal(shouldCloudSync = true) { try { let compactQueue = customerQueue.map(c => { let cp = (c.products || []).map(p => { let { calculatedData, allSchemes, ...keepProduct } = p; return keepProduct; }); return { ...c, products: cp }; }); localStorage.setItem('persistent_queue_backup', JSON.stringify(compactQueue)); localStorage.setItem('persistent_active_idx_backup', activeCustomerIndex); await saveToDB('persistent_queue', compactQueue); await saveToDB('persistent_active_idx', activeCustomerIndex); if(shouldCloudSync && loggedInUserEmail) { triggerSilentCloudSync(); } } catch(e) { console.error("Local Save Interrupted", e); } }
+async function saveQueueToLocal(shouldCloudSync = true) { 
+    try { 
+        let compactQueue = customerQueue.map(c => { 
+            let cp = (c.products || []).map(p => { 
+                let { calculatedData, allSchemes, ...keepProduct } = p; 
+                return keepProduct; 
+            }); 
+            return { ...c, products: cp }; 
+        }); 
+        localStorage.setItem('persistent_queue_backup', JSON.stringify(compactQueue)); 
+        localStorage.setItem('persistent_active_idx_backup', activeCustomerIndex); 
+        await saveToDB('persistent_queue', compactQueue); 
+        await saveToDB('persistent_active_idx', activeCustomerIndex); 
+        if(shouldCloudSync) { 
+            markLocalDataModified();
+            if (loggedInUserEmail) triggerSilentCloudSync(); 
+        } 
+    } catch(e) { console.error("Local Save Interrupted", e); } 
+}
 
 // ⚡ CACHE DURATION: दिवसातून फक्त २ वेळा (२४ तास / २ = १२ तास)
 const CACHE_DURATION_MS = 12 * 60 * 60 * 1000; 
@@ -335,6 +505,7 @@ async function fetchFromMasterStream(forceSync = false) {
     let globalLoader = document.getElementById('dataLoadingIndicator');
     let searchInput1 = document.getElementById('modalMatrixSearch');
     let searchInput2 = document.getElementById('globalModelSearch');
+    let savedName = localStorage.getItem('persistent_user_name') || "User";
 
     if(globalLoader) {
         globalLoader.style.display = 'block';
@@ -357,7 +528,9 @@ async function fetchFromMasterStream(forceSync = false) {
 
                 if (activeCustomerIndex !== -1) { loadCurrentProducts(); renderMatrix(); }
 
-                if(statusBadge) { 
+                if (loggedInUserEmail) {
+                    updateLoginUI(savedName, true);
+                } else if(statusBadge) { 
                     statusBadge.innerHTML = '⚡ LOADED FROM CACHE (2X/DAY)'; 
                     statusBadge.style.color = 'var(--success)'; 
                     statusBadge.style.background = 'rgba(39, 174, 96, 0.15)'; 
@@ -371,7 +544,7 @@ async function fetchFromMasterStream(forceSync = false) {
         }
 
         if(globalLoader) globalLoader.innerHTML = 'डाउनलोड सुरू आहे...';
-        if(statusBadge) { 
+        if(statusBadge && !loggedInUserEmail) { 
             statusBadge.innerHTML = '⬇️ LIVE DATA DOWNLOADING...'; 
             statusBadge.style.color = '#f39c12'; 
             statusBadge.style.background = 'rgba(243, 156, 18, 0.15)'; 
@@ -426,7 +599,9 @@ async function fetchFromMasterStream(forceSync = false) {
 
         if (activeCustomerIndex !== -1) { loadCurrentProducts(); renderMatrix(); }
 
-        if(statusBadge) { 
+        if (loggedInUserEmail) {
+            updateLoginUI(savedName, true);
+        } else if(statusBadge) { 
             statusBadge.innerHTML = '✅ LIVE DATA SYNCED'; 
             statusBadge.style.color = 'var(--success)'; 
             statusBadge.style.background = 'rgba(39, 174, 96, 0.15)'; 
@@ -449,7 +624,9 @@ async function fetchFromMasterStream(forceSync = false) {
             db_records = fallbackDb;
             dealer_records = fallbackDealers || [];
             if (activeCustomerIndex !== -1) { loadCurrentProducts(); renderMatrix(); }
-            if(statusBadge) {
+            if (loggedInUserEmail) {
+                updateLoginUI(savedName, true);
+            } else if(statusBadge) {
                 statusBadge.innerHTML = '⚡ OFFLINE MODE (CACHE ACTIVE)';
                 statusBadge.style.color = 'var(--success)';
                 statusBadge.style.background = 'rgba(39, 174, 96, 0.15)';
@@ -494,8 +671,8 @@ document.addEventListener('click', function(e) {
 });
 
 window.onload = async function() {
+    let savedName = localStorage.getItem('persistent_user_name') || "User"; 
     if(loggedInUserEmail) { 
-        let savedName = localStorage.getItem('persistent_user_name') || "User"; 
         updateLoginUI(savedName, true); 
     } 
     generateStackCards(); 
@@ -540,6 +717,11 @@ window.onload = async function() {
         await loadCustomStagingSchemes();
         await fetchFromMasterStream(); 
         autoCleanStagingSchemesAgainstMaster();
+
+        // 🚀 जर युझर आधीपासून लॉगिन असेल तर पेज लोड होताच Cloud वरून ताजा डेटा सिंक करा
+        if (loggedInUserEmail) {
+            await fetchCloudDataOnLogin(savedName, true, false);
+        }
 
         setTimeout(() => checkForExcelUpdates(), 3000);
     } catch(e) { 
@@ -631,6 +813,7 @@ function generateFlyer() {
     if(!tempFgBitly) { showToast("या डीलरची लिंक उपलब्ध नाही!", "error"); return; }
     if(oType !== "NONE" && !oVal) { showToast("ऑफरचे नाव किंवा रक्कम भरा!", "error"); return; }
     localStorage.setItem('portal_sales_name', sName);
+    triggerSilentCloudSync();
     let baseUrl = window.location.href.split('?')[0]; baseUrl = baseUrl.replace(/index\.html?$/i, ''); if(!baseUrl.endsWith('/')) baseUrl += '/';
     let url = `${baseUrl}flyer.html?sn=${encodeURIComponent(sName)}&sm=${encodeURIComponent(sMob)}&did=${encodeURIComponent(tempFgDealerId)}&dn=${encodeURIComponent(tempFgDealerName)}&bl=${encodeURIComponent(tempFgBitly)}`;
     if(oType !== "NONE") url += `&ot=${encodeURIComponent(oType)}&ov=${encodeURIComponent(oVal)}`; if(tempFgModel) url += `&fm=${encodeURIComponent(tempFgModel)}`;
@@ -819,7 +1002,7 @@ async function addCustomerToQueue() {
 
     let now = new Date(); 
     let ts = now.toLocaleDateString('en-GB', {day:'2-digit', month:'short'}) + ' ' + now.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
-    let newCustObj = { name, mobile, limit, ltv, type, cap, timestamp: ts, components: {}, products: [], sortConfigs: [] };
+    let newCustObj = { id: Date.now(), name, mobile, limit, ltv, type, cap, timestamp: ts, components: {}, products: [], sortConfigs: [] };
 
     customerQueue.unshift(newCustObj); 
     silentLeadDispatcher(newCustObj);
@@ -827,7 +1010,7 @@ async function addCustomerToQueue() {
     if (activeCustomerIndex !== -1) activeCustomerIndex++; 
     if (selectedQueueIndex !== -1) selectedQueueIndex++;
 
-    await saveQueueToLocal(); 
+    await saveQueueToLocal(true); 
 
     document.getElementById('cqName').value = ''; 
     document.getElementById('cqMobile').value = ''; 
@@ -859,6 +1042,7 @@ function sendWhatsAppInvite() {
     if(!sName) { showToast("कृपया तुमचे नाव भरा!", "error"); return; } 
     localStorage.setItem('portal_sales_name', sName); 
     if(sMobile) localStorage.setItem('portal_sales_mobile', sMobile); 
+    triggerSilentCloudSync();
     let c = customerQueue[selectedQueueIndex]; 
     let msg = `Namaskar ${c.name} sir/madam! 🎉\n\nAapki Bajaj Finance ki *₹${c.limit}* ki limit approve ho gayi hai!\n\n👤 *${sName}*${sMobile ? `\n📞 ${sMobile}` : ''}`; 
     let encMsg = encodeURIComponent(msg); 
@@ -868,17 +1052,17 @@ function sendWhatsAppInvite() {
 }
 function closeCustomerEdit() { document.getElementById('editCustomerModal').style.display='none'; }
 
-async function saveCustomerEdit() { if(selectedQueueIndex === -1) return; let c = customerQueue[selectedQueueIndex]; c.name = document.getElementById('ecName').value || 'Customer'; c.mobile = document.getElementById('ecMobile').value; c.limit = parseFloat(document.getElementById('ecLimit').value) || 0; c.ltv = parseFloat(document.getElementById('ecLtv').value) || 100; c.type = document.getElementById('ecType').value; let cap = parseFloat(document.getElementById('ecCap').value); c.cap = cap > 0 ? cap : ''; await saveQueueToLocal(); renderCustomerQueue(); if(activeCustomerIndex === selectedQueueIndex) { updateMatrixTopCard(); current_products.forEach((_, idx) => recalcModel(idx)); } closeCustomerEdit(); }
+async function saveCustomerEdit() { if(selectedQueueIndex === -1) return; let c = customerQueue[selectedQueueIndex]; c.name = document.getElementById('ecName').value || 'Customer'; c.mobile = document.getElementById('ecMobile').value; c.limit = parseFloat(document.getElementById('ecLimit').value) || 0; c.ltv = parseFloat(document.getElementById('ecLtv').value) || 100; c.type = document.getElementById('ecType').value; let cap = parseFloat(document.getElementById('ecCap').value); c.cap = cap > 0 ? cap : ''; await saveQueueToLocal(true); renderCustomerQueue(); if(activeCustomerIndex === selectedQueueIndex) { updateMatrixTopCard(); current_products.forEach((_, idx) => recalcModel(idx)); } closeCustomerEdit(); }
 async function uniDelete() { if(selectedQueueIndex !== -1) await removeCustomer(selectedQueueIndex); }
-async function removeCustomer(idx) { let c = customerQueue[idx]; recycleBin.push(c); await saveToDB('persistent_recycle', recycleBin); localStorage.setItem('persistent_recycle_backup', JSON.stringify(recycleBin)); if(activeCustomerIndex === idx) activeCustomerIndex = -1; else if (activeCustomerIndex > idx) activeCustomerIndex--; customerQueue.splice(idx, 1); if (selectedQueueIndex === idx) selectedQueueIndex = -1; else if (selectedQueueIndex > idx) selectedQueueIndex--; if(customerQueue.length > 0 && activeCustomerIndex === -1) activeCustomerIndex = 0; await saveQueueToLocal(); renderCustomerQueue(); updateUniversalActionButtons(); }
+async function removeCustomer(idx) { let c = customerQueue[idx]; recycleBin.push(c); await saveToDB('persistent_recycle', recycleBin); localStorage.setItem('persistent_recycle_backup', JSON.stringify(recycleBin)); if(activeCustomerIndex === idx) activeCustomerIndex = -1; else if (activeCustomerIndex > idx) activeCustomerIndex--; customerQueue.splice(idx, 1); if (selectedQueueIndex === idx) selectedQueueIndex = -1; else if (selectedQueueIndex > idx) selectedQueueIndex--; if(customerQueue.length > 0 && activeCustomerIndex === -1) activeCustomerIndex = 0; await saveQueueToLocal(true); renderCustomerQueue(); updateUniversalActionButtons(); }
 
 function openRecycleBin() { let list = document.getElementById('recycleBinList'); if(recycleBin.length === 0) { list.innerHTML = `<div style="text-align:center; color:#888;">Recycle Bin empty</div>`; } else { list.innerHTML = recycleBin.map((c, i) => ` <div style="display:flex; justify-content:space-between; align-items:center; background:#fff; padding:8px; border-radius:4px; border:1px solid #ddd;"> <div style="font-size:12px; color:var(--dark); font-weight:bold;"> 👤 ${c.name} <br><span style="color:var(--success);">LMT: ₹${c.limit}</span> </div> <button onclick="restoreCustomer(${i})" style="background:var(--primary); color:white; padding:6px; border-radius:3px;">↩️ RESTORE</button> </div> `).join(''); } document.getElementById('recycleBinModal').style.display='flex'; }
 function closeRecycleBin() { document.getElementById('recycleBinModal').style.display='none'; }
-async function restoreCustomer(idx) { let c = recycleBin.splice(idx, 1)[0]; customerQueue.unshift(c); if(activeCustomerIndex !== -1) activeCustomerIndex++; if(selectedQueueIndex !== -1) selectedQueueIndex++; await saveQueueToLocal(); await saveToDB('persistent_recycle', recycleBin); localStorage.setItem('persistent_recycle_backup', JSON.stringify(recycleBin)); openRecycleBin(); renderCustomerQueue(); updateUniversalActionButtons(); }
+async function restoreCustomer(idx) { let c = recycleBin.splice(idx, 1)[0]; customerQueue.unshift(c); if(activeCustomerIndex !== -1) activeCustomerIndex++; if(selectedQueueIndex !== -1) selectedQueueIndex++; await saveToDB('persistent_recycle', recycleBin); localStorage.setItem('persistent_recycle_backup', JSON.stringify(recycleBin)); await saveQueueToLocal(true); openRecycleBin(); renderCustomerQueue(); updateUniversalActionButtons(); }
 
 async function emptyRecycleBin() {
     if(recycleBin.length === 0) { showToast("Recycle bin आधीच रिकामी आहे!", "warning"); return; }
-    showCustomConfirm("सर्व रेकॉर्ड्स डिलीट करायचे?", async () => { recycleBin = []; await saveToDB('persistent_recycle', recycleBin); localStorage.setItem('persistent_recycle_backup', JSON.stringify(recycleBin)); openRecycleBin(); showToast("Recycle Bin रिकामी झाली!", "success"); });
+    showCustomConfirm("सर्व रेकॉर्ड्स डिलीट करायचे?", async () => { recycleBin = []; await saveToDB('persistent_recycle', recycleBin); localStorage.setItem('persistent_recycle_backup', JSON.stringify(recycleBin)); triggerSilentCloudSync(); openRecycleBin(); showToast("Recycle Bin रिकामी झाली!", "success"); });
 }
 
 function renderCustomerQueue() { 
@@ -919,7 +1103,7 @@ function renderCustomerQueue() {
     }).join(''); 
 }
 
-async function setActiveCustomer(idx) { if(db_records.length === 0) { showToast("Master डेटा उपलब्ध नाही!", "error"); return; } activeCustomerIndex = idx; await saveQueueToLocal(); if(document.getElementById('queueSearch')) document.getElementById('queueSearch').value = ''; goToFinalPage(); }
+async function setActiveCustomer(idx) { if(db_records.length === 0) { showToast("Master डेटा उपलब्ध नाही!", "error"); return; } activeCustomerIndex = idx; await saveQueueToLocal(false); if(document.getElementById('queueSearch')) document.getElementById('queueSearch').value = ''; goToFinalPage(); }
 
 function isDictionaryViewActive() {
     let dictEl = document.getElementById('dictionarySearchModal');
@@ -977,7 +1161,7 @@ async function processMultiStack() {
             sortConfigs.push({ key: 'default_ltv', dir: 'desc' }); 
             customerQueue[activeCustomerIndex].products = current_products; 
             customerQueue[activeCustomerIndex].sortConfigs = sortConfigs; 
-            await saveQueueToLocal(); 
+            await saveQueueToLocal(true); 
         }
 
         closeMultiStackModal(); 
@@ -1050,7 +1234,7 @@ function openSchemeOnlyModal(pIdx) { if (!isLimitValid()) return; document.getEl
 function closeManualModal() { document.getElementById('manualModal').style.display='none'; }
 function openEditSchemeModal(pIdx, dIdx) { let scheme = current_products[pIdx].schemes[dIdx]; document.getElementById('editPIdx').value = pIdx; document.getElementById('editDIdx').value = dIdx; document.getElementById('editTen').value = scheme.tenure || 0; document.getElementById('editAdv').value = scheme.advEmi || 0; document.getElementById('editDbd').value = scheme.dbd || 0; document.getElementById('editPf').value = scheme.pf || 0; document.getElementById('editRoi').value = scheme.roi || 0; document.getElementById('editFixed').value = scheme.fixedEmi || 0; document.getElementById('editSchemeModal').style.display = 'flex'; }
 function closeEditSchemeModal() { document.getElementById('editSchemeModal').style.display = 'none'; }
-function saveSchemeEdit() { let pIdx = parseInt(document.getElementById('editPIdx').value); let dIdx = parseInt(document.getElementById('editDIdx').value); let scheme = current_products[pIdx].schemes[dIdx]; scheme.tenure = parseInt(document.getElementById('editTen').value) || 0; scheme.advEmi = parseInt(document.getElementById('editAdv').value) || 0; scheme.dbd = parseFloat(document.getElementById('editDbd').value) || 0; scheme.pf = parseInt(document.getElementById('editPf').value) || 0; scheme.roi = parseFloat(document.getElementById('editRoi').value) || 0; scheme.fixedEmi = parseFloat(document.getElementById('editFixed').value) || 0; closeEditSchemeModal(); recalcModel(pIdx); }
+function saveSchemeEdit() { let pIdx = parseInt(document.getElementById('editPIdx').value); let dIdx = parseInt(document.getElementById('editDIdx').value); let scheme = current_products[pIdx].schemes[dIdx]; scheme.tenure = parseInt(document.getElementById('editTen').value) || 0; scheme.advEmi = parseInt(document.getElementById('editAdv').value) || 0; scheme.dbd = parseFloat(document.getElementById('editDbd').value) || 0; scheme.pf = parseInt(document.getElementById('editPf').value) || 0; scheme.roi = parseFloat(document.getElementById('editRoi').value) || 0; scheme.fixedEmi = parseFloat(document.getElementById('editFixed').value) || 0; closeEditSchemeModal(); recalcModel(pIdx); saveQueueToLocal(true); }
 
 function selectModel(name) { 
     if (!isLimitValid()) return; 
@@ -1116,7 +1300,7 @@ function showComponentsModal(baseMrp = "") {
     document.getElementById('compCap').value = c?.components?.cap || c?.cap || ''; document.getElementById('compTarget').value = c?.components?.target || ''; if (!isMobileCat) { document.getElementById('compExw').value = c?.components?.exw || ''; } document.getElementById('compMargin').value = c?.components?.margin || ''; document.getElementById('compDealer').value = c?.components?.dealer || ''; document.getElementById('componentsModal').style.display = 'flex';
 }
 
-async function proceedToMatrixFromComponents() { let idx = activeCustomerIndex; if(idx === -1) return; if(!customerQueue[idx].components) customerQueue[idx].components = {}; customerQueue[idx].components.mrp = parseFloat(document.getElementById('compMrp').value) || 0; customerQueue[idx].components.inv = parseFloat(document.getElementById('compInv').value) || 0; customerQueue[idx].components.cap = parseFloat(document.getElementById('compCap').value) || 0; customerQueue[idx].components.target = parseFloat(document.getElementById('compTarget').value) || 0; customerQueue[idx].components.gtl = parseFloat(document.getElementById('compGtl').value) || 0; let isMobileCat = isMobileDeviceCat(currentModalCategory); customerQueue[idx].components.rfc = isMobileCat ? (parseFloat(document.getElementById('compRfc').value) || 0) : 0; customerQueue[idx].components.exw = isMobileCat ? 0 : (parseFloat(document.getElementById('compExw').value) || 0); customerQueue[idx].components.margin = parseFloat(document.getElementById('compMargin').value) || 0; customerQueue[idx].components.dealer = parseFloat(document.getElementById('compDealer').value) || 0; let cCap = customerQueue[idx].components.cap; if (cCap > 0 || customerQueue[idx].cap > 0) { customerQueue[idx].cap = cCap > 0 ? cCap : ""; renderCustomerQueue(); updateMatrixTopCard(); } await saveQueueToLocal(); document.getElementById('componentsModal').style.display = 'none'; if (tempPendingProduct) finalizeProductAddition(); }
+async function proceedToMatrixFromComponents() { let idx = activeCustomerIndex; if(idx === -1) return; if(!customerQueue[idx].components) customerQueue[idx].components = {}; customerQueue[idx].components.mrp = parseFloat(document.getElementById('compMrp').value) || 0; customerQueue[idx].components.inv = parseFloat(document.getElementById('compInv').value) || 0; customerQueue[idx].components.cap = parseFloat(document.getElementById('compCap').value) || 0; customerQueue[idx].components.target = parseFloat(document.getElementById('compTarget').value) || 0; customerQueue[idx].components.gtl = parseFloat(document.getElementById('compGtl').value) || 0; let isMobileCat = isMobileDeviceCat(currentModalCategory); customerQueue[idx].components.rfc = isMobileCat ? (parseFloat(document.getElementById('compRfc').value) || 0) : 0; customerQueue[idx].components.exw = isMobileCat ? 0 : (parseFloat(document.getElementById('compExw').value) || 0); customerQueue[idx].components.margin = parseFloat(document.getElementById('compMargin').value) || 0; customerQueue[idx].components.dealer = parseFloat(document.getElementById('compDealer').value) || 0; let cCap = customerQueue[idx].components.cap; if (cCap > 0 || customerQueue[idx].cap > 0) { customerQueue[idx].cap = cCap > 0 ? cCap : ""; renderCustomerQueue(); updateMatrixTopCard(); } await saveQueueToLocal(true); document.getElementById('componentsModal').style.display = 'none'; if (tempPendingProduct) finalizeProductAddition(); }
 
 async function finalizeProductAddition() {
     let allRecords = [...db_records, ...customStagingSchemes];
@@ -1126,11 +1310,11 @@ async function finalizeProductAddition() {
     let uniqueSchemes = []; let seenSchemes = new Set();
     matrixEligible.forEach(s => { let schemeKey = `${s.tenure}_${s.advEmi}_${s.fixedEmi}_${s.minLoan}_${s.maxLoan}`; if (!seenSchemes.has(schemeKey)) { seenSchemes.add(schemeKey); s.inactive = false; uniqueSchemes.push({...s}); } });
     let comp = customerQueue[activeCustomerIndex].components || {}; let finalMrp = comp.mrp || ""; let finalInv = comp.inv || ""; let surch = (finalInv > finalMrp && finalMrp > 0) ? finalInv - finalMrp : 0;
-    current_products.push({ name: tempPendingProduct.name, isNonTieup: tempPendingProduct.isNT, schemes: uniqueSchemes, category: tempPendingProduct.category, inputs: { mrp: finalMrp, inv: finalInv, cap: comp.cap || (customerQueue[activeCustomerIndex]?.cap || ""), target: comp.target || "", gtl: comp.gtl || 0, rfc: comp.rfc || 0, exw: comp.exw || 0, margin: comp.margin || "", dealer: comp.dealer || "", surch: surch, manualLoans: {} }, isManual: false }); sortConfigs.push({ key: 'default_ltv', dir: 'desc' }); customerQueue[activeCustomerIndex].products = current_products; customerQueue[activeCustomerIndex].sortConfigs = sortConfigs; tempPendingProduct = null; await saveQueueToLocal(); renderMatrix(); 
+    current_products.push({ name: tempPendingProduct.name, isNonTieup: tempPendingProduct.isNT, schemes: uniqueSchemes, category: tempPendingProduct.category, inputs: { mrp: finalMrp, inv: finalInv, cap: comp.cap || (customerQueue[activeCustomerIndex]?.cap || ""), target: comp.target || "", gtl: comp.gtl || 0, rfc: comp.rfc || 0, exw: comp.exw || 0, margin: comp.margin || "", dealer: comp.dealer || "", surch: surch, manualLoans: {} }, isManual: false }); sortConfigs.push({ key: 'default_ltv', dir: 'desc' }); customerQueue[activeCustomerIndex].products = current_products; customerQueue[activeCustomerIndex].sortConfigs = sortConfigs; tempPendingProduct = null; await saveQueueToLocal(true); renderMatrix(); 
 }
 
 function updateFinalSwitcher() { let sw = document.getElementById('finalCustomerSwitcher'); if(!sw) return; sw.innerHTML = customerQueue.map((c, i) => `<option value="${i}" ${i === activeCustomerIndex ? 'selected' : ''}>👤 ${c.name} (₹${c.limit})</option>`).join(''); }
-async function switchCustomerFinal(idx) { activeCustomerIndex = parseInt(idx); await saveQueueToLocal(); goToFinalPage(); }
+async function switchCustomerFinal(idx) { activeCustomerIndex = parseInt(idx); await saveQueueToLocal(false); goToFinalPage(); }
 function updateMatrixTopCard() { let c = customerQueue[activeCustomerIndex]; document.getElementById('infoName').innerText = c?.name || "-"; document.getElementById('infoMobile').innerText = c?.mobile || "-"; document.getElementById('infoLimit').innerText = "₹" + (c?.limit || 0); document.getElementById('infoLtv').innerText = (c?.ltv || 100) + "%"; document.getElementById('infoCap').innerText = c?.cap ? "₹" + c.cap : "NONE"; document.getElementById('infoType').innerText = c?.type || 'NEW'; }
 function loadCurrentProducts() { let c = customerQueue[activeCustomerIndex]; current_products = c?.products || []; sortConfigs = c?.sortConfigs || []; }
 
@@ -1201,7 +1385,7 @@ function renderMatrix() {
                     <button class="pmp-btn btn-quote" onclick="instantSingleQuote(${pIdx})">QUOTE</button>
                     <button class="pmp-btn btn-settings" onclick="toggleSettingsGrid(${pIdx})">SETTINGS</button>
                     <button class="pmp-btn btn-manual" onclick="openSchemeOnlyModal(${pIdx})">+ MANUAL</button>
-                    <button class="pmp-btn btn-remove" onclick="current_products.splice(${pIdx},1);saveQueueToLocal();renderMatrix();">REMOVE</button>
+                    <button class="pmp-btn btn-remove" onclick="current_products.splice(${pIdx},1);saveQueueToLocal(true);renderMatrix();">REMOVE</button>
                 </div>
 
                 <div class="control-grid" id="cg_${pIdx}" style="display:none;">
@@ -1264,7 +1448,7 @@ function updateVal(pIdx, field, val) {
     }
     if(field === 'cap') { if(activeCustomerIndex !== -1 && customerQueue[activeCustomerIndex]) { customerQueue[activeCustomerIndex].cap = v === 0 ? "" : v; let topCap = document.getElementById('infoCap'); if(topCap) topCap.innerText = v > 0 ? "₹" + v : "NONE"; current_products.forEach((cp, idx) => { cp.inputs.cap = v; let capInput = document.getElementById(`capInp_${idx}`); if (capInput && idx !== pIdx) capInput.value = val; }); } }
     if (field === 'mrp' || field === 'inv') { let m = parseFloat(current_products[pIdx].inputs.mrp) || 0; let i = parseFloat(current_products[pIdx].inputs.inv) || 0; current_products[pIdx].inputs.surch = (i > m && m > 0) ? i - m : 0; let surchEl = document.getElementById(`surch_${pIdx}`); if(surchEl) surchEl.value = current_products[pIdx].inputs.surch; if(field === 'mrp' && i === 0) syncInsurance(pIdx, m, m, 'MRP'); if(field === 'inv') syncInsurance(pIdx, m, i > 0 ? i : m, 'INV'); }
-    field === 'cap' ? current_products.forEach((_, idx) => recalcModel(idx)) : recalcModel(pIdx); customerQueue[activeCustomerIndex].products = current_products; saveQueueToLocal();
+    field === 'cap' ? current_products.forEach((_, idx) => recalcModel(idx)) : recalcModel(pIdx); customerQueue[activeCustomerIndex].products = current_products; saveQueueToLocal(true);
 }
 
 function recalcModel(pIdx) {
@@ -1524,6 +1708,8 @@ function manual(pIdx, dIdx) {
 
     prod.inputs.manualLoans = prod.inputs.manualLoans || {};
     prod.inputs.manualLoans[dIdx] = loan;
+    customerQueue[activeCustomerIndex].products = current_products;
+    saveQueueToLocal(true);
     renderRows(pIdx);
 }
 
@@ -1533,7 +1719,7 @@ function sortM(pIdx, key) {
     else { conf.key = key; conf.dir = key === 'curLTV' ? 'desc' : 'asc'; }
     renderRows(pIdx); 
     customerQueue[activeCustomerIndex].products = current_products; 
-    saveQueueToLocal(); 
+    saveQueueToLocal(true); 
 }
 
 function copySchemeText(pIdx, dIdx, btnElement) {
@@ -1548,7 +1734,7 @@ function fallbackCopy(text, successCb) {
     try { let success = document.execCommand('copy'); if (success) { successCb(); } else { showCustomAlert("Auto-copy blocked:", text); } } catch (err) { showCustomAlert("Auto-copy failed:", text); } document.body.removeChild(ta);
 }
 
-async function toggleInactive(pIdx, dIdx) { let prod = current_products[pIdx]; let scheme = prod.schemes[dIdx]; scheme.inactive = !scheme.inactive; recalcModel(pIdx); customerQueue[activeCustomerIndex].products = current_products; await saveQueueToLocal(); }
+async function toggleInactive(pIdx, dIdx) { let prod = current_products[pIdx]; let scheme = prod.schemes[dIdx]; scheme.inactive = !scheme.inactive; recalcModel(pIdx); customerQueue[activeCustomerIndex].products = current_products; await saveQueueToLocal(true); }
 
 async function executeManualAction() {
     let mode = document.getElementById('targetPIdx').value; 
@@ -1562,9 +1748,12 @@ async function executeManualAction() {
         sortConfigs.push({ key: 'default_ltv', dir: 'desc' }); 
         customerQueue[activeCustomerIndex].products = current_products; 
         customerQueue[activeCustomerIndex].sortConfigs = sortConfigs; 
-        await saveQueueToLocal(); renderMatrix(); 
+        await saveQueueToLocal(true); renderMatrix(); 
     } else { 
-        current_products[mode].schemes.push(scheme); recalcModel(parseInt(mode)); 
+        current_products[mode].schemes.push(scheme); 
+        customerQueue[activeCustomerIndex].products = current_products;
+        await saveQueueToLocal(true);
+        recalcModel(parseInt(mode)); 
     } 
     closeManualModal();
 }
@@ -1672,6 +1861,7 @@ function toggleDealerStar(dealerId, event) {
     if (starred.includes(idStr)) { starred = starred.filter(id => id !== idStr); showToast("Removed from favorites!", "warning"); } 
     else { starred.push(idStr); showToast("Added to favorites!", "success"); }
     localStorage.setItem('persistent_starred_dealers', JSON.stringify(starred));
+    triggerSilentCloudSync();
     searchDealer();
 }
 
@@ -1868,6 +2058,7 @@ async function loadCustomStagingSchemes() {
 async function saveCustomStagingSchemes() {
     await saveToDB('custom_staging_schemes', customStagingSchemes);
     updateStagingBadge();
+    triggerSilentCloudSync();
 }
 
 function updateStagingBadge() {
@@ -2019,11 +2210,11 @@ async function dictSaveNewCustomerToQueue() {
 
     let now = new Date();
     let ts = now.toLocaleDateString('en-GB', { day:'2-digit', month:'short' }) + ' ' + now.toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit' });
-    let newCustObj = { name, mobile: "", limit, ltv, type, cap, timestamp: ts, components: {}, products: [], sortConfigs: [] };
+    let newCustObj = { id: Date.now(), name, mobile: "", limit, ltv, type, cap, timestamp: ts, components: {}, products: [], sortConfigs: [] };
 
     customerQueue.unshift(newCustObj);
     activeCustomerIndex = 0;
-    await saveQueueToLocal();
+    await saveQueueToLocal(true);
 
     document.getElementById('dictCustSearch').value = `👤 ${name} (Limit: ₹${limit})`;
     dictLoadCustomerToInputs(newCustObj);
@@ -2751,7 +2942,7 @@ async function transferDictModelToFinalQueue() {
 
     dictBasketProducts = [];
     renderDictBasketChips();
-    await saveQueueToLocal();
+    await saveQueueToLocal(true);
 
     closeDictionaryModal();
     goToFinalPage();
