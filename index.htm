@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Persistent Portal">
 
-    <title>Persistent Portal V76.22 - Pro Edition</title>
+    <title>Persistent Portal V76.23 - Pro Edition</title>
 
     <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -907,22 +907,45 @@
     </div>
 </footer>
 
-<!-- 🌟 INLINE TAB SWITCHER & UNIVERSAL SEARCH LOGIC 🌟 -->
+<!-- 🌟 SINGLE-VIEW INLINE TAB SWITCHER & UNIVERSAL SEARCH LOGIC 🌟 -->
 <script>
-    function toggleInline(id, openFunc) {
-        ['unifiedHome', 'zatpatCalcModal', 'customerMessageGenModal', 'dealerSearchModal', 'dictionarySearchModal', 'flyerGenModal'].forEach(modId => {
+    const ALL_INLINE_SECTIONS = [
+        'unifiedHome',
+        'finalEligibleArea',
+        'zatpatCalcModal',
+        'customerMessageGenModal',
+        'dealerSearchModal',
+        'dictionarySearchModal',
+        'flyerGenModal'
+    ];
+
+    function hideAllInlineSections() {
+        ALL_INLINE_SECTIONS.forEach(modId => {
             let mod = document.getElementById(modId);
-            if(mod) mod.style.display = 'none';
+            if (mod) mod.style.display = 'none';
+        });
+    }
+
+    function toggleInline(id, openFunc) {
+        // 1. Aadhi sarva open aslele inline menus ani final chart purnapane band kara
+        hideAllInlineSections();
+
+        // 2. Kontehi popup modals ughade astil tar tehi band kara
+        ['addProductModal', 'catSelectionModal', 'multiStackModal', 'customSchemesStagingModal'].forEach(mId => {
+            let m = document.getElementById(mId);
+            if (m) m.style.display = 'none';
         });
 
+        // 3. Fakta click kelela ekach menu open kara
         let el = document.getElementById(id);
-        if(el) {
-            el.style.display = (id === 'unifiedHome') ? 'block' : 'flex'; 
+        if (el) {
+            el.style.display = (id === 'unifiedHome') ? 'block' : 'flex';
         }
 
-        if(typeof openFunc === 'function') {
+        if (typeof openFunc === 'function') {
             openFunc();
         }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     // 🔍 UNIVERSAL MODEL SEARCH FOR ADD PRODUCT MODAL
@@ -978,6 +1001,6 @@
     }
 </script>
 
-<script src="app.js?v=76.22"></script>
+<script src="app.js?v=76.23"></script>
 </body>
 </html>
