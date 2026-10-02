@@ -249,7 +249,11 @@ function markDraftAsSent(index) { showCustomConfirm("हा ड्राफ्�
 
 window.isFestiveMode = false; let currentModalCategory = ""; let tempFgDealerId = ""; let tempFgDealerName = ""; let tempFgModel = ""; let tempFgBitly = ""; 
 
-function cleanPureShopName(raw) { if(!raw) return ""; return raw.split('#')[0].split('|')[0].split('(')[0].trim().toUpperCase(); }
+function cleanPureShopName(raw) { 
+    if(!raw) return ""; 
+    return String(raw).split('#')[0].split('|')[0].split('(')[0].trim().toUpperCase(); 
+}
+
 function parseDealerObj(d) {
     if (!d) return { code: '', name: '', city: '', bitly: '' };
     let keys = Object.keys(d); let rawName = '', code = '', city = '', bitly = '';
@@ -493,6 +497,46 @@ window.onload = async function() {
     }
 };
 
+/* 🚀 FIX BUG 1: Missing doSearch Function for Add Product Modal Search */
+function doSearch(inputId, dropdownId) {
+    let inp = document.getElementById(inputId);
+    let dd = document.getElementById(dropdownId);
+    if (!inp || !dd) return;
+
+    let q = inp.value.toUpperCase().trim();
+    if (!q) {
+        dd.style.display = 'none';
+        return;
+    }
+
+    let validRecords = db_records.filter(r => r.model !== SPECIAL_MODEL);
+    let matches = validRecords.filter(r => {
+        let m = r.model || "";
+        let b = r.brand || "";
+        let c = r.category || "";
+        return m.includes(q) || b.includes(q) || c.includes(q);
+    }).map(r => r.model);
+
+    matches = [...new Set(matches)].slice(0, 25);
+
+    if (matches.length === 0) {
+        dd.innerHTML = `<div style="padding:10px; color:#d35400; font-weight:bold; text-align:center;">कोणतेही मॉडेल सापडले नाही.</div>`;
+        dd.style.display = 'block';
+        return;
+    }
+
+    dd.innerHTML = matches.map(m => {
+        let rec = validRecords.find(x => x.model === m);
+        let catTag = rec && rec.category ? `<span style="font-size:10px; background:#e0e0e0; color:#333; padding:2px 6px; border-radius:4px; float:right;">📁 ${rec.category}</span>` : '';
+        let brandTag = rec && rec.brand ? `<span style="font-size:10px; color:#0984e3; font-weight:900; margin-right:5px;">[${rec.brand}]</span>` : '';
+        return `<div style="padding:10px; border-bottom:1px solid #eee; cursor:pointer; font-weight:800; color:var(--dark); display:flex; justify-content:space-between; align-items:center;" onmouseover="this.style.background='#e3f2fd'" onmouseout="this.style.background='#fff'" onclick="selectModel('${m.replace(/'/g, "\\'")}')">
+            <span style="flex:1;">${brandTag}📱 ${m}</span> ${catTag}
+        </div>`;
+    }).join('');
+
+    dd.style.display = 'block';
+}
+
 function openFlyerGenModal() { document.getElementById('fgSalesName').value = ''; document.getElementById('fgSalesMobile').value = ''; document.getElementById('fgDealerSearch').value = ''; document.getElementById('fgDealerList').innerHTML = ''; tempFgDealerId = ""; tempFgDealerName = ""; tempFgBitly = ""; clearFgModel(); document.getElementById('fgOfferType').value = 'NONE'; toggleFgOfferInput(); document.getElementById('fgSelectedDealerBox').style.display = 'none'; document.getElementById('flyerGeneratedLinkBox').style.display = 'none'; document.getElementById('flyerGenModal').style.display = 'flex'; }
 function toggleFgOfferInput() { let type = document.getElementById('fgOfferType').value; let box = document.getElementById('fgOfferValBox'); let label = document.getElementById('fgOfferValLabel'); let inp = document.getElementById('fgOfferValue'); if(type === "NONE") { box.style.display = 'none'; inp.value = ''; } else if(type === "FREEBIE") { box.style.display = 'block'; label.innerText = "ENTER GIFT NAME"; inp.placeholder = "E.g. Earbuds"; } else { box.style.display = 'block'; label.innerText = "ENTER UPTO AMOUNT (₹)"; inp.placeholder = "E.g. 2500"; } }
 function searchFgDealer() { let q = document.getElementById('fgDealerSearch').value.toLowerCase().trim(); let list = document.getElementById('fgDealerList'); if(!q) { list.innerHTML = ''; return; } let matches = dealer_records.map(d => parseDealerObj(d)).filter(p => p.name.toLowerCase().includes(q) || p.code.toLowerCase().includes(q) || p.city.toLowerCase().includes(q)).slice(0, 10); list.innerHTML = matches.map(p => { let displayStr = `${p.name}${p.city ? ' - ' + p.city : ''} (${p.code})`; return `<div onclick="selectFgDealer('${p.code}', '${p.name.replace(/'/g, "\\'")}', '${p.city.replace(/'/g, "\\'")}', '${encodeURIComponent(p.bitly||'')}')" style="padding:8px; border-bottom:1px solid #eee; cursor:pointer; background:#fff; font-size:12px; font-weight:bold; color:var(--bajaj-blue);">🏪 ${displayStr}</div>`; }).join(''); }
@@ -665,7 +709,7 @@ function checkDuplicateMobile(val) {
     if (cleanVal.length === 10) {
         let existingCust = customerQueue.find(c => c.mobile && c.mobile === cleanVal);
         if (existingCust) {
-            warningEl.innerHTML = `⚠️ नंबर आधीच Queue मध्ये <b>'${existingCust.name}'</b> नावाने आहे!`;
+            warningEl.innerHTML = `⚠️️ नंबर आधीच Queue मध्ये <b>'${existingCust.name}'</b> नावाने आहे!`;
             warningEl.style.display = 'block';
             addBtn.disabled = true;
             return;
@@ -746,7 +790,7 @@ function renderCustomerQueue() {
     let list = document.getElementById('customerQueueList'); 
     if(!list) return; 
 
-    let qSearch = document.getElementById('queueSearch').value.toLowerCase().trim(); 
+    let qSearch = document.getElementById('queueSearch') ? document.getElementById('queueSearch').value.toLowerCase().trim() : ""; 
     let isSearching = qSearch !== ""; 
     let filtered = customerQueue.map((c, idx) => ({...c, originalIdx: idx})).filter(c => { 
         if(!isSearching) return true; 
@@ -777,7 +821,8 @@ function renderCustomerQueue() {
         </div>`; 
     }).join(''); 
 }
-async function setActiveCustomer(idx) { if(db_records.length === 0) { showToast("Master डेटा उपलब्ध नाही!", "error"); return; } activeCustomerIndex = idx; await saveQueueToLocal(); document.getElementById('queueSearch').value = ''; goToFinalPage(); }
+
+async function setActiveCustomer(idx) { if(db_records.length === 0) { showToast("Master डेटा उपलब्ध नाही!", "error"); return; } activeCustomerIndex = idx; await saveQueueToLocal(); if(document.getElementById('queueSearch')) document.getElementById('queueSearch').value = ''; goToFinalPage(); }
 function isLimitValid() { if (activeCustomerIndex === -1 || !customerQueue[activeCustomerIndex]) { showToast("आधी Queue मध्ये Customer सिलेक्ट किंवा ॲड करा!", "warning"); return false; } return true; }
 
 function generateStackCards() { let container = document.getElementById('stackInputsContainer'); if(!container) return; container.innerHTML = ""; for(let i=1; i<=10; i++) { container.innerHTML += ` <div class="stack-card"><div style="font-weight:900; color:var(--primary); margin-bottom:4px; border-bottom:1px solid #eee; padding-bottom:2px;">SCHEME #${i}</div> <div class="inner-grid"> <div><label>TENURE (MAX)</label><input type="number" id="msTen_${i}" placeholder="0"></div> <div><label>ADVANCE</label><input type="number" id="msAdv_${i}" placeholder="0"></div> <div><label>DBD %</label><input type="number" id="msDbd_${i}" placeholder="0"></div> <div><label>PF (₹)</label><input type="number" id="msPf_${i}" placeholder="0"></div> <div><label>ROI %</label><input type="number" id="msRoi_${i}" placeholder="0"></div> <div><label>FIXED EMI (₹)</label><input type="number" id="msFix_${i}" placeholder="0"></div> </div> </div>`; } }
@@ -798,7 +843,6 @@ async function processMultiStack() {
         await saveQueueToLocal(); 
         closeMultiStackModal(); 
         
-        // Dictionary chya search product madhe he model set karne
         currentViewedModel = msNameInput;
         let sm = document.getElementById('globalModelSearch');
         if(sm) sm.value = msNameInput;
@@ -839,7 +883,7 @@ function mapData(row, type) {
     }; 
 }
 
-function goHome() { document.getElementById('finalEligibleArea').style.display='none'; document.getElementById('catSelectionModal').style.display='none'; document.getElementById('unifiedHome').style.display='flex'; activeCustomerIndex = -1; selectedQueueIndex = -1; renderCustomerQueue(); updateUniversalActionButtons(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+function goHome() { document.getElementById('finalEligibleArea').style.display='none'; document.getElementById('catSelectionModal').style.display='none'; document.getElementById('unifiedHome').style.display='block'; activeCustomerIndex = -1; selectedQueueIndex = -1; renderCustomerQueue(); updateUniversalActionButtons(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
 function closeImageViewer() { document.getElementById('imageViewerModal').style.display='none'; }
 function openAddProductModal() { if (!isLimitValid()) return; document.getElementById('modalMatrixSearch').value = ''; document.getElementById('modalMatrixSearchDropdown').style.display = 'none'; document.getElementById('addProductModal').style.display = 'flex'; }
 function openSchemeOnlyModal(pIdx) { if (!isLimitValid()) return; document.getElementById('modalTitle').innerText = "Add Custom Scheme"; document.getElementById('modelNameInputArea').style.display = 'none'; document.getElementById('targetPIdx').value = pIdx; document.getElementById('manualModal').style.display='flex'; }
@@ -857,7 +901,6 @@ function selectCategory(catName) {
     tempPendingProduct = { name: fullName, isNT: true, category: catName }; 
     currentModalCategory = catName; 
 
-    // Dictionary search box madhe he model disel
     currentViewedModel = fullName;
     let sm = document.getElementById('globalModelSearch');
     if(sm) sm.value = fullName;
@@ -1023,25 +1066,77 @@ function updateVal(pIdx, field, val) {
     field === 'cap' ? current_products.forEach((_, idx) => recalcModel(idx)) : recalcModel(pIdx); customerQueue[activeCustomerIndex].products = current_products; saveQueueToLocal();
 }
 
+/* 🚀 FIX BUG 2: Reference errors (adv and d.tenure replaced by s.advEmi and s.tenure) */
 function recalcModel(pIdx) {
     if(!current_products[pIdx]) return; 
 
-    let prod = current_products[pIdx], limit = customerQueue[activeCustomerIndex]?.limit || 0, type = customerQueue[activeCustomerIndex]?.type || 'NEW'; let fee = (type === 'EMI CARD') ? 270 : (type === 'W/O CARD' ? 320 : 850), inp = prod.inputs; let totalFees = fee + (parseFloat(inp.margin)||0) + (parseFloat(inp.dealer)||0); let currentLimit = limit > 0 ? limit : 9999999; let inputMrp = parseFloat(inp.mrp) || 0; let inputInv = parseFloat(inp.inv) || 0; let effectivePrice = inputInv > 0 ? inputInv : (inputMrp > 0 ? inputMrp : 0); let loanCapPrice = (inputMrp > 0 && inputInv > 0) ? Math.min(inputMrp, inputInv) : effectivePrice;
+    let prod = current_products[pIdx], limit = customerQueue[activeCustomerIndex]?.limit || 0, type = customerQueue[activeCustomerIndex]?.type || 'NEW'; 
+    let fee = (type === 'EMI CARD') ? 270 : (type === 'W/O CARD' ? 320 : 850), inp = prod.inputs; 
+    let totalFees = fee + (parseFloat(inp.margin)||0) + (parseFloat(inp.dealer)||0); 
+    let currentLimit = limit > 0 ? limit : 9999999; 
+    let inputMrp = parseFloat(inp.mrp) || 0; 
+    let inputInv = parseFloat(inp.inv) || 0; 
+    let effectivePrice = inputInv > 0 ? inputInv : (inputMrp > 0 ? inputMrp : 0); 
+    let loanCapPrice = (inputMrp > 0 && inputInv > 0) ? Math.min(inputMrp, inputInv) : effectivePrice;
 
     let minAllowedLoanByInvoice = effectivePrice > 0 ? effectivePrice * 0.50 : 0;
 
     prod.calculatedData = prod.schemes.map((s, dIdx) => {
-        let isFixed = s.fixedEmi > 0; let loan = 0, nbfcMaxL = 0, dpExact = 0, dpRounded = 0, emi = 0, inst = 0, currentTenure = s.tenure; nbfcMaxL = (currentLimit * s.tenure) / (s.tenure - s.advEmi || 1); let dbdRate = (s.dbd * 1.18 / 100); let roiRate = s.roi / 1200; let roiRateDP = roiRate * s.advEmi; let dynamicPf = s.pf;
-        if (prod.isNonTieup) { let checkAmount = effectivePrice > 0 ? effectivePrice : (currentLimit < 9999999 ? currentLimit : 0); let slabPf = getNonTieupPfValue(prod.category, checkAmount); if (slabPf !== null) { dynamicPf = slabPf; } }
+        let isFixed = s.fixedEmi > 0; let loan = 0, nbfcMaxL = 0, dpExact = 0, dpRounded = 0, emi = 0, inst = 0, currentTenure = s.tenure; 
+        nbfcMaxL = (currentLimit * s.tenure) / (s.tenure - s.advEmi || 1); 
+        let dbdRate = (s.dbd * 1.18 / 100); 
+        let roiRate = s.roi / 1200; 
+        let roiRateDP = roiRate * s.advEmi; 
+        let dynamicPf = s.pf;
+
+        if (prod.isNonTieup) { 
+            let checkAmount = effectivePrice > 0 ? effectivePrice : (currentLimit < 9999999 ? currentLimit : 0); 
+            let slabPf = getNonTieupPfValue(prod.category, checkAmount); 
+            if (slabPf !== null) { dynamicPf = slabPf; } 
+        }
+
         if (isFixed) {
-            let maxRemainingEmis = Math.floor(currentLimit / s.fixedEmi); let maxTotalTenure = maxRemainingEmis + s.advEmi; nbfcMaxL = maxTotalTenure * s.fixedEmi; 
-            if (effectivePrice > 0) { currentTenure = Math.floor(effectivePrice / s.fixedEmi); if (currentTenure > maxTotalTenure) currentTenure = maxTotalTenure; if (currentTenure < 1) currentTenure = 1; loan = currentTenure * s.fixedEmi; if (loan > loanCapPrice) loan = loanCapPrice;
+            let maxRemainingEmis = Math.floor(currentLimit / s.fixedEmi); 
+            let maxTotalTenure = maxRemainingEmis + s.advEmi; 
+            nbfcMaxL = maxTotalTenure * s.fixedEmi; 
 
-            if (parseFloat(inp.target) > 0) { let numerator = parseFloat(inp.target) - effectivePrice - (s.fixedEmi * s.advEmi) - dynamicPf - totalFees; let denominator = dbdRate + roiRateDP - 1; let solvedLoan = numerator / denominator; let solvedTenure = Math.floor(solvedLoan / s.fixedEmi); if (solvedTenure > maxTotalTenure) solvedTenure = maxTotalTenure; loan = Math.max(0, solvedTenure * s.fixedEmi); if (loan > loanCapPrice) loan = loanCapPrice; currentTenure = Math.floor(loan / s.fixedEmi) || 1; } } else { currentTenure = s.tenure || 1; if (currentTenure > maxTotalTenure) currentTenure = maxTotalTenure; loan = currentTenure * s.fixedEmi; }
+            if (effectivePrice > 0) { 
+                currentTenure = Math.floor(effectivePrice / s.fixedEmi); 
+                if (currentTenure > maxTotalTenure) currentTenure = maxTotalTenure; 
+                if (currentTenure < 1) currentTenure = 1; 
+                loan = currentTenure * s.fixedEmi; 
+                if (loan > loanCapPrice) loan = loanCapPrice;
+
+                if (parseFloat(inp.target) > 0) { 
+                    let numerator = parseFloat(inp.target) - effectivePrice - (s.fixedEmi * s.advEmi) - dynamicPf - totalFees; 
+                    let denominator = dbdRate + roiRateDP - 1; 
+                    let solvedLoan = numerator / denominator; 
+                    let solvedTenure = Math.floor(solvedLoan / s.fixedEmi); 
+                    if (solvedTenure > maxTotalTenure) solvedTenure = maxTotalTenure; 
+                    loan = Math.max(0, solvedTenure * s.fixedEmi); 
+                    if (loan > loanCapPrice) loan = loanCapPrice; 
+                    currentTenure = Math.floor(loan / s.fixedEmi) || 1; 
+                } 
+            } else { 
+                currentTenure = s.tenure || 1; 
+                if (currentTenure > maxTotalTenure) currentTenure = maxTotalTenure; 
+                loan = currentTenure * s.fixedEmi; 
+            }
         } else {
-            let checkPrice = effectivePrice > 0 ? loanCapPrice : 50000; let absoluteMax = Math.min(checkPrice, nbfcMaxL); if (prod.isNonTieup) { if (s.maxLoan < 9999999) absoluteMax = Math.min(absoluteMax, s.maxLoan); } loan = absoluteMax;
+            let checkPrice = effectivePrice > 0 ? loanCapPrice : 50000; 
+            let absoluteMax = Math.min(checkPrice, nbfcMaxL); 
+            if (prod.isNonTieup) { 
+                if (s.maxLoan < 9999999) absoluteMax = Math.min(absoluteMax, s.maxLoan); 
+            } 
+            loan = absoluteMax;
 
-            if(parseFloat(inp.target) > 0 && effectivePrice > 0) { let advRate = s.advEmi / s.tenure; let numerator = parseFloat(inp.target) - effectivePrice - dynamicPf - totalFees; let denominator = advRate + dbdRate + roiRateDP - 1; let solvedLoan = numerator / denominator; loan = Math.min(loan, Math.max(0, Math.floor(solvedLoan))); } 
+            if(parseFloat(inp.target) > 0 && effectivePrice > 0) { 
+                let advRate = s.advEmi / s.tenure; 
+                let numerator = parseFloat(inp.target) - effectivePrice - dynamicPf - totalFees; 
+                let denominator = advRate + dbdRate + roiRateDP - 1; 
+                let solvedLoan = numerator / denominator; 
+                loan = Math.min(loan, Math.max(0, Math.floor(solvedLoan))); 
+            } 
         }
 
         let isManuallyOverridden = (inp.manualLoans && inp.manualLoans[dIdx] !== undefined);
@@ -1055,10 +1150,15 @@ function recalcModel(pIdx) {
         }
 
         if (isFixed) {
-            inst = currentTenure - s.advEmi; if(inst < 1) inst = 1; let insTotal = (parseFloat(inp.gtl)||0) + (parseFloat(inp.rfc)||0) + (parseFloat(inp.exw)||0); let roiInEmi = loan * roiRate; emi = s.fixedEmi + (insTotal / inst) + roiInEmi;
-            let roiInDp = loan * roiRateDP; dpExact = effectivePrice - loan + (s.fixedEmi * s.advEmi) + (loan * dbdRate) + dynamicPf + totalFees + roiInDp;
+            inst = currentTenure - s.advEmi; if(inst < 1) inst = 1; 
+            let insTotal = (parseFloat(inp.gtl)||0) + (parseFloat(inp.rfc)||0) + (parseFloat(inp.exw)||0); 
+            let roiInEmi = loan * roiRate; 
+            emi = s.fixedEmi + (insTotal / inst) + roiInEmi;
+            let roiInDp = loan * roiRateDP; 
+            dpExact = effectivePrice - loan + (s.fixedEmi * s.advEmi) + (loan * dbdRate) + dynamicPf + totalFees + roiInDp;
         } else {
-            inst = s.tenure - s.advEmi; if(inst < 1) inst = 1; let insTotal = (parseFloat(inp.gtl)||0)+(parseFloat(inp.rfc)||0)+(parseFloat(inp.exw)||0); 
+            inst = s.tenure - s.advEmi; if(inst < 1) inst = 1; 
+            let insTotal = (parseFloat(inp.gtl)||0)+(parseFloat(inp.rfc)||0)+(parseFloat(inp.exw)||0); 
             let baseEmi = loan / s.tenure;
             if (baseEmi > 0 && baseEmi < 900) baseEmi = 900; 
 
@@ -1070,10 +1170,18 @@ function recalcModel(pIdx) {
                 if (baseEmi > 0 && baseEmi < 900) baseEmi = 900; 
                 roiInEmi = loan * roiRate; emi = baseEmi + (insTotal / inst) + roiInEmi; 
             } 
-            let roiInDp = loan * roiRateDP; dpExact = effectivePrice - loan + ((loan/d.tenure) * adv) + (loan * dbdRate) + dynamicPf + totalFees + roiInDp;
+            let roiInDp = loan * roiRateDP; 
+            dpExact = effectivePrice - loan + ((loan / s.tenure) * s.advEmi) + (loan * dbdRate) + dynamicPf + totalFees + roiInDp;
         }
 
-        if(dpExact > 0) dpRounded = Math.ceil(dpExact / 10) * 10; else dpRounded = dpExact; let extraVal = effectivePrice > 0 ? (((emi * inst) + dpRounded) - effectivePrice) : 0; let dbdAmt = loan * dbdRate; let roiAmt = (loan * roiRateDP) + (loan * roiRate * inst); let curLTV = currentTenure > 0 ? ((currentTenure - s.advEmi) / currentTenure) * 100 : 0; let marginMoney = parseFloat(inp.margin) || 0; let roundupAdj = (dpRounded > dpExact) ? (dpRounded - dpExact) : 0; let netDisb = effectivePrice > 0 ? (effectivePrice - dpRounded - marginMoney - roundupAdj) : 0;
+        if(dpExact > 0) dpRounded = Math.ceil(dpExact / 10) * 10; else dpRounded = dpExact; 
+        let extraVal = effectivePrice > 0 ? (((emi * inst) + dpRounded) - effectivePrice) : 0; 
+        let dbdAmt = loan * dbdRate; 
+        let roiAmt = (loan * roiRateDP) + (loan * roiRate * inst); 
+        let curLTV = currentTenure > 0 ? ((currentTenure - s.advEmi) / currentTenure) * 100 : 0; 
+        let marginMoney = parseFloat(inp.margin) || 0; 
+        let roundupAdj = (dpRounded > dpExact) ? (dpRounded - dpExact) : 0; 
+        let netDisb = effectivePrice > 0 ? (effectivePrice - dpRounded - marginMoney - roundupAdj) : 0;
 
         let isInv50Breach = effectivePrice > 0 && (loan < minAllowedLoanByInvoice);
 
@@ -2182,7 +2290,6 @@ function removeDictBasketProduct(idx) {
     renderDictBasketChips();
 }
 
-// 🖼️ DICTIONARY QUOTE IMAGE GENERATOR (Exact 5 Columns: T/A, DP, EMI, MONTHS, PER DAY)[span_0](start_span)[span_0](end_span)
 function exportDictCustomerQuoteImage() {
     let cust = (activeCustomerIndex !== -1 && customerQueue[activeCustomerIndex]) ? customerQueue[activeCustomerIndex] : null;
     let custName = cust ? cust.name : "Valued Customer";
