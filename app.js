@@ -419,6 +419,7 @@ async function fetchFromMasterStream(forceSync = false) {
         if (fallbackDb && fallbackDb.length > 0) {
             db_records = fallbackDb;
             dealer_records = fallbackDealers || [];
+            if (activeCustomerIndex !== -1) { loadCurrentProducts(); renderMatrix(); }
             if(statusBadge) {
                 statusBadge.innerHTML = '⚡ OFFLINE MODE (CACHE ACTIVE)';
                 statusBadge.style.color = 'var(--success)';
@@ -442,6 +443,27 @@ async function fetchFromMasterStream(forceSync = false) {
         }
     }
 }
+
+// ड्रॉपडाउन बाहेर क्लिक केल्यावर आपोआप बंद होण्यासाठी
+document.addEventListener('click', function(e) {
+    let gSearch = document.getElementById('globalModelSearch');
+    let gDd = document.getElementById('globalModelDropdown');
+    if (gDd && gSearch && !gSearch.contains(e.target) && !gDd.contains(e.target)) {
+        gDd.style.display = 'none';
+    }
+
+    let mSearch = document.getElementById('modalMatrixSearch');
+    let mDd = document.getElementById('modalMatrixSearchDropdown');
+    if (mDd && mSearch && !mSearch.contains(e.target) && !mDd.contains(e.target)) {
+        mDd.style.display = 'none';
+    }
+
+    let cSearch = document.getElementById('dictCustSearch');
+    let cDd = document.getElementById('dictCustSuggestionsList');
+    if (cDd && cSearch && !cSearch.contains(e.target) && !cDd.contains(e.target)) {
+        cDd.style.display = 'none';
+    }
+});
 
 window.onload = async function() {
     if(loggedInUserEmail) { 
@@ -497,7 +519,7 @@ window.onload = async function() {
     }
 };
 
-/* 🚀 FIX BUG 1: Missing doSearch Function for Add Product Modal Search */
+/* 🔍 UNIVERSAL MODEL SEARCH FOR ADD PRODUCT MODAL */
 function doSearch(inputId, dropdownId) {
     let inp = document.getElementById(inputId);
     let dd = document.getElementById(dropdownId);
@@ -509,15 +531,26 @@ function doSearch(inputId, dropdownId) {
         return;
     }
 
-    let validRecords = db_records.filter(r => r.model !== SPECIAL_MODEL);
+    let allRecords = [
+        ...(Array.isArray(db_records) ? db_records : []),
+        ...(Array.isArray(customStagingSchemes) ? customStagingSchemes : [])
+    ];
+
+    let validRecords = allRecords.filter(r => r && r.model && r.model !== SPECIAL_MODEL);
+    if (validRecords.length === 0) {
+        dd.innerHTML = `<div style="padding:10px; color:var(--danger); font-weight:bold; text-align:center;">Master Data अजून लोड झाला नाही, कृपया थोडा वेळ थांबा.</div>`;
+        dd.style.display = 'block';
+        return;
+    }
+
     let matches = validRecords.filter(r => {
-        let m = r.model || "";
-        let b = r.brand || "";
-        let c = r.category || "";
+        let m = String(r.model || "").toUpperCase();
+        let b = String(r.brand || "").toUpperCase();
+        let c = String(r.category || "").toUpperCase();
         return m.includes(q) || b.includes(q) || c.includes(q);
     }).map(r => r.model);
 
-    matches = [...new Set(matches)].slice(0, 25);
+    matches = [...new Set(matches)].slice(0, 30);
 
     if (matches.length === 0) {
         dd.innerHTML = `<div style="padding:10px; color:#d35400; font-weight:bold; text-align:center;">कोणतेही मॉडेल सापडले नाही.</div>`;
@@ -529,15 +562,16 @@ function doSearch(inputId, dropdownId) {
         let rec = validRecords.find(x => x.model === m);
         let catTag = rec && rec.category ? `<span style="font-size:10px; background:#e0e0e0; color:#333; padding:2px 6px; border-radius:4px; float:right;">📁 ${rec.category}</span>` : '';
         let brandTag = rec && rec.brand ? `<span style="font-size:10px; color:#0984e3; font-weight:900; margin-right:5px;">[${rec.brand}]</span>` : '';
-        return `<div style="padding:10px; border-bottom:1px solid #eee; cursor:pointer; font-weight:800; color:var(--dark); display:flex; justify-content:space-between; align-items:center;" onmouseover="this.style.background='#e3f2fd'" onmouseout="this.style.background='#fff'" onclick="selectModel('${m.replace(/'/g, "\\'")}')">
-            <span style="flex:1;">${brandTag}📱 ${m}</span> ${catTag}
+        let safeModel = String(m).replace(/'/g, "\\'");
+        return `<div style="padding:10px; border-bottom:1px solid #eee; cursor:pointer; font-weight:800; color:var(--dark); display:flex; justify-content:space-between; align-items:center;" onmouseover="this.style.background='#e3f2fd'" onmouseout="this.style.background='#fff'" onclick="selectModel('${safeModel}')">
+            <span style="flex:1; font-size:12px;">${brandTag}📱 ${m}</span> ${catTag}
         </div>`;
     }).join('');
 
     dd.style.display = 'block';
 }
 
-function openFlyerGenModal() { document.getElementById('fgSalesName').value = ''; document.getElementById('fgSalesMobile').value = ''; document.getElementById('fgDealerSearch').value = ''; document.getElementById('fgDealerList').innerHTML = ''; tempFgDealerId = ""; tempFgDealerName = ""; tempFgBitly = ""; clearFgModel(); document.getElementById('fgOfferType').value = 'NONE'; toggleFgOfferInput(); document.getElementById('fgSelectedDealerBox').style.display = 'none'; document.getElementById('flyerGeneratedLinkBox').style.display = 'none'; document.getElementById('flyerGenModal').style.display = 'flex'; }
+function openFlyerGenModal() { document.getElementById('fgSalesName').value = localStorage.getItem('portal_sales_name') || ''; document.getElementById('fgSalesMobile').value = localStorage.getItem('portal_sales_mobile') || ''; document.getElementById('fgDealerSearch').value = ''; document.getElementById('fgDealerList').innerHTML = ''; tempFgDealerId = ""; tempFgDealerName = ""; tempFgBitly = ""; clearFgModel(); document.getElementById('fgOfferType').value = 'NONE'; toggleFgOfferInput(); document.getElementById('fgSelectedDealerBox').style.display = 'none'; document.getElementById('flyerGeneratedLinkBox').style.display = 'none'; document.getElementById('flyerGenModal').style.display = 'flex'; }
 function toggleFgOfferInput() { let type = document.getElementById('fgOfferType').value; let box = document.getElementById('fgOfferValBox'); let label = document.getElementById('fgOfferValLabel'); let inp = document.getElementById('fgOfferValue'); if(type === "NONE") { box.style.display = 'none'; inp.value = ''; } else if(type === "FREEBIE") { box.style.display = 'block'; label.innerText = "ENTER GIFT NAME"; inp.placeholder = "E.g. Earbuds"; } else { box.style.display = 'block'; label.innerText = "ENTER UPTO AMOUNT (₹)"; inp.placeholder = "E.g. 2500"; } }
 function searchFgDealer() { let q = document.getElementById('fgDealerSearch').value.toLowerCase().trim(); let list = document.getElementById('fgDealerList'); if(!q) { list.innerHTML = ''; return; } let matches = dealer_records.map(d => parseDealerObj(d)).filter(p => p.name.toLowerCase().includes(q) || p.code.toLowerCase().includes(q) || p.city.toLowerCase().includes(q)).slice(0, 10); list.innerHTML = matches.map(p => { let displayStr = `${p.name}${p.city ? ' - ' + p.city : ''} (${p.code})`; return `<div onclick="selectFgDealer('${p.code}', '${p.name.replace(/'/g, "\\'")}', '${p.city.replace(/'/g, "\\'")}', '${encodeURIComponent(p.bitly||'')}')" style="padding:8px; border-bottom:1px solid #eee; cursor:pointer; background:#fff; font-size:12px; font-weight:bold; color:var(--bajaj-blue);">🏪 ${displayStr}</div>`; }).join(''); }
 function selectFgDealer(code, name, city, bitlyEnc) { tempFgDealerId = code; tempFgDealerName = `${name}${city ? ' - ' + city : ''}`; tempFgBitly = decodeURIComponent(bitlyEnc); document.getElementById('fgDealerSearch').value = ''; document.getElementById('fgDealerList').innerHTML = ''; document.getElementById('fgSelectedDealerBox').innerHTML = `✅ ${tempFgDealerName} [Code: ${code}] <span onclick="clearFgDealer()" style="color:red; cursor:pointer; float:right;">✖</span>`; document.getElementById('fgSelectedDealerBox').style.display = 'block'; }
@@ -547,13 +581,17 @@ function selectFgModel(name) { tempFgModel = name; document.getElementById('fgMo
 function clearFgModel() { tempFgModel = ""; document.getElementById('fgSelectedModelBox').style.display = 'none'; }
 
 function generateFlyer() {
-    let sName = document.getElementById('fgSalesName').value.trim(); let sMob = document.getElementById('fgSalesMobile').value.trim(); let oType = document.getElementById('fgOfferType').value; let oVal = document.getElementById('fgOfferValue').value.trim();
-    if(!sName || !sMob || sMob.length !== 10) { showToast("नाव आणि १० अंकी मोबाईल नंबर भरा!", "error"); return; }
+    let sName = document.getElementById('fgSalesName').value.trim(); 
+    let sMob = document.getElementById('fgSalesMobile').value.trim(); 
+    let oType = document.getElementById('fgOfferType').value; 
+    let oVal = document.getElementById('fgOfferValue').value.trim();
+    if(!sName) { showToast("कृपया Salesman चे नाव भरा!", "error"); return; }
     if(!tempFgDealerId) { showToast("डीलर निवडणे आवश्यक आहे!", "error"); return; }
     if(!tempFgBitly) { showToast("या डीलरची लिंक उपलब्ध नाही!", "error"); return; }
     if(oType !== "NONE" && !oVal) { showToast("ऑफरचे नाव किंवा रक्कम भरा!", "error"); return; }
+    localStorage.setItem('portal_sales_name', sName);
     let baseUrl = window.location.href.split('?')[0]; baseUrl = baseUrl.replace(/index\.html?$/i, ''); if(!baseUrl.endsWith('/')) baseUrl += '/';
-    let url = `${baseUrl}flyer.html?sn=${encodeURIComponent(sName)}&sm=${sMob}&did=${encodeURIComponent(tempFgDealerId)}&dn=${encodeURIComponent(tempFgDealerName)}&bl=${encodeURIComponent(tempFgBitly)}`;
+    let url = `${baseUrl}flyer.html?sn=${encodeURIComponent(sName)}&sm=${encodeURIComponent(sMob)}&did=${encodeURIComponent(tempFgDealerId)}&dn=${encodeURIComponent(tempFgDealerName)}&bl=${encodeURIComponent(tempFgBitly)}`;
     if(oType !== "NONE") url += `&ot=${encodeURIComponent(oType)}&ov=${encodeURIComponent(oVal)}`; if(tempFgModel) url += `&fm=${encodeURIComponent(tempFgModel)}`;
     document.getElementById('flyerGeneratedLinkBox').style.display = 'block'; document.getElementById('fgGeneratedLinkText').value = url;
 }
@@ -564,15 +602,16 @@ function doGlobalSearch() {
     let q = document.getElementById('globalModelSearch').value.toUpperCase().trim(); 
     let dd = document.getElementById('globalModelDropdown'); 
     if(!q) { dd.style.display='none'; return; } 
-    let validRecords = db_records.filter(r => r.model !== SPECIAL_MODEL); 
-    let matches = validRecords.filter(r => { let m = r.model || ""; let b = r.brand || ""; let c = r.category || ""; return m.includes(q) || b.includes(q) || c.includes(q); }).map(r => r.model); 
+    let allRecords = [...db_records, ...customStagingSchemes];
+    let validRecords = allRecords.filter(r => r && r.model && r.model !== SPECIAL_MODEL); 
+    let matches = validRecords.filter(r => { let m = String(r.model || "").toUpperCase(); let b = String(r.brand || "").toUpperCase(); let c = String(r.category || "").toUpperCase(); return m.includes(q) || b.includes(q) || c.includes(q); }).map(r => r.model); 
     matches = [...new Set(matches)].slice(0, 30); 
     if (matches.length === 0) { dd.innerHTML = `<div style="padding:10px; color:#d35400; font-weight:bold; text-align:center;">कोणतेही मॉडेल सापडले नाही.</div>`; dd.style.display = 'block'; return; } 
     dd.innerHTML = matches.map(m => { 
         let rec = validRecords.find(x => x.model === m); 
         let catTag = rec && rec.category ? `<span style="font-size:10px; background:#e0e0e0; color:#333; padding:2px 6px; border-radius:4px; float:right;">📁 ${rec.category}</span>` : ''; 
         let brandTag = rec && rec.brand ? `<span style="font-size:10px; color:#0984e3; font-weight:900; margin-right:5px;">[${rec.brand}]</span>` : ''; 
-        return `<div style="padding:10px; border-bottom:1px solid #eee; cursor:pointer; font-weight:800; color:var(--dark); display:flex; justify-content:space-between; align-items:center;" onmouseover="this.style.background='#e3f2fd'" onmouseout="this.style.background='#fff'" onclick="viewGlobalModel('${m.replace(/'/g, "\\'")}')"> <span style="flex:1;">${brandTag}📱 ${m}</span> ${catTag} </div>`; 
+        return `<div style="padding:10px; border-bottom:1px solid #eee; cursor:pointer; font-weight:800; color:var(--dark); display:flex; justify-content:space-between; align-items:center;" onmouseover="this.style.background='#e3f2fd'" onmouseout="this.style.background='#fff'" onclick="viewGlobalModel('${String(m).replace(/'/g, "\\'")}')"> <span style="flex:1;">${brandTag}📱 ${m}</span> ${catTag} </div>`; 
     }).join(''); 
     dd.style.display = 'block'; 
 }
@@ -604,13 +643,17 @@ function copySingleScheme(tenure, advEmi, loan, dp, emi, fixedEmi, dbd, roi, pf,
         textToCopy += `*PF:* ₹${pf}`;
     }
 
+    function showCopied() {
+        let orig = btn.innerText;
+        btn.innerText = "COPIED!";
+        btn.style.background = "var(--success)";
+        setTimeout(() => { btn.innerText = orig; btn.style.background = "var(--primary)"; }, 2000);
+    }
+
     if (navigator.clipboard && window.isSecureContext) {
-        navigator.clipboard.writeText(textToCopy).then(() => {
-            let orig = btn.innerText;
-            btn.innerText = "COPIED!";
-            btn.style.background = "var(--success)";
-            setTimeout(() => { btn.innerText = orig; btn.style.background = "var(--primary)"; }, 2000);
-        });
+        navigator.clipboard.writeText(textToCopy).then(showCopied).catch(() => fallbackCopy(textToCopy, showCopied));
+    } else {
+        fallbackCopy(textToCopy, showCopied);
     }
 }
 
@@ -672,6 +715,7 @@ function calculateFastData() {
         dpRounded = Math.ceil(dpExact / 10) * 10; 
     } 
     else { 
+        if (tenure <= 0) { document.getElementById('fcResult').style.display = 'none'; return; }
         if (target > 0 && inv > 0) { 
             let advRate = adv / tenure; let numerator = target - inv - pf - totalFees; let denominator = advRate + dbdRate + roiRateDP - 1; 
             let solvedLoan = numerator / denominator; loan = Math.min(inv, Math.max(minFastLoan, Math.floor(solvedLoan))); 
@@ -709,7 +753,7 @@ function checkDuplicateMobile(val) {
     if (cleanVal.length === 10) {
         let existingCust = customerQueue.find(c => c.mobile && c.mobile === cleanVal);
         if (existingCust) {
-            warningEl.innerHTML = `⚠️️ नंबर आधीच Queue मध्ये <b>'${existingCust.name}'</b> नावाने आहे!`;
+            warningEl.innerHTML = `⚠️ नंबर आधीच Queue मध्ये <b>'${existingCust.name}'</b> नावाने आहे!`;
             warningEl.style.display = 'block';
             addBtn.disabled = true;
             return;
@@ -767,8 +811,20 @@ function updateUniversalActionButtons() {
 function uniCopy() { if(selectedQueueIndex !== -1) copyCustomerDetails(selectedQueueIndex, document.getElementById('uniCopyBtn')); }
 function uniSelect() { if(selectedQueueIndex !== -1) setActiveCustomer(selectedQueueIndex); }
 function uniEdit() { if(selectedQueueIndex === -1) return; let c = customerQueue[selectedQueueIndex]; document.getElementById('ecName').value = c.name; document.getElementById('ecMobile').value = c.mobile || ''; document.getElementById('ecLimit').value = c.limit; document.getElementById('ecLtv').value = c.ltv || 100; document.getElementById('ecType').value = c.type; document.getElementById('ecCap').value = c.cap || ''; document.getElementById('editCustomerModal').style.display='flex'; }
-function uniInvite() { if(selectedQueueIndex === -1) return; let c = customerQueue[selectedQueueIndex]; if(!c.mobile || c.mobile.length < 10) { showToast("मोबाईल नंबर उपलब्ध नाही!", "error"); return; } document.getElementById('invSenderName').value = localStorage.getItem('portal_sales_name') || ""; document.getElementById('invSenderMobile').value = localStorage.getItem('portal_sales_mobile') || ""; document.getElementById('inviteModal').style.display = 'flex'; }
-function sendWhatsAppInvite() { let sName = document.getElementById('invSenderName').value.trim(); let sMobile = document.getElementById('invSenderMobile').value.trim(); if(!sName || !sMobile) { showToast("नाव आणि नंबर भरा!", "error"); return; } localStorage.setItem('portal_sales_name', sName); localStorage.setItem('portal_sales_mobile', sMobile); let c = customerQueue[selectedQueueIndex]; let msg = `Namaskar ${c.name} sir/madam! 🎉\n\nAapki Bajaj Finance ki *₹${c.limit}* ki limit approve ho gayi hai!\n\n👤 *${sName}*\n📞 ${sMobile}`; let encMsg = encodeURIComponent(msg); window.open(`https://wa.me/91${c.mobile}?text=${encMsg}`, '_blank'); document.getElementById('inviteModal').style.display = 'none'; }
+function uniInvite() { if(selectedQueueIndex === -1) return; document.getElementById('invSenderName').value = localStorage.getItem('portal_sales_name') || ""; document.getElementById('invSenderMobile').value = localStorage.getItem('portal_sales_mobile') || ""; document.getElementById('inviteModal').style.display = 'flex'; }
+function sendWhatsAppInvite() { 
+    let sName = document.getElementById('invSenderName').value.trim(); 
+    let sMobile = document.getElementById('invSenderMobile').value.trim(); 
+    if(!sName) { showToast("कृपया तुमचे नाव भरा!", "error"); return; } 
+    localStorage.setItem('portal_sales_name', sName); 
+    if(sMobile) localStorage.setItem('portal_sales_mobile', sMobile); 
+    let c = customerQueue[selectedQueueIndex]; 
+    let msg = `Namaskar ${c.name} sir/madam! 🎉\n\nAapki Bajaj Finance ki *₹${c.limit}* ki limit approve ho gayi hai!\n\n👤 *${sName}*${sMobile ? `\n📞 ${sMobile}` : ''}`; 
+    let encMsg = encodeURIComponent(msg); 
+    let url = (c.mobile && c.mobile.length === 10) ? `https://wa.me/91${c.mobile}?text=${encMsg}` : `https://api.whatsapp.com/send?text=${encMsg}`;
+    window.open(url, '_blank'); 
+    document.getElementById('inviteModal').style.display = 'none'; 
+}
 function closeCustomerEdit() { document.getElementById('editCustomerModal').style.display='none'; }
 
 async function saveCustomerEdit() { if(selectedQueueIndex === -1) return; let c = customerQueue[selectedQueueIndex]; c.name = document.getElementById('ecName').value || 'Customer'; c.mobile = document.getElementById('ecMobile').value; c.limit = parseFloat(document.getElementById('ecLimit').value) || 0; c.ltv = parseFloat(document.getElementById('ecLtv').value) || 100; c.type = document.getElementById('ecType').value; let cap = parseFloat(document.getElementById('ecCap').value); c.cap = cap > 0 ? cap : ''; await saveQueueToLocal(); renderCustomerQueue(); if(activeCustomerIndex === selectedQueueIndex) { updateMatrixTopCard(); current_products.forEach((_, idx) => recalcModel(idx)); } closeCustomerEdit(); }
@@ -885,14 +941,37 @@ function mapData(row, type) {
 
 function goHome() { document.getElementById('finalEligibleArea').style.display='none'; document.getElementById('catSelectionModal').style.display='none'; document.getElementById('unifiedHome').style.display='block'; activeCustomerIndex = -1; selectedQueueIndex = -1; renderCustomerQueue(); updateUniversalActionButtons(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
 function closeImageViewer() { document.getElementById('imageViewerModal').style.display='none'; }
-function openAddProductModal() { if (!isLimitValid()) return; document.getElementById('modalMatrixSearch').value = ''; document.getElementById('modalMatrixSearchDropdown').style.display = 'none'; document.getElementById('addProductModal').style.display = 'flex'; }
+
+function openAddProductModal() { 
+    if (!isLimitValid()) return; 
+    let sInp = document.getElementById('modalMatrixSearch');
+    let dd = document.getElementById('modalMatrixSearchDropdown');
+    if(sInp) sInp.value = ''; 
+    if(dd) dd.style.display = 'none'; 
+    document.getElementById('addProductModal').style.display = 'flex'; 
+    setTimeout(() => { if(sInp) sInp.focus(); }, 100);
+}
+
 function openSchemeOnlyModal(pIdx) { if (!isLimitValid()) return; document.getElementById('modalTitle').innerText = "Add Custom Scheme"; document.getElementById('modelNameInputArea').style.display = 'none'; document.getElementById('targetPIdx').value = pIdx; document.getElementById('manualModal').style.display='flex'; }
 function closeManualModal() { document.getElementById('manualModal').style.display='none'; }
 function openEditSchemeModal(pIdx, dIdx) { let scheme = current_products[pIdx].schemes[dIdx]; document.getElementById('editPIdx').value = pIdx; document.getElementById('editDIdx').value = dIdx; document.getElementById('editTen').value = scheme.tenure || 0; document.getElementById('editAdv').value = scheme.advEmi || 0; document.getElementById('editDbd').value = scheme.dbd || 0; document.getElementById('editPf').value = scheme.pf || 0; document.getElementById('editRoi').value = scheme.roi || 0; document.getElementById('editFixed').value = scheme.fixedEmi || 0; document.getElementById('editSchemeModal').style.display = 'flex'; }
 function closeEditSchemeModal() { document.getElementById('editSchemeModal').style.display = 'none'; }
 function saveSchemeEdit() { let pIdx = parseInt(document.getElementById('editPIdx').value); let dIdx = parseInt(document.getElementById('editDIdx').value); let scheme = current_products[pIdx].schemes[dIdx]; scheme.tenure = parseInt(document.getElementById('editTen').value) || 0; scheme.advEmi = parseInt(document.getElementById('editAdv').value) || 0; scheme.dbd = parseFloat(document.getElementById('editDbd').value) || 0; scheme.pf = parseInt(document.getElementById('editPf').value) || 0; scheme.roi = parseFloat(document.getElementById('editRoi').value) || 0; scheme.fixedEmi = parseFloat(document.getElementById('editFixed').value) || 0; closeEditSchemeModal(); recalcModel(pIdx); }
 
-function selectModel(name) { if (!isLimitValid()) return; let raw = db_records.filter(r => r.model === name); let baseMrp = raw.find(s => s.mrp > 0)?.mrp || ""; let cat = raw[0]?.category || ""; tempPendingProduct = { name: name, isNT: false, category: cat }; currentModalCategory = cat; document.getElementById('modalMatrixSearchDropdown').style.display = 'none'; document.getElementById('modalMatrixSearch').value = ''; document.getElementById('addProductModal').style.display = 'none'; showComponentsModal(baseMrp); }
+function selectModel(name) { 
+    if (!isLimitValid()) return; 
+    let allRecords = [...db_records, ...customStagingSchemes];
+    let raw = allRecords.filter(r => r.model === name); 
+    let baseMrp = raw.find(s => s.mrp > 0)?.mrp || ""; 
+    let cat = raw[0]?.category || "OTHER"; 
+    tempPendingProduct = { name: name, isNT: false, category: cat }; 
+    currentModalCategory = cat; 
+    document.getElementById('modalMatrixSearchDropdown').style.display = 'none'; 
+    document.getElementById('modalMatrixSearch').value = ''; 
+    document.getElementById('addProductModal').style.display = 'none'; 
+    showComponentsModal(baseMrp); 
+}
+
 function quickNonTieup() { if (!isLimitValid()) return; if(db_records.length === 0) { showToast("Master डेटा उपलब्ध नाही!", "error"); return; } document.getElementById('addProductModal').style.display = 'none'; let tieup = db_records.filter(r => r.model === SPECIAL_MODEL); let cats = [...new Set(tieup.map(r => r.category))].sort(); document.getElementById('categoryGrid').innerHTML = cats.map(c => { let label = (c === 'PHONE(WEB-MOBILE)') ? 'PHONE, TABLET, SMART WATCH' : c; return `<div style="background:var(--indigo);color:white;padding:12px;border-radius:4px;cursor:pointer;font-weight:900;text-align:center;" onclick="selectCategory('${c}')">${label}</div>`; }).join(''); document.getElementById('catSelectionModal').style.display = 'flex'; }
 function selectCategory(catName) { 
     document.getElementById('catSelectionModal').style.display = 'none'; 
@@ -931,15 +1010,19 @@ function showComponentsModal(baseMrp = "") {
 async function proceedToMatrixFromComponents() { let idx = activeCustomerIndex; if(idx === -1) return; if(!customerQueue[idx].components) customerQueue[idx].components = {}; customerQueue[idx].components.mrp = parseFloat(document.getElementById('compMrp').value) || 0; customerQueue[idx].components.inv = parseFloat(document.getElementById('compInv').value) || 0; customerQueue[idx].components.cap = parseFloat(document.getElementById('compCap').value) || 0; customerQueue[idx].components.target = parseFloat(document.getElementById('compTarget').value) || 0; customerQueue[idx].components.gtl = parseFloat(document.getElementById('compGtl').value) || 0; let isMobileCat = isMobileDeviceCat(currentModalCategory); customerQueue[idx].components.rfc = isMobileCat ? (parseFloat(document.getElementById('compRfc').value) || 0) : 0; customerQueue[idx].components.exw = isMobileCat ? 0 : (parseFloat(document.getElementById('compExw').value) || 0); customerQueue[idx].components.margin = parseFloat(document.getElementById('compMargin').value) || 0; customerQueue[idx].components.dealer = parseFloat(document.getElementById('compDealer').value) || 0; let cCap = customerQueue[idx].components.cap; if (cCap > 0 || customerQueue[idx].cap > 0) { customerQueue[idx].cap = cCap > 0 ? cCap : ""; renderCustomerQueue(); updateMatrixTopCard(); } await saveQueueToLocal(); document.getElementById('componentsModal').style.display = 'none'; if (tempPendingProduct) finalizeProductAddition(); }
 
 async function finalizeProductAddition() {
-    let raw = tempPendingProduct.isNT ? db_records.filter(r => r.model === SPECIAL_MODEL && r.category === tempPendingProduct.category) : db_records.filter(r => r.model === tempPendingProduct.name); let ltvLimit = customerQueue[activeCustomerIndex]?.ltv || 100; let matrixEligible = raw.filter(s => s.fixedEmi > 0 || (s.tenure > 0 && ((s.tenure-s.advEmi)/s.tenure)*100 <= ltvLimit)); let uniqueSchemes = []; let seenSchemes = new Set();
-    matrixEligible.forEach(s => { let schemeKey = `${s.tenure}_${s.advEmi}_${s.fixedEmi}_${s.minLoan}_${s.maxLoan}`; if (!seenSchemes.has(schemeKey)) { seenSchemes.add(schemeKey); s.inactive = false; uniqueSchemes.push(s); } });
+    let allRecords = [...db_records, ...customStagingSchemes];
+    let raw = tempPendingProduct.isNT ? allRecords.filter(r => r.model === SPECIAL_MODEL && r.category === tempPendingProduct.category) : allRecords.filter(r => r.model === tempPendingProduct.name); 
+    let ltvLimit = customerQueue[activeCustomerIndex]?.ltv || 100; 
+    let matrixEligible = raw.filter(s => s.fixedEmi > 0 || (s.tenure > 0 && ((s.tenure-s.advEmi)/s.tenure)*100 <= ltvLimit)); 
+    let uniqueSchemes = []; let seenSchemes = new Set();
+    matrixEligible.forEach(s => { let schemeKey = `${s.tenure}_${s.advEmi}_${s.fixedEmi}_${s.minLoan}_${s.maxLoan}`; if (!seenSchemes.has(schemeKey)) { seenSchemes.add(schemeKey); s.inactive = false; uniqueSchemes.push({...s}); } });
     let comp = customerQueue[activeCustomerIndex].components || {}; let finalMrp = comp.mrp || ""; let finalInv = comp.inv || ""; let surch = (finalInv > finalMrp && finalMrp > 0) ? finalInv - finalMrp : 0;
     current_products.push({ name: tempPendingProduct.name, isNonTieup: tempPendingProduct.isNT, schemes: uniqueSchemes, category: tempPendingProduct.category, inputs: { mrp: finalMrp, inv: finalInv, cap: comp.cap || (customerQueue[activeCustomerIndex]?.cap || ""), target: comp.target || "", gtl: comp.gtl || 0, rfc: comp.rfc || 0, exw: comp.exw || 0, margin: comp.margin || "", dealer: comp.dealer || "", surch: surch, manualLoans: {} }, isManual: false }); sortConfigs.push({ key: 'default_ltv', dir: 'desc' }); customerQueue[activeCustomerIndex].products = current_products; customerQueue[activeCustomerIndex].sortConfigs = sortConfigs; tempPendingProduct = null; await saveQueueToLocal(); renderMatrix(); 
 }
 
 function updateFinalSwitcher() { let sw = document.getElementById('finalCustomerSwitcher'); if(!sw) return; sw.innerHTML = customerQueue.map((c, i) => `<option value="${i}" ${i === activeCustomerIndex ? 'selected' : ''}>👤 ${c.name} (₹${c.limit})</option>`).join(''); }
 async function switchCustomerFinal(idx) { activeCustomerIndex = parseInt(idx); await saveQueueToLocal(); goToFinalPage(); }
-function updateMatrixTopCard() { let c = customerQueue[activeCustomerIndex]; document.getElementById('infoName').innerText = c?.name || "-"; document.getElementById('infoMobile').innerText = c?.mobile || ""; document.getElementById('infoLimit').innerText = "₹" + (c?.limit || 0); document.getElementById('infoLtv').innerText = (c?.ltv || 100) + "%"; document.getElementById('infoCap').innerText = c?.cap ? "₹" + c.cap : "NONE"; document.getElementById('infoType').innerText = c?.type || 'NEW'; }
+function updateMatrixTopCard() { let c = customerQueue[activeCustomerIndex]; document.getElementById('infoName').innerText = c?.name || "-"; document.getElementById('infoMobile').innerText = c?.mobile || "-"; document.getElementById('infoLimit').innerText = "₹" + (c?.limit || 0); document.getElementById('infoLtv').innerText = (c?.ltv || 100) + "%"; document.getElementById('infoCap').innerText = c?.cap ? "₹" + c.cap : "NONE"; document.getElementById('infoType').innerText = c?.type || 'NEW'; }
 function loadCurrentProducts() { let c = customerQueue[activeCustomerIndex]; current_products = c?.products || []; sortConfigs = c?.sortConfigs || []; }
 
 function goToFinalPage() {
@@ -1066,7 +1149,6 @@ function updateVal(pIdx, field, val) {
     field === 'cap' ? current_products.forEach((_, idx) => recalcModel(idx)) : recalcModel(pIdx); customerQueue[activeCustomerIndex].products = current_products; saveQueueToLocal();
 }
 
-/* 🚀 FIX BUG 2: Reference errors (adv and d.tenure replaced by s.advEmi and s.tenure) */
 function recalcModel(pIdx) {
     if(!current_products[pIdx]) return; 
 
@@ -1951,7 +2033,8 @@ async function saveDictSingleScheme() {
 
 function dictInvoiceChanged() {
     let inv = parseFloat(document.getElementById('calcInvoice').value) || 0;
-    let rec = db_records.find(r => r.model === currentViewedModel);
+    let allRecords = [...db_records, ...customStagingSchemes];
+    let rec = allRecords.find(r => r.model === currentViewedModel);
     let isPhone = rec ? isMobileDeviceCat(rec.category) : false;
 
     let gtl = inv > 100000 ? 2398 : (inv > 50000 ? 1799 : (inv > 30000 ? 1499 : (inv > 10000 ? 1199 : (inv > 0 ? 699 : 0))));
@@ -1990,7 +2073,8 @@ function viewGlobalModel(name) {
     currentViewedModel = name;
     dictManualLoans = {};
 
-    let rec = db_records.find(r => r.model === name);
+    let allRecords = [...db_records, ...customStagingSchemes];
+    let rec = allRecords.find(r => r.model === name);
     if(rec && rec.mrp > 0) {
         document.getElementById('calcInvoice').value = rec.mrp;
     } else {
@@ -2223,7 +2307,8 @@ function addCurrentModelToDictBasket() {
     let cap = parseFloat(document.getElementById('calcCap').value) || "";
     let target = parseFloat(document.getElementById('calcTarget').value) || "";
 
-    let rec = db_records.find(r => r.model === currentViewedModel);
+    let allRecords = [...db_records, ...customStagingSchemes];
+    let rec = allRecords.find(r => r.model === currentViewedModel);
     let category = rec ? rec.category : "OTHER";
 
     let exist = dictBasketProducts.find(p => p.name === currentViewedModel);
@@ -2476,7 +2561,7 @@ async function transferDictModelToFinalQueue() {
         let seen = new Set();
         eligible.forEach(s => {
             let key = `${s.tenure}_${s.advEmi}_${s.fixedEmi}_${s.minLoan}_${s.maxLoan}`;
-            if(!seen.has(key)) { seen.add(key); s.inactive = false; uniqueSchemes.push(s); }
+            if(!seen.has(key)) { seen.add(key); s.inactive = false; uniqueSchemes.push({...s}); }
         });
 
         let pIndex = cust.products.findIndex(p => p.name === prod.name);
