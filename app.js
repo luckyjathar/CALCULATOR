@@ -177,20 +177,20 @@ async function fetchCloudDataOnLogin(userName, isSilent = false, forceCloudPrior
                     renderMatrix();
                 }
 
-                if (!isSilent) showToast("सर्व डिव्हाइसवरील डेटा यशस्वीरित्या सिंक झाला!", "success");
+                if (!isSilent) showToast("सर्व डिव्हाइसवरील डेटा सिंक झाला!", "success");
             } else {
                 await triggerSilentCloudSync();
             }
         } else {
             if (customerQueue.length > 0 || customStagingSchemes.length > 0 || recycleBin.length > 0) {
                 await triggerSilentCloudSync();
-                if (!isSilent) showToast("Local डेटा Cloud वर सिंक झाला!", "success");
+                if (!isSilent) showToast("लोकल डेटा क्लाऊडवर सिंक झाला!", "success");
             }
         }
         updateLoginUI(userName, true);
     } catch(e) {
         console.error("Cloud Fetch Error", e);
-        if (!isSilent) showToast("Cloud सिंक करताना अडचण आली. ऑफलाइन मोड सुरू राहील.", "warning");
+        if (!isSilent) showToast("क्लाऊड सिंक एरर ऑफलाइन मोड सुरू राहील", "warning");
         updateLoginUI(userName, true);
     } finally {
         isPullingFromCloud = false;
@@ -489,6 +489,7 @@ async function saveQueueToLocal(shouldCloudSync = true) {
 
 const CACHE_DURATION_MS = 12 * 60 * 60 * 1000; 
 
+/* ⚡ stale-while-revalidate: कॅश डेटा १ सेकंदात लोड करून बॅकग्राउंडमध्ये सिंक करतो */
 async function fetchFromMasterStream(forceSync = false) {
     let statusBadge = document.getElementById('gitStatusBadge'); 
     let globalLoader = document.getElementById('dataLoadingIndicator');
@@ -496,49 +497,39 @@ async function fetchFromMasterStream(forceSync = false) {
     let searchInput2 = document.getElementById('globalModelSearch');
     let savedName = localStorage.getItem('persistent_user_name') || "User";
 
-    if(globalLoader) {
+    let cachedDbRecords = await getFromDB('cached_db_records');
+    let cachedDealerRecords = await getFromDB('cached_dealer_records');
+    let cachedTime = await getFromDB('master_data_time') || 0;
+    let now = new Date().getTime();
+
+    if (cachedDbRecords && cachedDbRecords.length > 0) {
+        db_records = cachedDbRecords;
+        dealer_records = cachedDealerRecords || [];
+        if (activeCustomerIndex !== -1) { loadCurrentProducts(); renderMatrix(); }
+        if (searchInput1) { searchInput1.disabled = false; searchInput1.placeholder = "type model, brand or category..."; }
+        if (searchInput2) { searchInput2.disabled = false; searchInput2.placeholder = "type brand or model name..."; }
+        if (loggedInUserEmail) {
+            updateLoginUI(savedName, true);
+        } else if (statusBadge) {
+            statusBadge.innerHTML = '⚡ READY (CACHE ACTIVE)';
+            statusBadge.style.color = 'var(--success)';
+            statusBadge.style.background = 'rgba(39, 174, 96, 0.15)';
+        }
+    }
+
+    if (!forceSync && cachedDbRecords && cachedDbRecords.length > 0 && (now - cachedTime < CACHE_DURATION_MS)) {
+        if (globalLoader) globalLoader.style.display = 'none';
+        return;
+    }
+
+    if (globalLoader && (!cachedDbRecords || cachedDbRecords.length === 0)) {
         globalLoader.style.display = 'block';
         globalLoader.style.background = 'var(--warning)';
         globalLoader.style.color = '#000';
-        globalLoader.innerHTML = 'डेटा तपासत आहे...';
+        globalLoader.innerHTML = 'डेटा सिंक होत आहे...';
     }
 
     try {
-        let now = new Date().getTime();
-
-        if (!forceSync) {
-            let cachedTime = await getFromDB('master_data_time');
-            let cachedDbRecords = await getFromDB('cached_db_records');
-            let cachedDealerRecords = await getFromDB('cached_dealer_records');
-
-            if (cachedTime && cachedDbRecords && cachedDbRecords.length > 0 && (now - cachedTime < CACHE_DURATION_MS)) {
-                db_records = cachedDbRecords;
-                dealer_records = cachedDealerRecords || [];
-
-                if (activeCustomerIndex !== -1) { loadCurrentProducts(); renderMatrix(); }
-
-                if (loggedInUserEmail) {
-                    updateLoginUI(savedName, true);
-                } else if(statusBadge) { 
-                    statusBadge.innerHTML = '⚡ LOADED FROM CACHE (2X/DAY)'; 
-                    statusBadge.style.color = 'var(--success)'; 
-                    statusBadge.style.background = 'rgba(39, 174, 96, 0.15)'; 
-                }
-
-                if(globalLoader) globalLoader.style.display = 'none'; 
-                if(searchInput1) { searchInput1.disabled = false; searchInput1.placeholder = "type model, brand or category..."; }
-                if(searchInput2) { searchInput2.disabled = false; searchInput2.placeholder = "type brand or model name..."; }
-                return;
-            }
-        }
-
-        if(globalLoader) globalLoader.innerHTML = 'डाउनलोड सुरू आहे...';
-        if(statusBadge && !loggedInUserEmail) { 
-            statusBadge.innerHTML = '⬇️ LIVE DATA DOWNLOADING...'; 
-            statusBadge.style.color = '#f39c12'; 
-            statusBadge.style.background = 'rgba(243, 156, 18, 0.15)'; 
-        }
-
         const urlsToTry = [
             PRIMARY_EXCEL_URL + '?t=' + now,
             SECONDARY_EXCEL_URL + '?t=' + now,
@@ -561,7 +552,6 @@ async function fetchFromMasterStream(forceSync = false) {
         }
 
         let wb = XLSX.read(new Uint8Array(dataBuffer), { type: 'array' });
-
         tempSheet1Data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { raw: false, defval: "" }); 
         parsedSheet2Data = wb.SheetNames.length > 1 ? XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[1]], { raw: false, defval: "" }).map(r => mapData(r, SPECIAL_MODEL)).filter(x => x && x.model && x.model.trim() !== "") : [];
 
@@ -596,44 +586,23 @@ async function fetchFromMasterStream(forceSync = false) {
             statusBadge.style.background = 'rgba(39, 174, 96, 0.15)'; 
         }
 
-        if(globalLoader) {
+        if (globalLoader) {
             globalLoader.style.background = 'var(--success)';
             globalLoader.style.color = '#fff';
             globalLoader.innerHTML = 'डेटा तयार आहे!';
-            setTimeout(() => { globalLoader.style.display = 'none'; }, 2000); 
+            setTimeout(() => { globalLoader.style.display = 'none'; }, 1500);
         }
-        if(searchInput1) { searchInput1.disabled = false; searchInput1.placeholder = "type model, brand or category..."; }
-        if(searchInput2) { searchInput2.disabled = false; searchInput2.placeholder = "type brand or model name..."; }
+        if (searchInput1) { searchInput1.disabled = false; searchInput1.placeholder = "type model, brand or category..."; }
+        if (searchInput2) { searchInput2.disabled = false; searchInput2.placeholder = "type brand or model name..."; }
 
     } catch(err) { 
         console.error("Master Fetch Error:", err); 
-        let fallbackDb = await getFromDB('cached_db_records');
-        let fallbackDealers = await getFromDB('cached_dealer_records');
-        if (fallbackDb && fallbackDb.length > 0) {
-            db_records = fallbackDb;
-            dealer_records = fallbackDealers || [];
-            if (activeCustomerIndex !== -1) { loadCurrentProducts(); renderMatrix(); }
-            if (loggedInUserEmail) {
-                updateLoginUI(savedName, true);
-            } else if(statusBadge) {
-                statusBadge.innerHTML = '⚡ OFFLINE MODE (CACHE ACTIVE)';
-                statusBadge.style.color = 'var(--success)';
-                statusBadge.style.background = 'rgba(39, 174, 96, 0.15)';
-            }
-            if(globalLoader) globalLoader.style.display = 'none';
-            if(searchInput1) { searchInput1.disabled = false; searchInput1.placeholder = "type model, brand or category..."; }
-            if(searchInput2) { searchInput2.disabled = false; searchInput2.placeholder = "type brand or model name..."; }
-        } else {
-            db_records = []; dealer_records = [];
+        if (globalLoader) globalLoader.style.display = 'none';
+        if (!cachedDbRecords || cachedDbRecords.length === 0) {
             if(statusBadge) { 
                 statusBadge.innerHTML = '⚠️ NO MASTER DATA FOUND'; 
                 statusBadge.style.color = 'var(--danger)'; 
                 statusBadge.style.background = 'rgba(214, 48, 49, 0.15)'; 
-            } 
-            if(globalLoader) {
-                globalLoader.style.background = 'var(--danger)';
-                globalLoader.style.color = '#fff';
-                globalLoader.innerHTML = 'इंटरनेट कनेक्शन तपासा';
             }
         }
     }
@@ -1318,7 +1287,7 @@ async function switchCustomerFinal(idx) { activeCustomerIndex = parseInt(idx); a
 function updateMatrixTopCard() { let c = customerQueue[activeCustomerIndex]; document.getElementById('infoName').innerText = c?.name || "-"; document.getElementById('infoMobile').innerText = c?.mobile || "-"; document.getElementById('infoLimit').innerText = "₹" + (c?.limit || 0); document.getElementById('infoLtv').innerText = (c?.ltv || 100) + "%"; document.getElementById('infoCap').innerText = c?.cap ? "₹" + c.cap : "NONE"; document.getElementById('infoType').innerText = c?.type || 'NEW'; }
 function loadCurrentProducts() { let c = customerQueue[activeCustomerIndex]; current_products = c?.products || []; sortConfigs = c?.sortConfigs || []; }
 
-/* 🚀 goToFinalPage: फायनल स्क्रीन उघडते आणि मॉडेल सर्च विंडो समोर आणते */
+/* 🚀 goToFinalPage: फायनल स्क्रीन उघडून लगेच सर्च पॉपअप दाखवतो */
 function goToFinalPage() {
     if(activeCustomerIndex === -1 || !customerQueue[activeCustomerIndex]) return; 
     loadCurrentProducts(); 
@@ -2740,7 +2709,7 @@ function exportDictCustomerQuoteImage() {
     tableRows.forEach(tr => {
         let tds = tr.querySelectorAll('td');
         if(tds.length >= 7) {
-            let ta = tds[0].innerText.replace('★ MANUAL', '').trim();
+            let ta = tds[0].innerText.replace('★ manual', '').trim();
             let dp = tds[4].innerText.trim();
             let emi = tds[5].innerText.trim();
             let months = tds[6].innerText.trim();
