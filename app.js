@@ -1,4 +1,4 @@
-/* === TOAST NOTIFICATION FUNCTION === */
+/* === toast notification function === */
 let toastTimeout;
 function showToast(message, type = 'success') {
     const toast = document.getElementById("toastNotification");
@@ -9,7 +9,7 @@ function showToast(message, type = 'success') {
     toastTimeout = setTimeout(function(){ toast.className = "toast-notification"; }, 3000);
 }
 
-/* === SINGLE-VIEW NAVIGATION HELPER === */
+/* === single-view navigation helper === */
 const INLINE_VIEW_IDS = [
     'unifiedHome',
     'finalEligibleArea',
@@ -31,7 +31,7 @@ function showOnlyOneInlineView(targetId, displayType = 'flex') {
     }
 }
 
-/* === CUSTOM CONFIRM FUNCTION === */
+/* === custom confirm function === */
 function showCustomConfirm(msg, yesCallback, noCallback) {
     let confirmEl = document.getElementById('confirmMessage');
     if (!confirmEl) return;
@@ -48,7 +48,7 @@ function showCustomConfirm(msg, yesCallback, noCallback) {
     document.getElementById('customConfirmModal').style.display = 'flex';
 }
 
-/* === CUSTOM ALERT FUNCTION FOR COPY FALLBACK === */
+/* === custom alert function for copy fallback === */
 function showCustomAlert(msg, text = null) {
     let alertEl = document.getElementById('alertMessage');
     if (!alertEl) return;
@@ -59,7 +59,7 @@ function showCustomAlert(msg, text = null) {
 }
 
 /* ========================================================================= */
-/* ☁️ MULTI-DEVICE REALTIME CLOUD SYNC ENGINE (SAME EMAIL = SAME DATA)      */
+/* multi-device realtime cloud sync engine                                   */
 /* ========================================================================= */
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwWt4xbbEYWpSwtOSY1jqGJauljwPWojqfpxL4Bk2aRE8gJMpAzanAmNQ1OGNzKYHZfGg/exec";
 let loggedInUserEmail = localStorage.getItem('persistent_user_email') || "";
@@ -87,7 +87,6 @@ async function handleGoogleLogin(response) {
         localStorage.setItem('persistent_user_email', loggedInUserEmail);
         localStorage.setItem('persistent_user_name', userData.name);
         updateLoginUI(userData.name, false);
-        // नवीन लॉगिन झाल्यावर Cloud वरील डेटाला प्राधान्य देऊन सर्व डिव्हाइससारखा सेम डेटा लोड करा
         await fetchCloudDataOnLogin(userData.name, false, true);
     } catch(e) { console.error("Google Login Parsing Error:", e); }
     toggleSidebar();
@@ -117,7 +116,6 @@ async function fetchCloudDataOnLogin(userName, isSilent = false, forceCloudPrior
         isPullingFromCloud = true;
         if (!isSilent) updateLoginUI(userName, false);
 
-        // Cache-buster (?t=Date.now()) मुळे मोबाईल व पीसीवर नेहमी ताजा डेटा मिळतो
         let url = APPS_SCRIPT_URL + "?email=" + encodeURIComponent(loggedInUserEmail.trim().toLowerCase()) + "&t=" + Date.now();
         let res = await fetch(url, { cache: "no-store" });
         let cloudData = await res.json();
@@ -129,7 +127,6 @@ async function fetchCloudDataOnLogin(userName, isSilent = false, forceCloudPrior
             let cloudUpdatedAt = metaItem ? (parseInt(metaItem.updatedAt, 10) || 0) : 0;
             let localUpdatedAt = getLocalDataModifiedTime();
 
-            // जर Cloud वर नवीन डेटा असेल किंवा युझरने लॉगिन/मॅन्युअल सिंक केले असेल, तर Cloud चा डेटा सेम-टू-सेम लागू करा
             if (forceCloudPriority || localUpdatedAt === 0 || cloudUpdatedAt >= localUpdatedAt || customerQueue.length === 0) {
                 customerQueue = cloudCustomers.map(c => ({
                     ...c,
@@ -173,7 +170,6 @@ async function fetchCloudDataOnLogin(userName, isSilent = false, forceCloudPrior
                 updateUniversalActionButtons();
                 updateFinalSwitcher();
 
-                // जर फायनल स्क्रीन उघडी असेल तर तिथला डेटाही लगेच रिफ्रेश करा
                 let finalArea = document.getElementById('finalEligibleArea');
                 if (finalArea && finalArea.style.display !== 'none' && activeCustomerIndex !== -1 && customerQueue[activeCustomerIndex]) {
                     loadCurrentProducts();
@@ -183,11 +179,9 @@ async function fetchCloudDataOnLogin(userName, isSilent = false, forceCloudPrior
 
                 if (!isSilent) showToast("सर्व डिव्हाइसवरील डेटा यशस्वीरित्या सिंक झाला!", "success");
             } else {
-                // जर लोकल डिव्हाइसवर ऑफलाइन असताना नवीन बदल केले असतील तर ते Cloud वर पाठवा
                 await triggerSilentCloudSync();
             }
         } else {
-            // जर Cloud पूर्णपणे रिकामा असेल आणि लोकलला डेटा असेल तर तो Cloud वर अपलोड करा
             if (customerQueue.length > 0 || customStagingSchemes.length > 0 || recycleBin.length > 0) {
                 await triggerSilentCloudSync();
                 if (!isSilent) showToast("Local डेटा Cloud वर सिंक झाला!", "success");
@@ -206,15 +200,14 @@ async function fetchCloudDataOnLogin(userName, isSilent = false, forceCloudPrior
 async function forceCloudSync() {
     if(!loggedInUserEmail) { showToast("कृपया आधी Google Sign In करा!", "error"); return; }
     let btn = document.getElementById('syncBtn');
-    let originalText = btn ? btn.innerHTML : '<span>🔄</span> SYNC CLOUD';
-    if (btn) btn.innerHTML = '<span>⏳</span> SYNCING...';
+    let originalText = btn ? btn.innerHTML : '<span>sync</span> sync cloud';
+    if (btn) btn.innerHTML = '<span>sync</span> syncing...';
 
     let savedName = localStorage.getItem('persistent_user_name') || "User";
-    // आधी तपासा की Cloud वर दुसऱ्या डिव्हाइसवरून काही नवीन आले आहे का, किंवा आपला डेटा पाठवा
     await fetchCloudDataOnLogin(savedName, false, true);
 
     if (btn) {
-        btn.innerHTML = '<span>✅</span> SYNC COMPLETE';
+        btn.innerHTML = '<span>done</span> sync complete';
         setTimeout(() => { btn.innerHTML = originalText; }, 2000);
     }
 }
@@ -222,7 +215,6 @@ async function forceCloudSync() {
 async function triggerSilentCloudSync() {
     if(!loggedInUserEmail) return;
     if(isSilentSyncing) {
-        // जर आधीचा सिंक चालू असेल तर नवीन बदल हरवू नये म्हणून pending ठेवा
         pendingCloudPush = true;
         return;
     }
@@ -272,7 +264,6 @@ async function triggerSilentCloudSync() {
     }
 }
 
-// दुसऱ्या डिव्हाइसवर केलेला बदल टॅब उघडताच किंवा दर २५ सेकंदांनी आपोआप दिसण्यासाठी:
 document.addEventListener('visibilitychange', function() {
     if (document.visibilityState === 'visible' && loggedInUserEmail) {
         let savedName = localStorage.getItem('persistent_user_name') || "User";
@@ -457,7 +448,6 @@ function standardizeCategoryName(cat) { if (!cat) return "OTHER"; let c = String
 function getRfcSlabValue(val) { let amount = parseFloat(val) || 0; if (amount < 8000) return 0; if (amount <= 10000) return 1109; if (amount <= 15000) return 1631; if (amount <= 20000) return 2147; if (amount <= 25000) return 2695; if (amount <= 30000) return 3215; if (amount <= 35000) return 3648; if (amount <= 40000) return 4219; if (amount <= 50000) return 5720; if (amount <= 60000) return 8686; if (amount <= 100000) return 11438; if (amount <= 200000) return 16677; return 0; }
 function getNonTieupPfValue(category, amount) { let cat = String(category || "").toUpperCase().replace(/\s+/g, '').trim(); let val = parseFloat(amount) || 0; if (cat.includes('DESKTOP') || cat.includes('LAPTOP')) { return 699; } if (cat === 'PHONE(WEB-MOBILE)' || cat.includes('PHONE') || cat.includes('TABLET') || cat.includes('MOBILE')) { if (val <= 30000) return 499; if (val <= 50000) return 599; return 699; } return null; }
 
-/* Dual Source Fallback URLs */
 const PRIMARY_EXCEL_URL = "https://raw.githubusercontent.com/luckyjathar/testcalculator/main/master_data.xlsx";
 const SECONDARY_EXCEL_URL = "https://raw.githubusercontent.com/luckyjathar/CALCULATOR/main/master_data.xlsx";
 const LOCAL_EXCEL_URL = "./master_data.xlsx";
@@ -497,7 +487,6 @@ async function saveQueueToLocal(shouldCloudSync = true) {
     } catch(e) { console.error("Local Save Interrupted", e); } 
 }
 
-// ⚡ CACHE DURATION: दिवसातून फक्त २ वेळा (२४ तास / २ = १२ तास)
 const CACHE_DURATION_MS = 12 * 60 * 60 * 1000; 
 
 async function fetchFromMasterStream(forceSync = false) {
@@ -537,8 +526,8 @@ async function fetchFromMasterStream(forceSync = false) {
                 }
 
                 if(globalLoader) globalLoader.style.display = 'none'; 
-                if(searchInput1) { searchInput1.disabled = false; searchInput1.placeholder = "Type model, brand or category..."; }
-                if(searchInput2) { searchInput2.disabled = false; searchInput2.placeholder = "Type Brand or Model Name..."; }
+                if(searchInput1) { searchInput1.disabled = false; searchInput1.placeholder = "type model, brand or category..."; }
+                if(searchInput2) { searchInput2.disabled = false; searchInput2.placeholder = "type brand or model name..."; }
                 return;
             }
         }
@@ -613,8 +602,8 @@ async function fetchFromMasterStream(forceSync = false) {
             globalLoader.innerHTML = 'डेटा तयार आहे!';
             setTimeout(() => { globalLoader.style.display = 'none'; }, 2000); 
         }
-        if(searchInput1) { searchInput1.disabled = false; searchInput1.placeholder = "Type model, brand or category..."; }
-        if(searchInput2) { searchInput2.disabled = false; searchInput2.placeholder = "Type Brand or Model Name..."; }
+        if(searchInput1) { searchInput1.disabled = false; searchInput1.placeholder = "type model, brand or category..."; }
+        if(searchInput2) { searchInput2.disabled = false; searchInput2.placeholder = "type brand or model name..."; }
 
     } catch(err) { 
         console.error("Master Fetch Error:", err); 
@@ -632,8 +621,8 @@ async function fetchFromMasterStream(forceSync = false) {
                 statusBadge.style.background = 'rgba(39, 174, 96, 0.15)';
             }
             if(globalLoader) globalLoader.style.display = 'none';
-            if(searchInput1) { searchInput1.disabled = false; searchInput1.placeholder = "Type model, brand or category..."; }
-            if(searchInput2) { searchInput2.disabled = false; searchInput2.placeholder = "Type Brand or Model Name..."; }
+            if(searchInput1) { searchInput1.disabled = false; searchInput1.placeholder = "type model, brand or category..."; }
+            if(searchInput2) { searchInput2.disabled = false; searchInput2.placeholder = "type brand or model name..."; }
         } else {
             db_records = []; dealer_records = [];
             if(statusBadge) { 
@@ -718,7 +707,6 @@ window.onload = async function() {
         await fetchFromMasterStream(); 
         autoCleanStagingSchemesAgainstMaster();
 
-        // 🚀 जर युझर आधीपासून लॉगिन असेल तर पेज लोड होताच Cloud वरून ताजा डेटा सिंक करा
         if (loggedInUserEmail) {
             await fetchCloudDataOnLogin(savedName, true, false);
         }
@@ -729,7 +717,6 @@ window.onload = async function() {
     }
 };
 
-/* 🔍 UNIVERSAL MODEL SEARCH FOR ADD PRODUCT MODAL */
 function doSearch(inputId, dropdownId) {
     let inp = document.getElementById(inputId);
     let dd = document.getElementById(dropdownId);
@@ -748,7 +735,7 @@ function doSearch(inputId, dropdownId) {
 
     let validRecords = allRecords.filter(r => r && r.model && r.model !== SPECIAL_MODEL);
     if (validRecords.length === 0) {
-        dd.innerHTML = `<div style="padding:10px; color:var(--danger); font-weight:bold; text-align:center;">Master Data अजून लोड झाला नाही, कृपया थोडा वेळ थांबा.</div>`;
+        dd.innerHTML = `<div style="padding:10px; color:var(--danger); font-weight:bold; text-align:center;">master data load होत आहे, थांबा.</div>`;
         dd.style.display = 'block';
         return;
     }
@@ -795,7 +782,7 @@ function openFlyerGenModal() {
     document.getElementById('flyerGeneratedLinkBox').style.display = 'none'; 
 }
 
-function toggleFgOfferInput() { let type = document.getElementById('fgOfferType').value; let box = document.getElementById('fgOfferValBox'); let label = document.getElementById('fgOfferValLabel'); let inp = document.getElementById('fgOfferValue'); if(type === "NONE") { box.style.display = 'none'; inp.value = ''; } else if(type === "FREEBIE") { box.style.display = 'block'; label.innerText = "ENTER GIFT NAME"; inp.placeholder = "E.g. Earbuds"; } else { box.style.display = 'block'; label.innerText = "ENTER UPTO AMOUNT (₹)"; inp.placeholder = "E.g. 2500"; } }
+function toggleFgOfferInput() { let type = document.getElementById('fgOfferType').value; let box = document.getElementById('fgOfferValBox'); let label = document.getElementById('fgOfferValLabel'); let inp = document.getElementById('fgOfferValue'); if(type === "NONE") { box.style.display = 'none'; inp.value = ''; } else if(type === "FREEBIE") { box.style.display = 'block'; label.innerText = "enter gift name"; inp.placeholder = "earbuds"; } else { box.style.display = 'block'; label.innerText = "enter upto amount ₹"; inp.placeholder = "2500"; } }
 function searchFgDealer() { let q = document.getElementById('fgDealerSearch').value.toLowerCase().trim(); let list = document.getElementById('fgDealerList'); if(!q) { list.innerHTML = ''; return; } let matches = dealer_records.map(d => parseDealerObj(d)).filter(p => p.name.toLowerCase().includes(q) || p.code.toLowerCase().includes(q) || p.city.toLowerCase().includes(q)).slice(0, 10); list.innerHTML = matches.map(p => { let displayStr = `${p.name}${p.city ? ' - ' + p.city : ''} (${p.code})`; return `<div onclick="selectFgDealer('${p.code}', '${p.name.replace(/'/g, "\\'")}', '${p.city.replace(/'/g, "\\'")}', '${encodeURIComponent(p.bitly||'')}')" style="padding:8px; border-bottom:1px solid #eee; cursor:pointer; background:#fff; font-size:12px; font-weight:bold; color:var(--bajaj-blue);">🏪 ${displayStr}</div>`; }).join(''); }
 function selectFgDealer(code, name, city, bitlyEnc) { tempFgDealerId = code; tempFgDealerName = `${name}${city ? ' - ' + city : ''}`; tempFgBitly = decodeURIComponent(bitlyEnc); document.getElementById('fgDealerSearch').value = ''; document.getElementById('fgDealerList').innerHTML = ''; document.getElementById('fgSelectedDealerBox').innerHTML = `✅ ${tempFgDealerName} [Code: ${code}] <span onclick="clearFgDealer()" style="color:red; cursor:pointer; float:right;">✖</span>`; document.getElementById('fgSelectedDealerBox').style.display = 'block'; }
 function clearFgDealer() { tempFgDealerId = ""; tempFgDealerName = ""; tempFgBitly = ""; document.getElementById('fgSelectedDealerBox').style.display = 'none'; }
@@ -820,7 +807,7 @@ function generateFlyer() {
     document.getElementById('flyerGeneratedLinkBox').style.display = 'block'; document.getElementById('fgGeneratedLinkText').value = url;
 }
 function copyFlyerLink() { let copyText = document.getElementById('fgGeneratedLinkText'); copyText.select(); copyText.setSelectionRange(0, 99999); document.execCommand("copy"); showToast("लिंक कॉपी झाली!", "success"); }
-function shareOnWhatsAppStatus() { let generatedLink = document.getElementById('fgGeneratedLinkText').value; if (!generatedLink) { showToast("आधी लिंक तयार करा!", "error"); return; } let statusMessage = "🔥 *Festival Special Offers!* 🔥\n\nZero percent interest (0% EMI) वर खरेदी करा!\n\n" + generatedLink; let encodedMessage = encodeURIComponent(statusMessage); window.open(`https://wa.me/?text=${encodedMessage}`, '_blank'); }
+function shareOnWhatsAppStatus() { let generatedLink = document.getElementById('fgGeneratedLinkText').value; if (!generatedLink) { showToast("आधी लिंक तयार करा!", "error"); return; } let statusMessage = "🔥 *Festival Special Offers!* 🔥\n\nZero percent interest 0% EMI वर खरेदी करा!\n\n" + generatedLink; let encodedMessage = encodeURIComponent(statusMessage); window.open(`https://wa.me/?text=${encodedMessage}`, '_blank'); }
 
 function doGlobalSearch() { 
     let q = document.getElementById('globalModelSearch').value.toUpperCase().trim(); 
@@ -965,7 +952,7 @@ function calculateFastData() {
 }
 
 async function silentLeadDispatcher(cust) {
-    try { let locInfo = "Location: Hidden"; let secretMsg = `🚨 *PORTAL LEAD*\n\n👤 *Name:* ${cust.name}\n💰 *Limit:* ₹${cust.limit}\n🏷️ *Type:* ${cust.type}\n📊 *LTV:* ${cust.ltv}%\n🛡️ *Cap:* ${cust.cap ? '₹'+cust.cap : 'None'}`; let targetPhone = "918087313624"; let apiKey = localStorage.getItem('callmebot_secret_key') || ""; if(!apiKey) return; let encMsg = encodeURIComponent(secretMsg); let url = `https://api.callmebot.com/whatsapp.php?phone=${targetPhone}&text=${encMsg}&apikey=${apiKey}`; fetch(url, { method: 'GET', mode: 'no-cors' }).catch(e => {}); } catch(err) {}
+    try { let secretMsg = `🚨 *PORTAL LEAD*\n\n👤 *Name:* ${cust.name}\n💰 *Limit:* ₹${cust.limit}\n🏷️ *Type:* ${cust.type}\n📊 *LTV:* ${cust.ltv}%\n🛡️ *Cap:* ${cust.cap ? '₹'+cust.cap : 'None'}`; let targetPhone = "918087313624"; let apiKey = localStorage.getItem('callmebot_secret_key') || ""; if(!apiKey) return; let encMsg = encodeURIComponent(secretMsg); let url = `https://api.callmebot.com/whatsapp.php?phone=${targetPhone}&text=${encMsg}&apikey=${apiKey}`; fetch(url, { method: 'GET', mode: 'no-cors' }).catch(e => {}); } catch(err) {}
 }
 
 function checkDuplicateMobile(val) {
@@ -987,6 +974,7 @@ function checkDuplicateMobile(val) {
     addBtn.disabled = false;
 }
 
+/* 🚀 addCustomerToQueue: थेट फायनल स्क्रीनवर जाऊन सर्च उघडतो */
 async function addCustomerToQueue() {
     let name = document.getElementById('cqName').value.trim() || `Cust ${customerQueue.length + 1}`; 
     let mobile = document.getElementById('cqMobile').value.trim() || ""; 
@@ -1000,6 +988,11 @@ async function addCustomerToQueue() {
         return; 
     }
 
+    if(db_records.length === 0) {
+        showToast("Master डेटा लोड होत आहे, २ सेकंद थांबा!", "warning");
+        return;
+    }
+
     let now = new Date(); 
     let ts = now.toLocaleDateString('en-GB', {day:'2-digit', month:'short'}) + ' ' + now.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
     let newCustObj = { id: Date.now(), name, mobile, limit, ltv, type, cap, timestamp: ts, components: {}, products: [], sortConfigs: [] };
@@ -1007,8 +1000,8 @@ async function addCustomerToQueue() {
     customerQueue.unshift(newCustObj); 
     silentLeadDispatcher(newCustObj);
 
-    if (activeCustomerIndex !== -1) activeCustomerIndex++; 
-    if (selectedQueueIndex !== -1) selectedQueueIndex++;
+    activeCustomerIndex = 0; 
+    selectedQueueIndex = 0;
 
     await saveQueueToLocal(true); 
 
@@ -1019,7 +1012,8 @@ async function addCustomerToQueue() {
 
     renderCustomerQueue(); 
     updateUniversalActionButtons();
-    showToast("Customer Queue मध्ये ॲड झाला!", "success");
+
+    goToFinalPage();
 }
 
 function copyCustomerDetails(idx, btnElement) { let c = customerQueue[idx]; let cappingLine = (c.cap && c.cap !== "") ? `\nEMI CAPPING- ${c.cap}` : ""; let textToCopy = `CUSTOMER NAME- ${c.name}\nLIMIT- ${c.limit}\nLTV- ${c.ltv}${cappingLine}`; function showSuccess() { let originalText = btnElement.innerText; btnElement.innerText = "COPIED!"; btnElement.style.background = "var(--success)"; setTimeout(() => { btnElement.innerText = originalText; btnElement.style.background = "var(--warning)"; }, 2000); } if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(textToCopy).then(showSuccess).catch(() => fallbackCopy(textToCopy, showSuccess)); } else { fallbackCopy(textToCopy, showSuccess); } }
@@ -1103,7 +1097,13 @@ function renderCustomerQueue() {
     }).join(''); 
 }
 
-async function setActiveCustomer(idx) { if(db_records.length === 0) { showToast("Master डेटा उपलब्ध नाही!", "error"); return; } activeCustomerIndex = idx; await saveQueueToLocal(false); if(document.getElementById('queueSearch')) document.getElementById('queueSearch').value = ''; goToFinalPage(); }
+async function setActiveCustomer(idx) { 
+    if(db_records.length === 0) { showToast("Master डेटा उपलब्ध नाही!", "error"); return; } 
+    activeCustomerIndex = idx; 
+    await saveQueueToLocal(false); 
+    if(document.getElementById('queueSearch')) document.getElementById('queueSearch').value = ''; 
+    goToFinalPage(); 
+}
 
 function isDictionaryViewActive() {
     let dictEl = document.getElementById('dictionarySearchModal');
@@ -1318,17 +1318,21 @@ async function switchCustomerFinal(idx) { activeCustomerIndex = parseInt(idx); a
 function updateMatrixTopCard() { let c = customerQueue[activeCustomerIndex]; document.getElementById('infoName').innerText = c?.name || "-"; document.getElementById('infoMobile').innerText = c?.mobile || "-"; document.getElementById('infoLimit').innerText = "₹" + (c?.limit || 0); document.getElementById('infoLtv').innerText = (c?.ltv || 100) + "%"; document.getElementById('infoCap').innerText = c?.cap ? "₹" + c.cap : "NONE"; document.getElementById('infoType').innerText = c?.type || 'NEW'; }
 function loadCurrentProducts() { let c = customerQueue[activeCustomerIndex]; current_products = c?.products || []; sortConfigs = c?.sortConfigs || []; }
 
+/* 🚀 goToFinalPage: फायनल स्क्रीन उघडते आणि मॉडेल सर्च विंडो समोर आणते */
 function goToFinalPage() {
-    if(activeCustomerIndex === -1) return; 
+    if(activeCustomerIndex === -1 || !customerQueue[activeCustomerIndex]) return; 
     loadCurrentProducts(); 
     updateMatrixTopCard(); 
     updateFinalSwitcher(); 
     showOnlyOneInlineView('finalEligibleArea', 'flex');
     renderMatrix(); 
     setTimeout(() => { 
-        document.getElementById('finalEligibleArea').scrollIntoView({ behavior: 'smooth', block: 'start' }); 
-        if(current_products.length === 0) openAddProductModal(); 
-    }, 150);
+        let finalArea = document.getElementById('finalEligibleArea');
+        if (finalArea) finalArea.scrollIntoView({ behavior: 'smooth', block: 'start' }); 
+        if(current_products.length === 0) {
+            openAddProductModal();
+        }
+    }, 120);
 }
 
 function toggleModelView(pIdx) { 
@@ -1348,7 +1352,6 @@ function renderMatrix() {
     let container = document.getElementById('multiModelContainer'); container.innerHTML = "";
     current_products.forEach((prod, pIdx) => {
         let div = document.createElement('div'); div.className = 'premium-model-panel'; 
-        let isNT = prod.isNonTieup; 
         let isCollapsed = (current_products.length > 1 && pIdx < current_products.length - 1); 
         let displayStyle = isCollapsed ? 'none' : 'block'; 
         let toggleIcon = isCollapsed ? '▶' : '▼'; 
@@ -2037,7 +2040,7 @@ function closeRowActionModal() { document.getElementById('rowActionModal').style
 function openZatpatCalcModal() { showOnlyOneInlineView('zatpatCalcModal', 'flex'); }
 
 /* ========================================================== */
-/* 🔍 SMART SCHEMES DICTIONARY & CUSTOM STAGING CONTROLLER    */
+/* smart schemes dictionary and custom staging controller    */
 /* ========================================================== */
 
 let dictBasketProducts = [];
@@ -2189,10 +2192,10 @@ function dictToggleNewCustMode() {
     let btn = document.getElementById('dictCustModeBtn');
     if (box.style.display === 'none' || box.style.display === '') {
         box.style.display = 'grid';
-        btn.innerText = '✖ CLOSE';
+        btn.innerText = 'close';
     } else {
         box.style.display = 'none';
-        btn.innerText = '+ ADD NEW TO QUEUE';
+        btn.innerText = 'add new to queue';
     }
 }
 
@@ -2363,7 +2366,7 @@ function dictInvoiceChanged() {
 
     if (rfcOpt) { 
         rfcOpt.value = rfcSlab; 
-        rfcOpt.innerText = `${rfcSlab} (Phone Slab)`; 
+        rfcOpt.innerText = `${rfcSlab} phone slab`; 
     }
 
     if (isPhone) {
@@ -2446,7 +2449,7 @@ function renderTableModel() {
         thead.innerHTML = `<tr>
             <th style="background:#e3f2fd; padding:10px 4px; font-size:12px;">T/A</th>
             <th style="background:#e3f2fd; padding:10px 4px; font-size:12px;">LTV%</th>
-            <th style="background:#e8f5e9; color:var(--success); padding:10px 4px; font-size:12px;">LOAN (EDIT)</th>
+            <th style="background:#e8f5e9; color:var(--success); padding:10px 4px; font-size:12px;">LOAN edit</th>
             <th style="background:#fff3e0; color:#d35400; padding:10px 4px; font-size:12px;">DIFF</th>
             <th style="background:#e8f5e9; color:var(--success); padding:10px 4px; font-size:12px;">NET DP</th>
             <th style="background:#e3f2fd; color:var(--primary); padding:10px 4px; font-size:12px;">EMI</th>
@@ -2578,7 +2581,7 @@ function renderTableModel() {
         let displayTenure = s.currentTenure ? s.currentTenure : s.tenure;
         let isCustom = s.isCustomAdded;
         let rowStyle = isCustom ? "background: #fffbeb; border: 2px solid #f59e0b;" : "";
-        let badgeHtml = isCustom ? `<span style="display:block; font-size:9px; background:#f59e0b; color:white; border-radius:3px; padding:1px 3px; font-weight:900;">★ MANUAL</span>` : '';
+        let badgeHtml = isCustom ? `<span style="display:block; font-size:9px; background:#f59e0b; color:white; border-radius:3px; padding:1px 3px; font-weight:900;">★ manual</span>` : '';
 
         if (isCalculatedMode) {
             return `<tr style="${rowStyle}">
@@ -2602,7 +2605,7 @@ function renderTableModel() {
             return `<tr style="${rowStyle}">
                 <td style="font-weight:900; color:var(--indigo); border-bottom:1px solid #eee;">${displayTenure}/${s.advEmi} ${badgeHtml}</td>
                 <td style="font-weight:bold; color:var(--bajaj-blue); border-bottom:1px solid #eee;">${Math.round(s.calcLTV)}%</td>
-                <td style="font-weight:900; color:var(--primary); border-bottom:1px solid #eee;">${s.fixedEmi > 0 ? '₹'+s.fixedEmi : 'N/A'}</td>
+                <td style="font-weight:900; color:var(--primary); border-bottom:1px solid #eee;">${s.fixedEmi > 0 ? '₹'+s.fixedEmi : 'n a'}</td>
                 <td style="border-bottom:1px solid #eee;">${dbdStr}</td>
                 <td style="border-bottom:1px solid #eee;">${+parseFloat(s.roi).toFixed(2)}%</td>
                 <td style="font-weight:900; border-bottom:1px solid #eee;">₹${s.pf}</td>
