@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Persistent Portal">
 
-    <title>Persistent Portal V76.29 - Pro Edition</title>
+    <title>Persistent Portal V76.30 - Pro Edition</title>
 
     <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -79,18 +79,22 @@
             transform: scale(0.95);
         }
 
-        /* Model Header Action Icons & Read-Only Value Chips */
+        /* Compact Model Header Action Icons (एकाच लाईनमध्ये उजव्या कोपऱ्यात बसण्यासाठी लहान साईझ) */
         .model-action-icon {
-            border-radius: 6px;
-            padding: 4px 9px;
-            font-size: 13px !important;
+            border-radius: 4px;
+            width: 24px !important;
+            height: 24px !important;
+            min-height: 24px !important;
+            padding: 0 !important;
+            font-size: 11px !important;
             font-weight: 900;
             cursor: pointer;
-            min-height: 30px !important;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             border: 1px solid transparent;
+            flex-shrink: 0;
+            line-height: 1;
         }
         .model-edit-icon {
             background: #e0f2fe;
@@ -103,7 +107,7 @@
             border-color: #fecaca;
         }
         .model-action-icon:active {
-            transform: scale(0.92);
+            transform: scale(0.9);
         }
 
         .val-summary-bar {
@@ -344,15 +348,15 @@
             <div id="categoryGrid" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:8px;"></div>
         </div>
 
-        <!-- INLINE 3: Fill / Edit Components Panel -->
+        <!-- INLINE 3: Edit Components Panel (मॉडेल सिलेक्ट केल्यावर किंवा ✏️ वर क्लिक केल्यावर उघडेल) -->
         <div id="componentsModal" class="inline-work-panel" style="display: none;">
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 2px solid #ddd; padding-bottom: 6px; margin-bottom: 10px;">
-                <h3 style="margin:0; color:var(--indigo);"><span id="compModalHeadingText">Fill Components</span> (<span id="compPendingModelName" style="color:var(--primary);"></span>)</h3>
+                <h3 style="margin:0; color:var(--indigo);"><span id="compModalHeadingText">Edit Components</span> (<span id="compPendingModelName" style="color:var(--primary);"></span>)</h3>
                 <button onclick="cancelComponentsModal()" style="background:none; border:none; color:var(--danger); font-weight:900; cursor:pointer; min-height:unset;">✖ Close</button>
             </div>
             <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:8px; margin-bottom:12px;">
                 <div><label>MRP ₹</label><input type="number" id="compMrp" placeholder="0" oninput="compPriceChanged()"></div>
-                <div><label>Inv ₹</label><input type="number" id="compInv" placeholder="0" oninput="compPriceChanged()"></div>
+                <div><label style="color:var(--danger);">Inv ₹ (Required *)</label><input type="number" id="compInv" placeholder="Enter Invoice ₹" style="border: 1.5px solid var(--primary);" oninput="compPriceChanged()"></div>
                 <div><label>EMI Capping ₹</label><input type="number" id="compCap" placeholder="Max"></div>
                 <div><label>Target DP ₹</label><input type="number" id="compTarget" placeholder="0"></div>
                 <div><label>GTL ₹</label><select id="compGtl"><option value="0">0</option><option value="699">699</option><option value="1099">1099</option><option value="1199">1199</option><option value="1499">1499</option><option value="1799">1799</option><option value="2398">2398</option></select></div>
@@ -546,6 +550,6 @@
     </div>
 </footer>
 
-<script src="app.js?v=76.29"></script>
+<script src="app.js?v=76.30"></script>
 </body>
 </html>
