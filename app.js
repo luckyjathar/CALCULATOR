@@ -564,19 +564,9 @@ async function processMultiStack() {
         } 
     }
     if(validSchemes.length > 0) { 
-        if (activeCustomerIndex !== -1 && customerQueue[activeCustomerIndex]) {
-            let c = customerQueue[activeCustomerIndex];
-            let sharedTarget = c.targetDp || c.components?.target || "";
-            current_products.push({ name: msNameInput, schemes: validSchemes, category: "MANUAL", inputs: { mrp: "", inv: "", cap: c.cap || "", target: sharedTarget, gtl: 0, rfc: 0, exw: "", margin: "", dealer: "", surch: 0, manualLoans: {} }, isManual: true, isNonTieup: false }); 
-            sortConfigs.push({ key: 'default_ltv', dir: 'desc' }); 
-            c.products = current_products; 
-            c.sortConfigs = sortConfigs; 
-            await saveQueueToLocal(); 
-        }
-        closeMultiStackModal(); 
-        if (activeCustomerIndex !== -1) {
-            renderMatrix();
-        }
+        tempPendingProduct = { name: msNameInput, isNT: false, isManual: true, manualSchemes: validSchemes, category: "MANUAL" };
+        currentModalCategory = "MANUAL";
+        showComponentsModal("");
     } else { showToast("किमान एक Scheme भरा!", "error"); }
 }
 
@@ -725,7 +715,7 @@ function cancelComponentsModal() {
     document.getElementById('componentsModal').style.display = 'none';
 }
 
-/* नवीन मॉडेलसाठी: फक्त MRP आणि GTL (स्लॅबनुसार) प्री-सिलेक्ट होईल, RFC बाय-डिफॉल्ट 0 राहील */
+/* मॉडेल सिलेक्ट केल्यावर Edit Components ची स्क्रीन उघडेल आणि कर्सर Inv ₹ वर जाईल */
 function showComponentsModal(baseMrp = "") {
     editingProductIdx = -1;
     let c = customerQueue[activeCustomerIndex]; 
@@ -733,7 +723,7 @@ function showComponentsModal(baseMrp = "") {
     let exwInput = document.getElementById('compExw'); 
     let isMobileCat = isMobileDeviceCat(currentModalCategory);
 
-    document.getElementById('compModalHeadingText').innerText = "Fill Components";
+    document.getElementById('compModalHeadingText').innerText = "Edit Components";
     let pendingNameEl = document.getElementById('compPendingModelName');
     if (pendingNameEl && tempPendingProduct) {
         pendingNameEl.innerText = tempPendingProduct.name;
@@ -776,6 +766,10 @@ function showComponentsModal(baseMrp = "") {
     document.getElementById('compTarget').value = sharedTargetDp > 0 ? sharedTargetDp : ""; 
     
     showInlineSubPanel('componentsModal');
+    setTimeout(() => {
+        let invInp = document.getElementById('compInv');
+        if (invInp) invInp.focus();
+    }, 120);
 }
 
 /* मॉडेलमधील ✏️ Edit आयकॉनवर क्लिक केल्यावर त्या मॉडेलच्या व्हॅल्यूज एडिट करण्यासाठी उघडतो */
@@ -829,8 +823,13 @@ function openEditModelComponents(pIdx, event) {
     document.getElementById('compDealer').value = inp.dealer !== "" ? inp.dealer : "";
 
     showInlineSubPanel('componentsModal');
+    setTimeout(() => {
+        let invInp = document.getElementById('compInv');
+        if (invInp) invInp.focus();
+    }, 120);
 }
 
+/* Invoice Value टाकल्याशिवाय फायनल कॅल्क्युलेशन पुढे जाणार नाही */
 async function proceedToMatrixFromComponents() { 
     let idx = activeCustomerIndex; 
     if(idx === -1) return; 
@@ -845,8 +844,15 @@ async function proceedToMatrixFromComponents() {
     let marginVal = document.getElementById('compMargin').value;
     let dealerVal = document.getElementById('compDealer').value;
 
+    let parsedInv = invVal !== "" ? (parseFloat(invVal) || 0) : 0;
+    if (parsedInv <= 0) {
+        showToast("फायनल कॅल्क्युलेशनसाठी कृपया Inv ₹ (Invoice Value) भरा!", "error");
+        let invInp = document.getElementById('compInv');
+        if (invInp) invInp.focus();
+        return;
+    }
+
     let parsedMrp = mrpVal !== "" ? (parseFloat(mrpVal) || 0) : ""; 
-    let parsedInv = invVal !== "" ? (parseFloat(invVal) || 0) : ""; 
     let parsedCap = capVal !== "" ? (parseFloat(capVal) || 0) : ""; 
     let parsedTarget = targetVal !== "" ? (parseFloat(targetVal) || 0) : ""; 
     let parsedGtl = parseFloat(document.getElementById('compGtl').value) || 0; 
@@ -924,12 +930,21 @@ async function proceedToMatrixFromComponents() {
 }
 
 async function finalizeProductAddition() {
-    let raw = tempPendingProduct.isNT ? db_records.filter(r => r.model === SPECIAL_MODEL && r.category === tempPendingProduct.category) : db_records.filter(r => r.model === tempPendingProduct.name); 
     let c = customerQueue[activeCustomerIndex];
     let ltvLimit = c?.ltv || 100; 
-    let matrixEligible = raw.filter(s => s.fixedEmi > 0 || (s.tenure > 0 && ((s.tenure-s.advEmi)/s.tenure)*100 <= ltvLimit)); 
-    let uniqueSchemes = []; let seenSchemes = new Set();
-    matrixEligible.forEach(s => { let schemeKey = `${s.tenure}_${s.advEmi}_${s.fixedEmi}_${s.minLoan}_${s.maxLoan}`; if (!seenSchemes.has(schemeKey)) { seenSchemes.add(schemeKey); s.inactive = false; uniqueSchemes.push({...s}); } });
+    let uniqueSchemes = [];
+
+    if (tempPendingProduct.isManual && Array.isArray(tempPendingProduct.manualSchemes)) {
+        uniqueSchemes = tempPendingProduct.manualSchemes;
+    } else {
+        let raw = tempPendingProduct.isNT ? db_records.filter(r => r.model === SPECIAL_MODEL && r.category === tempPendingProduct.category) : db_records.filter(r => r.model === tempPendingProduct.name); 
+        let matrixEligible = raw.filter(s => s.fixedEmi > 0 || (s.tenure > 0 && ((s.tenure-s.advEmi)/s.tenure)*100 <= ltvLimit)); 
+        let seenSchemes = new Set();
+        matrixEligible.forEach(s => { 
+            let schemeKey = `${s.tenure}_${s.advEmi}_${s.fixedEmi}_${s.minLoan}_${s.maxLoan}`; 
+            if (!seenSchemes.has(schemeKey)) { seenSchemes.add(schemeKey); s.inactive = false; uniqueSchemes.push({...s}); } 
+        });
+    }
     
     let comp = c.components || {}; 
     let finalMrp = comp.mrp !== undefined ? comp.mrp : ""; 
@@ -940,7 +955,7 @@ async function finalizeProductAddition() {
 
     current_products.push({ 
         name: tempPendingProduct.name, 
-        isNonTieup: tempPendingProduct.isNT, 
+        isNonTieup: tempPendingProduct.isNT || false, 
         schemes: uniqueSchemes, 
         category: tempPendingProduct.category, 
         inputs: { 
@@ -956,7 +971,7 @@ async function finalizeProductAddition() {
             surch: surch, 
             manualLoans: {} 
         }, 
-        isManual: false 
+        isManual: tempPendingProduct.isManual || false 
     }); 
     sortConfigs.push({ key: 'default_ltv', dir: 'desc' }); 
     c.products = current_products; 
@@ -1012,7 +1027,7 @@ function removeModelFromMatrix(pIdx, event) {
 
 function instantSingleQuote(pIdx) { window.tempImageGenIndices = [pIdx]; requestWhatsAppDispatch = false; doGenerateCustomerImage(); }
 
-/* मॉडेल पॅनेलमध्ये एकही इनपुट बॉक्स नाही; सर्व सेट केलेल्या व्हॅल्यूज चिप्समध्ये दिसतात आणि एडिटसाठी ✏️ व काढण्यासाठी ✖ आयकॉन */
+/* लहान ✏️ आणि ✖ आयकॉन्स एकाच ओळीत उजव्या कोपऱ्यात बसतील आणि फक्त सेट केलेल्या व्हॅल्यूज दिसतील */
 function renderMatrix() {
     let container = document.getElementById('multiModelContainer'); container.innerHTML = "";
     let c = customerQueue[activeCustomerIndex];
@@ -1041,17 +1056,17 @@ function renderMatrix() {
         if (inp.exw > 0) chipsHtml += `<span class="val-chip"><b>EXW:</b> ₹${inp.exw}</span>`;
         if (inp.margin > 0) chipsHtml += `<span class="val-chip"><b>Margin:</b> ₹${inp.margin}</span>`;
         if (inp.dealer > 0) chipsHtml += `<span class="val-chip"><b>Dealer:</b> ₹${inp.dealer}</span>`;
-        if (!chipsHtml) chipsHtml = `<span class="val-chip" style="color:#64748b;">No Price Components Set (Tap ✏️ To Edit)</span>`;
+        if (!chipsHtml) chipsHtml = `<span class="val-chip" style="color:var(--danger);">⚠️ Invoice Value Required (Tap ✏️ To Enter Inv ₹)</span>`;
 
         div.innerHTML = `
-            <div class="pmp-header" style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:10px 12px;">
-                <div class="pmp-title" onclick="toggleModelView(${pIdx})" style="flex:1; min-width:140px; cursor:pointer;">
+            <div class="pmp-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:nowrap; gap:6px; padding:8px 10px;">
+                <div class="pmp-title" onclick="toggleModelView(${pIdx})" style="flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer; font-size:13px;">
                     <span id="togIcon_${pIdx}" class="pmp-icon">${toggleIcon}</span>
                     ${prod.name}
                 </div>
-                <div style="display:flex; align-items:center; gap:6px;">
-                    <button class="model-action-icon model-edit-icon" onclick="openEditModelComponents(${pIdx}, event)" title="Edit Values">✏️</button>
-                    <button class="model-action-icon model-close-icon" onclick="removeModelFromMatrix(${pIdx}, event)" title="Close / Remove Model">✖</button>
+                <div style="display:flex; align-items:center; gap:5px; flex-shrink:0;">
+                    <button class="model-action-icon model-edit-icon" onclick="openEditModelComponents(${pIdx}, event)" title="Edit Components">✏️</button>
+                    <button class="model-action-icon model-close-icon" onclick="removeModelFromMatrix(${pIdx}, event)" title="Remove Model">✖</button>
                 </div>
             </div>
 
@@ -1095,7 +1110,7 @@ function syncInsurance(pIdx, mrpVal, baseLoanVal) {
     if (isPhoneWebMobile) inp.exw = ""; 
 }
 
-/* Capping नियम: जर Capping असेल तर EMI त्यापेक्षा जास्त कधीही जाणार नाही, आणि कमी झालेल्या लोननुसार DP आपोआप वाढेल */
+/* Invoice Value टाकल्याशिवाय फायनल कॅल्क्युलेशन दिसणार नाही */
 function recalcModel(pIdx) {
     if(!current_products[pIdx]) return; 
 
@@ -1106,11 +1121,22 @@ function recalcModel(pIdx) {
     let currentLimit = limit > 0 ? limit : 9999999; 
     let inputMrp = parseFloat(inp.mrp) || 0; 
     let inputInv = parseFloat(inp.inv) || 0; 
-    let effectivePrice = inputInv > 0 ? inputInv : (inputMrp > 0 ? inputMrp : 0); 
+
+    /* जर Invoice Value टाकली नसेल तर फायनल कॅल्क्युलेशन दाखवत नाही */
+    if (inputInv <= 0) {
+        prod.calculatedData = [];
+        let tbody = document.getElementById(`body_${pIdx}`);
+        if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="7" onclick="openEditModelComponents(${pIdx}, event)" style="padding:18px; text-align:center; color:var(--danger); font-weight:900; cursor:pointer; background:#fff5f5;">⚠️ फायनल कॅल्क्युलेशन पाहण्यासाठी आधी ✏️ आयकॉनवर टॅप करून Invoice Value (Inv ₹) टाका!</td></tr>`;
+        }
+        return;
+    }
+
+    let effectivePrice = inputInv; 
     let loanCapPrice = (inputMrp > 0 && inputInv > 0) ? Math.min(inputMrp, inputInv) : effectivePrice;
     let activeCap = parseFloat(inp.cap) || parseFloat(c?.cap) || 0;
 
-    let minAllowedLoanByInvoice = effectivePrice > 0 ? effectivePrice * 0.50 : 0;
+    let minAllowedLoanByInvoice = effectivePrice * 0.50;
 
     prod.calculatedData = prod.schemes.map((s, dIdx) => {
         let isFixed = s.fixedEmi > 0; let loan = 0, nbfcMaxL = 0, dpExact = 0, dpRounded = 0, emi = 0, inst = 0, currentTenure = s.tenure; 
@@ -1121,8 +1147,7 @@ function recalcModel(pIdx) {
         let dynamicPf = s.pf;
 
         if (prod.isNonTieup) { 
-            let checkAmount = effectivePrice > 0 ? effectivePrice : (currentLimit < 9999999 ? currentLimit : 0); 
-            let slabPf = getNonTieupPfValue(prod.category, checkAmount); 
+            let slabPf = getNonTieupPfValue(prod.category, effectivePrice); 
             if (slabPf !== null) { dynamicPf = slabPf; } 
         }
 
@@ -1131,37 +1156,30 @@ function recalcModel(pIdx) {
             let maxTotalTenure = maxRemainingEmis + s.advEmi; 
             nbfcMaxL = maxTotalTenure * s.fixedEmi; 
 
-            if (effectivePrice > 0) { 
-                currentTenure = Math.floor(effectivePrice / s.fixedEmi); 
-                if (currentTenure > maxTotalTenure) currentTenure = maxTotalTenure; 
-                if (currentTenure < 1) currentTenure = 1; 
-                loan = currentTenure * s.fixedEmi; 
-                if (loan > loanCapPrice) loan = loanCapPrice;
+            currentTenure = Math.floor(effectivePrice / s.fixedEmi); 
+            if (currentTenure > maxTotalTenure) currentTenure = maxTotalTenure; 
+            if (currentTenure < 1) currentTenure = 1; 
+            loan = currentTenure * s.fixedEmi; 
+            if (loan > loanCapPrice) loan = loanCapPrice;
 
-                if (parseFloat(inp.target) > 0) { 
-                    let numerator = parseFloat(inp.target) - effectivePrice - (s.fixedEmi * s.advEmi) - dynamicPf - totalFees; 
-                    let denominator = dbdRate + roiRateDP - 1; 
-                    let solvedLoan = numerator / denominator; 
-                    let solvedTenure = Math.floor(solvedLoan / s.fixedEmi); 
-                    if (solvedTenure > maxTotalTenure) solvedTenure = maxTotalTenure; 
-                    loan = Math.max(0, solvedTenure * s.fixedEmi); 
-                    if (loan > loanCapPrice) loan = loanCapPrice; 
-                    currentTenure = Math.floor(loan / s.fixedEmi) || 1; 
-                } 
-            } else { 
-                currentTenure = s.tenure || 1; 
-                if (currentTenure > maxTotalTenure) currentTenure = maxTotalTenure; 
-                loan = currentTenure * s.fixedEmi; 
-            }
+            if (parseFloat(inp.target) > 0) { 
+                let numerator = parseFloat(inp.target) - effectivePrice - (s.fixedEmi * s.advEmi) - dynamicPf - totalFees; 
+                let denominator = dbdRate + roiRateDP - 1; 
+                let solvedLoan = numerator / denominator; 
+                let solvedTenure = Math.floor(solvedLoan / s.fixedEmi); 
+                if (solvedTenure > maxTotalTenure) solvedTenure = maxTotalTenure; 
+                loan = Math.max(0, solvedTenure * s.fixedEmi); 
+                if (loan > loanCapPrice) loan = loanCapPrice; 
+                currentTenure = Math.floor(loan / s.fixedEmi) || 1; 
+            } 
         } else {
-            let checkPrice = effectivePrice > 0 ? loanCapPrice : 50000; 
-            let absoluteMax = Math.min(checkPrice, nbfcMaxL); 
+            let absoluteMax = Math.min(loanCapPrice, nbfcMaxL); 
             if (prod.isNonTieup) { 
                 if (s.maxLoan < 9999999) absoluteMax = Math.min(absoluteMax, s.maxLoan); 
             } 
             loan = absoluteMax;
 
-            if(parseFloat(inp.target) > 0 && effectivePrice > 0) { 
+            if(parseFloat(inp.target) > 0) { 
                 let advRate = s.advEmi / s.tenure; 
                 let numerator = parseFloat(inp.target) - effectivePrice - dynamicPf - totalFees; 
                 let denominator = advRate + dbdRate + roiRateDP - 1; 
@@ -1176,7 +1194,7 @@ function recalcModel(pIdx) {
             if (isFixed) currentTenure = Math.floor(loan / s.fixedEmi) || 1;
         }
 
-        if (!isFixed && effectivePrice > 0 && loan > effectivePrice) {
+        if (!isFixed && loan > effectivePrice) {
             loan = effectivePrice;
         }
 
@@ -1205,7 +1223,7 @@ function recalcModel(pIdx) {
             if (activeCap > 0 && emi > activeCap) { 
                 let maxLoanForCap = Math.floor((activeCap - (insTotal / inst)) / ((1 / s.tenure) + roiRate));
                 if (maxLoanForCap < 0) maxLoanForCap = 0;
-                if (effectivePrice > 0 && maxLoanForCap > effectivePrice) maxLoanForCap = effectivePrice;
+                if (maxLoanForCap > effectivePrice) maxLoanForCap = effectivePrice;
                 loan = maxLoanForCap;
 
                 baseEmi = loan / s.tenure;
@@ -1223,15 +1241,15 @@ function recalcModel(pIdx) {
         }
 
         if(dpExact > 0) dpRounded = Math.ceil(dpExact / 10) * 10; else dpRounded = dpExact; 
-        let extraVal = effectivePrice > 0 ? (((emi * inst) + dpRounded) - effectivePrice) : 0; 
+        let extraVal = ((emi * inst) + dpRounded) - effectivePrice; 
         let dbdAmt = loan * dbdRate; 
         let roiAmt = (loan * roiRateDP) + (loan * roiRate * inst); 
         let curLTV = currentTenure > 0 ? ((currentTenure - s.advEmi) / currentTenure) * 100 : 0; 
         let marginMoney = parseFloat(inp.margin) || 0; 
         let roundupAdj = (dpRounded > dpExact) ? (dpRounded - dpExact) : 0; 
-        let netDisb = effectivePrice > 0 ? (effectivePrice - dpRounded - marginMoney - roundupAdj) : 0;
+        let netDisb = effectivePrice - dpRounded - marginMoney - roundupAdj;
 
-        let isInv50Breach = effectivePrice > 0 && (loan < minAllowedLoanByInvoice);
+        let isInv50Breach = loan < minAllowedLoanByInvoice;
 
         return { ...s, pf: dynamicPf, currentTenure, nbfcMaxL, loan, dp: dpRounded, emi, inst, daily: emi/30, dIdx, isFixed, curLTV, extra: extraVal, dbdAmt, roiAmt, netDisb, inactive: s.inactive || false, expiryDateStr: s.expiryDateStr, isInv50Breach: isInv50Breach, isCapBreach: isCapBreach };
     });
@@ -1319,28 +1337,31 @@ function manual(pIdx, dIdx) {
     let fee = (type === 'EMI CARD') ? 270 : (type === 'W/O CARD' ? 320 : 850); let totalFees = fee + (parseFloat(inp.margin)||0) + (parseFloat(inp.dealer)||0); 
     let limit = c?.limit || 0; 
     let currentLimit = limit > 0 ? limit : 9999999; let inputMrp = parseFloat(inp.mrp) || 0; let inputInv = parseFloat(inp.inv) || 0; 
-    let effectivePrice = inputInv > 0 ? inputInv : (inputMrp > 0 ? inputMrp : 0); let loanCapPrice = (inputMrp > 0 && inputInv > 0) ? Math.min(inputMrp, inputInv) : effectivePrice;
+    if (inputInv <= 0) return;
+
+    let effectivePrice = inputInv; 
+    let loanCapPrice = (inputMrp > 0 && inputInv > 0) ? Math.min(inputMrp, inputInv) : effectivePrice;
     let activeCap = parseFloat(inp.cap) || parseFloat(c?.cap) || 0;
 
-    let minAllowedLoanByInvoice = effectivePrice > 0 ? effectivePrice * 0.50 : 0;
-    if (effectivePrice > 0 && loan < minAllowedLoanByInvoice) {
+    let minAllowedLoanByInvoice = effectivePrice * 0.50;
+    if (loan < minAllowedLoanByInvoice) {
         loan = minAllowedLoanByInvoice;
         showToast("लोन रक्कम ५०% पेक्षा कमी असू शकत नाही!", "error");
     }
 
-    if (effectivePrice > 0 && loan > effectivePrice) {
+    if (loan > effectivePrice) {
         loan = effectivePrice;
         showToast("लोन रक्कम इनव्हॉइसपेक्षा जास्त असू शकत नाही!", "warning");
     }
 
     syncInsurance(pIdx, inputMrp, loan); 
-    let appliedPf = d.pf; if (prod.isNonTieup) { let checkAmount = effectivePrice > 0 ? effectivePrice : loan; let slabPf = getNonTieupPfValue(prod.category, checkAmount); if (slabPf !== null) appliedPf = slabPf; d.pf = appliedPf; }
+    let appliedPf = d.pf; if (prod.isNonTieup) { let slabPf = getNonTieupPfValue(prod.category, effectivePrice); if (slabPf !== null) appliedPf = slabPf; d.pf = appliedPf; }
     let dbdRate = (d.dbd * 1.18 / 100); let roiRate = d.roi / 1200; let roiRateDP = roiRate * d.advEmi; let dpE = 0; let dpR = 0;
     let insTotal = (parseFloat(inp.gtl)||0)+(parseFloat(inp.rfc)||0)+(parseFloat(inp.exw)||0);
 
     if (d.isFixed) { 
         let calcTenure = Math.floor(loan / d.fixedEmi) || 1; 
-        if (effectivePrice > 0 && (calcTenure * d.fixedEmi) < minAllowedLoanByInvoice) { calcTenure = Math.ceil(minAllowedLoanByInvoice / d.fixedEmi); }
+        if ((calcTenure * d.fixedEmi) < minAllowedLoanByInvoice) { calcTenure = Math.ceil(minAllowedLoanByInvoice / d.fixedEmi); }
         loan = calcTenure * d.fixedEmi; 
         let maxBoundary = Math.min(d.nbfcMaxL, prod.isNonTieup ? d.maxLoan : 9999999, loanCapPrice > 0 ? loanCapPrice : 9999999); 
         if (loan > maxBoundary) { loan = Math.floor(maxBoundary / d.fixedEmi) * d.fixedEmi; calcTenure = Math.floor(loan / d.fixedEmi) || 1; } 
@@ -1356,7 +1377,6 @@ function manual(pIdx, dIdx) {
         let nbfcMaxL = (currentLimit * d.tenure) / (d.tenure - d.advEmi || 1); 
         let maxBoundary = Math.min(loanCapPrice > 0 ? loanCapPrice : 999999, nbfcMaxL, prod.isNonTieup ? d.maxLoan : 9999999); 
         
-        /* मॅन्युअल लोन टाकताना सुद्धा EMI Capping च्या वर जाणार नाही याची काळजी घेतो */
         if (activeCap > 0) {
             let maxLoanForCap = Math.floor((activeCap - (insTotal / inst)) / ((1 / d.tenure) + roiRate));
             if (loan > maxLoanForCap) {
@@ -1366,8 +1386,8 @@ function manual(pIdx, dIdx) {
         }
 
         if(loan > maxBoundary) { loan = maxBoundary; } 
-        if (effectivePrice > 0 && loan < minAllowedLoanByInvoice) { loan = minAllowedLoanByInvoice; }
-        if (effectivePrice > 0 && loan > effectivePrice) { loan = effectivePrice; }
+        if (loan < minAllowedLoanByInvoice) { loan = minAllowedLoanByInvoice; }
+        if (loan > effectivePrice) { loan = effectivePrice; }
         el.value = Math.floor(loan); 
 
         let roiInEmi = loan * roiRate; let roiInDp = loan * roiRateDP; 
@@ -1379,9 +1399,9 @@ function manual(pIdx, dIdx) {
         d.loan = loan; d.dp = dpR; d.emi = emi; 
     }
 
-    d.extra = effectivePrice > 0 ? (((d.emi * d.inst) + d.dp) - effectivePrice) : 0; d.dbdAmt = loan * dbdRate; d.roiAmt = (loan * roiRateDP) + (loan * roiRate * d.inst); 
+    d.extra = ((d.emi * d.inst) + d.dp) - effectivePrice; d.dbdAmt = loan * dbdRate; d.roiAmt = (loan * roiRateDP) + (loan * roiRate * d.inst); 
     let marginMoney = parseFloat(inp.margin) || 0; let roundupAdj = (dpR > dpE) ? (dpR - dpE) : 0; 
-    d.netDisb = effectivePrice > 0 ? (effectivePrice - dpR - marginMoney - roundupAdj) : 0;
+    d.netDisb = effectivePrice - dpR - marginMoney - roundupAdj;
 
     prod.inputs.manualLoans = prod.inputs.manualLoans || {};
     prod.inputs.manualLoans[dIdx] = loan;
@@ -1400,7 +1420,7 @@ function sortM(pIdx, key) {
 }
 
 function copySchemeText(pIdx, dIdx, btnElement) {
-    let prod = current_products[pIdx], d = prod.calculatedData.find(x => x.dIdx === dIdx); let invAmt = prod.inputs.inv > 0 ? prod.inputs.inv : prod.inputs.mrp; let c = customerQueue[activeCustomerIndex]; let cappingLine = (c.cap && c.cap !== "") ? `\nEMI Capping- ${c.cap}` : ""; let custDetails = `Customer Name- ${c.name}\nLimit- ${c.limit}\nLTV- ${c.ltv}${cappingLine}\n\n`;
+    let prod = current_products[pIdx], d = prod.calculatedData.find(x => x.dIdx === dIdx); let invAmt = prod.inputs.inv; let c = customerQueue[activeCustomerIndex]; let cappingLine = (c.cap && c.cap !== "") ? `\nEMI Capping- ${c.cap}` : ""; let custDetails = `Customer Name- ${c.name}\nLimit- ${c.limit}\nLTV- ${c.ltv}${cappingLine}\n\n`;
     let textToCopy = `${custDetails}📱 *${prod.name}*\n${invAmt > 0 ? `*Invoice Amount:* ₹${invAmt}\n\n` : "" }✅ *Scheme:* ${d.currentTenure}/${d.advEmi}\n💰 *DP:* ₹${Math.round(d.dp).toLocaleString()}\n🗓️ *EMI:* ₹${Math.round(d.emi).toLocaleString()} x ${d.inst}\n✨ *Daily EMI:* ₹${Math.round(d.daily).toLocaleString()}`;
     function showSuccess() { let originalText = btnElement.innerText; btnElement.innerText = "Copied!"; btnElement.style.background = "var(--success)"; setTimeout(() => { btnElement.innerText = originalText; btnElement.style.background = "var(--primary)"; }, 2000); }
     if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(textToCopy).then(showSuccess).catch(() => fallbackCopy(textToCopy, showSuccess)); } else { fallbackCopy(textToCopy, showSuccess); }
@@ -1419,13 +1439,11 @@ async function executeManualAction() {
     let scheme = { tenure: parseInt(document.getElementById('manTen').value)||0, advEmi: parseInt(document.getElementById('manAdv').value)||0, dbd: parseFloat(document.getElementById('manDbd').value)||0, pf: parseInt(document.getElementById('manPf').value)||0, roi: parseFloat(document.getElementById('manRoi').value)||0, fixedEmi: parseInt(document.getElementById('manFixed').value)||0, minLoan: 0, maxLoan: 9999999, category: "MANUAL", inactive: false, isExpired: false, expiryDateStr: "" };
     if(mode === "NEW") { 
         let name = manNameInput !== "" ? manNameInput : "MANUAL MODEL"; 
-        let c = customerQueue[activeCustomerIndex];
-        let sharedTarget = c?.targetDp || c?.components?.target || ""; 
-        current_products.push({ name: name, schemes: [scheme], category: "MANUAL", inputs: { mrp: "", inv: "", cap: c?.cap || "", target: sharedTarget, gtl: 0, rfc: 0, exw: "", margin: "", dealer: "", surch: 0, manualLoans: {} }, isManual: true }); 
-        sortConfigs.push({ key: 'default_ltv', dir: 'desc' }); 
-        customerQueue[activeCustomerIndex].products = current_products; 
-        customerQueue[activeCustomerIndex].sortConfigs = sortConfigs; 
-        await saveQueueToLocal(); renderMatrix(); 
+        closeManualModal();
+        tempPendingProduct = { name: name, isNT: false, isManual: true, manualSchemes: [scheme], category: "MANUAL" };
+        currentModalCategory = "MANUAL";
+        showComponentsModal("");
+        return;
     } else { 
         current_products[mode].schemes.push(scheme); 
         customerQueue[activeCustomerIndex].products = current_products;
@@ -1483,10 +1501,11 @@ function doGenerateCustomerImage() {
     let productsToRender = window.tempImageGenIndices.map(idx => current_products[idx]);
 
     productsToRender.forEach((prod) => {
+        if (!prod.calculatedData || prod.calculatedData.length === 0) return;
         let validS = prod.calculatedData.filter(d => !d.inactive && !d.isInv50Breach && !d.isCapBreach && d.loan > 0);
         if(validS.length === 0) return; 
         hasV = true; 
-        let invAmt = prod.inputs.inv > 0 ? prod.inputs.inv : prod.inputs.mrp;
+        let invAmt = prod.inputs.inv;
 
         html += `
             <div style="border-left: 10px solid #034887; background: #ffffff; margin-bottom: 16px; border: 1px solid #cbd5e1;">
@@ -1515,7 +1534,7 @@ function doGenerateCustomerImage() {
         html += `</tbody></table></div>`;
     });
 
-    if(!hasV) { showToast("कोणतीही Eligible Scheme नाही!", "error"); return; }
+    if(!hasV) { showToast("कोणतीही Eligible Scheme नाही (कृपया आधी Invoice Value भरा)!", "error"); return; }
     html += `</div></div>`;
     quoteDiv.innerHTML = html; 
     document.body.appendChild(quoteDiv);
