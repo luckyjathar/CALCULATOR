@@ -13,50 +13,11 @@
     <!-- external libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
 
     <link rel="stylesheet" href="style.css?v=6.6">
 
     <style>
         body { overflow-x: hidden; }
-
-        .top-utility-bar {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: #ffffff;
-            padding: 8px 5px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-            border-bottom: 2px solid #e2e8f0;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-        .top-utility-bar .util-btn {
-            background: transparent;
-            border: none;
-            font-size: 24px;
-            padding: 6px;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.2s ease-in-out;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            width: 46px;
-            height: 46px;
-            position: relative;
-        }
-        .top-utility-bar .util-btn:active {
-            background: #e0f2fe;
-            transform: scale(0.9);
-        }
-        @media (min-width: 769px) {
-            .top-utility-bar .util-btn:hover {
-                background: #f1f5f9;
-                transform: translateY(-3px);
-            }
-        }
 
         @media (max-width: 768px) {
             .forms-row {
@@ -105,21 +66,9 @@
                 -webkit-overflow-scrolling: touch;
             }
         }
-
-        @media (max-width: 480px) {
-            .top-utility-bar .util-btn {
-                font-size: 20px;
-                width: 40px;
-                height: 40px;
-            }
-        }
     </style>
 </head>
 <body>
-
-<div id="dataLoadingIndicator" style="display: none; position: fixed; top: 15px; left: 50%; transform: translateX(-50%); background: var(--warning); color: #000; padding: 6px 15px; border-radius: 20px; font-weight: 900; font-size: 12px; z-index: 100000; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
-    downloading master data
-</div>
 
 <div id="toastNotification" class="toast-notification"></div>
 
@@ -143,28 +92,22 @@
     </div>
 </div>
 
-<header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; padding: 12px 15px; background: #fff; border-bottom: 1px solid #e2e8f0; gap: 15px;">
+<header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; padding: 12px 15px; background: #fff; border-bottom: 2px solid #e2e8f0; gap: 12px;">
     <h1 style="margin: 0; color: var(--bajaj-blue); font-size: 20px; display: flex; align-items: center; gap: 8px;">
         persistent portal
     </h1>
 
-    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-        <div id="gitStatusBadge" style="font-weight: 950; font-size: 11px; background: rgba(39, 174, 96, 0.15); color: var(--success); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--success); letter-spacing: 0.5px; text-align: center; white-space: nowrap; cursor: pointer;" title="click to refresh live data">
-            github connected
+    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+        <div id="masterDataStatusBadge" style="font-weight: 900; font-size: 11px; background: rgba(214, 48, 49, 0.12); color: var(--danger); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--danger); letter-spacing: 0.5px; text-align: center; white-space: nowrap;">
+            ⚠️ no master data
         </div>
 
-        <div id="g_id_onload" data-client_id="777001839486-tqii6kb1hjig7qnreme74vjbm9utavvd.apps.googleusercontent.com" data-callback="handleGoogleLogin" data-auto_select="false" data-auto_prompt="false"></div>
-        <div class="g_id_signin" data-type="standard" data-shape="rectangular" data-theme="outline" data-text="signin_with" data-size="large" data-logo_alignment="left"></div>
-
-        <button onclick="forceCloudSync()" id="syncBtn" style="background: #3498db; color: white; border: none; padding: 8px 15px; border-radius: 6px; font-weight: 900; cursor: pointer; display: none; align-items: center; gap: 6px; font-size: 12px; white-space: nowrap; box-shadow: 0 2px 4px rgba(52, 152, 219, 0.3);">
-            <span>sync</span> sync cloud
+        <input type="file" id="masterExcelFileInput" accept=".xlsx, .xls, .csv" style="display: none;" onchange="handleManualExcelUpload(event)">
+        <button onclick="document.getElementById('masterExcelFileInput').click()" style="background: var(--primary); color: white; border: none; padding: 8px 14px; border-radius: 6px; font-weight: 900; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 12px; white-space: nowrap; box-shadow: 0 2px 4px rgba(9, 132, 227, 0.3);">
+            📂 upload master excel
         </button>
     </div>
 </header>
-
-<div class="top-utility-bar">
-    <button onclick="toggleInline('unifiedHome')" class="util-btn" title="customers & queue">👥</button>
-</div>
 
 <main>
 
@@ -213,7 +156,7 @@
         </div>
         <div class="action-box">
             <div class="disclaimer-box">
-                github smart stream activated. master data downloads 2 times per day to keep things fast. verify with actual calculations.
+                local master data mode active. एकदा एक्सेल अपलोड केल्यावर ती ब्राउझरमध्ये सेव्ह राहते. verify with actual calculations.
             </div>
         </div>
     </div>
@@ -458,6 +401,6 @@
     </div>
 </footer>
 
-<script src="app.js?v=76.24"></script>
+<script src="app.js?v=76.25"></script>
 </body>
 </html>
