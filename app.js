@@ -689,7 +689,6 @@ function selectCategory(catName) {
     showComponentsModal(""); 
 }
 
-/* MRP किंवा INV बदलल्यावर GTL स्लॅबनुसार आपोआप सिलेक्ट होतो आणि RFC ऑप्शन अपडेट होतो (RFC डिफॉल्ट 0 राहतो) */
 function compPriceChanged() { 
     let mrp = parseFloat(document.getElementById('compMrp').value) || 0; 
     let inv = parseFloat(document.getElementById('compInv').value) || 0; 
@@ -715,7 +714,6 @@ function cancelComponentsModal() {
     document.getElementById('componentsModal').style.display = 'none';
 }
 
-/* मॉडेल सिलेक्ट केल्यावर Edit Components ची स्क्रीन उघडेल आणि कर्सर Inv ₹ वर जाईल */
 function showComponentsModal(baseMrp = "") {
     editingProductIdx = -1;
     let c = customerQueue[activeCustomerIndex]; 
@@ -747,21 +745,18 @@ function showComponentsModal(baseMrp = "") {
     document.getElementById('compMrp').value = currentMrp; 
     let mrpNum = parseFloat(currentMrp) || 0; 
 
-    /* GTL स्लॅबनुसार ऑटो-सिलेक्ट आणि RFC बाय-डिफॉल्ट 0 */
     document.getElementById('compGtl').value = String(getGtlSlabValue(mrpNum));
     let rfcSlab = getRfcSlabValue(mrpNum); 
     let rfcOpt = document.getElementById('compRfcOpt'); 
     if(rfcOpt) { rfcOpt.value = rfcSlab; rfcOpt.innerText = rfcSlab; }
     document.getElementById('compRfc').value = "0"; 
 
-    /* INV व इतर इनपुट्स कोरे */
     document.getElementById('compInv').value = ""; 
     document.getElementById('compCap').value = ""; 
     document.getElementById('compExw').value = ""; 
     document.getElementById('compMargin').value = ""; 
     document.getElementById('compDealer').value = ""; 
 
-    /* जर या कस्टमरच्या आधीच्या मॉडेलमध्ये Target DP टाकला असेल तरच तो प्री-फिल्ड येईल */
     let sharedTargetDp = c?.targetDp || c?.components?.target || "";
     document.getElementById('compTarget').value = sharedTargetDp > 0 ? sharedTargetDp : ""; 
     
@@ -772,7 +767,6 @@ function showComponentsModal(baseMrp = "") {
     }, 120);
 }
 
-/* मॉडेलमधील ✏️ Edit आयकॉनवर क्लिक केल्यावर त्या मॉडेलच्या व्हॅल्यूज एडिट करण्यासाठी उघडतो */
 function openEditModelComponents(pIdx, event) {
     if (event) event.stopPropagation();
     let prod = current_products[pIdx];
@@ -829,7 +823,6 @@ function openEditModelComponents(pIdx, event) {
     }, 120);
 }
 
-/* Invoice Value टाकल्याशिवाय फायनल कॅल्क्युलेशन पुढे जाणार नाही */
 async function proceedToMatrixFromComponents() { 
     let idx = activeCustomerIndex; 
     if(idx === -1) return; 
@@ -876,7 +869,6 @@ async function proceedToMatrixFromComponents() {
         dealer: parsedDealer
     };
 
-    /* जर Target DP दिला किंवा बदलला असेल, तर तो कस्टमरच्या सर्व मॉडेल्ससाठी लागू करतो */
     if (parsedTarget !== "") {
         c.targetDp = parsedTarget;
         current_products.forEach(cp => {
@@ -891,7 +883,6 @@ async function proceedToMatrixFromComponents() {
         });
     }
 
-    /* जर EMI Capping दिला असेल तर कस्टमर लेव्हलला सुद्धा अपडेट करतो */
     if (parsedCap !== "") { 
         c.cap = parsedCap > 0 ? parsedCap : ""; 
         current_products.forEach(cp => {
@@ -1027,7 +1018,7 @@ function removeModelFromMatrix(pIdx, event) {
 
 function instantSingleQuote(pIdx) { window.tempImageGenIndices = [pIdx]; requestWhatsAppDispatch = false; doGenerateCustomerImage(); }
 
-/* लहान ✏️ आणि ✖ आयकॉन्स एकाच ओळीत उजव्या कोपऱ्यात बसतील आणि फक्त सेट केलेल्या व्हॅल्यूज दिसतील */
+/* Model Name Complete Top-Left & Edit/Close Icons Complete Top-Right */
 function renderMatrix() {
     let container = document.getElementById('multiModelContainer'); container.innerHTML = "";
     let c = customerQueue[activeCustomerIndex];
@@ -1044,7 +1035,6 @@ function renderMatrix() {
         let inp = prod.inputs;
         let effectiveCap = parseFloat(inp.cap) || parseFloat(c?.cap) || 0;
 
-        /* फक्त ज्या व्हॅल्यूज सेट केल्या आहेत त्यांचेच Read-Only Chips तयार करतो */
         let chipsHtml = "";
         if (inp.mrp > 0) chipsHtml += `<span class="val-chip"><b>MRP:</b> ₹${Number(inp.mrp).toLocaleString()}</span>`;
         if (inp.inv > 0) chipsHtml += `<span class="val-chip"><b>Inv:</b> ₹${Number(inp.inv).toLocaleString()}</span>`;
@@ -1059,12 +1049,12 @@ function renderMatrix() {
         if (!chipsHtml) chipsHtml = `<span class="val-chip" style="color:var(--danger);">⚠️ Invoice Value Required (Tap ✏️ To Enter Inv ₹)</span>`;
 
         div.innerHTML = `
-            <div class="pmp-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:nowrap; gap:6px; padding:8px 10px;">
-                <div class="pmp-title" onclick="toggleModelView(${pIdx})" style="flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer; font-size:13px;">
-                    <span id="togIcon_${pIdx}" class="pmp-icon">${toggleIcon}</span>
-                    ${prod.name}
+            <div class="pmp-header-bar">
+                <div class="pmp-model-left" onclick="toggleModelView(${pIdx})">
+                    <span id="togIcon_${pIdx}">${toggleIcon}</span>
+                    <span>${prod.name}</span>
                 </div>
-                <div style="display:flex; align-items:center; gap:5px; flex-shrink:0;">
+                <div class="pmp-actions-right">
                     <button class="model-action-icon model-edit-icon" onclick="openEditModelComponents(${pIdx}, event)" title="Edit Components">✏️</button>
                     <button class="model-action-icon model-close-icon" onclick="removeModelFromMatrix(${pIdx}, event)" title="Remove Model">✖</button>
                 </div>
@@ -1110,7 +1100,6 @@ function syncInsurance(pIdx, mrpVal, baseLoanVal) {
     if (isPhoneWebMobile) inp.exw = ""; 
 }
 
-/* Invoice Value टाकल्याशिवाय फायनल कॅल्क्युलेशन दिसणार नाही */
 function recalcModel(pIdx) {
     if(!current_products[pIdx]) return; 
 
@@ -1122,7 +1111,6 @@ function recalcModel(pIdx) {
     let inputMrp = parseFloat(inp.mrp) || 0; 
     let inputInv = parseFloat(inp.inv) || 0; 
 
-    /* जर Invoice Value टाकली नसेल तर फायनल कॅल्क्युलेशन दाखवत नाही */
     if (inputInv <= 0) {
         prod.calculatedData = [];
         let tbody = document.getElementById(`body_${pIdx}`);
@@ -1219,7 +1207,6 @@ function recalcModel(pIdx) {
             let roiInEmi = loan * roiRate; 
             emi = baseEmi + (insTotal / inst) + roiInEmi;
 
-            /* जर EMI Capping असेल तर EMI कॅपिंगच्या आत ठेवण्यासाठी लोन कमी करतो आणि त्यानुसार DP आपोआप वाढतो */
             if (activeCap > 0 && emi > activeCap) { 
                 let maxLoanForCap = Math.floor((activeCap - (insTotal / inst)) / ((1 / s.tenure) + roiRate));
                 if (maxLoanForCap < 0) maxLoanForCap = 0;
