@@ -287,18 +287,79 @@ function standardizeCategoryName(cat) { if (!cat) return "OTHER"; let c = String
 function getRfcSlabValue(val) { let amount = parseFloat(val) || 0; if (amount < 8000) return 0; if (amount <= 10000) return 1109; if (amount <= 15000) return 1631; if (amount <= 20000) return 2147; if (amount <= 25000) return 2695; if (amount <= 30000) return 3215; if (amount <= 35000) return 3648; if (amount <= 40000) return 4219; if (amount <= 50000) return 5720; if (amount <= 60000) return 8686; if (amount <= 100000) return 11438; if (amount <= 200000) return 16677; return 0; }
 function getNonTieupPfValue(category, amount) { let cat = String(category || "").toUpperCase().replace(/\s+/g, '').trim(); let val = parseFloat(amount) || 0; if (cat.includes('DESKTOP') || cat.includes('LAPTOP')) { return 699; } if (cat === 'PHONE(WEB-MOBILE)' || cat.includes('PHONE') || cat.includes('TABLET') || cat.includes('MOBILE')) { if (val <= 30000) return 499; if (val <= 50000) return 599; return 699; } return null; }
 
-const PRIMARY_EXCEL_URL = "https://raw.githubusercontent.com/luckyjathar/testcalculator/main/master_data.xlsx";
-const SECONDARY_EXCEL_URL = "https://raw.githubusercontent.com/luckyjathar/CALCULATOR/main/master_data.xlsx";
-const LOCAL_EXCEL_URL = "./master_data.xlsx";
+/* ========================================================================= */
+/* MULTI-CDN & FALLBACK MASTER DATA LOADER (100% RELIABLE)                   */
+/* ========================================================================= */
+const EXCEL_ENDPOINTS = [
+    "https://raw.githubusercontent.com/luckyjathar/testcalculator/main/master_data.xlsx",
+    "https://cdn.jsdelivr.net/gh/luckyjathar/testcalculator@main/master_data.xlsx",
+    "https://raw.githubusercontent.com/luckyjathar/CALCULATOR/main/master_data.xlsx",
+    "https://cdn.jsdelivr.net/gh/luckyjathar/CALCULATOR@main/master_data.xlsx",
+    "https://raw.githubusercontent.com/luckyjathar/Store/main/master_data.xlsx",
+    "./master_data.xlsx",
+    "master_data.xlsx"
+];
 
 const DB_NAME = "PersistentPortalDB"; 
 const DB_VERSION = 2; 
 const STORE_NAME = "dataStore"; 
 let dbInstance;
 
-function initDB() { return new Promise((resolve, reject) => { let request = indexedDB.open(DB_NAME, DB_VERSION); request.onupgradeneeded = function(e) { let db = e.target.result; if (!db.objectStoreNames.contains(STORE_NAME)) { db.createObjectStore(STORE_NAME); } }; request.onsuccess = function(e) { dbInstance = e.target.result; resolve(dbInstance); }; request.onerror = function(e) { reject(e); }; }); }
-function saveToDB(key, data) { return new Promise((resolve, reject) => { if (!dbInstance) return reject("DB not initialized"); try { let tx = dbInstance.transaction(STORE_NAME, 'readwrite'); let store = tx.objectStore(STORE_NAME); let req = store.put(JSON.stringify(data), key); req.onsuccess = () => resolve(); req.onerror = (e) => reject(e.target.error); } catch(e) { reject(e); } }); }
-function getFromDB(key) { return new Promise((resolve, reject) => { if (!dbInstance) return resolve(null); try { let tx = dbInstance.transaction(STORE_NAME, 'readonly'); let store = tx.objectStore(STORE_NAME); let req = store.get(key); req.onsuccess = (e) => { let res = e.target.result; if (res) { if (typeof res === 'string') resolve(JSON.parse(res)); else resolve(res); } else { resolve(null); } }; req.onerror = (e) => reject(e.target.error); } catch(e) { reject(e); } }); }
+function initDB() { 
+    return new Promise((resolve) => { 
+        try {
+            let request = indexedDB.open(DB_NAME, DB_VERSION); 
+            request.onupgradeneeded = function(e) { 
+                let db = e.target.result; 
+                if (!db.objectStoreNames.contains(STORE_NAME)) { 
+                    db.createObjectStore(STORE_NAME); 
+                } 
+            }; 
+            request.onsuccess = function(e) { 
+                dbInstance = e.target.result; 
+                resolve(dbInstance); 
+            }; 
+            request.onerror = function() { 
+                console.warn("IndexedDB blocked, using fallback memory.");
+                resolve(null); 
+            }; 
+        } catch (err) {
+            resolve(null);
+        }
+    }); 
+}
+
+function saveToDB(key, data) { 
+    return new Promise((resolve) => { 
+        if (!dbInstance) return resolve(); 
+        try { 
+            let tx = dbInstance.transaction(STORE_NAME, 'readwrite'); 
+            let store = tx.objectStore(STORE_NAME); 
+            let req = store.put(JSON.stringify(data), key); 
+            req.onsuccess = () => resolve(); 
+            req.onerror = () => resolve(); 
+        } catch(e) { resolve(); } 
+    }); 
+}
+
+function getFromDB(key) { 
+    return new Promise((resolve) => { 
+        if (!dbInstance) return resolve(null); 
+        try { 
+            let tx = dbInstance.transaction(STORE_NAME, 'readonly'); 
+            let store = tx.objectStore(STORE_NAME); 
+            let req = store.get(key); 
+            req.onsuccess = (e) => { 
+                let res = e.target.result; 
+                if (res) { 
+                    try { resolve(typeof res === 'string' ? JSON.parse(res) : res); } 
+                    catch(err) { resolve(null); }
+                } else { resolve(null); } 
+            }; 
+            req.onerror = () => resolve(null); 
+        } catch(e) { resolve(null); } 
+    }); 
+}
 
 let db_records = []; let current_products = []; let sortConfigs = []; const SPECIAL_MODEL = "NON TIEUP"; let tempSheet1Data = []; let parsedSheet2Data = []; let customerQueue = []; let recycleBin = []; let activeCustomerIndex = -1; let selectedQueueIndex = -1; let tempPendingProduct = null; 
 
@@ -326,6 +387,81 @@ async function saveQueueToLocal(shouldCloudSync = true) {
 
 const CACHE_DURATION_MS = 12 * 60 * 60 * 1000; 
 
+/* Smart Excel Sheet Parser - वरती रिकाम्या ओळी असल्या तरी डेटा शोधतो */
+function parseSheetSmartly(sheet) {
+    if (!sheet) return [];
+    let rows = XLSX.utils.sheet_to_json(sheet, { raw: false, defval: "" });
+    if (rows.length > 0) {
+        let firstKeys = Object.keys(rows[0]).map(k => k.toUpperCase());
+        let hasEmptyKey = firstKeys.some(k => k.includes('__EMPTY'));
+        if (hasEmptyKey) {
+            let matrix = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false, defval: "" });
+            let headerRowIdx = matrix.findIndex(r => Array.isArray(r) && r.some(cell => String(cell).toUpperCase().match(/MODEL|TENURE|CATEGORY|DBD|SCHEME/)));
+            if (headerRowIdx > 0) {
+                rows = XLSX.utils.sheet_to_json(sheet, { range: headerRowIdx, raw: false, defval: "" });
+            }
+        }
+    }
+    return rows;
+}
+
+async function processArrayBufferToDB(dataBuffer) {
+    let wb = XLSX.read(new Uint8Array(dataBuffer), { type: 'array' });
+    tempSheet1Data = parseSheetSmartly(wb.Sheets[wb.SheetNames[0]]); 
+    parsedSheet2Data = wb.SheetNames.length > 1 ? parseSheetSmartly(wb.Sheets[wb.SheetNames[1]]).map(r => mapData(r, SPECIAL_MODEL)).filter(x => x && x.model && x.model.trim() !== "") : [];
+
+    let filteredSheet1 = tempSheet1Data.map(r => mapData(r, "REG")).filter(m => m && m.model && m.model.trim() !== ""); 
+    let rawCombined = [...filteredSheet1, ...parsedSheet2Data]; 
+    let uniqueDB = []; let seenDB = new Set();
+
+    rawCombined.forEach(r => { 
+        let key = `${r.model}_${r.category}_${r.tenure}_${r.advEmi}_${r.fixedEmi}_${r.minLoan}_${r.maxLoan}`; 
+        if (!seenDB.has(key)) { seenDB.add(key); uniqueDB.push(r); } 
+    });
+
+    if (uniqueDB.length === 0) {
+        throw new Error("Excel मध्ये वैध मॉडेल डेटा सापडला नाही.");
+    }
+
+    db_records = uniqueDB;
+    let now = Date.now();
+    await saveToDB('cached_db_records', db_records);
+    await saveToDB('master_data_time', now);
+}
+
+/* मॅन्युअल फाईल अपलोडर (जर सर्व लिंक्स फेल झाल्या तर) */
+function promptManualExcelUpload() {
+    let inp = document.getElementById('hiddenManualExcelInput');
+    if (!inp) {
+        inp = document.createElement('input');
+        inp.type = 'file';
+        inp.id = 'hiddenManualExcelInput';
+        inp.accept = '.xlsx, .xls, .csv';
+        inp.style.display = 'none';
+        inp.onchange = async function(e) {
+            let file = e.target.files[0];
+            if (!file) return;
+            try {
+                showToast("फाईल लोड होत आहे...", "warning");
+                let buf = await file.arrayBuffer();
+                await processArrayBufferToDB(buf);
+                let statusBadge = document.getElementById('gitStatusBadge');
+                if (statusBadge) {
+                    statusBadge.innerHTML = `✅ DATA LOADED (${db_records.length})`;
+                    statusBadge.style.color = 'var(--success)';
+                    statusBadge.style.background = 'rgba(39, 174, 96, 0.15)';
+                }
+                if (activeCustomerIndex !== -1) { loadCurrentProducts(); renderMatrix(); }
+                showToast(`एकूण ${db_records.length} स्कीम्स यशस्वीरित्या लोड झाल्या!`, "success");
+            } catch (err) {
+                showToast("फाईल वाचण्यात एरर: " + err.message, "error");
+            }
+        };
+        document.body.appendChild(inp);
+    }
+    inp.click();
+}
+
 async function fetchFromMasterStream(forceSync = false) {
     let statusBadge = document.getElementById('gitStatusBadge'); 
     let globalLoader = document.getElementById('dataLoadingIndicator');
@@ -343,7 +479,7 @@ async function fetchFromMasterStream(forceSync = false) {
         if (loggedInUserEmail) {
             updateLoginUI(savedName, true);
         } else if (statusBadge) {
-            statusBadge.innerHTML = '⚡ READY (CACHE ACTIVE)';
+            statusBadge.innerHTML = `⚡ READY (${db_records.length} SCHEMES)`;
             statusBadge.style.color = 'var(--success)';
             statusBadge.style.background = 'rgba(39, 174, 96, 0.15)';
         }
@@ -358,55 +494,40 @@ async function fetchFromMasterStream(forceSync = false) {
         globalLoader.style.display = 'block';
         globalLoader.style.background = 'var(--warning)';
         globalLoader.style.color = '#000';
-        globalLoader.innerHTML = 'डेटा सिंक होत आहे...';
+        globalLoader.innerHTML = 'Master Data डाउनलोड होत आहे...';
     }
 
     try {
-        const urlsToTry = [
-            PRIMARY_EXCEL_URL + '?t=' + now,
-            SECONDARY_EXCEL_URL + '?t=' + now,
-            LOCAL_EXCEL_URL + '?t=' + now
-        ];
-
         let dataBuffer = null;
-        for (let url of urlsToTry) {
+        for (let baseUrl of EXCEL_ENDPOINTS) {
             try {
-                let res = await fetch(url);
+                let fetchUrl = baseUrl.startsWith('http') ? (baseUrl + '?t=' + now) : baseUrl;
+                let res = await fetch(fetchUrl, { cache: "no-store" });
                 if (res.ok) {
-                    dataBuffer = await res.arrayBuffer();
-                    break;
+                    let buf = await res.arrayBuffer();
+                    if (buf && buf.byteLength > 100) {
+                        dataBuffer = buf;
+                        console.log("Loaded Master Data from:", baseUrl);
+                        break;
+                    }
                 }
-            } catch(e) { }
+            } catch(e) {
+                console.warn("Endpoint skipped:", baseUrl);
+            }
         }
 
         if (!dataBuffer) {
-            throw new Error("सर्व नेटवर्क एन्डपॉइंट्सवर एक्सेल लोड झाली नाही.");
+            throw new Error("नेटवर्कवरून मास्टर एक्सेल लोड होऊ शकली नाही.");
         }
 
-        let wb = XLSX.read(new Uint8Array(dataBuffer), { type: 'array' });
-        tempSheet1Data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { raw: false, defval: "" }); 
-        parsedSheet2Data = wb.SheetNames.length > 1 ? XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[1]], { raw: false, defval: "" }).map(r => mapData(r, SPECIAL_MODEL)).filter(x => x && x.model && x.model.trim() !== "") : [];
-
-        let filteredSheet1 = tempSheet1Data.map(r => mapData(r, "REG")).filter(m => m && m.model && m.model.trim() !== ""); 
-        let rawCombined = [...filteredSheet1, ...parsedSheet2Data]; 
-        let uniqueDB = []; let seenDB = new Set();
-
-        rawCombined.forEach(r => { 
-            let key = `${r.model}_${r.category}_${r.tenure}_${r.advEmi}_${r.fixedEmi}_${r.minLoan}_${r.maxLoan}`; 
-            if (!seenDB.has(key)) { seenDB.add(key); uniqueDB.push(r); } 
-        });
-
-        db_records = uniqueDB;
-
-        await saveToDB('cached_db_records', db_records);
-        await saveToDB('master_data_time', now);
+        await processArrayBufferToDB(dataBuffer);
 
         if (activeCustomerIndex !== -1) { loadCurrentProducts(); renderMatrix(); }
 
         if (loggedInUserEmail) {
             updateLoginUI(savedName, true);
         } else if(statusBadge) { 
-            statusBadge.innerHTML = '✅ LIVE DATA SYNCED'; 
+            statusBadge.innerHTML = `✅ LIVE SYNCED (${db_records.length})`; 
             statusBadge.style.color = 'var(--success)'; 
             statusBadge.style.background = 'rgba(39, 174, 96, 0.15)'; 
         }
@@ -424,10 +545,12 @@ async function fetchFromMasterStream(forceSync = false) {
         if (globalLoader) globalLoader.style.display = 'none';
         if (!cachedDbRecords || cachedDbRecords.length === 0) {
             if(statusBadge) { 
-                statusBadge.innerHTML = '⚠️ NO MASTER DATA FOUND'; 
+                statusBadge.innerHTML = '📂 UPLOAD MASTER EXCEL (CLICK HERE)'; 
                 statusBadge.style.color = 'var(--danger)'; 
                 statusBadge.style.background = 'rgba(214, 48, 49, 0.15)'; 
+                statusBadge.onclick = function() { promptManualExcelUpload(); };
             }
+            showToast("नेटवर्क एरर! वरच्या लाल बटणावर क्लिक करून master_data.xlsx सिलेक्ट करा.", "error");
         }
     }
 }
@@ -452,8 +575,12 @@ window.onload = async function() {
         statusBadge.style.cursor = 'pointer';
         statusBadge.title = "Click to refresh master data";
         statusBadge.onclick = async function() {
-            showToast("लाइव्ह डेटा डाउनलोड सुरू आहे...", "warning");
-            await forceRefreshMasterData();
+            if (db_records.length === 0) {
+                promptManualExcelUpload();
+            } else {
+                showToast("लाइव्ह डेटा डाउनलोड सुरू आहे...", "warning");
+                await forceRefreshMasterData();
+            }
         };
     }
 
@@ -483,17 +610,17 @@ window.onload = async function() {
 
         renderCustomerQueue(); 
         updateUniversalActionButtons();
-
-        await fetchFromMasterStream(); 
-
-        if (loggedInUserEmail) {
-            await fetchCloudDataOnLogin(savedName, true, false);
-        }
-
-        setTimeout(() => checkForExcelUpdates(), 3000);
     } catch(e) { 
         console.error("Local Data Initialization Failure", e); 
     }
+
+    await fetchFromMasterStream(); 
+
+    if (loggedInUserEmail) {
+        fetchCloudDataOnLogin(savedName, true, false);
+    }
+
+    setTimeout(() => checkForExcelUpdates(), 3000);
 };
 
 function doSearch(inputId, dropdownId) {
@@ -509,7 +636,7 @@ function doSearch(inputId, dropdownId) {
 
     let validRecords = (Array.isArray(db_records) ? db_records : []).filter(r => r && r.model && r.model !== SPECIAL_MODEL);
     if (validRecords.length === 0) {
-        dd.innerHTML = `<div style="padding:10px; color:var(--danger); font-weight:bold; text-align:center;">master data load होत आहे, थांबा.</div>`;
+        dd.innerHTML = `<div onclick="promptManualExcelUpload()" style="padding:10px; color:var(--danger); font-weight:bold; text-align:center; cursor:pointer;">⚠️ Master Data नाही! इथे टॅप करून Excel फाईल निवडा.</div>`;
         dd.style.display = 'block';
         return;
     }
@@ -579,7 +706,8 @@ async function addCustomerToQueue() {
     }
 
     if(db_records.length === 0) {
-        showToast("Master डेटा लोड होत आहे, २ सेकंद थांबा!", "warning");
+        showToast("Master डेटा अजून लोड झाला नाही! वरच्या लाल बटणावरून फाईल निवडा.", "warning");
+        promptManualExcelUpload();
         return;
     }
 
@@ -688,7 +816,11 @@ function renderCustomerQueue() {
 }
 
 async function setActiveCustomer(idx) { 
-    if(db_records.length === 0) { showToast("Master डेटा उपलब्ध नाही!", "error"); return; } 
+    if(db_records.length === 0) { 
+        showToast("Master डेटा उपलब्ध नाही! कृपया फाईल निवडा.", "error"); 
+        promptManualExcelUpload();
+        return; 
+    } 
     activeCustomerIndex = idx; 
     await saveQueueToLocal(false); 
     if(document.getElementById('queueSearch')) document.getElementById('queueSearch').value = ''; 
@@ -751,7 +883,17 @@ async function processMultiStack() {
     } else { showToast("किमान एक Scheme भरा!", "error"); }
 }
 
-function findValLocal(row, targets) { let key = Object.keys(row).find(k => targets.includes(k.toUpperCase().replace(/\s/g, ''))); return key ? row[key] : null; }
+/* अधिक लवचिक Column Finder */
+function findValLocal(row, targets) { 
+    let keys = Object.keys(row);
+    let exactKey = keys.find(k => targets.includes(k.toUpperCase().replace(/[^A-Z0-9%]/g, ''))); 
+    if (exactKey !== undefined) return row[exactKey];
+    let partialKey = keys.find(k => {
+        let cleanK = k.toUpperCase().replace(/[^A-Z0-9%]/g, '');
+        return targets.some(t => cleanK.includes(t));
+    });
+    return partialKey !== undefined ? row[partialKey] : null; 
+}
 
 function mapData(row, type) { 
     if(!row) return null; 
@@ -763,17 +905,28 @@ function mapData(row, type) {
         if(expDate < today) isExp = true; 
         let dd = String(expDate.getDate()).padStart(2, '0'); let mm = String(expDate.getMonth() + 1).padStart(2, '0'); let yyyy = expDate.getFullYear(); expiryDateStr = `${dd}/${mm}/${yyyy}`; 
     } 
+
+    let rawModel = findValLocal(row, ['MODEL', 'BRANDMODEL', 'MODELNAME', 'PRODUCT', 'ITEM']);
+    let rawTen = findValLocal(row, ['TOTALTENURE', 'TENURE', 'TA', 'MONTHS']);
+    let rawAdv = findValLocal(row, ['ADVANCEEMI', 'ADV', 'ADVEMI']);
+
+    if (rawTen && String(rawTen).includes('/')) {
+        let parts = String(rawTen).split('/');
+        rawTen = parts[0];
+        if (!rawAdv) rawAdv = parts[1];
+    }
+
     return { 
-        model: type === SPECIAL_MODEL ? SPECIAL_MODEL : String(findValLocal(row,['MODEL','BRANDMODEL'])||"").toUpperCase(), 
-        brand: String(findValLocal(row, ['BRAND', 'MAKE', 'MANUFACTURER'])||"").toUpperCase(), 
+        model: type === SPECIAL_MODEL ? SPECIAL_MODEL : String(rawModel || "").trim().toUpperCase(), 
+        brand: String(findValLocal(row, ['BRAND', 'MAKE', 'MANUFACTURER'])||"").trim().toUpperCase(), 
         mrp: parseFloat(findValLocal(row, ['MRP', 'PRICE', 'M.R.P'])) || 0, 
-        tenure: parseInt(findValLocal(row, ['TOTALTENURE', 'TENURE', 'TA'])) || 0, 
-        advEmi: parseInt(findValLocal(row, ['ADVANCEEMI', 'ADV'])) || 0, 
-        dbd: parseFloat(findValLocal(row,['DBD','DBD%'])||0), 
+        tenure: parseInt(rawTen) || 0, 
+        advEmi: parseInt(rawAdv) || 0, 
+        dbd: parseFloat(findValLocal(row,['DBD','DBD%','DEALERDISCOUNT'])||0), 
         pf: parseInt(findValLocal(row,['PF','PROCESSINGFEE'])||0), 
-        roi: parseFloat(findValLocal(row,['ROI','ROI%'])||0), 
+        roi: parseFloat(findValLocal(row,['ROI','ROI%','INTEREST'])||0), 
         fixedEmi: parseFloat(findValLocal(row,['FIXEDEMI', 'FIXED'])||0), 
-        category: standardizeCategoryName(findValLocal(row,['CATEGORY','CAT'])||""), 
+        category: standardizeCategoryName(findValLocal(row,['CATEGORY','CAT','ASSET'])||""), 
         minLoan: parseFloat(findValLocal(row, ['MINLOAN', 'MINL'])) || 0, 
         maxLoan: parseFloat(findValLocal(row, ['MAXLOAN', 'MAXL'])) || 9999999, 
         isExpired: isExp, 
