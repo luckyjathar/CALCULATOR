@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Persistent Portal">
 
-    <title>Persistent Portal V76.30 - Pro Edition</title>
+    <title>Persistent Portal V76.31 - Pro Edition</title>
 
     <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -79,32 +79,75 @@
             transform: scale(0.95);
         }
 
-        /* Compact Model Header Action Icons (एकाच लाईनमध्ये उजव्या कोपऱ्यात बसण्यासाठी लहान साईझ) */
+        /* Model Header: Model Name Complete Top-Left & Edit/Close Icons Complete Top-Right */
+        .premium-model-panel {
+            position: relative !important;
+        }
+        .pmp-header-bar {
+            position: relative !important;
+            display: flex !important;
+            flex-direction: row !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+            padding: 8px 65px 8px 10px !important;
+            background: #034887;
+            color: #ffffff;
+            border-bottom: 1px solid #e2e8f0;
+            min-height: 36px !important;
+        }
+        .pmp-model-left {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 6px !important;
+            font-size: 13px !important;
+            font-weight: 900 !important;
+            color: #ffffff !important;
+            cursor: pointer;
+            text-align: left !important;
+            margin: 0 !important;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 100%;
+        }
+        .pmp-actions-right {
+            position: absolute !important;
+            top: 6px !important;
+            right: 8px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 5px !important;
+            z-index: 10;
+        }
         .model-action-icon {
-            border-radius: 4px;
+            border-radius: 4px !important;
             width: 24px !important;
             height: 24px !important;
             min-height: 24px !important;
+            max-height: 24px !important;
             padding: 0 !important;
+            margin: 0 !important;
             font-size: 11px !important;
-            font-weight: 900;
+            font-weight: 900 !important;
             cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid transparent;
-            flex-shrink: 0;
-            line-height: 1;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            border: 1px solid transparent !important;
+            flex-shrink: 0 !important;
+            line-height: 1 !important;
         }
         .model-edit-icon {
-            background: #e0f2fe;
-            color: var(--primary);
-            border-color: #bae6fd;
+            background: #e0f2fe !important;
+            color: var(--primary) !important;
+            border-color: #bae6fd !important;
         }
         .model-close-icon {
-            background: #fee2e2;
-            color: var(--danger);
-            border-color: #fecaca;
+            background: #fee2e2 !important;
+            color: var(--danger) !important;
+            border-color: #fecaca !important;
         }
         .model-action-icon:active {
             transform: scale(0.9);
@@ -348,7 +391,7 @@
             <div id="categoryGrid" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:8px;"></div>
         </div>
 
-        <!-- INLINE 3: Edit Components Panel (मॉडेल सिलेक्ट केल्यावर किंवा ✏️ वर क्लिक केल्यावर उघडेल) -->
+        <!-- INLINE 3: Edit Components Panel -->
         <div id="componentsModal" class="inline-work-panel" style="display: none;">
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 2px solid #ddd; padding-bottom: 6px; margin-bottom: 10px;">
                 <h3 style="margin:0; color:var(--indigo);"><span id="compModalHeadingText">Edit Components</span> (<span id="compPendingModelName" style="color:var(--primary);"></span>)</h3>
@@ -550,6 +593,6 @@
     </div>
 </footer>
 
-<script src="app.js?v=76.30"></script>
+<script src="app.js?v=76.31"></script>
 </body>
 </html>
