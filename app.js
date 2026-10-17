@@ -564,6 +564,7 @@ async function processMultiStack() {
         } 
     }
     if(validSchemes.length > 0) { 
+        closeMultiStackModal();
         tempPendingProduct = { name: msNameInput, isNT: false, isManual: true, manualSchemes: validSchemes, category: "MANUAL" };
         currentModalCategory = "MANUAL";
         showComponentsModal("");
