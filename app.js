@@ -12,12 +12,7 @@ function showToast(message, type = 'success') {
 /* === single-view navigation helper === */
 const INLINE_VIEW_IDS = [
     'unifiedHome',
-    'finalEligibleArea',
-    'zatpatCalcModal',
-    'customerMessageGenModal',
-    'dealerSearchModal',
-    'dictionarySearchModal',
-    'flyerGenModal'
+    'finalEligibleArea'
 ];
 
 function showOnlyOneInlineView(targetId, displayType = 'flex') {
@@ -29,6 +24,20 @@ function showOnlyOneInlineView(targetId, displayType = 'flex') {
     if (targetEl) {
         targetEl.style.display = (targetId === 'unifiedHome') ? 'block' : displayType;
     }
+}
+
+function toggleInline(id, openFunc) {
+    showOnlyOneInlineView(id, (id === 'unifiedHome') ? 'block' : 'flex');
+
+    ['addProductModal', 'catSelectionModal', 'multiStackModal'].forEach(mId => {
+        let m = document.getElementById(mId);
+        if (m) m.style.display = 'none';
+    });
+
+    if (typeof openFunc === 'function') {
+        openFunc();
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 /* === custom confirm function === */
@@ -89,7 +98,6 @@ async function handleGoogleLogin(response) {
         updateLoginUI(userData.name, false);
         await fetchCloudDataOnLogin(userData.name, false, true);
     } catch(e) { console.error("Google Login Parsing Error:", e); }
-    toggleSidebar();
 }
 
 function updateLoginUI(userName, isOnline) {
@@ -141,19 +149,6 @@ async function fetchCloudDataOnLogin(userName, isSilent = false, forceCloudPrior
                         await saveToDB('persistent_recycle', recycleBin);
                         localStorage.setItem('persistent_recycle_backup', JSON.stringify(recycleBin));
                     }
-                    if (Array.isArray(metaItem.customStagingSchemes)) {
-                        customStagingSchemes = metaItem.customStagingSchemes;
-                        await saveToDB('custom_staging_schemes', customStagingSchemes);
-                        autoCleanStagingSchemesAgainstMaster();
-                        updateStagingBadge();
-                    }
-                    if (Array.isArray(metaItem.starredDealers)) {
-                        localStorage.setItem('persistent_starred_dealers', JSON.stringify(metaItem.starredDealers));
-                    }
-                    if (Array.isArray(metaItem.emiDrafts)) {
-                        localStorage.setItem('persistent_emi_drafts', JSON.stringify(metaItem.emiDrafts));
-                        updateDraftBadgeCount();
-                    }
                     if (metaItem.salesName) localStorage.setItem('portal_sales_name', metaItem.salesName);
                     if (metaItem.salesMobile) localStorage.setItem('portal_sales_mobile', metaItem.salesMobile);
                     if (cloudUpdatedAt > 0) {
@@ -182,7 +177,7 @@ async function fetchCloudDataOnLogin(userName, isSilent = false, forceCloudPrior
                 await triggerSilentCloudSync();
             }
         } else {
-            if (customerQueue.length > 0 || customStagingSchemes.length > 0 || recycleBin.length > 0) {
+            if (customerQueue.length > 0 || recycleBin.length > 0) {
                 await triggerSilentCloudSync();
                 if (!isSilent) showToast("लोकल डेटा क्लाऊडवर सिंक झाला!", "success");
             }
@@ -235,9 +230,6 @@ async function triggerSilentCloudSync() {
             _isPortalSyncMeta: true,
             updatedAt: updatedAt,
             recycleBin: recycleBin || [],
-            customStagingSchemes: customStagingSchemes || [],
-            starredDealers: JSON.parse(localStorage.getItem('persistent_starred_dealers') || '[]'),
-            emiDrafts: JSON.parse(localStorage.getItem('persistent_emi_drafts') || '[]'),
             salesName: localStorage.getItem('portal_sales_name') || '',
             salesMobile: localStorage.getItem('portal_sales_mobile') || ''
         };
@@ -288,160 +280,7 @@ setInterval(function() {
     }
 }, 25000);
 
-if (typeof pdfjsLib !== 'undefined') {
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-}
-
-function toggleSidebar() { 
-    let sb = document.getElementById('appSidebar'); 
-    let ol = document.getElementById('sidebarOverlay'); 
-    if(sb) sb.classList.toggle('open'); 
-    if(ol) ol.classList.toggle('show'); 
-}
-
-function openCustomerMessageModal() { 
-    showOnlyOneInlineView('customerMessageGenModal', 'flex'); 
-    calculateDates(); 
-    updateDraftBadgeCount(); 
-}
-function closeCustomerMessageModal() { 
-    showOnlyOneInlineView('unifiedHome', 'block'); 
-}
-
-let pdfInputEl = document.getElementById('pdfInput');
-if (pdfInputEl) {
-    pdfInputEl.addEventListener('change', async function(e) {
-        const file = e.target.files[0]; if (!file) return;
-        let statusEl = document.getElementById('pdfStatus'); statusEl.style.color = 'var(--primary)'; statusEl.innerText = 'PDF डेटा वाचत आहे, थांबा...';
-        const fileReader = new FileReader();
-        fileReader.onload = async function() {
-            const typedarray = new Uint8Array(this.result);
-            try {
-                const pdf = await pdfjsLib.getDocument(typedarray).promise; let fullText = "";
-                for (let i = 1; i <= pdf.numPages; i++) { const page = await pdf.getPage(i); const textContent = await page.getTextContent(); fullText += " " + textContent.items.map(item => item.str).join(" "); }
-                parsePDFText(fullText); statusEl.style.color = 'var(--success)'; statusEl.innerText = 'PDF डेटा यशस्वीरित्या मिळवला!';
-            } catch (error) { statusEl.style.color = 'var(--danger)'; statusEl.innerText = 'PDF वाचण्यात एरर आला. मॅन्युअली तपासा.'; }
-        };
-        fileReader.readAsArrayBuffer(file);
-    });
-}
-
-function parsePDFText(text) {
-    const dealerMatch = text.match(/Dear\s+(.*?)\s*Customer ID:/i);
-    if (dealerMatch) { let rawDealer = dealerMatch[1].replace(/Bajaj Finance Limited/gi, '').replace(/DELIVERY ORDER/gi, '').trim(); let parts = rawDealer.split('#').map(p => p.trim()).filter(p => p !== ''); document.getElementById('msgShopName').value = parts.slice(0, 2).join(' - ') || rawDealer; }
-    const assetMatch = text.match(/Asset Category\s*(?:\|\s*)*([A-Z0-9\(\)\-\s]+?)\s*(?:\||\s*OEM)/i); if (assetMatch) document.getElementById('msgAssetCategory').value = assetMatch[1].trim();
-    const nameMatch = text.match(/application of Mr\/Miss\/Mrs\.\s*([A-Za-z\s]+?)\s*has been approved/i); if (nameMatch) document.getElementById('msgCustName').value = nameMatch[1].trim();
-    const mobileMatch = text.match(/Mobile Number:\s*(\d{10})/i); if (mobileMatch) document.getElementById('msgCustMobile').value = mobileMatch[1];
-    const emiMatch = text.match(/Total EMI\s*["',\s]*([\d,]+)/i); if (emiMatch) document.getElementById('msgCustEMI').value = emiMatch[1].replace(/,/g, '');
-    const tenureMatch = text.match(/Scheme Code.*?\((\d+)\s*\/\s*(\d+)\)/i) || text.match(/\((\d+)\s*\/\s*(\d+)\)/);
-    if (tenureMatch) { let grossTenure = parseInt(tenureMatch[1], 10) || 0; let advanceEmi = parseInt(tenureMatch[2], 10) || 0; let netTenure = grossTenure - advanceEmi; document.getElementById('msgCustTenure').value = netTenure > 0 ? netTenure : grossTenure; }
-    const dateMatch = text.match(/Date:\s*(\d{2})\/(\d{2})\/(\d{4})/i); if (dateMatch) { document.getElementById('msgLoanDate').value = `${dateMatch[3]}-${dateMatch[2]}-${dateMatch[1]}`; }
-    calculateDates();
-}
-
-function calculateDates() {
-    const loanDateVal = document.getElementById('msgLoanDate').value; const tenure = parseInt(document.getElementById('msgCustTenure').value) || 0; const lang = document.getElementById('msgLang').value;
-    if (!loanDateVal) { document.getElementById('msgStartDate').value = ''; document.getElementById('msgEndDate').value = ''; generateMessage(); return; }
-    const dateParts = loanDateVal.split('-'); let year = parseInt(dateParts[0]); let month = parseInt(dateParts[1]) - 1; let day = parseInt(dateParts[2]);
-    let startMonth = month + 1; let startYear = year; if (day >= 24) { startMonth = month + 2; }
-    let startDateObj = new Date(startYear, startMonth, 2); let endDateObj = new Date(startYear, startMonth + tenure - 1, 2);
-    document.getElementById('msgStartDate').value = formatDate(startDateObj, lang); document.getElementById('msgEndDate').value = formatDate(endDateObj, lang); generateMessage();
-}
-
-function formatDate(dateObj, lang) {
-    const mrMonths = ["जानेवारी", "फेब्रुवारी", "मार्च", "एप्रिल", "मे", "जून", "जुलै", "ऑगस्ट", "सप्टेंबर", "ऑक्टोबर", "नोव्हेंबर", "डिसेंबर"];
-    const hiMonths = ["जनवरी", "फरवरी", "मार्च", "अप्रैल", "मई", "जून", "जुलाई", "अगस्त", "सितंबर", "अक्टूबर", "नवंबर", "दिसंबर"];
-    const enMonths = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-    const day = String(dateObj.getDate()).padStart(2, '0'); const year = dateObj.getFullYear();
-    if (lang === 'mr') return `०२ ${mrMonths[dateObj.getMonth()]} ${year}`; if (lang === 'hi') return `${day} ${hiMonths[dateObj.getMonth()]} ${year}`; return `${day} ${enMonths[dateObj.getMonth()]} ${year}`;
-}
-
-function generateMessage() {
-    const shop = document.getElementById('msgShopName').value || ''; const asset = document.getElementById('msgAssetCategory').value || '';
-    const name = document.getElementById('msgCustName').value || ''; const emi = document.getElementById('msgCustEMI').value || '0';
-    const tenure = document.getElementById('msgCustTenure').value || '0'; const startDate = document.getElementById('msgStartDate').value || '-';
-    const endDate = document.getElementById('msgEndDate').value || '-'; const lang = document.getElementById('msgLang').value;
-    let msg = "";
-    if (lang === 'mr') {
-        msg = `सस्नेह नमस्कार, ${name}! 🙏\n\nबजाज फायनान्समध्ये आपले स्वागत आहे. आपण खरेदी केलेल्या वस्तूच्या कर्जाची माहिती खालीलप्रमाणे आहे:\n\n🏬 दुकानाचे नाव: ${shop}\n📱 वस्तूचा प्रकार: ${asset}\n📌 मासिक हप्ता: ₹${emi}/-\n📌 एकूण हप्ते: ${tenure} महिने\n📅 पहिला हप्ता सुरू: ${startDate}\n📅 शेवटचा हप्ता संपण्याची तारीख: ${endDate}\n\nधन्यवाद! ✨`;
-    } else if (lang === 'hi') {
-        msg = `नमस्ते, ${name}! 🙏\n\nबजाज फाइनेंस में स्वागत है। आपके उत्पाद के लोन का विवरण:\n\n🏬 दुकान: ${shop}\n📱 उत्पाद: ${asset}\n📌 मासिक किस्त: ₹${emi}/-\n📌 कुल किस्तें: ${tenure} महीने\n📅 पहली किस्त: ${startDate}\n📅 अंतिम किस्त: ${endDate}\n\nधन्यवाद! ✨`;
-    } else {
-        msg = `Dear ${name}, 🙏\n\nWelcome to Bajaj Finance! Details:\n\n🏬 Shop: ${shop}\n📱 Asset: ${asset}\n📌 EMI: ₹${emi}/-\n📌 Tenure: ${tenure} Months\n📅 Start: ${startDate}\n📅 End: ${endDate}\n\nThank you! ✨`;
-    }
-    document.getElementById('finalMessage').value = msg;
-}
-
-function copyMsgText() { document.getElementById('finalMessage').select(); document.execCommand('copy'); showToast('मेसेज कॉपी झाला!', 'success'); }
-function sendMsgWhatsApp() { const mobile = document.getElementById('msgCustMobile').value; const text = encodeURIComponent(document.getElementById('finalMessage').value); let url = `https://api.whatsapp.com/send?text=${text}`; if (mobile && mobile.length === 10) { url = `https://api.whatsapp.com/send?phone=91${mobile}&text=${text}`; } window.open(url, '_blank'); }
-
-function updateDraftBadgeCount() { let drafts = JSON.parse(localStorage.getItem('persistent_emi_drafts') || '[]'); let badge = document.getElementById('draftBadge'); if (badge) { badge.innerText = drafts.length; if (drafts.length > 0) { badge.style.animation = "pulseGlow 1.5s infinite"; } else { badge.style.animation = "none"; } } }
-function openDraftsModal() { renderEmiDrafts(); document.getElementById('draftsModal').style.display = 'flex'; }
-function closeDraftsModal() { document.getElementById('draftsModal').style.display = 'none'; }
-
-function saveEmiDraft() {
-    const name = document.getElementById('msgCustName').value.trim(); const mobile = document.getElementById('msgCustMobile').value.trim(); const shop = document.getElementById('msgShopName').value.trim();
-    const finalMsg = document.getElementById('finalMessage').value; const startDate = document.getElementById('msgStartDate').value; const endDate = document.getElementById('msgEndDate').value;
-    if (!name) { showToast("कृपया कस्टमरचे नाव भरा!", "error"); return; }
-    const draftObj = { id: Date.now(), shop: shop, asset: document.getElementById('msgAssetCategory').value, name: name, mobile: mobile, emi: document.getElementById('msgCustEMI').value, tenure: document.getElementById('msgCustTenure').value, loanDate: document.getElementById('msgLoanDate').value, startDate: startDate, endDate: endDate, lang: document.getElementById('msgLang').value, finalMessage: finalMsg, timestamp: new Date().toLocaleString() };
-    let drafts = JSON.parse(localStorage.getItem('persistent_emi_drafts') || '[]'); drafts.unshift(draftObj); localStorage.setItem('persistent_emi_drafts', JSON.stringify(drafts));
-    updateDraftBadgeCount(); 
-    triggerSilentCloudSync();
-    showToast("ड्राफ्ट सेव्ह झाला!", "success");
-}
-
-function renderEmiDrafts() {
-    updateDraftBadgeCount(); const draftsContainer = document.getElementById('draftsContainer'); if(!draftsContainer) return; 
-    let drafts = JSON.parse(localStorage.getItem('persistent_emi_drafts') || '[]');
-    if (drafts.length === 0) { draftsContainer.innerHTML = '<div style="text-align:center; color:#888; font-style:italic; padding: 20px;">एकही सेव्ह केलेला ड्राफ्ट नाही.</div>'; return; }
-    draftsContainer.innerHTML = drafts.map((d, index) => `
-        <div style="background:#f8f9fa; border:1px solid #ccc; border-radius:6px; padding:10px; display:flex; flex-direction:column; gap:8px;">
-            <div onclick="toggleDraftDetails(${index})" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
-                <strong style="color:var(--bajaj-blue); font-size:14px;">👤 ${d.name}</strong>
-                <span style="font-size:11px; color:#666;">${d.timestamp}</span>
-            </div>
-            <div id="draftDetails_${index}" style="display:none; font-size:12px; color:#444; background:#fff; padding:10px; border-radius:4px; border:1px dashed #aaa; line-height:1.6;">
-                दुकानाचे नाव: <b style="color:var(--indigo);">${d.shop || '-'}</b><br>
-                मासिक हप्ता: <b style="color:var(--primary);">₹${d.emi || '0'}</b><br>
-                एकूण हप्ते: <b style="color:var(--primary);">${d.tenure || '0'}</b>
-                <div style="display:flex; gap:6px; margin-top:10px; border-top:1px solid #eee; padding-top:10px;">
-                    <button onclick="loadEmiDraft(${index})" style="flex:1; background:var(--indigo); color:white; padding:8px; border-radius:4px; border:none; cursor:pointer;">LOAD</button>
-                    <button onclick="sendDraftNow(${index})" style="flex:1.2; background:#25D366; color:white; padding:8px; border-radius:4px; border:none; cursor:pointer;">SEND NOW</button>
-                    <button onclick="markDraftAsSent(${index})" style="flex:0.8; background:var(--danger); color:white; padding:8px; border-radius:4px; border:none; cursor:pointer;">DELETE</button>
-                </div>
-            </div>
-        </div>
-    `).join('');
-}
-
-function toggleDraftDetails(index) { const detailsDiv = document.getElementById(`draftDetails_${index}`); if (detailsDiv.style.display === 'none') { detailsDiv.style.display = 'block'; } else { detailsDiv.style.display = 'none'; } }
-function sendDraftNow(index) { let drafts = JSON.parse(localStorage.getItem('persistent_emi_drafts') || '[]'); let d = drafts[index]; if (!d) return; let mobile = d.mobile || ''; let text = encodeURIComponent(d.finalMessage || ''); let url = `https://api.whatsapp.com/send?text=${text}`; if (mobile && mobile.length === 10) { url = `https://api.whatsapp.com/send?phone=91${mobile}&text=${text}`; } window.open(url, '_blank'); }
-function loadEmiDraft(index) { let drafts = JSON.parse(localStorage.getItem('persistent_emi_drafts') || '[]'); let d = drafts[index]; if (!d) return; document.getElementById('msgShopName').value = d.shop || ''; document.getElementById('msgAssetCategory').value = d.asset || ''; document.getElementById('msgCustName').value = d.name || ''; document.getElementById('msgCustEMI').value = d.emi || ''; document.getElementById('msgCustTenure').value = d.tenure || ''; document.getElementById('msgLoanDate').value = d.loanDate || ''; document.getElementById('msgLang').value = d.lang || 'en'; calculateDates(); closeDraftsModal(); }
-function markDraftAsSent(index) { showCustomConfirm("हा ड्राफ्ट कायमचा डिलीट होईल. पुढे जायचे?", () => { let drafts = JSON.parse(localStorage.getItem('persistent_emi_drafts') || '[]'); drafts.splice(index, 1); localStorage.setItem('persistent_emi_drafts', JSON.stringify(drafts)); renderEmiDrafts(); triggerSilentCloudSync(); showToast("ड्राफ्ट डिलीट झाला!", "success"); }); }
-
-window.isFestiveMode = false; let currentModalCategory = ""; let tempFgDealerId = ""; let tempFgDealerName = ""; let tempFgModel = ""; let tempFgBitly = ""; 
-
-function cleanPureShopName(raw) { 
-    if(!raw) return ""; 
-    return String(raw).split('#')[0].split('|')[0].split('(')[0].trim().toUpperCase(); 
-}
-
-function parseDealerObj(d) {
-    if (!d) return { code: '', name: '', city: '', bitly: '' };
-    let keys = Object.keys(d); let rawName = '', code = '', city = '', bitly = '';
-    for (let k of keys) { 
-        let val = String(d[k]).trim(); 
-        if (val.startsWith('http://') || val.startsWith('https://') || val.includes('bit.ly') || val.includes('bfl.onelink.me') || val.includes('bajajfinserv.in')) { 
-            bitly = val; 
-            break; 
-        } 
-    }
-    let nameKey = keys.find(k => ['DEALER NAME', 'SHOP NAME', 'NAME', 'SHOP', 'DEALER'].includes(k.toUpperCase().trim())); rawName = nameKey ? String(d[nameKey]).trim() : '';
-    let codeKey = keys.find(k => ['DEALERID', 'DEALER CODE', 'CODE', 'ID', 'BPES RCD', 'DEALER_ID'].includes(k.toUpperCase().trim())); code = codeKey ? String(d[codeKey]).trim() : '';
-    let cityKey = keys.find(k => ['CITY', 'LOCATION', 'TOWN', 'DISTRICT'].includes(k.toUpperCase().trim())); city = cityKey ? String(d[cityKey]).trim() : '';
-    if (rawName.includes('#')) { let parts = rawName.split('#'); let shopPart = parts[0].trim(); if (!city && parts.length > 1) city = parts[1].split('|')[0].replace(/\(.*?\)/g, '').trim(); rawName = shopPart; }
-    if (bitly && !bitly.startsWith('http')) bitly = 'https://' + bitly; return { code: code || '-', name: cleanPureShopName(rawName) || 'SHOP', city: city || '', bitly: bitly };
-}
+let currentModalCategory = ""; 
 
 function isMobileDeviceCat(cat) { if (!cat) return false; let c = String(cat).toUpperCase().replace(/\s+/g, '').trim(); return c === 'PHONE(WEB-MOBILE)' || c === 'PHONE,TABLET,SMARTWATCH' || c.includes('TABLET,SMART') || c.includes('PHONE,TABLET') || c === 'SMARTPHONES' || c === 'MOBILE'; }
 function standardizeCategoryName(cat) { if (!cat) return "OTHER"; let c = String(cat).toUpperCase().trim(); let cNoSpace = c.replace(/\s+/g, ''); if (cNoSpace === 'PHONE(WEB-MOBILE)' || cNoSpace === 'PHONE,TABLET,SMARTWATCH' || cNoSpace.includes('TABLET,SMART') || cNoSpace.includes('PHONE,TABLET') || cNoSpace === 'SMARTPHONES' || cNoSpace === 'MOBILE') { return "PHONE(WEB-MOBILE)"; } if (cNoSpace === 'AIRCONDITIONERS' || cNoSpace === 'AC') { return "AC"; } if (cNoSpace === 'TELEVISIONS' || cNoSpace === 'TV' || cNoSpace === 'LED') { return "LED TV"; } if (cNoSpace === 'REFRIGERATORS' || cNoSpace === 'FRIDGE') { return "REFRIGERATOR"; } return c; }
@@ -461,10 +300,8 @@ function initDB() { return new Promise((resolve, reject) => { let request = inde
 function saveToDB(key, data) { return new Promise((resolve, reject) => { if (!dbInstance) return reject("DB not initialized"); try { let tx = dbInstance.transaction(STORE_NAME, 'readwrite'); let store = tx.objectStore(STORE_NAME); let req = store.put(JSON.stringify(data), key); req.onsuccess = () => resolve(); req.onerror = (e) => reject(e.target.error); } catch(e) { reject(e); } }); }
 function getFromDB(key) { return new Promise((resolve, reject) => { if (!dbInstance) return resolve(null); try { let tx = dbInstance.transaction(STORE_NAME, 'readonly'); let store = tx.objectStore(STORE_NAME); let req = store.get(key); req.onsuccess = (e) => { let res = e.target.result; if (res) { if (typeof res === 'string') resolve(JSON.parse(res)); else resolve(res); } else { resolve(null); } }; req.onerror = (e) => reject(e.target.error); } catch(e) { reject(e); } }); }
 
-let db_records = []; let dealer_records = []; let current_products = []; let sortConfigs = []; const SPECIAL_MODEL = "NON TIEUP"; let tempSheet1Data = []; let parsedSheet2Data = []; let customerQueue = []; let recycleBin = []; let activeCustomerIndex = -1; let selectedQueueIndex = -1; let tempPendingProduct = null; 
-let currentViewedModel = "";
+let db_records = []; let current_products = []; let sortConfigs = []; const SPECIAL_MODEL = "NON TIEUP"; let tempSheet1Data = []; let parsedSheet2Data = []; let customerQueue = []; let recycleBin = []; let activeCustomerIndex = -1; let selectedQueueIndex = -1; let tempPendingProduct = null; 
 
-function highlightNumber(e, el) { if (e) e.stopPropagation(); let range = document.createRange(); range.selectNodeContents(el); let sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range); try { document.execCommand('copy'); } catch(err) {} }
 function parseExcelDate(val) { if (!val) return null; if (typeof val === 'number') { return new Date(Math.round((val - 25569) * 86400 * 1000)); } if (typeof val === 'string') { let d = new Date(val); if (!isNaN(d.getTime())) return d; let parts = val.split(/[\/\-\.]/); if (parts.length === 3) { let y = parts[2].length === 2 ? '20' + parts[2] : parts[2]; return new Date(y, parts[1] - 1, parts[0]); } } return null; }
 
 async function saveQueueToLocal(shouldCloudSync = true) { 
@@ -489,25 +326,20 @@ async function saveQueueToLocal(shouldCloudSync = true) {
 
 const CACHE_DURATION_MS = 12 * 60 * 60 * 1000; 
 
-/* ⚡ stale-while-revalidate: कॅश डेटा १ सेकंदात लोड करून बॅकग्राउंडमध्ये सिंक करतो */
 async function fetchFromMasterStream(forceSync = false) {
     let statusBadge = document.getElementById('gitStatusBadge'); 
     let globalLoader = document.getElementById('dataLoadingIndicator');
     let searchInput1 = document.getElementById('modalMatrixSearch');
-    let searchInput2 = document.getElementById('globalModelSearch');
     let savedName = localStorage.getItem('persistent_user_name') || "User";
 
     let cachedDbRecords = await getFromDB('cached_db_records');
-    let cachedDealerRecords = await getFromDB('cached_dealer_records');
     let cachedTime = await getFromDB('master_data_time') || 0;
     let now = new Date().getTime();
 
     if (cachedDbRecords && cachedDbRecords.length > 0) {
         db_records = cachedDbRecords;
-        dealer_records = cachedDealerRecords || [];
         if (activeCustomerIndex !== -1) { loadCurrentProducts(); renderMatrix(); }
         if (searchInput1) { searchInput1.disabled = false; searchInput1.placeholder = "type model, brand or category..."; }
-        if (searchInput2) { searchInput2.disabled = false; searchInput2.placeholder = "type brand or model name..."; }
         if (loggedInUserEmail) {
             updateLoginUI(savedName, true);
         } else if (statusBadge) {
@@ -555,12 +387,6 @@ async function fetchFromMasterStream(forceSync = false) {
         tempSheet1Data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { raw: false, defval: "" }); 
         parsedSheet2Data = wb.SheetNames.length > 1 ? XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[1]], { raw: false, defval: "" }).map(r => mapData(r, SPECIAL_MODEL)).filter(x => x && x.model && x.model.trim() !== "") : [];
 
-        if (wb.SheetNames.length > 2) { 
-            dealer_records = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[2]], { raw: false, defval: "" }); 
-        } else { 
-            dealer_records = []; 
-        }
-
         let filteredSheet1 = tempSheet1Data.map(r => mapData(r, "REG")).filter(m => m && m.model && m.model.trim() !== ""); 
         let rawCombined = [...filteredSheet1, ...parsedSheet2Data]; 
         let uniqueDB = []; let seenDB = new Set();
@@ -573,7 +399,6 @@ async function fetchFromMasterStream(forceSync = false) {
         db_records = uniqueDB;
 
         await saveToDB('cached_db_records', db_records);
-        await saveToDB('cached_dealer_records', dealer_records);
         await saveToDB('master_data_time', now);
 
         if (activeCustomerIndex !== -1) { loadCurrentProducts(); renderMatrix(); }
@@ -593,7 +418,6 @@ async function fetchFromMasterStream(forceSync = false) {
             setTimeout(() => { globalLoader.style.display = 'none'; }, 1500);
         }
         if (searchInput1) { searchInput1.disabled = false; searchInput1.placeholder = "type model, brand or category..."; }
-        if (searchInput2) { searchInput2.disabled = false; searchInput2.placeholder = "type brand or model name..."; }
 
     } catch(err) { 
         console.error("Master Fetch Error:", err); 
@@ -609,22 +433,10 @@ async function fetchFromMasterStream(forceSync = false) {
 }
 
 document.addEventListener('click', function(e) {
-    let gSearch = document.getElementById('globalModelSearch');
-    let gDd = document.getElementById('globalModelDropdown');
-    if (gDd && gSearch && !gSearch.contains(e.target) && !gDd.contains(e.target)) {
-        gDd.style.display = 'none';
-    }
-
     let mSearch = document.getElementById('modalMatrixSearch');
     let mDd = document.getElementById('modalMatrixSearchDropdown');
     if (mDd && mSearch && !mSearch.contains(e.target) && !mDd.contains(e.target)) {
         mDd.style.display = 'none';
-    }
-
-    let cSearch = document.getElementById('dictCustSearch');
-    let cDd = document.getElementById('dictCustSuggestionsList');
-    if (cDd && cSearch && !cSearch.contains(e.target) && !cDd.contains(e.target)) {
-        cDd.style.display = 'none';
     }
 });
 
@@ -672,9 +484,7 @@ window.onload = async function() {
         renderCustomerQueue(); 
         updateUniversalActionButtons();
 
-        await loadCustomStagingSchemes();
         await fetchFromMasterStream(); 
-        autoCleanStagingSchemesAgainstMaster();
 
         if (loggedInUserEmail) {
             await fetchCloudDataOnLogin(savedName, true, false);
@@ -697,12 +507,7 @@ function doSearch(inputId, dropdownId) {
         return;
     }
 
-    let allRecords = [
-        ...(Array.isArray(db_records) ? db_records : []),
-        ...(Array.isArray(customStagingSchemes) ? customStagingSchemes : [])
-    ];
-
-    let validRecords = allRecords.filter(r => r && r.model && r.model !== SPECIAL_MODEL);
+    let validRecords = (Array.isArray(db_records) ? db_records : []).filter(r => r && r.model && r.model !== SPECIAL_MODEL);
     if (validRecords.length === 0) {
         dd.innerHTML = `<div style="padding:10px; color:var(--danger); font-weight:bold; text-align:center;">master data load होत आहे, थांबा.</div>`;
         dd.style.display = 'block';
@@ -728,196 +533,13 @@ function doSearch(inputId, dropdownId) {
         let rec = validRecords.find(x => x.model === m);
         let catTag = rec && rec.category ? `<span style="font-size:10px; background:#e0e0e0; color:#333; padding:2px 6px; border-radius:4px; float:right;">📁 ${rec.category}</span>` : '';
         let brandTag = rec && rec.brand ? `<span style="font-size:10px; color:#0984e3; font-weight:900; margin-right:5px;">[${rec.brand}]</span>` : '';
-        let safeModel = String(m).replace(/'/g, "\\'");
+        let safeModel = String(m).replace(/'/g, "\\'").replace(/"/g, '&quot;');
         return `<div style="padding:10px; border-bottom:1px solid #eee; cursor:pointer; font-weight:800; color:var(--dark); display:flex; justify-content:space-between; align-items:center;" onmouseover="this.style.background='#e3f2fd'" onmouseout="this.style.background='#fff'" onclick="selectModel('${safeModel}')">
             <span style="flex:1; font-size:12px;">${brandTag}📱 ${m}</span> ${catTag}
         </div>`;
     }).join('');
 
     dd.style.display = 'block';
-}
-
-function openFlyerGenModal() { 
-    showOnlyOneInlineView('flyerGenModal', 'flex');
-    document.getElementById('fgSalesName').value = localStorage.getItem('portal_sales_name') || ''; 
-    document.getElementById('fgSalesMobile').value = localStorage.getItem('portal_sales_mobile') || ''; 
-    document.getElementById('fgDealerSearch').value = ''; 
-    document.getElementById('fgDealerList').innerHTML = ''; 
-    tempFgDealerId = ""; tempFgDealerName = ""; tempFgBitly = ""; 
-    clearFgModel(); 
-    document.getElementById('fgOfferType').value = 'NONE'; 
-    toggleFgOfferInput(); 
-    document.getElementById('fgSelectedDealerBox').style.display = 'none'; 
-    document.getElementById('flyerGeneratedLinkBox').style.display = 'none'; 
-}
-
-function toggleFgOfferInput() { let type = document.getElementById('fgOfferType').value; let box = document.getElementById('fgOfferValBox'); let label = document.getElementById('fgOfferValLabel'); let inp = document.getElementById('fgOfferValue'); if(type === "NONE") { box.style.display = 'none'; inp.value = ''; } else if(type === "FREEBIE") { box.style.display = 'block'; label.innerText = "enter gift name"; inp.placeholder = "earbuds"; } else { box.style.display = 'block'; label.innerText = "enter upto amount ₹"; inp.placeholder = "2500"; } }
-function searchFgDealer() { let q = document.getElementById('fgDealerSearch').value.toLowerCase().trim(); let list = document.getElementById('fgDealerList'); if(!q) { list.innerHTML = ''; return; } let matches = dealer_records.map(d => parseDealerObj(d)).filter(p => p.name.toLowerCase().includes(q) || p.code.toLowerCase().includes(q) || p.city.toLowerCase().includes(q)).slice(0, 10); list.innerHTML = matches.map(p => { let displayStr = `${p.name}${p.city ? ' - ' + p.city : ''} (${p.code})`; return `<div onclick="selectFgDealer('${p.code}', '${p.name.replace(/'/g, "\\'")}', '${p.city.replace(/'/g, "\\'")}', '${encodeURIComponent(p.bitly||'')}')" style="padding:8px; border-bottom:1px solid #eee; cursor:pointer; background:#fff; font-size:12px; font-weight:bold; color:var(--bajaj-blue);">🏪 ${displayStr}</div>`; }).join(''); }
-function selectFgDealer(code, name, city, bitlyEnc) { tempFgDealerId = code; tempFgDealerName = `${name}${city ? ' - ' + city : ''}`; tempFgBitly = decodeURIComponent(bitlyEnc); document.getElementById('fgDealerSearch').value = ''; document.getElementById('fgDealerList').innerHTML = ''; document.getElementById('fgSelectedDealerBox').innerHTML = `✅ ${tempFgDealerName} [Code: ${code}] <span onclick="clearFgDealer()" style="color:red; cursor:pointer; float:right;">✖</span>`; document.getElementById('fgSelectedDealerBox').style.display = 'block'; }
-function clearFgDealer() { tempFgDealerId = ""; tempFgDealerName = ""; tempFgBitly = ""; document.getElementById('fgSelectedDealerBox').style.display = 'none'; }
-function searchFgModel() { let q = document.getElementById('fgModelSearch').value.toUpperCase().trim(); let list = document.getElementById('fgModelList'); if(!q) { list.innerHTML = ''; return; } let matches = [...new Set(db_records.filter(r => r.model !== SPECIAL_MODEL).map(r => r.model))].filter(m => m.includes(q)).slice(0,8); list.innerHTML = matches.map(m => `<div onclick="selectFgModel('${m.replace(/'/g, "\\'")}')" style="padding:8px; border-bottom:1px solid #eee; cursor:pointer; background:#fff; font-size:12px;">📱 ${m}</div>`).join(''); }
-function selectFgModel(name) { tempFgModel = name; document.getElementById('fgModelSearch').value = ''; document.getElementById('fgModelList').innerHTML = ''; document.getElementById('fgSelectedModelBox').innerHTML = `📱 Locked: ${name} <span onclick="clearFgModel()" style="color:red; cursor:pointer; float:right;">✖</span>`; document.getElementById('fgSelectedModelBox').style.display = 'block'; }
-function clearFgModel() { tempFgModel = ""; document.getElementById('fgSelectedModelBox').style.display = 'none'; }
-
-function generateFlyer() {
-    let sName = document.getElementById('fgSalesName').value.trim(); 
-    let sMob = document.getElementById('fgSalesMobile').value.trim(); 
-    let oType = document.getElementById('fgOfferType').value; 
-    let oVal = document.getElementById('fgOfferValue').value.trim();
-    if(!sName) { showToast("कृपया Salesman चे नाव भरा!", "error"); return; }
-    if(!tempFgDealerId) { showToast("डीलर निवडणे आवश्यक आहे!", "error"); return; }
-    if(!tempFgBitly) { showToast("या डीलरची लिंक उपलब्ध नाही!", "error"); return; }
-    if(oType !== "NONE" && !oVal) { showToast("ऑफरचे नाव किंवा रक्कम भरा!", "error"); return; }
-    localStorage.setItem('portal_sales_name', sName);
-    triggerSilentCloudSync();
-    let baseUrl = window.location.href.split('?')[0]; baseUrl = baseUrl.replace(/index\.html?$/i, ''); if(!baseUrl.endsWith('/')) baseUrl += '/';
-    let url = `${baseUrl}flyer.html?sn=${encodeURIComponent(sName)}&sm=${encodeURIComponent(sMob)}&did=${encodeURIComponent(tempFgDealerId)}&dn=${encodeURIComponent(tempFgDealerName)}&bl=${encodeURIComponent(tempFgBitly)}`;
-    if(oType !== "NONE") url += `&ot=${encodeURIComponent(oType)}&ov=${encodeURIComponent(oVal)}`; if(tempFgModel) url += `&fm=${encodeURIComponent(tempFgModel)}`;
-    document.getElementById('flyerGeneratedLinkBox').style.display = 'block'; document.getElementById('fgGeneratedLinkText').value = url;
-}
-function copyFlyerLink() { let copyText = document.getElementById('fgGeneratedLinkText'); copyText.select(); copyText.setSelectionRange(0, 99999); document.execCommand("copy"); showToast("लिंक कॉपी झाली!", "success"); }
-function shareOnWhatsAppStatus() { let generatedLink = document.getElementById('fgGeneratedLinkText').value; if (!generatedLink) { showToast("आधी लिंक तयार करा!", "error"); return; } let statusMessage = "🔥 *Festival Special Offers!* 🔥\n\nZero percent interest 0% EMI वर खरेदी करा!\n\n" + generatedLink; let encodedMessage = encodeURIComponent(statusMessage); window.open(`https://wa.me/?text=${encodedMessage}`, '_blank'); }
-
-function doGlobalSearch() { 
-    let q = document.getElementById('globalModelSearch').value.toUpperCase().trim(); 
-    let dd = document.getElementById('globalModelDropdown'); 
-    if(!q) { dd.style.display='none'; return; } 
-    let allRecords = [...db_records, ...customStagingSchemes];
-    let validRecords = allRecords.filter(r => r && r.model && r.model !== SPECIAL_MODEL); 
-    let matches = validRecords.filter(r => { let m = String(r.model || "").toUpperCase(); let b = String(r.brand || "").toUpperCase(); let c = String(r.category || "").toUpperCase(); return m.includes(q) || b.includes(q) || c.includes(q); }).map(r => r.model); 
-    matches = [...new Set(matches)].slice(0, 30); 
-    if (matches.length === 0) { dd.innerHTML = `<div style="padding:10px; color:#d35400; font-weight:bold; text-align:center;">कोणतेही मॉडेल सापडले नाही.</div>`; dd.style.display = 'block'; return; } 
-    dd.innerHTML = matches.map(m => { 
-        let rec = validRecords.find(x => x.model === m); 
-        let catTag = rec && rec.category ? `<span style="font-size:10px; background:#e0e0e0; color:#333; padding:2px 6px; border-radius:4px; float:right;">📁 ${rec.category}</span>` : ''; 
-        let brandTag = rec && rec.brand ? `<span style="font-size:10px; color:#0984e3; font-weight:900; margin-right:5px;">[${rec.brand}]</span>` : ''; 
-        return `<div style="padding:10px; border-bottom:1px solid #eee; cursor:pointer; font-weight:800; color:var(--dark); display:flex; justify-content:space-between; align-items:center;" onmouseover="this.style.background='#e3f2fd'" onmouseout="this.style.background='#fff'" onclick="viewGlobalModel('${String(m).replace(/'/g, "\\'")}')"> <span style="flex:1;">${brandTag}📱 ${m}</span> ${catTag} </div>`; 
-    }).join(''); 
-    dd.style.display = 'block'; 
-}
-
-function recalcCurrentModel() {
-    if(currentViewedModel !== "") {
-        renderTableModel();
-    }
-}
-
-function copySingleScheme(tenure, advEmi, loan, dp, emi, fixedEmi, dbd, roi, pf, btn) {
-    let limit = parseFloat(document.getElementById('calcLimit').value) || 0;
-    let invoice = parseFloat(document.getElementById('calcInvoice').value) || 0;
-    let isCalculatedMode = (limit > 0 && invoice > 0);
-    let inst = Math.max(1, parseInt(tenure) - parseInt(advEmi));
-
-    let textToCopy = `📱 *${currentViewedModel}*\n`;
-
-    if (isCalculatedMode) {
-        textToCopy += `*INVOICE AMOUNT:* ₹${invoice}\n\n`;
-        textToCopy += `✅ *Scheme:* ${tenure}/${advEmi}\n`;
-        textToCopy += `💳 *Loan:* ₹${Math.floor(loan).toLocaleString()}\n`;
-        textToCopy += `💰 *Net DP:* ₹${Math.round(dp).toLocaleString()}\n`;
-        textToCopy += `🗓️ *EMI:* ₹${Math.round(emi).toLocaleString()} x ${inst} Months`;
-    } else {
-        textToCopy += `✅ *Scheme:* ${tenure}/${advEmi}\n`;
-        if (fixedEmi > 0) textToCopy += `🗓️ *FIXED EMI:* ₹${fixedEmi}\n`;
-        textToCopy += `*DBD:* ${parseFloat(dbd).toFixed(2)}% | *ROI:* ${parseFloat(roi).toFixed(2)}%\n`;
-        textToCopy += `*PF:* ₹${pf}`;
-    }
-
-    function showCopied() {
-        let orig = btn.innerText;
-        btn.innerText = "COPIED!";
-        btn.style.background = "var(--success)";
-        setTimeout(() => { btn.innerText = orig; btn.style.background = "var(--primary)"; }, 2000);
-    }
-
-    if (navigator.clipboard && window.isSecureContext) {
-        navigator.clipboard.writeText(textToCopy).then(showCopied).catch(() => fallbackCopy(textToCopy, showCopied));
-    } else {
-        fallbackCopy(textToCopy, showCopied);
-    }
-}
-
-function resetFastCalc() { let fields = ['fcInv', 'fcLoanInput', 'fcTenure', 'fcAdv', 'fcDbd', 'fcRoi', 'fcPf', 'fcFixed', 'fcCap', 'fcTarget', 'fcExw', 'fcMargin', 'fcDealer']; fields.forEach(id => document.getElementById(id).value = ''); document.getElementById('fcGtl').value = '0'; let rfcOpt = document.getElementById('fcRfcOpt'); if(rfcOpt) { rfcOpt.value = '0'; rfcOpt.innerText = '0'; } document.getElementById('fcCustType').value = 'NEW'; document.getElementById('fcCat').value = 'OTHER'; fcCatChanged(); document.getElementById('fcResult').style.display = 'none'; }
-function copyFastCalcResult(btn) { let inv = document.getElementById('fcInv').value || 0; let loan = document.getElementById('fcResLoan').innerText; let dp = document.getElementById('fcResDp').innerText; let emi = document.getElementById('fcResEmi').innerText; let daily = document.getElementById('fcResDaily').innerText; let ta = document.getElementById('fcResTa').innerText; let text = `⚡ *Zatpat Calculation*\n`; if (inv > 0) text += `*Invoice:* ₹${inv}\n\n`; text += `*Loan:* ${loan}\n*DP:* ${dp}\n*EMI:* ${emi}\n*Daily:* ${daily}\n*Details:* ${ta}`; let orig = btn.innerText; btn.innerText = "COPIED!"; btn.style.background = "var(--success)"; btn.style.color = "white"; if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(text).then(() => { setTimeout(() => { btn.innerText = orig; btn.style.background = "var(--primary)"; btn.style.color = "white"; }, 2000); }).catch(() => fallbackCopy(text, () => { setTimeout(() => { btn.innerText = orig; btn.style.background = "var(--primary)"; btn.style.color = "white"; }, 2000); })); } else { fallbackCopy(text, () => { setTimeout(() => { btn.innerText = orig; btn.style.background = "var(--primary)"; btn.style.color = "white"; }, 2000); }); } }
-function fcCatChanged() { let isPhone = isMobileDeviceCat(document.getElementById('fcCat').value); let rSelect = document.getElementById('fcRfc'); let exwInput = document.getElementById('fcExw'); if(isPhone) { rSelect.disabled = false; rSelect.style.background = '#fff'; rSelect.style.cursor = 'default'; exwInput.value = ""; exwInput.disabled = true; exwInput.style.background = '#e9ecef'; exwInput.style.cursor = 'not-allowed'; fcInvChanged(); } else { rSelect.value = "0"; rSelect.disabled = true; rSelect.style.background = '#e9ecef'; rSelect.style.cursor = 'not-allowed'; exwInput.disabled = false; exwInput.style.background = '#fff'; exwInput.style.cursor = 'text'; calculateFastData(); } }
-
-function fcInvChanged() { 
-    let inv = parseFloat(document.getElementById('fcInv').value) || 0; 
-    document.getElementById('fcLoanInput').value = inv > 0 ? inv : '';
-    let isPhone = isMobileDeviceCat(document.getElementById('fcCat').value); 
-    let gtl = inv > 100000 ? 2398 : (inv > 50000 ? 1799 : (inv > 30000 ? 1499 : (inv > 10000 ? 1199 : (inv > 0 ? 699 : 0)))); 
-    document.getElementById('fcGtl').value = gtl; 
-    let rfcSlab = getRfcSlabValue(inv); 
-    let rfcOpt = document.getElementById('fcRfcOpt'); 
-    if(rfcOpt) { rfcOpt.value = rfcSlab; rfcOpt.innerText = rfcSlab; } 
-    if (isPhone) { document.getElementById('fcRfc').value = rfcSlab; } else { document.getElementById('fcRfc').value = "0"; } 
-    calculateFastData(); 
-}
-
-function validateFastLoanMin() {
-    let inv = parseFloat(document.getElementById('fcInv').value) || 0;
-    let loanInput = parseFloat(document.getElementById('fcLoanInput').value) || 0;
-    let minFastLoan = inv > 0 ? inv * 0.50 : 0;
-    if (inv > 0 && loanInput > 0 && loanInput < minFastLoan) {
-        document.getElementById('fcLoanInput').value = minFastLoan;
-        showToast("लोन रक्कम इनव्हॉइसच्या ५०% पेक्षा कमी असू शकत नाही!", "error");
-        calculateFastData();
-    }
-}
-
-function calculateFastData() {
-    let inv = parseFloat(document.getElementById('fcInv').value) || 0; let loanInput = parseFloat(document.getElementById('fcLoanInput').value) || 0; let tenure = parseInt(document.getElementById('fcTenure').value) || 0; let adv = parseInt(document.getElementById('fcAdv').value) || 0; let roi = parseFloat(document.getElementById('fcRoi').value) || 0; let pf = parseFloat(document.getElementById('fcPf').value) || 0; let dbd = parseFloat(document.getElementById('fcDbd').value) || 0; let custType = document.getElementById('fcCustType').value; let fixedEmi = parseFloat(document.getElementById('fcFixed').value) || 0; let cap = parseFloat(document.getElementById('fcCap').value) || 0; let target = parseFloat(document.getElementById('fcTarget').value) || 0; let gtl = parseFloat(document.getElementById('fcGtl').value) || 0; let rfc = parseFloat(document.getElementById('fcRfc').value) || 0; let exw = parseFloat(document.getElementById('fcExw').value) || 0; let margin = parseFloat(document.getElementById('fcMargin').value) || 0; let dealer = parseFloat(document.getElementById('fcDealer').value) || 0;
-    if (inv <= 0 && loanInput <= 0) { document.getElementById('fcResult').style.display = 'none'; return; }
-
-    let minFastLoan = inv > 0 ? inv * 0.50 : 0;
-    if (loanInput > 0 && loanInput < minFastLoan) { loanInput = minFastLoan; }
-
-    let fee = (custType === 'EMI CARD') ? 270 : (custType === 'W/O CARD' ? 320 : 850); let totalFees = fee + margin + dealer; let insTotal = gtl + rfc + exw; let dbdRate = (dbd * 1.18 / 100); let roiRate = roi / 1200; let roiRateDP = roiRate * adv; let loan = loanInput > 0 ? loanInput : inv;
-
-    let emi = 0; let dpRounded = 0; let inst = 0; let finalTenure = tenure;
-    if (fixedEmi > 0) { 
-        finalTenure = Math.floor(loan / fixedEmi) || 1; 
-        if (loanInput > 0) loan = finalTenure * fixedEmi;
-
-        if (target > 0) { 
-            let numerator = target - inv - (fixedEmi * adv) - pf - totalFees; 
-            let denominator = dbdRate + roiRateDP - 1; 
-            let solvedLoan = numerator / denominator; 
-            let solvedTenure = Math.floor(solvedLoan / fixedEmi); 
-            loan = Math.max(minFastLoan, solvedTenure * fixedEmi); 
-            finalTenure = Math.floor(loan / fixedEmi) || 1; 
-        } else { 
-            if (loanInput === 0) loan = finalTenure * fixedEmi; 
-        } 
-        inst = finalTenure - adv; if (inst < 1) inst = 1; 
-        let roiInEmi = loan * roiRate; emi = fixedEmi + (insTotal / inst) + roiInEmi; 
-        let roiInDp = loan * roiRateDP; let dpExact = inv - loan + (fixedEmi * adv) + (loan * dbdRate) + pf + totalFees + roiInDp; 
-        dpRounded = Math.ceil(dpExact / 10) * 10; 
-    } 
-    else { 
-        if (tenure <= 0) { document.getElementById('fcResult').style.display = 'none'; return; }
-        if (target > 0 && inv > 0) { 
-            let advRate = adv / tenure; let numerator = target - inv - pf - totalFees; let denominator = advRate + dbdRate + roiRateDP - 1; 
-            let solvedLoan = numerator / denominator; loan = Math.min(inv, Math.max(minFastLoan, Math.floor(solvedLoan))); 
-        } 
-
-        let minLoanFor900Emi = 900 * tenure;
-        if (loan < minLoanFor900Emi) { loan = minLoanFor900Emi; }
-        if (inv > 0 && loan > inv) { loan = inv; }
-
-        inst = tenure - adv; if (inst < 1) inst = 1; 
-        let roiInEmi = loan * roiRate; emi = (loan / tenure) + (insTotal / inst) + roiInEmi; 
-        if (cap > 0 && emi > cap) { 
-            loan = (cap - (insTotal / inst)) / ((1 / tenure) + roiRate); 
-            if (loan < minFastLoan) loan = minFastLoan; 
-            if (loan < minLoanFor900Emi) loan = minLoanFor900Emi; 
-            if (inv > 0 && loan > inv) loan = inv; 
-            roiInEmi = loan * roiRate; emi = (loan / tenure) + (insTotal / inst) + roiInEmi; 
-        } 
-        let roiInDp = loan * roiRateDP; let dpExact = inv - loan + ((loan / tenure) * adv) + (loan * dbdRate) + pf + totalFees + roiInDp; 
-        dpRounded = Math.ceil(dpExact / 10) * 10; 
-    }
-    let dailyEmi = emi / 30; document.getElementById('fcResLoan').innerText = "₹" + Math.floor(loan).toLocaleString(); document.getElementById('fcResDp').innerText = "₹" + Math.round(dpRounded).toLocaleString(); document.getElementById('fcResEmi').innerText = "₹" + Math.round(emi).toLocaleString(); document.getElementById('fcResDaily').innerText = "₹" + Math.round(dailyEmi).toLocaleString(); document.getElementById('fcResTa').innerText = `T/A: ${finalTenure}/${adv} | M: ${inst}`; document.getElementById('fcResult').style.display = 'block';
 }
 
 async function silentLeadDispatcher(cust) {
@@ -943,7 +565,6 @@ function checkDuplicateMobile(val) {
     addBtn.disabled = false;
 }
 
-/* 🚀 addCustomerToQueue: थेट फायनल स्क्रीनवर जाऊन सर्च उघडतो */
 async function addCustomerToQueue() {
     let name = document.getElementById('cqName').value.trim() || `Cust ${customerQueue.length + 1}`; 
     let mobile = document.getElementById('cqMobile').value.trim() || ""; 
@@ -1074,13 +695,7 @@ async function setActiveCustomer(idx) {
     goToFinalPage(); 
 }
 
-function isDictionaryViewActive() {
-    let dictEl = document.getElementById('dictionarySearchModal');
-    return dictEl && dictEl.style.display !== 'none';
-}
-
 function isLimitValid() { 
-    if (isDictionaryViewActive() && hasValidCriteria()) return true;
     if (activeCustomerIndex === -1 || !customerQueue[activeCustomerIndex]) { 
         showToast("आधी Queue मध्ये Customer सिलेक्ट किंवा ॲड करा!", "warning"); 
         return false; 
@@ -1121,9 +736,6 @@ async function processMultiStack() {
         } 
     }
     if(validSchemes.length > 0) { 
-        validSchemes.forEach(vs => customStagingSchemes.push(vs));
-        await saveCustomStagingSchemes();
-
         if (activeCustomerIndex !== -1 && customerQueue[activeCustomerIndex]) {
             let comp = customerQueue[activeCustomerIndex]?.components || {}; 
             current_products.push({ name: msNameInput, schemes: validSchemes, category: "MANUAL", inputs: { mrp: comp.mrp||"", inv: comp.inv||"", cap: comp.cap||(customerQueue[activeCustomerIndex]?.cap || ""), target: comp.target||"", gtl: comp.gtl||0, rfc: comp.rfc||0, exw: comp.exw||"", margin: comp.margin||"", dealer: comp.dealer||"", surch: 0, manualLoans: {} }, isManual: true, isNonTieup: false }); 
@@ -1132,15 +744,8 @@ async function processMultiStack() {
             customerQueue[activeCustomerIndex].sortConfigs = sortConfigs; 
             await saveQueueToLocal(true); 
         }
-
         closeMultiStackModal(); 
-
-        currentViewedModel = msNameInput;
-        let sm = document.getElementById('globalModelSearch');
-        if(sm) sm.value = msNameInput;
-        recalcCurrentModel();
-
-        if (!isDictionaryViewActive() && activeCustomerIndex !== -1) {
+        if (activeCustomerIndex !== -1) {
             renderMatrix();
         }
     } else { showToast("किमान एक Scheme भरा!", "error"); }
@@ -1207,8 +812,7 @@ function saveSchemeEdit() { let pIdx = parseInt(document.getElementById('editPId
 
 function selectModel(name) { 
     if (!isLimitValid()) return; 
-    let allRecords = [...db_records, ...customStagingSchemes];
-    let raw = allRecords.filter(r => r.model === name); 
+    let raw = db_records.filter(r => r.model === name); 
     let baseMrp = raw.find(s => s.mrp > 0)?.mrp || ""; 
     let cat = raw[0]?.category || "OTHER"; 
     tempPendingProduct = { name: name, isNT: false, category: cat }; 
@@ -1238,15 +842,6 @@ function selectCategory(catName) {
     let fullName = SPECIAL_MODEL + " - " + displayName;
     tempPendingProduct = { name: fullName, isNT: true, category: catName }; 
     currentModalCategory = catName; 
-
-    if (isDictionaryViewActive()) {
-        currentViewedModel = fullName;
-        let sm = document.getElementById('globalModelSearch');
-        if(sm) sm.value = fullName;
-        dictInvoiceChanged();
-        return;
-    }
-
     showComponentsModal(""); 
 }
 
@@ -1272,8 +867,7 @@ function showComponentsModal(baseMrp = "") {
 async function proceedToMatrixFromComponents() { let idx = activeCustomerIndex; if(idx === -1) return; if(!customerQueue[idx].components) customerQueue[idx].components = {}; customerQueue[idx].components.mrp = parseFloat(document.getElementById('compMrp').value) || 0; customerQueue[idx].components.inv = parseFloat(document.getElementById('compInv').value) || 0; customerQueue[idx].components.cap = parseFloat(document.getElementById('compCap').value) || 0; customerQueue[idx].components.target = parseFloat(document.getElementById('compTarget').value) || 0; customerQueue[idx].components.gtl = parseFloat(document.getElementById('compGtl').value) || 0; let isMobileCat = isMobileDeviceCat(currentModalCategory); customerQueue[idx].components.rfc = isMobileCat ? (parseFloat(document.getElementById('compRfc').value) || 0) : 0; customerQueue[idx].components.exw = isMobileCat ? 0 : (parseFloat(document.getElementById('compExw').value) || 0); customerQueue[idx].components.margin = parseFloat(document.getElementById('compMargin').value) || 0; customerQueue[idx].components.dealer = parseFloat(document.getElementById('compDealer').value) || 0; let cCap = customerQueue[idx].components.cap; if (cCap > 0 || customerQueue[idx].cap > 0) { customerQueue[idx].cap = cCap > 0 ? cCap : ""; renderCustomerQueue(); updateMatrixTopCard(); } await saveQueueToLocal(true); document.getElementById('componentsModal').style.display = 'none'; if (tempPendingProduct) finalizeProductAddition(); }
 
 async function finalizeProductAddition() {
-    let allRecords = [...db_records, ...customStagingSchemes];
-    let raw = tempPendingProduct.isNT ? allRecords.filter(r => r.model === SPECIAL_MODEL && r.category === tempPendingProduct.category) : allRecords.filter(r => r.model === tempPendingProduct.name); 
+    let raw = tempPendingProduct.isNT ? db_records.filter(r => r.model === SPECIAL_MODEL && r.category === tempPendingProduct.category) : db_records.filter(r => r.model === tempPendingProduct.name); 
     let ltvLimit = customerQueue[activeCustomerIndex]?.ltv || 100; 
     let matrixEligible = raw.filter(s => s.fixedEmi > 0 || (s.tenure > 0 && ((s.tenure-s.advEmi)/s.tenure)*100 <= ltvLimit)); 
     let uniqueSchemes = []; let seenSchemes = new Set();
@@ -1287,7 +881,6 @@ async function switchCustomerFinal(idx) { activeCustomerIndex = parseInt(idx); a
 function updateMatrixTopCard() { let c = customerQueue[activeCustomerIndex]; document.getElementById('infoName').innerText = c?.name || "-"; document.getElementById('infoMobile').innerText = c?.mobile || "-"; document.getElementById('infoLimit').innerText = "₹" + (c?.limit || 0); document.getElementById('infoLtv').innerText = (c?.ltv || 100) + "%"; document.getElementById('infoCap').innerText = c?.cap ? "₹" + c.cap : "NONE"; document.getElementById('infoType').innerText = c?.type || 'NEW'; }
 function loadCurrentProducts() { let c = customerQueue[activeCustomerIndex]; current_products = c?.products || []; sortConfigs = c?.sortConfigs || []; }
 
-/* 🚀 goToFinalPage: फायनल स्क्रीन उघडून लगेच सर्च पॉपअप दाखवतो */
 function goToFinalPage() {
     if(activeCustomerIndex === -1 || !customerQueue[activeCustomerIndex]) return; 
     loadCurrentProducts(); 
@@ -1823,121 +1416,6 @@ function doGenerateCustomerImage() {
     });
 }
 
-let showingOnlyStarred = false;
-function getStarredDealers() { return JSON.parse(localStorage.getItem('persistent_starred_dealers') || '[]'); }
-
-function toggleDealerStar(dealerId, event) {
-    if(event) { event.preventDefault(); event.stopPropagation(); }
-    let starred = getStarredDealers();
-    let idStr = String(dealerId).trim();
-    if (starred.includes(idStr)) { starred = starred.filter(id => id !== idStr); showToast("Removed from favorites!", "warning"); } 
-    else { starred.push(idStr); showToast("Added to favorites!", "success"); }
-    localStorage.setItem('persistent_starred_dealers', JSON.stringify(starred));
-    triggerSilentCloudSync();
-    searchDealer();
-}
-
-function showOnlyStarredDealers() {
-    showingOnlyStarred = !showingOnlyStarred;
-    let btn = document.getElementById('filterStarBtn');
-    if (showingOnlyStarred) { btn.style.background = "#ffb400"; btn.style.color = "#fff"; btn.innerText = "★ SHOW ALL"; } 
-    else { btn.style.background = "#fff3cd"; btn.style.color = "#856404"; btn.innerText = "★ FAVORITES"; }
-    searchDealer();
-}
-
-function copyThreeDealerItems(dId, dName, encBitly, btnEl, event) {
-    if(event) { event.preventDefault(); event.stopPropagation(); }
-    let bitlyUrl = decodeURIComponent(encBitly);
-    let textToCopy = `${dId} - ${dName} - ${bitlyUrl}`;
-    function showSuccess() {
-        let originalText = btnEl.innerText;
-        btnEl.innerText = "COPIED! ✓";
-        setTimeout(() => { btnEl.innerText = originalText; }, 1500);
-        showToast("Dealer Data Copied!", "success");
-    }
-    if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(textToCopy).then(showSuccess).catch(() => fallbackCopy(textToCopy, showSuccess)); } 
-    else { fallbackCopy(textToCopy, showSuccess); }
-}
-
-function openDealerSearchModal() { 
-    showOnlyOneInlineView('dealerSearchModal', 'flex');
-    document.getElementById('dealerSearchInput').value = ''; 
-    showingOnlyStarred = false;
-    let btn = document.getElementById('filterStarBtn');
-    if(btn) { btn.style.background = "#fff3cd"; btn.style.color = "#856404"; btn.innerText = "★ FAVORITES"; }
-    searchDealer();
-    setTimeout(() => document.getElementById('dealerSearchInput').focus(), 100); 
-}
-
-function closeDealerSearchModal() { showOnlyOneInlineView('unifiedHome', 'block'); }
-
-function openBitlyLink(url) { 
-    if (url && url !== '#' && url.trim() !== '') { 
-        let targetUrl = url.trim();
-        if (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) { targetUrl = 'https://' + targetUrl; } 
-        window.open(targetUrl, '_blank'); 
-        closeDealerSearchModal(); 
-    } else { 
-        showToast('Bitly link available नाही!', 'warning'); 
-    } 
-}
-
-function searchDealer() {
-    let q = document.getElementById('dealerSearchInput').value.toLowerCase().trim(); 
-    let resultsDiv = document.getElementById('dealerSearchResults');
-
-    if (dealer_records.length === 0) { resultsDiv.innerHTML = '<div style="text-align:center; color:var(--danger); padding: 15px;">Dealer data load नाही झाला.</div>'; return; }
-    let starredIds = getStarredDealers();
-
-    if (!q && !showingOnlyStarred) { resultsDiv.innerHTML = '<div style="text-align:center; color:#888; padding: 20px;">Type Dealer ID or Name to search...</div>'; return; }
-    let parsedDealers = dealer_records.map(d => parseDealerObj(d));
-    let matches = parsedDealers.filter(p => { 
-        if (showingOnlyStarred && !starredIds.includes(p.code)) return false;
-        if (!q && !showingOnlyStarred) return true;
-        return p.code.toLowerCase().includes(q) || p.name.toLowerCase().includes(q) || p.city.toLowerCase().includes(q); 
-    });
-
-    matches.sort((a, b) => {
-        let isStarA = starredIds.includes(a.code); let isStarB = starredIds.includes(b.code);
-        if (isStarA && !isStarB) return -1; if (!isStarA && isStarB) return 1; return 0;
-    });
-
-    let displayList = matches.slice(0, 50);
-    if (displayList.length === 0) { resultsDiv.innerHTML = '<div style="text-align:center; color:#d35400; padding: 15px; font-weight:bold;">कोणताही डीलर सापडला नाही!</div>'; return; }
-
-    resultsDiv.innerHTML = displayList.map(m => { 
-        let rawBitly = m.bitly || '#'; 
-        let validLink = (rawBitly && rawBitly !== '#') ? (rawBitly.startsWith('http') ? rawBitly : 'https://' + rawBitly) : '';
-        let encBitly = encodeURIComponent(validLink); 
-        let dId = m.code || '-'; 
-        let dName = m.name + (m.city ? ` - ${m.city}` : ''); 
-        let isStarred = starredIds.includes(dId);
-
-        let favBtnHtml = isStarred 
-            ? `<button onclick="toggleDealerStar('${dId}', event)" style="background:#fff3cd; color:#856404; border:1px solid #ffeeba; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:bold; cursor:pointer;">⭐ FAVORITED</button>`
-            : `<button onclick="toggleDealerStar('${dId}', event)" style="background:#f8f9fa; color:#555; border:1px solid #ccc; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:bold; cursor:pointer;">☆ ADD FAV</button>`;
-
-        let linkBtnHtml = validLink 
-            ? `<a href="${validLink}" target="_blank" rel="noopener noreferrer" onclick="closeDealerSearchModal()" style="flex:1; background:var(--success); color:white; border:none; padding:8px 6px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:11px; text-decoration:none; text-align:center; display:inline-block;">OPEN LINK ↗</a>`
-            : `<button onclick="showToast('No Link Available', 'warning')" style="flex:1; background:#ccc; color:#666; border:none; padding:8px 6px; border-radius:4px; font-weight:bold; font-size:11px; cursor:not-allowed;">NO LINK</button>`;
-
-        return ` 
-        <div style="display:flex; flex-direction:column; background:${isStarred ? '#fffdf0' : '#fff'}; padding:10px; border-radius:6px; border:1px solid ${isStarred ? '#ffb400' : '#ddd'}; gap: 8px;"> 
-            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                <div style="flex: 1;">
-                    <strong style="color:var(--indigo); display:block; font-size: 14px;">🏪 ${dName}</strong>
-                    <span style="color:#555; font-size: 11px; font-weight:bold;">ID: <span style="color:var(--primary); font-weight:900;">${dId}</span></span>
-                </div>
-                <div>${favBtnHtml}</div>
-            </div>
-            <div style="display:flex; gap: 5px; border-top: 1px dashed #eee; padding-top: 8px;">
-                ${linkBtnHtml}
-                <button onclick="copyThreeDealerItems('${dId}', '${dName.replace(/'/g, "\\'")}', '${encBitly}', this, event)" style="flex:1.5; background:var(--indigo); color:white; border:none; padding:8px 6px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:11px;">📋 COPY DATA</button>
-            </div>
-        </div>`; 
-    }).join('');
-}
-
 let lastTapTime = 0; let lastTapIdx = -1;
 function handleCustomerTap(idx) {
     let currentTime = new Date().getTime();
@@ -2006,917 +1484,3 @@ function openRowActionModal(pIdx, dIdx, isInactive) {
 }
 
 function closeRowActionModal() { document.getElementById('rowActionModal').style.display = 'none'; }
-function openZatpatCalcModal() { showOnlyOneInlineView('zatpatCalcModal', 'flex'); }
-
-/* ========================================================== */
-/* smart schemes dictionary and custom staging controller    */
-/* ========================================================== */
-
-let dictBasketProducts = [];
-let dictManualLoans = {};
-let customStagingSchemes = [];
-let pendingActionAfterCriteria = null;
-
-async function loadCustomStagingSchemes() {
-    let saved = await getFromDB('custom_staging_schemes');
-    if (saved && Array.isArray(saved)) {
-        customStagingSchemes = saved;
-    } else {
-        customStagingSchemes = [];
-    }
-    updateStagingBadge();
-}
-
-async function saveCustomStagingSchemes() {
-    await saveToDB('custom_staging_schemes', customStagingSchemes);
-    updateStagingBadge();
-    triggerSilentCloudSync();
-}
-
-function updateStagingBadge() {
-    let b = document.getElementById('stagingBadge');
-    if(b) {
-        b.innerText = customStagingSchemes.length;
-        b.style.display = customStagingSchemes.length > 0 ? 'inline-block' : 'none';
-    }
-}
-
-function autoCleanStagingSchemesAgainstMaster() {
-    if(!db_records || db_records.length === 0 || customStagingSchemes.length === 0) return;
-    let initialCount = customStagingSchemes.length;
-    customStagingSchemes = customStagingSchemes.filter(cs => {
-        let existsInMaster = db_records.some(r => 
-            r.model === cs.model && 
-            parseInt(r.tenure) === parseInt(cs.tenure) && 
-            parseInt(r.advEmi) === parseInt(cs.advEmi) &&
-            parseFloat(r.dbd) === parseFloat(cs.dbd)
-        );
-        return !existsInMaster; 
-    });
-    if(customStagingSchemes.length !== initialCount) {
-        saveCustomStagingSchemes();
-    }
-}
-
-function openDictionaryModal() { 
-    if(!db_records || db_records.length === 0) { 
-        showToast("Schemes Dictionary लोड होत आहे, थांबा...", "warning"); 
-        return; 
-    } 
-    showOnlyOneInlineView('dictionarySearchModal', 'flex');
-    document.getElementById('globalModelSearch').value = ''; 
-    document.getElementById('globalModelDropdown').style.display = 'none'; 
-    document.getElementById('schemeResultArea').style.display = 'none';
-    dictManualLoans = {};
-
-    loadCustomStagingSchemes();
-    autoCleanStagingSchemesAgainstMaster();
-
-    let searchInp = document.getElementById('dictCustSearch');
-    if (activeCustomerIndex !== -1 && customerQueue[activeCustomerIndex]) {
-        let c = customerQueue[activeCustomerIndex];
-        if (searchInp) searchInp.value = `👤 ${c.name} (Limit: ₹${c.limit})`;
-        dictLoadCustomerToInputs(c);
-    } else {
-        dictResetAllToDirectCalc();
-    }
-
-    renderDictBasketChips();
-    setTimeout(() => document.getElementById('globalModelSearch').focus(), 100); 
-}
-
-function closeDictionaryModal() { 
-    document.getElementById('dictionarySearchModal').style.display = 'none'; 
-}
-
-function dictResetAllToDirectCalc() {
-    activeCustomerIndex = -1;
-    let sInp = document.getElementById('dictCustSearch');
-    if(sInp) sInp.value = '';
-    
-    document.getElementById('calcCustType').value = "NEW";
-    document.getElementById('calcLimit').value = "";
-    document.getElementById('calcLtv').value = "100";
-    document.getElementById('calcCap').value = "";
-    document.getElementById('calcInvoice').value = "";
-    document.getElementById('calcGtl').value = "0";
-    document.getElementById('calcRfc').value = "0";
-    document.getElementById('calcExw').value = "";
-    document.getElementById('calcMargin').value = "0";
-    document.getElementById('calcTarget').value = "";
-    
-    dictManualLoans = {};
-    let suggBox = document.getElementById('dictCustSuggestionsList');
-    if(suggBox) suggBox.style.display = 'none';
-
-    recalcCurrentModel();
-    showToast("Direct Calculate साठी रीसेट झाले!", "warning");
-}
-
-function dictFilterCustomerSuggestions() {
-    let q = document.getElementById('dictCustSearch').value.toLowerCase().trim();
-    let suggBox = document.getElementById('dictCustSuggestionsList');
-    if(!suggBox) return;
-
-    let filtered = customerQueue.map((c, idx) => ({ ...c, idx })).filter(c => {
-        if(!q) return true;
-        return c.name.toLowerCase().includes(q) || (c.mobile && c.mobile.includes(q)) || c.limit.toString().includes(q);
-    });
-
-    if(filtered.length === 0) {
-        suggBox.innerHTML = `<div style="padding:10px; color:#888; font-size:12px; text-align:center;">कस्टमर सापडला नाही.</div>`;
-        suggBox.style.display = 'block';
-        return;
-    }
-
-    suggBox.innerHTML = filtered.map(c => `
-        <div onclick="dictSelectCustomerFromSuggestion(${c.idx})" style="padding:10px; border-bottom:1px solid #eee; cursor:pointer; font-size:12px; font-weight:bold; color:var(--dark);" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#fff'">
-            👤 ${c.name} <span style="color:var(--success); float:right;">LMT: ₹${c.limit} | LTV: ${c.ltv}%</span>
-        </div>
-    `).join('');
-    suggBox.style.display = 'block';
-}
-
-function dictSelectCustomerFromSuggestion(idx) {
-    let c = customerQueue[idx];
-    if(!c) return;
-    activeCustomerIndex = idx;
-    document.getElementById('dictCustSearch').value = `👤 ${c.name} (Limit: ₹${c.limit})`;
-    document.getElementById('dictCustSuggestionsList').style.display = 'none';
-    dictLoadCustomerToInputs(c);
-    saveQueueToLocal(false);
-    recalcCurrentModel();
-    showToast(`${c.name} सिलेक्ट केला!`, "success");
-}
-
-function dictLoadCustomerToInputs(c) {
-    document.getElementById('calcCustType').value = c.type || "NEW";
-    document.getElementById('calcLimit').value = c.limit || "";
-    document.getElementById('calcLtv').value = c.ltv || 100;
-    document.getElementById('calcCap').value = c.cap || "";
-}
-
-function dictToggleNewCustMode() {
-    let box = document.getElementById('dictNewCustBox');
-    let btn = document.getElementById('dictCustModeBtn');
-    if (box.style.display === 'none' || box.style.display === '') {
-        box.style.display = 'grid';
-        btn.innerText = 'close';
-    } else {
-        box.style.display = 'none';
-        btn.innerText = 'add new to queue';
-    }
-}
-
-async function dictSaveNewCustomerToQueue() {
-    let name = document.getElementById('dictNewName').value.trim() || `Cust ${customerQueue.length + 1}`;
-    let limit = parseFloat(document.getElementById('dictNewLimit').value);
-    let type = document.getElementById('dictNewType').value;
-    let ltv = parseFloat(document.getElementById('dictNewLtv').value) || 100;
-    let cap = parseFloat(document.getElementById('dictNewCap').value) || "";
-
-    if (!limit || limit <= 0 || isNaN(limit)) {
-        showToast("वैध NBFC Limit भरा!", "error");
-        return;
-    }
-
-    let now = new Date();
-    let ts = now.toLocaleDateString('en-GB', { day:'2-digit', month:'short' }) + ' ' + now.toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit' });
-    let newCustObj = { id: Date.now(), name, mobile: "", limit, ltv, type, cap, timestamp: ts, components: {}, products: [], sortConfigs: [] };
-
-    customerQueue.unshift(newCustObj);
-    activeCustomerIndex = 0;
-    await saveQueueToLocal(true);
-
-    document.getElementById('dictCustSearch').value = `👤 ${name} (Limit: ₹${limit})`;
-    dictLoadCustomerToInputs(newCustObj);
-    dictToggleNewCustMode();
-
-    renderCustomerQueue();
-    updateUniversalActionButtons();
-    showToast(`${name} Queue मध्ये ॲड झाला!`, "success");
-    recalcCurrentModel();
-}
-
-function hasValidCriteria() {
-    let limit = parseFloat(document.getElementById('calcLimit').value) || 0;
-    let ltv = parseFloat(document.getElementById('calcLtv').value) || 0;
-    return (limit > 0 && ltv > 0);
-}
-
-function dictPromptCriteria(actionCallback) {
-    pendingActionAfterCriteria = actionCallback;
-    document.getElementById('critType').value = document.getElementById('calcCustType').value;
-    document.getElementById('critLimit').value = document.getElementById('calcLimit').value || "";
-    document.getElementById('critLtv').value = document.getElementById('calcLtv').value || "100";
-    document.getElementById('dictCriteriaPromptModal').style.display = 'flex';
-}
-
-function dictSubmitCriteriaPrompt() {
-    let type = document.getElementById('critType').value;
-    let limit = parseFloat(document.getElementById('critLimit').value) || 0;
-    let ltv = parseFloat(document.getElementById('critLtv').value) || 100;
-
-    if(limit <= 0) {
-        showToast("NBFC Limit भरा!", "error");
-        return;
-    }
-
-    document.getElementById('calcCustType').value = type;
-    document.getElementById('calcLimit').value = limit;
-    document.getElementById('calcLtv').value = ltv;
-    document.getElementById('dictCriteriaPromptModal').style.display = 'none';
-
-    if(typeof pendingActionAfterCriteria === 'function') {
-        pendingActionAfterCriteria();
-        pendingActionAfterCriteria = null;
-    }
-}
-
-function dictValidateAndTriggerNonTieup() {
-    if(!hasValidCriteria()) {
-        dictPromptCriteria(() => dictExecuteNonTieup());
-    } else {
-        dictExecuteNonTieup();
-    }
-}
-
-function dictExecuteNonTieup() {
-    quickNonTieup();
-}
-
-function dictValidateAndTriggerManual() {
-    if(!hasValidCriteria()) {
-        dictPromptCriteria(() => dictExecuteManual());
-    } else {
-        dictExecuteManual();
-    }
-}
-
-function dictExecuteManual() {
-    openMultiStackModal();
-}
-
-function dictOpenSingleSchemeModal() {
-    if(!currentViewedModel) {
-        showToast("आधी एक मॉडेल सिलेक्ट करा!", "warning");
-        return;
-    }
-    document.getElementById('dssModelLabel').innerText = currentViewedModel;
-    document.getElementById('dssTen').value = '';
-    document.getElementById('dssAdv').value = '0';
-    document.getElementById('dssDbd').value = '0';
-    document.getElementById('dssPf').value = '0';
-    document.getElementById('dssRoi').value = '0';
-    document.getElementById('dssFix').value = '';
-    document.getElementById('dictSingleSchemeModal').style.display = 'flex';
-}
-
-async function saveDictSingleScheme() {
-    let ten = parseInt(document.getElementById('dssTen').value) || 0;
-    let adv = parseInt(document.getElementById('dssAdv').value) || 0;
-    let dbd = parseFloat(document.getElementById('dssDbd').value) || 0;
-    let pf = parseInt(document.getElementById('dssPf').value) || 0;
-    let roi = parseFloat(document.getElementById('dssRoi').value) || 0;
-    let fix = parseFloat(document.getElementById('dssFix').value) || 0;
-
-    if(ten <= 0 && fix <= 0) {
-        showToast("Tenure किंवा Fixed EMI भरा!", "error");
-        return;
-    }
-
-    let rec = db_records.find(r => r.model === currentViewedModel);
-    let category = rec ? rec.category : "OTHER";
-
-    let customScheme = {
-        model: currentViewedModel,
-        brand: rec ? rec.brand : "MANUAL",
-        category: category,
-        tenure: ten,
-        advEmi: adv,
-        dbd: dbd,
-        pf: pf,
-        roi: roi,
-        fixedEmi: fix,
-        minLoan: 0,
-        maxLoan: 9999999,
-        isCustomAdded: true,
-        timestamp: new Date().toLocaleString()
-    };
-
-    customStagingSchemes.push(customScheme);
-    await saveCustomStagingSchemes();
-
-    document.getElementById('dictSingleSchemeModal').style.display = 'none';
-    recalcCurrentModel();
-    showToast(`Custom Scheme ${currentViewedModel} मध्ये जोडली गेली!`, "success");
-}
-
-function dictInvoiceChanged() {
-    let inv = parseFloat(document.getElementById('calcInvoice').value) || 0;
-    let allRecords = [...db_records, ...customStagingSchemes];
-    let rec = null;
-    if (currentViewedModel && currentViewedModel.startsWith(SPECIAL_MODEL + " - ")) {
-        let catDisplay = currentViewedModel.replace(SPECIAL_MODEL + " - ", "").trim();
-        let catActual = (catDisplay === 'PHONE / TABLET / SMART WATCH') ? 'PHONE(WEB-MOBILE)' : catDisplay;
-        rec = allRecords.find(r => r.model === SPECIAL_MODEL && r.category === catActual);
-    } else {
-        rec = allRecords.find(r => r.model === currentViewedModel);
-    }
-    let isPhone = rec ? isMobileDeviceCat(rec.category) : false;
-
-    let gtl = inv > 100000 ? 2398 : (inv > 50000 ? 1799 : (inv > 30000 ? 1499 : (inv > 10000 ? 1199 : (inv > 0 ? 699 : 0))));
-    document.getElementById('calcGtl').value = gtl;
-
-    let rfcSlab = getRfcSlabValue(inv);
-    let rfcOpt = document.getElementById('calcRfcOpt');
-    let rfcSel = document.getElementById('calcRfc');
-    let exwInp = document.getElementById('calcExw');
-
-    if (rfcOpt) { 
-        rfcOpt.value = rfcSlab; 
-        rfcOpt.innerText = `${rfcSlab} phone slab`; 
-    }
-
-    if (isPhone) {
-        rfcSel.disabled = false;
-        rfcSel.value = "0";
-        exwInp.value = "";
-        exwInp.disabled = true;
-        exwInp.style.background = '#e9ecef';
-    } else {
-        rfcSel.value = "0";
-        rfcSel.disabled = true;
-        exwInp.disabled = false;
-        exwInp.style.background = '#fff';
-    }
-
-    dictManualLoans = {};
-    recalcCurrentModel();
-}
-
-function viewGlobalModel(name) {
-    document.getElementById('globalModelSearch').value = name;
-    document.getElementById('globalModelDropdown').style.display = 'none';
-    currentViewedModel = name;
-    dictManualLoans = {};
-
-    let allRecords = [...db_records, ...customStagingSchemes];
-    let rec = allRecords.find(r => r.model === name);
-    if(rec && rec.mrp > 0) {
-        document.getElementById('calcInvoice').value = rec.mrp;
-    } else {
-        document.getElementById('calcInvoice').value = "";
-    }
-
-    dictInvoiceChanged();
-
-    setTimeout(() => {
-        let resultArea = document.getElementById('schemeResultArea');
-        if(resultArea) resultArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
-}
-
-function renderTableModel() {
-    let masterSchemes = [];
-    if (currentViewedModel && currentViewedModel.startsWith(SPECIAL_MODEL + " - ")) {
-        let catDisplay = currentViewedModel.replace(SPECIAL_MODEL + " - ", "").trim();
-        let catActual = (catDisplay === 'PHONE / TABLET / SMART WATCH') ? 'PHONE(WEB-MOBILE)' : catDisplay;
-        masterSchemes = db_records.filter(r => r.model === SPECIAL_MODEL && r.category === catActual);
-    } else {
-        masterSchemes = db_records.filter(r => r.model === currentViewedModel);
-    }
-    let stagingForThis = customStagingSchemes.filter(s => s.model === currentViewedModel);
-    let schemes = [...masterSchemes, ...stagingForThis];
-
-    if(schemes.length === 0) return;
-
-    document.getElementById('globalViewerTitle').innerText = '📱 ' + currentViewedModel;
-
-    let custType = document.getElementById('calcCustType').value;
-    let ltvLimit = parseFloat(document.getElementById('calcLtv').value) || 100;
-    let limit = parseFloat(document.getElementById('calcLimit').value) || 0;
-    let invoice = parseFloat(document.getElementById('calcInvoice').value) || 0;
-    let margin = parseFloat(document.getElementById('calcMargin').value) || 0;
-    let targetDp = parseFloat(document.getElementById('calcTarget').value) || 0;
-    let emiCap = parseFloat(document.getElementById('calcCap').value) || 0;
-
-    let gtl = parseFloat(document.getElementById('calcGtl').value) || 0;
-    let rfc = parseFloat(document.getElementById('calcRfc').value) || 0;
-    let exw = parseFloat(document.getElementById('calcExw').value) || 0;
-    let insTotal = gtl + rfc + exw;
-
-    let isCalculatedMode = (limit > 0 && invoice > 0);
-    let fee = (custType === 'EMI CARD') ? 270 : (custType === 'W/O CARD' ? 320 : 850);
-    let totalFees = fee + margin;
-
-    let validSchemes = schemes.filter(s => s.tenure > 0 || s.fixedEmi > 0);
-    let minAllowedLoan = invoice > 0 ? invoice * 0.50 : 0;
-
-    let thead = document.getElementById('tableHead');
-    if (isCalculatedMode) {
-        thead.innerHTML = `<tr>
-            <th style="background:#e3f2fd; padding:10px 4px; font-size:12px;">T/A</th>
-            <th style="background:#e3f2fd; padding:10px 4px; font-size:12px;">LTV%</th>
-            <th style="background:#e8f5e9; color:var(--success); padding:10px 4px; font-size:12px;">LOAN edit</th>
-            <th style="background:#fff3e0; color:#d35400; padding:10px 4px; font-size:12px;">DIFF</th>
-            <th style="background:#e8f5e9; color:var(--success); padding:10px 4px; font-size:12px;">NET DP</th>
-            <th style="background:#e3f2fd; color:var(--primary); padding:10px 4px; font-size:12px;">EMI</th>
-            <th style="background:#e3f2fd; color:var(--primary); padding:10px 4px; font-size:12px;">M</th>
-            <th style="padding:10px 4px; font-size:12px;">ACT</th>
-        </tr>`;
-    } else {
-        thead.innerHTML = `<tr>
-            <th style="background:#e3f2fd;">T/A</th>
-            <th style="background:#e3f2fd;">LTV%</th>
-            <th style="background:#e3f2fd;">FIXED EMI</th>
-            <th style="background:#e3f2fd;">DBD%</th>
-            <th style="background:#e3f2fd;">ROI%</th>
-            <th style="background:#e3f2fd;">PF</th>
-        </tr>`;
-    }
-
-    validSchemes.forEach((s, idx) => { 
-        s.calcLTV = s.tenure > 0 ? ((s.tenure - s.advEmi)/s.tenure)*100 : 0; 
-
-        if (isCalculatedMode) {
-            let nbfcMax = (limit * s.tenure) / (s.tenure - s.advEmi || 1);
-            let finalLoan = 0, emi = 0, dp = 0, diff = 0;
-            let dbdRate = (s.dbd * 1.18 / 100);
-            let roiRate = s.roi / 1200;
-            let roiRateDP = roiRate * s.advEmi;
-            let inst = s.tenure - s.advEmi;
-            if (inst < 1) inst = 1;
-
-            let appliedPf = s.pf;
-            if (currentViewedModel.startsWith(SPECIAL_MODEL)) {
-                let slabPf = getNonTieupPfValue(s.category, invoice);
-                if (slabPf !== null) appliedPf = slabPf;
-            }
-
-            if (s.fixedEmi > 0) {
-                let maxTotalTenure = Math.floor(limit / s.fixedEmi) + s.advEmi;
-                let currentTenure = Math.floor(invoice / s.fixedEmi);
-                if(currentTenure > maxTotalTenure) currentTenure = maxTotalTenure;
-                if(currentTenure < 1) currentTenure = 1;
-
-                finalLoan = currentTenure * s.fixedEmi;
-
-                if (targetDp > 0) {
-                    let numerator = targetDp - invoice - (s.fixedEmi * s.advEmi) - appliedPf - totalFees;
-                    let denominator = dbdRate + roiRateDP - 1;
-                    let solvedLoan = numerator / denominator;
-                    let solvedTenure = Math.floor(solvedLoan / s.fixedEmi);
-                    if (solvedTenure > maxTotalTenure) solvedTenure = maxTotalTenure;
-                    finalLoan = Math.max(0, solvedTenure * s.fixedEmi);
-                }
-
-                if (finalLoan > invoice) finalLoan = Math.floor(invoice/s.fixedEmi)*s.fixedEmi;
-                if (dictManualLoans[idx] !== undefined) { finalLoan = dictManualLoans[idx]; }
-
-                currentTenure = Math.floor(finalLoan / s.fixedEmi) || 1;
-                inst = currentTenure - s.advEmi;
-                if(inst < 1) inst = 1;
-
-                let roiInEmi = finalLoan * roiRate;
-                emi = s.fixedEmi + (insTotal / inst) + roiInEmi;
-                let roiInDp = finalLoan * roiRateDP;
-                dp = invoice - finalLoan + (s.fixedEmi * s.advEmi) + appliedPf + totalFees + (finalLoan * dbdRate) + roiInDp;
-                s.currentTenure = currentTenure;
-                s.calcInst = inst;
-            } else {
-                finalLoan = Math.min(nbfcMax, invoice);
-                if (currentViewedModel.startsWith(SPECIAL_MODEL) && s.maxLoan < 9999999) {
-                    finalLoan = Math.min(finalLoan, s.maxLoan);
-                }
-
-                if (targetDp > 0) {
-                    let advRate = s.advEmi / s.tenure; 
-                    let numerator = targetDp - invoice - appliedPf - totalFees; 
-                    let denominator = advRate + dbdRate + roiRateDP - 1; 
-                    let solvedLoan = numerator / denominator; 
-                    finalLoan = Math.min(finalLoan, Math.max(0, Math.floor(solvedLoan)));
-                }
-
-                if (dictManualLoans[idx] !== undefined) { finalLoan = dictManualLoans[idx]; }
-                if (invoice > 0 && finalLoan > invoice) finalLoan = invoice;
-
-                let baseEmi = finalLoan / s.tenure;
-                if (baseEmi > 0 && baseEmi < 900) baseEmi = 900; 
-
-                let roiInEmi = finalLoan * roiRate;
-                emi = baseEmi + (insTotal / inst) + roiInEmi;
-
-                if (emiCap > 0 && emi > emiCap && dictManualLoans[idx] === undefined) {
-                    finalLoan = (emiCap - (insTotal / inst)) / ((1 / s.tenure) + roiRate);
-                    if(finalLoan < 0) finalLoan = 0;
-                    if (invoice > 0 && finalLoan > invoice) finalLoan = invoice; 
-
-                    baseEmi = finalLoan / s.tenure;
-                    if (baseEmi > 0 && baseEmi < 900) baseEmi = 900; 
-                    roiInEmi = finalLoan * roiRate;
-                    emi = baseEmi + (insTotal / inst) + roiInEmi;
-                }
-
-                let roiInDp = finalLoan * roiRateDP;
-                dp = invoice - finalLoan + (baseEmi * s.advEmi) + appliedPf + totalFees + (finalLoan * dbdRate) + roiInDp;
-                s.currentTenure = s.tenure;
-                s.calcInst = inst;
-            }
-
-            s.calcLoan = finalLoan;
-            let boundBreach = currentViewedModel.startsWith(SPECIAL_MODEL) && (finalLoan < s.minLoan || finalLoan > s.maxLoan);
-            s.isInvalidLoan = (isCalculatedMode && invoice > 0 && (finalLoan < minAllowedLoan || boundBreach));
-
-            diff = invoice - finalLoan;
-            s.calcDiff = diff > 0 ? diff : 0;
-            s.calcDp = Math.ceil(dp/10)*10;
-            s.calcEmi = emi;
-            s.schemeIdx = idx;
-            s.appliedPf = appliedPf;
-        }
-    });
-
-    validSchemes = validSchemes.filter(s => (s.fixedEmi > 0 || s.calcLTV <= ltvLimit) && !s.isInvalidLoan);
-
-    if (isCalculatedMode) {
-        validSchemes.sort((a,b) => a.calcDp - b.calcDp);
-    } else {
-        validSchemes.sort((a,b) => b.calcLTV - a.calcLTV);
-    }
-
-    let tbody = document.getElementById('globalViewerBody');
-    tbody.innerHTML = validSchemes.map(s => {
-        let displayTenure = s.currentTenure ? s.currentTenure : s.tenure;
-        let isCustom = s.isCustomAdded;
-        let rowStyle = isCustom ? "background: #fffbeb; border: 2px solid #f59e0b;" : "";
-        let badgeHtml = isCustom ? `<span style="display:block; font-size:9px; background:#f59e0b; color:white; border-radius:3px; padding:1px 3px; font-weight:900;">★ manual</span>` : '';
-
-        if (isCalculatedMode) {
-            return `<tr style="${rowStyle}">
-                <td style="font-weight:900; color:var(--indigo); border-bottom:1px solid #eee; padding:10px 4px; font-size:13px;">${displayTenure}/${s.advEmi} ${badgeHtml}</td>
-                <td style="font-weight:bold; color:var(--bajaj-blue); border-bottom:1px solid #eee; padding:10px 4px; font-size:13px;">${Math.round(s.calcLTV)}%</td>
-                <td style="border-bottom:1px solid #eee; background:#f4fcf6; padding:10px 4px;">
-                    <input type="number" value="${Math.floor(s.calcLoan)}" onchange="dictManualLoanChange(${s.schemeIdx}, this.value)" style="width:75px; font-weight:900; color:var(--success); border:1px solid #a7f3d0; border-radius:4px; padding:4px; text-align:center;">
-                </td>
-                <td style="border-bottom:1px solid #eee; background:#fff3e0; color:#d35400; font-weight:900; padding:10px 4px; font-size:13px;">₹${Math.floor(s.calcDiff).toLocaleString()}</td>
-                <td style="border-bottom:1px solid #eee; background:#f4fcf6; color:var(--success); font-weight:900; padding:10px 4px; font-size:13px;">₹${Math.round(s.calcDp).toLocaleString()}</td>
-                <td style="border-bottom:1px solid #eee; background:#eef6ff; color:var(--primary); font-weight:900; padding:10px 4px; font-size:13px;">₹${Math.round(s.calcEmi).toLocaleString()}</td>
-                <td style="font-weight:900; color:var(--primary); background:#eef6ff; border-bottom:1px solid #eee; padding:10px 4px; font-size:13px;">${s.calcInst}</td>
-                <td style="border-bottom:1px solid #eee; padding:10px 4px;">
-                    <button style="padding:4px 6px; font-size:10px !important; background:var(--primary); color:white; border:none; border-radius:3px; cursor:pointer;" onclick="copySingleScheme('${displayTenure}', '${s.advEmi}', '${s.calcLoan}', '${s.calcDp}', '${s.calcEmi}', '${s.fixedEmi}', '${s.dbd}', '${s.roi}', '${s.appliedPf || s.pf}', this)">COPY</button>
-                </td>
-            </tr>`;
-        } else {
-            let dbdAmtPreview = invoice > 0 ? invoice * (s.dbd * 1.18 / 100) : 0;
-            let dbdStr = invoice > 0 ? `${+parseFloat(s.dbd).toFixed(3)}%<br><span style="color:var(--danger); font-weight:900;">₹${Math.round(dbdAmtPreview).toLocaleString()}</span>` : `${+parseFloat(s.dbd).toFixed(3)}%`;
-
-            return `<tr style="${rowStyle}">
-                <td style="font-weight:900; color:var(--indigo); border-bottom:1px solid #eee;">${displayTenure}/${s.advEmi} ${badgeHtml}</td>
-                <td style="font-weight:bold; color:var(--bajaj-blue); border-bottom:1px solid #eee;">${Math.round(s.calcLTV)}%</td>
-                <td style="font-weight:900; color:var(--primary); border-bottom:1px solid #eee;">${s.fixedEmi > 0 ? '₹'+s.fixedEmi : 'n a'}</td>
-                <td style="border-bottom:1px solid #eee;">${dbdStr}</td>
-                <td style="border-bottom:1px solid #eee;">${+parseFloat(s.roi).toFixed(2)}%</td>
-                <td style="font-weight:900; border-bottom:1px solid #eee;">₹${s.pf}</td>
-            </tr>`;
-        }
-    }).join('');
-
-    document.getElementById('schemeResultArea').style.display = 'block';
-}
-
-function dictManualLoanChange(schemeIdx, val) {
-    let invoice = parseFloat(document.getElementById('calcInvoice').value) || 0;
-    let minAllowed = invoice > 0 ? invoice * 0.50 : 0;
-    let loan = parseFloat(val) || 0;
-
-    if (invoice > 0 && loan < minAllowed) {
-        loan = minAllowed;
-        showToast("लोन रक्कम ५०% पेक्षा कमी असू शकत नाही!", "error");
-    }
-    if (invoice > 0 && loan > invoice) {
-        loan = invoice;
-        showToast("लोन रक्कम इनव्हॉइसपेक्षा जास्त असू शकत नाही!", "warning");
-    }
-
-    dictManualLoans[schemeIdx] = loan;
-    renderTableModel();
-}
-
-function addCurrentModelToDictBasket() {
-    if (!currentViewedModel) return;
-    let inv = parseFloat(document.getElementById('calcInvoice').value) || 0;
-    let gtl = parseFloat(document.getElementById('calcGtl').value) || 0;
-    let rfc = parseFloat(document.getElementById('calcRfc').value) || 0;
-    let exw = parseFloat(document.getElementById('calcExw').value) || 0;
-    let margin = parseFloat(document.getElementById('calcMargin').value) || 0;
-    let cap = parseFloat(document.getElementById('calcCap').value) || "";
-    let target = parseFloat(document.getElementById('calcTarget').value) || "";
-
-    let allRecords = [...db_records, ...customStagingSchemes];
-    let category = "OTHER";
-    if (currentViewedModel.startsWith(SPECIAL_MODEL + " - ")) {
-        let catDisplay = currentViewedModel.replace(SPECIAL_MODEL + " - ", "").trim();
-        category = (catDisplay === 'PHONE / TABLET / SMART WATCH') ? 'PHONE(WEB-MOBILE)' : catDisplay;
-    } else {
-        let rec = allRecords.find(r => r.model === currentViewedModel);
-        if (rec) category = rec.category;
-    }
-
-    let exist = dictBasketProducts.find(p => p.name === currentViewedModel);
-    if (exist) {
-        exist.inv = inv;
-        exist.gtl = gtl;
-        exist.rfc = rfc;
-        exist.exw = exw;
-        exist.margin = margin;
-    } else {
-        dictBasketProducts.push({
-            name: currentViewedModel,
-            category: category,
-            inv: inv,
-            gtl: gtl,
-            rfc: rfc,
-            exw: exw,
-            margin: margin,
-            cap: cap,
-            target: target
-        });
-    }
-
-    renderDictBasketChips();
-    showToast(`${currentViewedModel} बास्केटमध्ये ॲड झाले!`, "success");
-}
-
-function renderDictBasketChips() {
-    let box = document.getElementById('dictProductsBasket');
-    let chips = document.getElementById('dictBasketChips');
-    if (!box || !chips) return;
-
-    if (dictBasketProducts.length === 0) {
-        box.style.display = 'none';
-        return;
-    }
-
-    box.style.display = 'block';
-    chips.innerHTML = dictBasketProducts.map((p, idx) => `
-        <span onclick="dictViewBasketProduct(${idx})" style="background:#e0f2fe; color:var(--bajaj-blue); padding:5px 10px; border-radius:15px; font-size:11px; font-weight:900; border:1px solid #bae6fd; display:flex; align-items:center; gap:6px; cursor:pointer;" title="Tap to view table">
-            📱 ${p.name} (₹${p.inv})
-            <span onclick="event.stopPropagation(); removeDictBasketProduct(${idx});" style="color:red; font-size:14px; font-weight:bold;">&times;</span>
-        </span>
-    `).join('');
-}
-
-function dictViewBasketProduct(idx) {
-    let p = dictBasketProducts[idx];
-    if(!p) return;
-    currentViewedModel = p.name;
-    document.getElementById('globalModelSearch').value = p.name;
-    document.getElementById('calcInvoice').value = p.inv || "";
-    document.getElementById('calcGtl').value = p.gtl || 0;
-    document.getElementById('calcRfc').value = p.rfc || 0;
-    document.getElementById('calcExw').value = p.exw || "";
-    document.getElementById('calcMargin').value = p.margin || 0;
-    dictManualLoans = {};
-    recalcCurrentModel();
-    showToast(`${p.name} चे स्कीम्स लोड झाले!`, "success");
-}
-
-function removeDictBasketProduct(idx) {
-    dictBasketProducts.splice(idx, 1);
-    renderDictBasketChips();
-}
-
-function exportDictCustomerQuoteImage() {
-    let cust = (activeCustomerIndex !== -1 && customerQueue[activeCustomerIndex]) ? customerQueue[activeCustomerIndex] : null;
-    let custName = cust ? cust.name : "Valued Customer";
-    let custLimit = cust ? cust.limit : (parseFloat(document.getElementById('calcLimit').value) || 0);
-    let custLtv = cust ? cust.ltv : (parseFloat(document.getElementById('calcLtv').value) || 100);
-    let custType = cust ? cust.type : document.getElementById('calcCustType').value;
-    let invoice = parseFloat(document.getElementById('calcInvoice').value) || 0;
-
-    let quoteDiv = document.createElement('div'); 
-    quoteDiv.style.width = "780px"; 
-    quoteDiv.style.padding = "16px"; 
-    quoteDiv.style.background = "#f8fafc"; 
-    quoteDiv.style.position = "absolute"; 
-    quoteDiv.style.top = "-9999px"; 
-    quoteDiv.style.boxSizing = "border-box";
-    quoteDiv.style.fontFamily = "sans-serif";
-
-    let rowsHtml = "";
-    let tableRows = document.querySelectorAll('#globalViewerBody tr');
-    tableRows.forEach(tr => {
-        let tds = tr.querySelectorAll('td');
-        if(tds.length >= 7) {
-            let ta = tds[0].innerText.replace('★ manual', '').trim();
-            let dp = tds[4].innerText.trim();
-            let emi = tds[5].innerText.trim();
-            let months = tds[6].innerText.trim();
-            
-            let emiNum = parseFloat(emi.replace(/[^\d.]/g, '')) || 0;
-            let perDay = Math.round(emiNum / 30);
-
-            rowsHtml += `
-                <tr style="border-bottom: 1px solid #e2e8f0; font-size: 15px; font-weight: bold;">
-                    <td style="padding: 12px; font-weight: 900; color: #0f172a;">${ta}</td>
-                    <td style="padding: 12px; color: #059669; font-weight: 900;">${dp}</td>
-                    <td style="padding: 12px; color: #095797; font-weight: 900;">${emi}</td>
-                    <td style="padding: 12px; color: #1e293b;">${months}</td>
-                    <td style="padding: 12px; color: #ea580c;">₹${perDay.toLocaleString()}</td>
-                </tr>
-            `;
-        }
-    });
-
-    if(!rowsHtml) {
-        showToast("कोटेशनसाठी स्कीम्स उपलब्ध नाहीत!", "error");
-        return;
-    }
-
-    quoteDiv.innerHTML = `
-    <div style="background: #ffffff; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); overflow: hidden; border: 1px solid #e2e8f0;">
-        <div style="background: linear-gradient(180deg, #095797 0%, #153e75 100%); padding: 20px 16px; color: #ffffff; text-align: center;">
-            <h2 style="margin: 0 0 10px 0; font-size: 26px; font-weight: 900; letter-spacing: 1px;">🎉 SPECIAL LOAN OFFER</h2> 
-            <div style="display: flex; gap: 14px; font-size: 16px; font-weight: 900; justify-content: center; background: rgba(255,255,255,0.1); padding: 8px; border-radius: 8px;">
-                <span>👤 ${custName}</span>
-                <span>| LIMIT: ₹${custLimit.toLocaleString()}</span>
-                <span>| LTV: ${custLtv}%</span>
-                <span>| ${custType}</span>
-            </div>
-        </div>
-        <div style="padding: 16px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; border-bottom:2px solid #034887; padding-bottom:6px;">
-                <h3 style="margin:0; color:#034887; font-size:20px;">📱 ${currentViewedModel}</h3>
-                <span style="background:#034887; color:#fff; padding:6px 14px; border-radius:6px; font-weight:900;">INV: ₹${invoice.toLocaleString()}</span>
-            </div>
-            <table style="width: 100%; border-collapse: collapse; text-align: center;">
-                <thead style="background: #f8fafc; border-bottom: 2px solid #cbd5e1; font-size: 14px;">
-                    <tr>
-                        <th style="padding:10px; color:#475569;">T/A</th>
-                        <th style="padding:10px; color:#475569;">DP</th>
-                        <th style="padding:10px; color:#475569;">EMI</th>
-                        <th style="padding:10px; color:#475569;">MONTHS</th>
-                        <th style="padding:10px; color:#475569;">PER DAY</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${rowsHtml}
-                </tbody>
-            </table>
-        </div>
-    </div>`;
-
-    document.body.appendChild(quoteDiv);
-
-    html2canvas(quoteDiv, { scale: 2, useCORS: true }).then(canvas => {
-        document.body.removeChild(quoteDiv);
-        let imgDataUrl = canvas.toDataURL("image/png");
-        document.getElementById('generatedImage').src = imgDataUrl;
-        document.getElementById('imageViewerModal').style.display = 'flex';
-        showToast("कोटेशन इमेज तयार झाली!", "success");
-    });
-}
-
-function openCustomSchemesStagingModal() {
-    renderStagingTable();
-    document.getElementById('customSchemesStagingModal').style.display = 'flex';
-}
-
-function closeCustomSchemesStagingModal() {
-    document.getElementById('customSchemesStagingModal').style.display = 'none';
-}
-
-function renderStagingTable() {
-    let tbody = document.getElementById('stagingTableBody');
-    if(!tbody) return;
-
-    if(customStagingSchemes.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:15px; color:#888;">कोणतीही मॅन्युअल स्कीम पेंडिंग नाही.</td></tr>`;
-        return;
-    }
-
-    tbody.innerHTML = customStagingSchemes.map((s, idx) => `
-        <tr style="border-bottom:1px solid #eee;">
-            <td style="padding:6px; font-weight:bold;">${s.model}</td>
-            <td style="padding:6px; text-align:center;">${s.tenure}/${s.advEmi}</td>
-            <td style="padding:6px; text-align:center;">${s.dbd}%</td>
-            <td style="padding:6px; text-align:center;">₹${s.pf}</td>
-            <td style="padding:6px; text-align:center;">${s.roi}%</td>
-            <td style="padding:6px; text-align:center;">${s.fixedEmi > 0 ? '₹'+s.fixedEmi : '-'}</td>
-            <td style="padding:6px; text-align:center;"><button onclick="deleteStagingScheme(${idx})" style="background:var(--danger); color:white; border:none; padding:2px 6px; border-radius:3px; cursor:pointer;">✖</button></td>
-        </tr>
-    `).join('');
-}
-
-function deleteStagingScheme(idx) {
-    customStagingSchemes.splice(idx, 1);
-    saveCustomStagingSchemes();
-    renderStagingTable();
-    recalcCurrentModel();
-    showToast("स्कीम Staging मधून डिलीट केली!", "success");
-}
-
-function clearAllStagingSchemes() {
-    showCustomConfirm("सर्व Staging स्कीम्स कायमच्या काढायच्या?", () => {
-        customStagingSchemes = [];
-        saveCustomStagingSchemes();
-        renderStagingTable();
-        recalcCurrentModel();
-        showToast("Staging पूर्णपणे रिकामी केली!", "success");
-    });
-}
-
-function copyStagingDataForExcel() {
-    if(customStagingSchemes.length === 0) {
-        showToast("कॉपी करण्यासाठी एकही स्कीम नाही!", "warning");
-        return;
-    }
-
-    let tsv = "MODEL\tBRAND\tCATEGORY\tTOTAL TENURE\tADVANCE EMI\tDBD%\tPF\tROI%\tFIXED EMI\n";
-    customStagingSchemes.forEach(s => {
-        tsv += `${s.model}\t${s.brand}\t${s.category}\t${s.tenure}\t${s.advEmi}\t${s.dbd}\t${s.pf}\t${s.roi}\t${s.fixedEmi}\n`;
-    });
-
-    fallbackCopy(tsv, () => {
-        showToast("Master Data TSV फॉर्मेटमध्ये कॉपी झाले! Excel मध्ये पेस्ट करा.", "success");
-    });
-}
-
-async function transferDictModelToFinalQueue() {
-    if (activeCustomerIndex === -1 || !customerQueue[activeCustomerIndex]) {
-        showToast("आधी कस्टमर सिलेक्ट किंवा ॲड करा!", "error");
-        return;
-    }
-
-    if (dictBasketProducts.length === 0 && currentViewedModel) {
-        addCurrentModelToDictBasket();
-    }
-
-    if (dictBasketProducts.length === 0) {
-        showToast("ट्रान्सफर करण्यासाठी एकही प्रॉडक्ट नाही!", "warning");
-        return;
-    }
-
-    let cust = customerQueue[activeCustomerIndex];
-    if (!cust.products) cust.products = [];
-
-    dictBasketProducts.forEach(prod => {
-        let rawMaster = [];
-        if (prod.name.startsWith(SPECIAL_MODEL + " - ")) {
-            rawMaster = db_records.filter(r => r.model === SPECIAL_MODEL && r.category === prod.category);
-        } else {
-            rawMaster = db_records.filter(r => r.model === prod.name);
-        }
-        let rawCustom = customStagingSchemes.filter(s => s.model === prod.name);
-        let combined = [...rawMaster, ...rawCustom];
-
-        let ltvLimit = cust.ltv || 100;
-        let eligible = combined.filter(s => s.fixedEmi > 0 || (s.tenure > 0 && ((s.tenure - s.advEmi)/s.tenure)*100 <= ltvLimit));
-        
-        let uniqueSchemes = [];
-        let seen = new Set();
-        eligible.forEach(s => {
-            let key = `${s.tenure}_${s.advEmi}_${s.fixedEmi}_${s.minLoan}_${s.maxLoan}`;
-            if(!seen.has(key)) { seen.add(key); s.inactive = false; uniqueSchemes.push({...s}); }
-        });
-
-        let pIndex = cust.products.findIndex(p => p.name === prod.name);
-        let prodObj = {
-            name: prod.name,
-            isNonTieup: prod.name.startsWith(SPECIAL_MODEL),
-            schemes: uniqueSchemes,
-            category: prod.category,
-            inputs: {
-                mrp: prod.inv,
-                inv: prod.inv,
-                cap: prod.cap || cust.cap || "",
-                target: prod.target || "",
-                gtl: prod.gtl || 0,
-                rfc: prod.rfc || 0,
-                exw: prod.exw || 0,
-                margin: prod.margin || 0,
-                dealer: 0,
-                surch: 0,
-                manualLoans: {}
-            },
-            isManual: false
-        };
-
-        if (pIndex !== -1) {
-            cust.products[pIndex] = prodObj;
-        } else {
-            cust.products.push(prodObj);
-            if (!cust.sortConfigs) cust.sortConfigs = [];
-            cust.sortConfigs.push({ key: 'default_ltv', dir: 'desc' });
-        }
-    });
-
-    dictBasketProducts = [];
-    renderDictBasketChips();
-    await saveQueueToLocal(true);
-
-    closeDictionaryModal();
-    goToFinalPage();
-    showToast("प्रॉडक्ट्स फायनल स्क्रीनवर ट्रान्सफर झाले!", "success");
-}
