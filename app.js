@@ -301,6 +301,7 @@ window.onload = async function() {
     }
 };
 
+/* Search Model: फक्त मॉडेलचे नाव दाखवतो (Brand आणि Category काढून टाकली आहे) */
 function doSearch(inputId, dropdownId) {
     let inp = document.getElementById(inputId);
     let dd = document.getElementById(dropdownId);
@@ -321,9 +322,7 @@ function doSearch(inputId, dropdownId) {
 
     let matches = validRecords.filter(r => {
         let m = String(r.model || "").toUpperCase();
-        let b = String(r.brand || "").toUpperCase();
-        let c = String(r.category || "").toUpperCase();
-        return m.includes(q) || b.includes(q) || c.includes(q);
+        return m.includes(q);
     }).map(r => r.model);
 
     matches = [...new Set(matches)].slice(0, 30);
@@ -335,12 +334,9 @@ function doSearch(inputId, dropdownId) {
     }
 
     dd.innerHTML = matches.map(m => {
-        let rec = validRecords.find(x => x.model === m);
-        let catTag = rec && rec.category ? `<span style="font-size:10px; background:#e0e0e0; color:#333; padding:2px 6px; border-radius:4px; float:right;">📁 ${rec.category}</span>` : '';
-        let brandTag = rec && rec.brand ? `<span style="font-size:10px; color:#0984e3; font-weight:900; margin-right:5px;">[${rec.brand}]</span>` : '';
         let safeModel = String(m).replace(/'/g, "\\'").replace(/"/g, '&quot;');
-        return `<div style="padding:10px; border-bottom:1px solid #eee; cursor:pointer; font-weight:800; color:var(--dark); display:flex; justify-content:space-between; align-items:center;" onmouseover="this.style.background='#e3f2fd'" onmouseout="this.style.background='#fff'" onclick="selectModel('${safeModel}')">
-            <span style="flex:1; font-size:12px;">${brandTag}📱 ${m}</span> ${catTag}
+        return `<div style="padding:10px; border-bottom:1px solid #eee; cursor:pointer; font-weight:800; color:var(--dark); display:flex; align-items:center;" onmouseover="this.style.background='#e3f2fd'" onmouseout="this.style.background='#fff'" onclick="selectModel('${safeModel}')">
+            <span style="flex:1; font-size:12px;">📱 ${m}</span>
         </div>`;
     }).join('');
 
@@ -371,7 +367,7 @@ async function addCustomerToQueue() {
     let mobile = document.getElementById('cqMobile').value.trim() || ""; 
     let limit = parseFloat(document.getElementById('cqLimit').value); 
     let ltv = parseFloat(document.getElementById('cqLtv').value) || 100; 
-    let type = document.getElementById('cqType').value; 
+    let type = document.getElementById('cqType').value || "NEW"; 
     let cap = parseFloat(document.getElementById('cqCap').value) || "";
 
     if(!limit || limit <= 0 || isNaN(limit)) { 
@@ -387,7 +383,7 @@ async function addCustomerToQueue() {
 
     let now = new Date(); 
     let ts = now.toLocaleDateString('en-GB', {day:'2-digit', month:'short'}) + ' ' + now.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
-    let newCustObj = { id: Date.now(), name, mobile, limit, ltv, type, cap, timestamp: ts, components: {}, products: [], sortConfigs: [] };
+    let newCustObj = { id: Date.now(), name, mobile, limit, ltv, type, cap, targetDp: "", timestamp: ts, components: {}, products: [], sortConfigs: [] };
 
     customerQueue.unshift(newCustObj); 
 
@@ -398,7 +394,9 @@ async function addCustomerToQueue() {
 
     document.getElementById('cqName').value = ''; 
     document.getElementById('cqMobile').value = ''; 
+    document.getElementById('cqType').value = ''; 
     document.getElementById('cqLimit').value = ''; 
+    document.getElementById('cqLtv').value = ''; 
     document.getElementById('cqCap').value = '';
 
     renderCustomerQueue(); 
@@ -549,11 +547,12 @@ async function processMultiStack() {
     }
     if(validSchemes.length > 0) { 
         if (activeCustomerIndex !== -1 && customerQueue[activeCustomerIndex]) {
-            let comp = customerQueue[activeCustomerIndex]?.components || {}; 
-            current_products.push({ name: msNameInput, schemes: validSchemes, category: "MANUAL", inputs: { mrp: comp.mrp||"", inv: comp.inv||"", cap: comp.cap||(customerQueue[activeCustomerIndex]?.cap || ""), target: comp.target||"", gtl: comp.gtl||0, rfc: comp.rfc||0, exw: comp.exw||"", margin: comp.margin||"", dealer: comp.dealer||"", surch: 0, manualLoans: {} }, isManual: true, isNonTieup: false }); 
+            let c = customerQueue[activeCustomerIndex];
+            let sharedTarget = c.targetDp || c.components?.target || "";
+            current_products.push({ name: msNameInput, schemes: validSchemes, category: "MANUAL", inputs: { mrp: "", inv: "", cap: "", target: sharedTarget, gtl: 0, rfc: 0, exw: "", margin: "", dealer: "", surch: 0, manualLoans: {} }, isManual: true, isNonTieup: false }); 
             sortConfigs.push({ key: 'default_ltv', dir: 'desc' }); 
-            customerQueue[activeCustomerIndex].products = current_products; 
-            customerQueue[activeCustomerIndex].sortConfigs = sortConfigs; 
+            c.products = current_products; 
+            c.sortConfigs = sortConfigs; 
             await saveQueueToLocal(); 
         }
         closeMultiStackModal(); 
@@ -678,17 +677,16 @@ function selectCategory(catName) {
     showComponentsModal(""); 
 }
 
+/* MRP बदलल्यावर INV किंवा GTL प्री-फिल्ड होणार नाही, फक्त RFC ऑप्शन अपडेट होईल */
 function compMrpChanged() { 
     let mrp = parseFloat(document.getElementById('compMrp').value) || 0; 
-    document.getElementById('compInv').value = mrp; 
-    let gtl = mrp > 100000 ? 2398 : (mrp > 50000 ? 1799 : (mrp > 30000 ? 1499 : (mrp > 10000 ? 1199 : (mrp > 0 ? 699 : 0)))); 
-    document.getElementById('compGtl').value = gtl; 
     let rfcSlab = getRfcSlabValue(mrp); 
     let rfcOpt = document.getElementById('compRfcOpt'); 
     if(rfcOpt) { rfcOpt.value = rfcSlab; rfcOpt.innerText = rfcSlab; } 
     if (!isMobileDeviceCat(currentModalCategory)) { document.getElementById('compRfc').value = "0"; } 
 }
 
+/* फक्त MRP आणि (जर कस्टमरसाठी आधी टाकला असेल तर) Target DP प्री-फिल्ड येईल, बाकी सर्व कोरे राहील */
 function showComponentsModal(baseMrp = "") {
     let c = customerQueue[activeCustomerIndex]; 
     let rfcSelect = document.getElementById('compRfc'); 
@@ -700,10 +698,40 @@ function showComponentsModal(baseMrp = "") {
         pendingNameEl.innerText = tempPendingProduct.name;
     }
 
-    if (isMobileCat) { rfcSelect.disabled = false; rfcSelect.style.background = '#fff'; exwInput.disabled = true; exwInput.style.background = '#e9ecef'; exwInput.value = ""; } else { rfcSelect.disabled = true; rfcSelect.style.background = '#e9ecef'; rfcSelect.value = "0"; exwInput.disabled = false; exwInput.style.background = '#fff'; }
-    let currentMrp = baseMrp !== "" ? baseMrp : (c?.components?.mrp || ''); document.getElementById('compMrp').value = currentMrp; let mrpForRfc = parseFloat(currentMrp) || 0; let rfcSlab = getRfcSlabValue(mrpForRfc); let rfcOpt = document.getElementById('compRfcOpt'); if(rfcOpt) { rfcOpt.value = rfcSlab; rfcOpt.innerText = rfcSlab; }
-    if (baseMrp !== "") { compMrpChanged(); } else { document.getElementById('compInv').value = c?.components?.inv || ''; document.getElementById('compGtl').value = c?.components?.gtl || 0; if (isMobileCat) { document.getElementById('compRfc').value = c?.components?.rfc || 0; } }
-    document.getElementById('compCap').value = c?.components?.cap || c?.cap || ''; document.getElementById('compTarget').value = c?.components?.target || ''; if (!isMobileCat) { document.getElementById('compExw').value = c?.components?.exw || ''; } document.getElementById('compMargin').value = c?.components?.margin || ''; document.getElementById('compDealer').value = c?.components?.dealer || ''; 
+    if (isMobileCat) { 
+        rfcSelect.disabled = false; 
+        rfcSelect.style.background = '#fff'; 
+        exwInput.disabled = true; 
+        exwInput.style.background = '#e9ecef'; 
+        exwInput.value = ""; 
+    } else { 
+        rfcSelect.disabled = true; 
+        rfcSelect.style.background = '#e9ecef'; 
+        rfcSelect.value = "0"; 
+        exwInput.disabled = false; 
+        exwInput.style.background = '#fff'; 
+    }
+
+    /* केवळ MRP प्री-फिल्ड */
+    let currentMrp = baseMrp !== "" ? baseMrp : ""; 
+    document.getElementById('compMrp').value = currentMrp; 
+    let mrpForRfc = parseFloat(currentMrp) || 0; 
+    let rfcSlab = getRfcSlabValue(mrpForRfc); 
+    let rfcOpt = document.getElementById('compRfcOpt'); 
+    if(rfcOpt) { rfcOpt.value = rfcSlab; rfcOpt.innerText = rfcSlab; }
+
+    /* INV व इतर सर्व इनपुट्स कोरे (Not Pre-filled) */
+    document.getElementById('compInv').value = ""; 
+    document.getElementById('compGtl').value = "0"; 
+    document.getElementById('compRfc').value = "0"; 
+    document.getElementById('compCap').value = ""; 
+    document.getElementById('compExw').value = ""; 
+    document.getElementById('compMargin').value = ""; 
+    document.getElementById('compDealer').value = ""; 
+
+    /* जर या कस्टमरच्या आधीच्या मॉडेलमध्ये Target DP टाकला असेल तरच तो प्री-फिल्ड येईल */
+    let sharedTargetDp = c?.targetDp || c?.components?.target || "";
+    document.getElementById('compTarget').value = sharedTargetDp > 0 ? sharedTargetDp : ""; 
     
     showInlineSubPanel('componentsModal');
 }
@@ -712,19 +740,38 @@ async function proceedToMatrixFromComponents() {
     let idx = activeCustomerIndex; 
     if(idx === -1) return; 
     if(!customerQueue[idx].components) customerQueue[idx].components = {}; 
-    customerQueue[idx].components.mrp = parseFloat(document.getElementById('compMrp').value) || 0; 
-    customerQueue[idx].components.inv = parseFloat(document.getElementById('compInv').value) || 0; 
-    customerQueue[idx].components.cap = parseFloat(document.getElementById('compCap').value) || 0; 
-    customerQueue[idx].components.target = parseFloat(document.getElementById('compTarget').value) || 0; 
+    
+    let mrpVal = document.getElementById('compMrp').value;
+    let invVal = document.getElementById('compInv').value;
+    let capVal = document.getElementById('compCap').value;
+    let targetVal = document.getElementById('compTarget').value;
+    let exwVal = document.getElementById('compExw').value;
+    let marginVal = document.getElementById('compMargin').value;
+    let dealerVal = document.getElementById('compDealer').value;
+
+    customerQueue[idx].components.mrp = mrpVal !== "" ? (parseFloat(mrpVal) || 0) : ""; 
+    customerQueue[idx].components.inv = invVal !== "" ? (parseFloat(invVal) || 0) : ""; 
+    customerQueue[idx].components.cap = capVal !== "" ? (parseFloat(capVal) || 0) : ""; 
+    customerQueue[idx].components.target = targetVal !== "" ? (parseFloat(targetVal) || 0) : ""; 
     customerQueue[idx].components.gtl = parseFloat(document.getElementById('compGtl').value) || 0; 
+    
     let isMobileCat = isMobileDeviceCat(currentModalCategory); 
     customerQueue[idx].components.rfc = isMobileCat ? (parseFloat(document.getElementById('compRfc').value) || 0) : 0; 
-    customerQueue[idx].components.exw = isMobileCat ? 0 : (parseFloat(document.getElementById('compExw').value) || 0); 
-    customerQueue[idx].components.margin = parseFloat(document.getElementById('compMargin').value) || 0; 
-    customerQueue[idx].components.dealer = parseFloat(document.getElementById('compDealer').value) || 0; 
+    customerQueue[idx].components.exw = isMobileCat ? "" : (exwVal !== "" ? (parseFloat(exwVal) || 0) : ""); 
+    customerQueue[idx].components.margin = marginVal !== "" ? (parseFloat(marginVal) || 0) : ""; 
+    customerQueue[idx].components.dealer = dealerVal !== "" ? (parseFloat(dealerVal) || 0) : ""; 
+
+    /* जर इथे Target DP दिला असेल, तर तो कस्टमरच्या सर्व मॉडेल्सला लागू करतो */
+    if (customerQueue[idx].components.target !== "") {
+        customerQueue[idx].targetDp = customerQueue[idx].components.target;
+        current_products.forEach(cp => {
+            cp.inputs.target = customerQueue[idx].targetDp;
+        });
+    }
+
     let cCap = customerQueue[idx].components.cap; 
-    if (cCap > 0 || customerQueue[idx].cap > 0) { 
-        customerQueue[idx].cap = cCap > 0 ? cCap : ""; 
+    if (cCap > 0) { 
+        customerQueue[idx].cap = cCap; 
         renderCustomerQueue(); 
         updateMatrixTopCard(); 
     } 
@@ -735,12 +782,44 @@ async function proceedToMatrixFromComponents() {
 
 async function finalizeProductAddition() {
     let raw = tempPendingProduct.isNT ? db_records.filter(r => r.model === SPECIAL_MODEL && r.category === tempPendingProduct.category) : db_records.filter(r => r.model === tempPendingProduct.name); 
-    let ltvLimit = customerQueue[activeCustomerIndex]?.ltv || 100; 
+    let c = customerQueue[activeCustomerIndex];
+    let ltvLimit = c?.ltv || 100; 
     let matrixEligible = raw.filter(s => s.fixedEmi > 0 || (s.tenure > 0 && ((s.tenure-s.advEmi)/s.tenure)*100 <= ltvLimit)); 
     let uniqueSchemes = []; let seenSchemes = new Set();
     matrixEligible.forEach(s => { let schemeKey = `${s.tenure}_${s.advEmi}_${s.fixedEmi}_${s.minLoan}_${s.maxLoan}`; if (!seenSchemes.has(schemeKey)) { seenSchemes.add(schemeKey); s.inactive = false; uniqueSchemes.push({...s}); } });
-    let comp = customerQueue[activeCustomerIndex].components || {}; let finalMrp = comp.mrp || ""; let finalInv = comp.inv || ""; let surch = (finalInv > finalMrp && finalMrp > 0) ? finalInv - finalMrp : 0;
-    current_products.push({ name: tempPendingProduct.name, isNonTieup: tempPendingProduct.isNT, schemes: uniqueSchemes, category: tempPendingProduct.category, inputs: { mrp: finalMrp, inv: finalInv, cap: comp.cap || (customerQueue[activeCustomerIndex]?.cap || ""), target: comp.target || "", gtl: comp.gtl || 0, rfc: comp.rfc || 0, exw: comp.exw || 0, margin: comp.margin || "", dealer: comp.dealer || "", surch: surch, manualLoans: {} }, isManual: false }); sortConfigs.push({ key: 'default_ltv', dir: 'desc' }); customerQueue[activeCustomerIndex].products = current_products; customerQueue[activeCustomerIndex].sortConfigs = sortConfigs; tempPendingProduct = null; await saveQueueToLocal(); renderMatrix(); 
+    
+    let comp = c.components || {}; 
+    let finalMrp = comp.mrp !== undefined ? comp.mrp : ""; 
+    let finalInv = comp.inv !== undefined ? comp.inv : ""; 
+    let surch = (parseFloat(finalInv) > parseFloat(finalMrp) && parseFloat(finalMrp) > 0) ? (parseFloat(finalInv) - parseFloat(finalMrp)) : 0;
+    let sharedTarget = c.targetDp !== undefined && c.targetDp !== "" ? c.targetDp : (comp.target || "");
+
+    current_products.push({ 
+        name: tempPendingProduct.name, 
+        isNonTieup: tempPendingProduct.isNT, 
+        schemes: uniqueSchemes, 
+        category: tempPendingProduct.category, 
+        inputs: { 
+            mrp: finalMrp, 
+            inv: finalInv, 
+            cap: comp.cap || "", 
+            target: sharedTarget, 
+            gtl: comp.gtl || 0, 
+            rfc: comp.rfc || 0, 
+            exw: comp.exw || "", 
+            margin: comp.margin || "", 
+            dealer: comp.dealer || "", 
+            surch: surch, 
+            manualLoans: {} 
+        }, 
+        isManual: false 
+    }); 
+    sortConfigs.push({ key: 'default_ltv', dir: 'desc' }); 
+    c.products = current_products; 
+    c.sortConfigs = sortConfigs; 
+    tempPendingProduct = null; 
+    await saveQueueToLocal(); 
+    renderMatrix(); 
 }
 
 function updateFinalSwitcher() { let sw = document.getElementById('finalCustomerSwitcher'); if(!sw) return; sw.innerHTML = customerQueue.map((c, i) => `<option value="${i}" ${i === activeCustomerIndex ? 'selected' : ''}>👤 ${c.name} (₹${c.limit})</option>`).join(''); }
@@ -775,9 +854,16 @@ function toggleModelView(pIdx) {
     if(wrapper.style.display === 'none') { wrapper.style.display = 'block'; icon.innerText = '▼'; } else { wrapper.style.display = 'none'; icon.innerText = '▶'; } 
 }
 
-function toggleSettingsGrid(pIdx) {
-    let grid = document.getElementById(`cg_${pIdx}`);
-    if(grid.style.display === 'none' || grid.style.display === '') { grid.style.display = 'flex'; } else { grid.style.display = 'none'; }
+function removeModelFromMatrix(pIdx, event) {
+    if (event) event.stopPropagation();
+    current_products.splice(pIdx, 1);
+    sortConfigs.splice(pIdx, 1);
+    if (activeCustomerIndex !== -1 && customerQueue[activeCustomerIndex]) {
+        customerQueue[activeCustomerIndex].products = current_products;
+        customerQueue[activeCustomerIndex].sortConfigs = sortConfigs;
+    }
+    saveQueueToLocal();
+    renderMatrix();
 }
 
 function instantSingleQuote(pIdx) { window.tempImageGenIndices = [pIdx]; requestWhatsAppDispatch = false; doGenerateCustomerImage(); }
@@ -791,43 +877,44 @@ function renderMatrix() {
         let toggleIcon = isCollapsed ? '▶' : '▼'; 
         let isPhoneWebMobile = isMobileDeviceCat(prod.category); 
         if (!isPhoneWebMobile) prod.inputs.rfc = 0; 
-        if (isPhoneWebMobile) prod.inputs.exw = 0; 
+        if (isPhoneWebMobile) prod.inputs.exw = ""; 
         let mVal = parseFloat(prod.inputs.mrp) || 0; 
         let rfcSlab = getRfcSlabValue(mVal);
 
         div.innerHTML = `
-            <div class="pmp-header">
-                <div class="pmp-title" onclick="toggleModelView(${pIdx})">
+            <div class="pmp-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                <div class="pmp-title" onclick="toggleModelView(${pIdx})" style="flex:1; min-width:160px;">
                     <span id="togIcon_${pIdx}" class="pmp-icon">${toggleIcon}</span>
                     ${prod.name}
                 </div>
-                <div class="pmp-quick-inputs">
-                    <div class="pmp-input-group">
-                        <label>MRP:</label>
-                        <input type="number" id="mrp_${pIdx}" value="${prod.inputs.mrp}" oninput="updateVal(${pIdx},'mrp',this.value)">
+                <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                    <div class="pmp-quick-inputs">
+                        <div class="pmp-input-group">
+                            <label>MRP:</label>
+                            <input type="number" id="mrp_${pIdx}" value="${prod.inputs.mrp}" oninput="updateVal(${pIdx},'mrp',this.value)">
+                        </div>
+                        <div class="pmp-input-group">
+                            <label>Inv:</label>
+                            <input type="number" id="inv_${pIdx}" value="${prod.inputs.inv}" oninput="updateVal(${pIdx},'inv',this.value)">
+                        </div>
+                        <div class="pmp-input-group readonly-group">
+                            <label>Var:</label>
+                            <input type="number" id="surch_${pIdx}" value="${prod.inputs.surch}" readonly>
+                        </div>
                     </div>
-                    <div class="pmp-input-group">
-                        <label>Inv:</label>
-                        <input type="number" id="inv_${pIdx}" value="${prod.inputs.inv}" oninput="updateVal(${pIdx},'inv',this.value)">
-                    </div>
-                    <div class="pmp-input-group readonly-group">
-                        <label>Var:</label>
-                        <input type="number" id="surch_${pIdx}" value="${prod.inputs.surch}" readonly>
-                    </div>
+                    <button class="model-remove-icon" onclick="removeModelFromMatrix(${pIdx}, event)" title="Remove Model">🗑️</button>
                 </div>
             </div>
 
             <div id="tw_${pIdx}" style="display:${displayStyle};">
                 <div class="pmp-toolbar">
                     <button class="pmp-btn btn-quote" onclick="instantSingleQuote(${pIdx})">Quote</button>
-                    <button class="pmp-btn btn-settings" onclick="toggleSettingsGrid(${pIdx})">Settings</button>
                     <button class="pmp-btn btn-manual" onclick="openSchemeOnlyModal(${pIdx})">+ Manual</button>
-                    <button class="pmp-btn btn-remove" onclick="current_products.splice(${pIdx},1);saveQueueToLocal();renderMatrix();">Remove</button>
                 </div>
 
-                <div class="control-grid" id="cg_${pIdx}" style="display:none;">
+                <div class="control-grid" id="cg_${pIdx}" style="display:flex;">
                     <div><label>EMI Capping</label><input type="number" id="capInp_${pIdx}" value="${prod.inputs.cap}" placeholder="Max" oninput="updateVal(${pIdx},'cap',this.value)"></div>
-                    <div><label>Target DP</label><input type="number" value="${prod.inputs.target}" placeholder="0" oninput="updateVal(${pIdx},'target',this.value)"></div>
+                    <div><label>Target DP</label><input type="number" id="targetInp_${pIdx}" value="${prod.inputs.target}" placeholder="0" oninput="updateVal(${pIdx},'target',this.value)"></div>
                     <div><label>GTL</label><select id="gtl_${pIdx}" onchange="updateVal(${pIdx},'gtl',this.value)"><option value="0" ${prod.inputs.gtl == 0 ? 'selected' : ''}>0</option><option value="699" ${prod.inputs.gtl == 699 ? 'selected' : ''}>699</option><option value="1099" ${prod.inputs.gtl == 1099 ? 'selected' : ''}>1099</option><option value="1199" ${prod.inputs.gtl == 1199 ? 'selected' : ''}>1199</option><option value="1499" ${prod.inputs.gtl == 1499 ? 'selected' : ''}>1499</option><option value="1799" ${prod.inputs.gtl == 1799 ? 'selected' : ''}>1799</option><option value="2398" ${prod.inputs.gtl == 2398 ? 'selected' : ''}>2398</option></select></div>
                     <div><label>RFC</label><select id="rfc_${pIdx}" onchange="updateVal(${pIdx},'rfc',this.value)" ${isPhoneWebMobile ? '' : 'disabled style="background:#e9ecef; cursor:not-allowed;"'}><option value="0">0</option>${isPhoneWebMobile ? `<option id="rfc_opt_${pIdx}" value="${rfcSlab}" ${prod.inputs.rfc > 0 ? 'selected' : ''}>${rfcSlab}</option>` : ''}</select></div>
                     <div><label>EXW</label><input type="number" id="exw_${pIdx}" value="${prod.inputs.exw}" placeholder="0" oninput="updateVal(${pIdx},'exw',this.value)" ${isPhoneWebMobile ? 'disabled style="background:#e9ecef; cursor:not-allowed;"' : 'style="background:#fff;"'}></div>
@@ -856,36 +943,74 @@ function renderMatrix() {
     });
 }
 
-function syncInsurance(pIdx, mrpVal, baseLoanVal, triggerType = 'NONE') {
+function syncInsurance(pIdx, mrpVal, baseLoanVal) {
     let prod = current_products[pIdx]; 
     let isPhoneWebMobile = isMobileDeviceCat(prod.category); 
-    let gtl = baseLoanVal > 100000 ? 2398 : (baseLoanVal > 50000 ? 1799 : (baseLoanVal > 30000 ? 1499 : (baseLoanVal > 10000 ? 1199 : (baseLoanVal > 0 ? 699 : 0)))); 
     let rfcSlab = getRfcSlabValue(mrpVal); 
     let inp = prod.inputs;
 
-    if(triggerType === 'MRP' || triggerType === 'INV' || triggerType === 'LOAN') { 
-        inp.gtl = gtl; 
-    }
-
-    let gSelect = document.getElementById(`gtl_${pIdx}`); 
     let rOpt = document.getElementById(`rfc_opt_${pIdx}`); 
     let rSelect = document.getElementById(`rfc_${pIdx}`); 
     let exwInput = document.getElementById(`exw_${pIdx}`);
 
-    if(gSelect) gSelect.value = inp.gtl; 
     if(rOpt && isPhoneWebMobile) { rOpt.value = rfcSlab; rOpt.innerText = rfcSlab; } 
     if(rSelect && !isPhoneWebMobile) { rSelect.value = "0"; inp.rfc = 0; } 
-    if(exwInput && isPhoneWebMobile) { exwInput.value = ""; inp.exw = 0; }
+    if(exwInput && isPhoneWebMobile) { exwInput.value = ""; inp.exw = ""; }
 }
 
 function updateVal(pIdx, field, val) {
-    let v = val === "" ? "" : parseFloat(val) || 0; current_products[pIdx].inputs[field] = v;
+    let v = val === "" ? "" : parseFloat(val) || 0; 
+    current_products[pIdx].inputs[field] = v;
+
     if (field === 'mrp' || field === 'inv' || field === 'target' || field === 'cap') {
         current_products[pIdx].inputs.manualLoans = {};
     }
-    if(field === 'cap') { if(activeCustomerIndex !== -1 && customerQueue[activeCustomerIndex]) { customerQueue[activeCustomerIndex].cap = v === 0 ? "" : v; let topCap = document.getElementById('infoCap'); if(topCap) topCap.innerText = v > 0 ? "₹" + v : "None"; current_products.forEach((cp, idx) => { cp.inputs.cap = v; let capInput = document.getElementById(`capInp_${idx}`); if (capInput && idx !== pIdx) capInput.value = val; }); } }
-    if (field === 'mrp' || field === 'inv') { let m = parseFloat(current_products[pIdx].inputs.mrp) || 0; let i = parseFloat(current_products[pIdx].inputs.inv) || 0; current_products[pIdx].inputs.surch = (i > m && m > 0) ? i - m : 0; let surchEl = document.getElementById(`surch_${pIdx}`); if(surchEl) surchEl.value = current_products[pIdx].inputs.surch; if(field === 'mrp' && i === 0) syncInsurance(pIdx, m, m, 'MRP'); if(field === 'inv') syncInsurance(pIdx, m, i > 0 ? i : m, 'INV'); }
-    field === 'cap' ? current_products.forEach((_, idx) => recalcModel(idx)) : recalcModel(pIdx); customerQueue[activeCustomerIndex].products = current_products; saveQueueToLocal();
+
+    if (field === 'cap') { 
+        if(activeCustomerIndex !== -1 && customerQueue[activeCustomerIndex]) { 
+            customerQueue[activeCustomerIndex].cap = v === 0 ? "" : v; 
+            let topCap = document.getElementById('infoCap'); 
+            if(topCap) topCap.innerText = v > 0 ? "₹" + v : "None"; 
+            current_products.forEach((cp, idx) => { 
+                cp.inputs.cap = v; 
+                let capInput = document.getElementById(`capInp_${idx}`); 
+                if (capInput && idx !== pIdx) capInput.value = val; 
+            }); 
+        } 
+    }
+
+    /* जर एका मॉडेलमध्ये Target DP टाकला, तर त्या कस्टमरच्या सर्व मॉडेल्ससाठी तोच सिंक होईल */
+    if (field === 'target') {
+        if (activeCustomerIndex !== -1 && customerQueue[activeCustomerIndex]) {
+            customerQueue[activeCustomerIndex].targetDp = v === 0 ? "" : v;
+            if (!customerQueue[activeCustomerIndex].components) customerQueue[activeCustomerIndex].components = {};
+            customerQueue[activeCustomerIndex].components.target = v === 0 ? "" : v;
+            current_products.forEach((cp, idx) => {
+                cp.inputs.target = v;
+                cp.inputs.manualLoans = {};
+                let tInput = document.getElementById(`targetInp_${idx}`);
+                if (tInput && idx !== pIdx) tInput.value = val;
+            });
+        }
+    }
+
+    if (field === 'mrp' || field === 'inv') { 
+        let m = parseFloat(current_products[pIdx].inputs.mrp) || 0; 
+        let i = parseFloat(current_products[pIdx].inputs.inv) || 0; 
+        current_products[pIdx].inputs.surch = (i > m && m > 0) ? i - m : 0; 
+        let surchEl = document.getElementById(`surch_${pIdx}`); 
+        if(surchEl) surchEl.value = current_products[pIdx].inputs.surch; 
+        syncInsurance(pIdx, m, i > 0 ? i : m); 
+    }
+
+    if (field === 'cap' || field === 'target') {
+        current_products.forEach((_, idx) => recalcModel(idx));
+    } else {
+        recalcModel(pIdx);
+    }
+
+    customerQueue[activeCustomerIndex].products = current_products; 
+    saveQueueToLocal();
 }
 
 function recalcModel(pIdx) {
@@ -1104,7 +1229,7 @@ function manual(pIdx, dIdx) {
         showToast("लोन रक्कम इनव्हॉइसपेक्षा जास्त असू शकत नाही!", "warning");
     }
 
-    syncInsurance(pIdx, inputMrp, loan, 'LOAN'); 
+    syncInsurance(pIdx, inputMrp, loan); 
     let appliedPf = d.pf; if (prod.isNonTieup) { let checkAmount = effectivePrice > 0 ? effectivePrice : loan; let slabPf = getNonTieupPfValue(prod.category, checkAmount); if (slabPf !== null) appliedPf = slabPf; d.pf = appliedPf; }
     let dbdRate = (d.dbd * 1.18 / 100); let roiRate = d.roi / 1200; let roiRateDP = roiRate * d.advEmi; let dpE = 0; let dpR = 0;
 
@@ -1177,11 +1302,11 @@ async function executeManualAction() {
     let mode = document.getElementById('targetPIdx').value; 
     let manNameInput = document.getElementById('manName').value.toUpperCase().trim();
     let scheme = { tenure: parseInt(document.getElementById('manTen').value)||0, advEmi: parseInt(document.getElementById('manAdv').value)||0, dbd: parseFloat(document.getElementById('manDbd').value)||0, pf: parseInt(document.getElementById('manPf').value)||0, roi: parseFloat(document.getElementById('manRoi').value)||0, fixedEmi: parseInt(document.getElementById('manFixed').value)||0, minLoan: 0, maxLoan: 9999999, category: "MANUAL", inactive: false, isExpired: false, expiryDateStr: "" };
-    let cCap = customerQueue[activeCustomerIndex]?.cap || "";
     if(mode === "NEW") { 
         let name = manNameInput !== "" ? manNameInput : "MANUAL MODEL"; 
-        let comp = customerQueue[activeCustomerIndex]?.components || {}; 
-        current_products.push({ name: name, schemes: [scheme], category: "MANUAL", inputs: { mrp: "", inv: "", cap: cCap, target: "", gtl: 0, rfc: 0, exw: comp.exw||"", margin: comp.margin||"", dealer: comp.dealer||"", surch: 0, manualLoans: {} }, isManual: true }); 
+        let c = customerQueue[activeCustomerIndex];
+        let sharedTarget = c?.targetDp || c?.components?.target || ""; 
+        current_products.push({ name: name, schemes: [scheme], category: "MANUAL", inputs: { mrp: "", inv: "", cap: "", target: sharedTarget, gtl: 0, rfc: 0, exw: "", margin: "", dealer: "", surch: 0, manualLoans: {} }, isManual: true }); 
         sortConfigs.push({ key: 'default_ltv', dir: 'desc' }); 
         customerQueue[activeCustomerIndex].products = current_products; 
         customerQueue[activeCustomerIndex].sortConfigs = sortConfigs; 
@@ -1252,7 +1377,7 @@ function doGenerateCustomerImage() {
             <div style="border-left: 10px solid #034887; background: #ffffff; margin-bottom: 16px; border: 1px solid #cbd5e1;">
                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-bottom: 2px solid #e2e8f0;">
                     <div style="font-size: 20px; font-weight: 900; color: #034887;">📱 ${prod.name.toUpperCase()}</div>
-                    <div style="background: #034887; color: #fff; padding: 6px 14px; border-radius: 6px; font-weight: 900;">Inv: ₹${invAmt.toLocaleString()}</div>
+                    <div style="background: #034887; color: #fff; padding: 6px 14px; border-radius: 6px; font-weight: 900;">Inv: ₹${invAmt ? invAmt.toLocaleString() : 0}</div>
                 </div>
                 <table style="width: 100%; border-collapse: collapse; text-align: center;">
                     <thead style="background: #f8fafc; border-bottom: 2px solid #cbd5e1; font-size: 14px;">
