@@ -8,12 +8,11 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Persistent Portal">
 
-    <title>Persistent Portal V76.23 - Pro Edition</title>
+    <title>Persistent Portal V76.24 - Pro Edition</title>
 
     <!-- external libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 
     <link rel="stylesheet" href="style.css?v=6.6">
@@ -23,7 +22,7 @@
 
         .top-utility-bar {
             display: flex;
-            justify-content: space-around;
+            justify-content: center;
             align-items: center;
             background: #ffffff;
             padding: 8px 5px;
@@ -80,9 +79,6 @@
                 font-size: 18px !important;
             }
 
-            #fastCalcContainer > div:nth-child(2) {
-                grid-template-columns: 1fr 1fr !important;
-            }
             #componentsModal .modal-content > div:nth-child(2),
             #manualModal .modal-content > div:nth-child(3),
             #editCustomerModal .modal-content > div:nth-child(5),
@@ -111,9 +107,6 @@
         }
 
         @media (max-width: 480px) {
-            #fastCalcContainer > div:nth-child(2) {
-                grid-template-columns: 1fr !important;
-            }
             .top-utility-bar .util-btn {
                 font-size: 20px;
                 width: 40px;
@@ -171,14 +164,6 @@
 
 <div class="top-utility-bar">
     <button onclick="toggleInline('unifiedHome')" class="util-btn" title="customers & queue">👥</button>
-    <button onclick="toggleInline('zatpatCalcModal', openZatpatCalcModal)" class="util-btn" title="zatpat calculator">🧮</button>
-    <button onclick="toggleInline('customerMessageGenModal', openCustomerMessageModal)" class="util-btn" title="send emi details">💬</button>
-    <button onclick="toggleInline('dealerSearchModal', openDealerSearchModal)" class="util-btn" title="dealers search">🏪</button>
-    <button onclick="toggleInline('dictionarySearchModal', openDictionaryModal)" class="util-btn" title="schemes dictionary">📖</button>
-    <button onclick="openCustomSchemesStagingModal()" class="util-btn" title="custom schemes staging">
-        📦<span id="stagingBadge" style="position:absolute; top:2px; right:2px; background:var(--danger); color:white; font-size:10px; padding:1px 5px; border-radius:10px; display:none; font-weight:bold;">0</span>
-    </button>
-    <button onclick="toggleInline('flyerGenModal', openFlyerGenModal)" class="util-btn" title="generate flyer">📢</button>
 </div>
 
 <main>
@@ -230,327 +215,6 @@
             <div class="disclaimer-box">
                 github smart stream activated. master data downloads 2 times per day to keep things fast. verify with actual calculations.
             </div>
-        </div>
-    </div>
-
-    <div id="zatpatCalcModal" style="display: none; width: 100%; margin-bottom: 15px; flex-direction: column; align-items: center;">
-        <div style="background: #fff; padding: 15px; border: 2px solid var(--bajaj-blue); border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 800px; box-sizing: border-box;">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--bajaj-blue); padding-bottom: 8px; margin-bottom: 12px;">
-                <h3 style="margin:0; color:var(--bajaj-blue); font-size:16px !important;"><span id="icon_fc">🧮</span> pro zatpat calculator</h3>
-                <div style="display:flex; gap:10px; align-items:center;">
-                    <button onclick="resetFastCalc()" style="background:var(--danger); color:white; padding:4px 10px; border-radius:4px; font-weight:bold; font-size:11px !important; letter-spacing:0.5px;">reset</button>
-                    <button onclick="toggleInline('unifiedHome')" style="background:none; border:none; color:var(--danger); font-weight:bold; cursor:pointer; font-size:18px;">close</button>
-                </div>
-            </div>
-
-            <div id="fastCalcContainer">
-                <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:6px; margin-bottom:12px; background: #f8f9fa; padding: 10px; border-radius: 6px; border: 1px solid #eee;">
-                    <div style="grid-column: span 3; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom:4px;">
-                        <div><label style="color:var(--primary);">invoice amount or mrp ₹</label><input type="number" id="fcInv" placeholder="enter amount" style="border-color:var(--primary);" oninput="fcInvChanged();"></div>
-                        <div><label style="color:var(--primary);">loan amount ₹</label><input type="number" id="fcLoanInput" placeholder="loan amount default 100%" style="border-color:var(--primary);" oninput="calculateFastData();" onchange="validateFastLoanMin();" onblur="validateFastLoanMin();"></div>
-                    </div>
-                    <div><label>tenure max</label><input type="number" id="fcTenure" placeholder="0" oninput="calculateFastData();"></div>
-                    <div><label>advance emi</label><input type="number" id="fcAdv" placeholder="0" oninput="calculateFastData();"></div>
-                    <div><label>dbd %</label><input type="number" id="fcDbd" placeholder="0" step="0.01" oninput="calculateFastData();"></div>
-                    <div><label>pf ₹</label><input type="number" id="fcPf" placeholder="0" oninput="calculateFastData();"></div>
-                    <div><label>roi %</label><input type="number" id="fcRoi" placeholder="0" step="0.01" oninput="calculateFastData();"></div>
-                    <div><label>customer type</label>
-                        <select id="fcCustType" onchange="calculateFastData();">
-                            <option value="NEW">NEW</option><option value="EMI CARD">EMI CARD</option><option value="VIRTUAL">VIRTUAL</option><option value="W/O CARD">W/O CARD</option>
-                        </select>
-                    </div>
-                    <div style="grid-column: span 3; border-top: 1px dashed #ccc; margin-top:4px; padding-top:6px;"></div>
-                    <div><label>fixed emi ₹</label><input type="number" id="fcFixed" placeholder="optional" oninput="calculateFastData();"></div>
-                    <div><label>emi capping</label><input type="number" id="fcCap" placeholder="max" oninput="calculateFastData();"></div>
-                    <div><label>target dp ₹</label><input type="number" id="fcTarget" placeholder="reverse calc" oninput="calculateFastData();"></div>
-                    <div style="grid-column: span 3; border-top: 1px dashed #ccc; margin-top:4px; padding-top:6px;"><label style="color:var(--indigo);">insurance and components</label></div>
-                    <div><label>category</label><select id="fcCat" onchange="fcCatChanged();"><option value="OTHER">OTHER</option><option value="PHONE(WEB-MOBILE)">PHONE, TABLET, SMART WATCH</option></select></div>
-                    <div><label>gtl ₹</label>
-                        <select id="fcGtl" onchange="calculateFastData();">
-                            <option value="0">0</option><option value="699">699</option><option value="1099">1099</option><option value="1199">1199</option><option value="1499">1499</option><option value="1799">1799</option><option value="2398">2398</option>
-                        </select>
-                    </div>
-                    <div><label>rfc ₹</label><select id="fcRfc" onchange="calculateFastData();" disabled style="background:#e9ecef; cursor:not-allowed;"><option value="0">0</option><option id="fcRfcOpt" value="0">0</option></select></div>
-                    <div><label>exw ₹</label><input type="number" id="fcExw" placeholder="0" oninput="calculateFastData();"></div>
-                    <div><label>margin ₹</label><input type="number" id="fcMargin" placeholder="0" oninput="calculateFastData();"></div>
-                    <div><label>dealer ₹</label><input type="number" id="fcDealer" placeholder="0" oninput="calculateFastData();"></div>
-                </div>
-                <div id="fcResult" style="display:none; margin-top:12px; background:#fff; border:2px solid var(--primary); padding:10px; border-radius:6px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
-                    <div style="display:flex; justify-content:space-between; margin-bottom:6px; border-bottom:1px solid #eee; padding-bottom:4px;"><span style="font-weight:900; color:#555;">loan amount:</span> <span id="fcResLoan" style="color:var(--dark); font-weight:900;">₹0</span></div>
-                    <div style="display:flex; justify-content:space-between; margin-bottom:6px; border-bottom:1px solid #eee; padding-bottom:4px;"><span style="font-weight:900; color:#555;">net dp:</span> <span id="fcResDp" style="color:var(--success); font-weight:900;">₹0</span></div>
-                    <div style="display:flex; justify-content:space-between; margin-bottom:6px; border-bottom:1px solid #eee; padding-bottom:4px;"><span style="font-weight:900; color:var(--primary);">monthly emi:</span> <span id="fcResEmi" style="color:var(--primary); font-weight:900;">₹0</span></div>
-                    <div style="display:flex; justify-content:space-between;"><span style="font-weight:900; color:#555;">daily emi:</span> <span id="fcResDaily" style="color:#d35400; font-weight:900;">₹0</span></div>
-                    <div id="fcResTa" style="text-align:center; font-weight:bold; color:var(--indigo); margin-top:6px;">t a: 0/0 months: 0</div>
-                    <button onclick="copyFastCalcResult(this)" style="width:100%; margin-top:10px; background:var(--primary); color:white; padding:8px; border-radius:4px; box-shadow: 0 2px 4px rgba(9, 132, 227, 0.3);">copy calculation</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="customerMessageGenModal" style="display: none; width: 100%; margin-bottom: 15px; flex-direction: column; align-items: center;">
-        <div style="background: #fff; padding: 20px; border: 2px solid var(--bajaj-blue); border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 850px; box-sizing: border-box;">
-            <div style="display: flex; align-items: center; border-bottom: 2px solid var(--bajaj-blue); padding-bottom: 8px; margin-bottom: 10px; position: relative;">
-                <button onclick="openDraftsModal()" style="background:var(--warning); color:#000; border:none; padding:6px 12px; border-radius:4px; font-weight:bold; cursor:pointer; display:flex; align-items:center; gap:6px; z-index: 10;">
-                    drafts <span id="draftBadge" style="background:var(--danger); color:white; border-radius:10px; padding:2px 6px; font-size:11px; line-height:1; min-width:12px; text-align:center;">0</span>
-                </button>
-                <h3 style="margin:0; color:var(--bajaj-blue); text-align:center; flex:1; position: absolute; width: 100%; left: 0; pointer-events: none;">send emi details</h3>
-                <button onclick="toggleInline('unifiedHome')" style="background:none; border:none; color:var(--danger); font-weight:bold; cursor:pointer; font-size:18px; margin-left: auto; z-index: 10;">close</button>
-            </div>
-            <div class="msg-section-title">1. upload delivery order pdf file</div>
-            <div class="msg-upload-box" onclick="document.getElementById('pdfInput').click()">
-                <strong style="color:var(--bajaj-blue);">click here to upload delivery order pdf</strong>
-                <p style="margin: 5px 0 0; font-size: 11px; color: #666;">dealer name, asset category, and customer details will be auto-populated</p>
-                <input type="file" id="pdfInput" accept="application/pdf">
-            </div>
-            <div id="pdfStatus" style="font-size: 12px; font-weight: bold; margin-bottom: 10px;"></div>
-            <div class="msg-section-title">2. customer details</div>
-            <div class="msg-grid">
-                <div class="msg-form-group"><label>dealer shop name</label><input type="text" id="msgShopName" value="" placeholder="enter dealer shop name" oninput="generateMessage()"></div>
-                <div class="msg-form-group"><label>asset category</label><input type="text" id="msgAssetCategory" value="" placeholder="enter category" oninput="generateMessage()"></div>
-                <div class="msg-form-group"><label>customer name</label><input type="text" id="msgCustName" value="" placeholder="enter customer name" oninput="generateMessage()"></div>
-                <div class="msg-form-group" style="display:none;"><label>mobile number</label><input type="text" id="msgCustMobile" value="" placeholder="10 digits" maxlength="10" oninput="generateMessage()"></div>
-                <div class="msg-form-group"><label>monthly emi amount ₹</label><input type="number" id="msgCustEMI" value="" placeholder="0" oninput="generateMessage()"></div>
-                <div class="msg-form-group"><label>total tenure months</label><input type="number" id="msgCustTenure" value="" placeholder="0" oninput="generateMessage()"></div>
-                <div class="msg-form-group"><label>loan approval date</label><input type="date" id="msgLoanDate" value="" onchange="calculateDates()"></div>
-                <div class="msg-form-group"><label>emi start date</label><input type="text" id="msgStartDate" value="" placeholder="auto-calculated" readonly style="background:#e9ecef; font-weight:bold;"></div>
-                <div class="msg-form-group"><label>emi end date</label><input type="text" id="msgEndDate" value="" placeholder="auto-calculated" readonly style="background:#e9ecef; font-weight:bold;"></div>
-            </div>
-            <div class="msg-lang-selector">
-                <div class="msg-form-group"><label style="color: #856404; font-size: 13px;">select whatsapp message language</label>
-                    <select id="msgLang" onchange="calculateDates()" style="font-weight: bold;"><option value="mr">Marathi</option><option value="hi">Hindi</option><option value="en">English</option></select>
-                </div>
-            </div>
-            <div class="msg-section-title">3. generated customer message</div>
-            <textarea id="finalMessage"></textarea>
-            <div style="display:flex; gap:10px; margin-top:12px; flex-wrap: wrap;">
-                <button onclick="copyMsgText()" style="flex:1; background:var(--primary); color:white; padding:10px; min-width: 140px;">copy message</button>
-                <button onclick="sendMsgWhatsApp()" style="flex:1; background:#25D366; color:white; padding:10px; min-width: 140px;">send via whatsapp</button>
-                <button onclick="saveEmiDraft()" style="flex:1; background:var(--warning); color:#000; padding:10px; font-weight:bold; min-width: 140px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">save as draft</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="flyerGenModal" style="display: none; width: 100%; margin-bottom: 15px; flex-direction: column; align-items: center;">
-        <div style="background: #fff; padding: 20px; border: 2px solid var(--bajaj-blue); border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 440px; box-sizing: border-box;">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--bajaj-blue); padding-bottom: 8px; margin-bottom: 15px;">
-                <h3 style="margin:0; color:var(--bajaj-blue);">generate flyer link</h3>
-                <button onclick="toggleInline('unifiedHome')" style="background:none; border:none; color:var(--danger); font-weight:bold; cursor:pointer; font-size:16px;">close</button>
-            </div>
-            <div style="margin-bottom:10px;"><label>salesman name required</label><input type="text" id="fgSalesName" placeholder="Lakshya"></div>
-            <div style="display:none;"><label>whatsapp number required</label><input type="text" id="fgSalesMobile" placeholder="10 digit mobile number" maxlength="10"></div>
-            <div style="margin-bottom:10px; background: #f8f9fa; padding: 10px; border: 1.5px solid var(--bajaj-blue); border-radius: 6px;">
-                <label style="color:var(--bajaj-blue);">select dealer shop compulsory</label>
-                <input type="text" id="fgDealerSearch" placeholder="search dealer name, city or code..." oninput="searchFgDealer()">
-                <div id="fgDealerList" class="custom-scroll" style="max-height:120px; overflow-y:auto; margin-top:5px;"></div>
-                <div id="fgSelectedDealerBox" style="display:none; margin-top:8px; padding:8px; background:#e8f4f8; border:1px solid var(--primary); border-radius:4px; font-weight:bold; color:var(--bajaj-blue);"></div>
-            </div>
-            <div style="margin-bottom:10px; background: #fff3e0; padding: 10px; border: 1.5px solid var(--warning); border-radius: 6px;">
-                <label style="color:#d35400;">add promotional offer optional</label>
-                <select id="fgOfferType" onchange="toggleFgOfferInput()" style="margin-bottom:6px; color:#d35400;"><option value="NONE">NO OFFER</option><option value="CASHBACK">CASHBACK</option><option value="DISCOUNT">DISCOUNT</option><option value="FREEBIE">FREEBIE GIFT</option></select>
-                <div id="fgOfferValBox" style="display:none;"><label id="fgOfferValLabel" style="color:#d35400;">enter upto amount ₹</label><input type="text" id="fgOfferValue" placeholder="2000 or earbuds"></div>
-            </div>
-            <div style="margin-bottom:15px; background: #f0f4c3; padding: 10px; border: 1px solid #9e9d24; border-radius: 6px;">
-                <label style="color:#827717;">lock specific model offer optional</label>
-                <input type="text" id="fgModelSearch" placeholder="search specific model..." oninput="searchFgModel()">
-                <div id="fgModelList" class="custom-scroll" style="max-height:100px; overflow-y:auto; margin-top:5px;"></div>
-                <div id="fgSelectedModelBox" style="display:none; margin-top:8px; padding:8px; background:#fff; border:1px solid #9e9d24; border-radius:4px; font-weight:bold; color:#827717;"></div>
-            </div>
-            <button onclick="generateFlyer()" style="width:100%; background:var(--primary); color:white; padding:10px; font-size:14px !important; margin-bottom:8px;">generate and view link</button>
-            <div id="flyerGeneratedLinkBox" style="display:none; text-align:center;">
-                <textarea id="fgGeneratedLinkText" readonly style="width:100%; height:60px; padding:8px; font-size:12px; border:2px dashed var(--success); background:#f4fcf6; border-radius:4px; resize:none;"></textarea>
-                <button onclick="copyFlyerLink()" style="width:100%; background:var(--success); color:white; margin-top:5px; padding:8px; border-radius:4px;">copy link</button>
-                <button onclick="shareOnWhatsAppStatus()" style="width:100%; background:#25D366; color:white; margin-top:8px; padding:10px; font-size:14px !important; border-radius:4px; box-shadow: 0 4px 6px rgba(37, 211, 102, 0.3);">share on whatsapp status</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="dictionarySearchModal" style="display: none; width: 100%; margin-bottom: 15px; flex-direction: column; align-items: center;">
-        <div style="background: #fff; padding: 18px; border: 2px solid var(--indigo); border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 950px; box-sizing: border-box; max-height: 85vh; overflow-y: auto;">
-            
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--indigo); padding-bottom: 8px; margin-bottom: 15px;">
-                <h3 style="margin:0; color:var(--indigo); font-size: 16px !important;">smart schemes dictionary</h3>
-                <button onclick="toggleInline('unifiedHome')" style="background:none; border:none; color:var(--danger); font-weight:bold; cursor:pointer; font-size:18px; padding:0;">close</button>
-            </div>
-
-            <div style="background: #eef2ff; border: 1.5px solid var(--indigo); padding: 12px; border-radius: 6px; margin-bottom: 12px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                    <label style="font-size:12px; font-weight:900; color:var(--indigo);">customer selection and queue sync</label>
-                    <button onclick="dictToggleNewCustMode()" id="dictCustModeBtn" style="background:var(--primary); color:white; border:none; padding:5px 10px; border-radius:4px; font-size:11px; font-weight:bold; cursor:pointer;">add new to queue</button>
-                </div>
-
-                <div id="dictSelectCustBox" style="position:relative; display:flex; gap:8px;">
-                    <div style="position:relative; flex:1;">
-                        <input type="text" id="dictCustSearch" placeholder="search saved customer by name, limit..." oninput="dictFilterCustomerSuggestions()" onfocus="dictFilterCustomerSuggestions()" style="width:100%; padding: 8px 10px; font-size: 13px; font-weight: bold; border: 1.5px solid #cbd5e1; border-radius: 4px; box-sizing:border-box;">
-                        <div id="dictCustSuggestionsList" class="custom-scroll" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--indigo); border-radius:4px; max-height:220px; overflow-y:auto; z-index:2000; box-shadow:0 10px 25px rgba(0,0,0,0.2);"></div>
-                    </div>
-                    <button onclick="dictResetAllToDirectCalc()" style="background:#64748b; color:white; border:none; padding:8px 12px; border-radius:4px; font-size:11px; font-weight:bold; cursor:pointer; white-space:nowrap;">direct calc reset</button>
-                </div>
-
-                <div id="dictNewCustBox" style="display: none; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin-top: 10px; background: #fff; padding: 12px; border-radius: 6px; border: 1.5px dashed var(--indigo);">
-                    <div>
-                        <label style="font-size:10px; font-weight:900; color:var(--indigo);">customer name</label>
-                        <input type="text" id="dictNewName" placeholder="customer name">
-                    </div>
-                    <div>
-                        <label style="font-size:10px; font-weight:900; color:var(--indigo);">nbfc limit ₹</label>
-                        <input type="number" id="dictNewLimit" placeholder="₹ limit">
-                    </div>
-                    <div>
-                        <label style="font-size:10px; font-weight:900; color:var(--indigo);">customer type</label>
-                        <select id="dictNewType">
-                            <option value="NEW">NEW</option>
-                            <option value="EMI CARD">EMI CARD</option>
-                            <option value="VIRTUAL">VIRTUAL</option>
-                            <option value="W/O CARD">W/O CARD</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label style="font-size:10px; font-weight:900; color:var(--indigo);">max ltv %</label>
-                        <input type="number" id="dictNewLtv" value="100" max="100" oninput="if(this.value>100)this.value=100;">
-                    </div>
-                    <div>
-                        <label style="font-size:10px; font-weight:900; color:var(--indigo);">emi capping ₹</label>
-                        <input type="number" id="dictNewCap" placeholder="optional cap">
-                    </div>
-                    <div style="display:flex; align-items:flex-end;">
-                        <button onclick="dictSaveNewCustomerToQueue()" style="width:100%; background:var(--success); color:white; padding:9px; border-radius:4px; font-weight:900; font-size:12px; cursor:pointer; border:none;">save and activate</button>
-                    </div>
-                </div>
-            </div>
-
-            <div style="background: #f0f7ff; border: 1.5px solid var(--primary); padding: 14px; border-radius: 6px; margin-bottom: 12px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:6px;">
-                    <h4 style="margin:0; color:var(--primary); font-size: 14px;">1. eligibility and product setup</h4>
-                    <div style="display:flex; gap:6px;">
-                        <button onclick="dictValidateAndTriggerNonTieup()" style="background:var(--warning); color:#000; border:none; padding:4px 8px; border-radius:4px; font-weight:900; font-size:11px; cursor:pointer;">non tieup</button>
-                        <button onclick="dictValidateAndTriggerManual()" style="background:var(--indigo); color:white; border:none; padding:4px 8px; border-radius:4px; font-weight:900; font-size:11px; cursor:pointer;">manual model</button>
-                        <button onclick="dictOpenSingleSchemeModal()" style="background:#0284c7; color:white; border:none; padding:4px 8px; border-radius:4px; font-weight:900; font-size:11px; cursor:pointer;">add single scheme</button>
-                    </div>
-                </div>
-
-                <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px;">
-                    <div style="flex: 1; min-width: 130px;">
-                        <label style="font-size:10px; font-weight:bold; color:var(--indigo);">customer type</label>
-                        <select id="calcCustType" onchange="recalcCurrentModel()" style="width:100%; padding:7px; font-size:12px; border:1px solid #ccc; border-radius:4px; font-weight:bold;">
-                            <option value="NEW">NEW</option>
-                            <option value="EMI CARD">EMI CARD</option>
-                            <option value="VIRTUAL">VIRTUAL</option>
-                            <option value="W/O CARD">W/O CARD</option>
-                        </select>
-                    </div>
-                    <div style="flex: 1; min-width: 130px;">
-                        <label style="font-size:10px; font-weight:bold; color:var(--indigo);">limit ₹</label>
-                        <input type="number" id="calcLimit" placeholder="50000" oninput="recalcCurrentModel()" style="width:100%; padding:7px; font-size:12px; border:1px solid #ccc; border-radius:4px; font-weight:bold;">
-                    </div>
-                    <div style="flex: 1; min-width: 130px;">
-                        <label style="font-size:10px; font-weight:bold; color:var(--indigo);">max ltv %</label>
-                        <input type="number" id="calcLtv" placeholder="100" value="100" oninput="recalcCurrentModel()" style="width:100%; padding:7px; font-size:12px; border:1px solid #ccc; border-radius:4px; font-weight:bold;">
-                    </div>
-                </div>
-
-                <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px;">
-                    <div style="flex: 2; min-width: 220px; position:relative;">
-                        <label style="font-size:10px; font-weight:bold; color:var(--indigo);">search product</label>
-                        <input type="search" id="globalModelSearch" oninput="doGlobalSearch()" placeholder="type brand or model name..." style="width:100%; padding:7px; font-size:12px; border:1px solid #ccc; border-radius:4px; font-weight:bold;">
-                        <div id="globalModelDropdown" class="custom-scroll" style="position: absolute; width: 100%; background: #fff; z-index: 1000; border: 1px solid #ddd; display: none; box-shadow: 0 10px 20px rgba(0,0,0,0.15); border-radius: 4px; max-height: 220px; overflow-y: auto; margin-top: 2px;"></div>
-                    </div>
-                    <div style="flex: 1; min-width: 130px;">
-                        <label style="font-size:10px; font-weight:bold; color:var(--indigo);">invoice amount ₹</label>
-                        <input type="number" id="calcInvoice" placeholder="35000" oninput="dictInvoiceChanged()" style="width:100%; padding:7px; font-size:12px; border:1px solid #ccc; border-radius:4px; font-weight:bold;">
-                    </div>
-                </div>
-
-                <div style="border-top: 1px dashed #cbd5e1; padding-top: 8px; margin-top: 8px;">
-                    <label style="font-size:10px; font-weight:900; color:var(--indigo); display:block; margin-bottom:4px;">components and insurance rules</label>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(125px, 1fr)); gap: 6px;">
-                        <div>
-                            <label style="font-size:9px; font-weight:bold; color:#555;">gtl ₹</label>
-                            <select id="calcGtl" onchange="recalcCurrentModel()" style="width:100%; padding:6px; font-size:12px; font-weight:bold; border-radius:4px; border:1px solid #ccc;">
-                                <option value="0">0</option>
-                                <option value="699">699</option>
-                                <option value="1099">1099</option>
-                                <option value="1199">1199</option>
-                                <option value="1499">1499</option>
-                                <option value="1799">1799</option>
-                                <option value="2398">2398</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label style="font-size:9px; font-weight:bold; color:#555;">rfc ₹</label>
-                            <select id="calcRfc" onchange="recalcCurrentModel()" style="width:100%; padding:6px; font-size:12px; font-weight:bold; border-radius:4px; border:1px solid #ccc; background:#fff;">
-                                <option value="0" selected>0</option>
-                                <option id="calcRfcOpt" value="0">0</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label style="font-size:9px; font-weight:bold; color:#555;">exw ₹</label>
-                            <input type="number" id="calcExw" placeholder="0" oninput="recalcCurrentModel()" style="width:100%; padding:6px; font-size:12px; font-weight:bold; border-radius:4px; border:1px solid #ccc;">
-                        </div>
-                        <div>
-                            <label style="font-size:9px; font-weight:bold; color:#555;">margin ₹</label>
-                            <input type="number" id="calcMargin" placeholder="0" value="0" oninput="recalcCurrentModel()" style="width:100%; padding:6px; font-size:12px; font-weight:bold; border-radius:4px; border:1px solid #ccc;">
-                        </div>
-                        <div>
-                            <label style="font-size:9px; font-weight:bold; color:#d35400;">target dp ₹</label>
-                            <input type="number" id="calcTarget" placeholder="reverse dp" oninput="recalcCurrentModel()" style="width:100%; padding:6px; font-size:12px; font-weight:bold; border-radius:4px; border:1px solid #ccc;">
-                        </div>
-                        <div>
-                            <label style="font-size:9px; font-weight:bold; color:#d35400;">emi capping ₹</label>
-                            <input type="number" id="calcCap" placeholder="cap limit" oninput="recalcCurrentModel()" style="width:100%; padding:6px; font-size:12px; font-weight:bold; border-radius:4px; border:1px solid #ccc;">
-                        </div>
-                    </div>
-                </div>
-
-                <div id="dictProductsBasket" style="display:none; margin-top:10px; padding:8px; background:#fff; border:1.5px solid #94a3b8; border-radius:6px;">
-                    <div style="font-size:11px; font-weight:900; color:var(--bajaj-blue); margin-bottom:4px;">basket</div>
-                    <div id="dictBasketChips" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
-                </div>
-            </div>
-
-            <div id="schemeResultArea" style="display: none; border: 1.5px solid var(--indigo); padding: 14px; border-radius: 6px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--indigo); padding-bottom: 8px; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
-                    <h3 id="globalViewerTitle" style="margin:0; color:var(--bajaj-blue); font-size: 15px !important;">model schemes</h3>
-                    <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                        <button onclick="addCurrentModelToDictBasket()" style="background: var(--warning); color: #000; border:none; padding:7px 11px; border-radius:4px; font-size:11px; font-weight:900; cursor:pointer;">add to basket</button>
-                        <button onclick="transferDictModelToFinalQueue()" style="background: var(--indigo); color: white; border:none; padding:7px 11px; border-radius:4px; font-size:11px; font-weight:900; cursor:pointer;">transfer to final</button>
-                        <button onclick="exportDictCustomerQuoteImage()" style="background: #2563eb; color: white; border:none; padding:7px 11px; border-radius:4px; font-size:11px; font-weight:900; cursor:pointer;">quote image</button>
-                    </div>
-                </div>
-                <div class="table-wrapper">
-                    <table style="width:100%;">
-                        <thead id="tableHead"></thead>
-                        <tbody id="globalViewerBody"></tbody>
-                    </table>
-                </div>
-            </div>
-
-        </div>
-    </div>
-
-    <div id="dealerSearchModal" style="display: none; width: 100%; margin-bottom: 15px; flex-direction: column; align-items: center;">
-        <div style="background: #fff; padding: 20px; border: 2px solid var(--bajaj-blue); border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 500px; box-sizing: border-box;">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--bajaj-blue); padding-bottom: 8px; margin-bottom: 15px;">
-                <h3 style="margin:0; color:var(--bajaj-blue);">dealer links search</h3>
-                <button onclick="toggleInline('unifiedHome')" style="background:none; border:none; color:var(--danger); font-weight:bold; cursor:pointer; font-size:18px;">close</button>
-            </div>
-
-            <div style="display:flex; gap:8px; margin-bottom:12px;">
-                <input type="text" id="dealerSearchInput" placeholder="type dealer name, city or code..." oninput="searchDealer()" style="flex:1;">
-                <button id="filterStarBtn" onclick="showOnlyStarredDealers()" style="background:#fff3cd; color:#856404; border:1px solid #ffeeba; font-weight:bold; padding:0 10px; border-radius:4px; font-size:11px !important;">favorites</button>
-            </div>
-
-            <div id="dealerSearchResults" class="custom-scroll" style="display:flex; flex-direction:column; gap:8px; max-height:350px; overflow-y:auto; padding-right:5px;">
-            </div>
-        </div>
-    </div>
-
-    <div id="draftsModal" class="modal">
-        <div class="modal-content" style="max-width: 500px; padding: 20px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--warning); padding-bottom: 8px; margin-bottom: 15px;">
-                <h3 style="margin:0; color:var(--warning); text-shadow: 0 1px 1px rgba(0,0,0,0.1);">saved drafts</h3>
-                <button onclick="closeDraftsModal()" style="background:none; border:none; color:var(--danger); font-weight:bold; cursor:pointer; font-size:18px;">close</button>
-            </div>
-            <div id="draftsContainer" style="display:flex; flex-direction:column; gap:10px; max-height: 400px; overflow-y:auto; padding-right: 5px;" class="custom-scroll"></div>
         </div>
     </div>
 
@@ -749,7 +413,7 @@
                 <div style="display: flex; flex-direction: column; gap: 4px;">
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <span id="infoName" style="font-size: 15px; font-weight: 900; text-transform: uppercase;">-</span>
-                        <span style="font-size: 11px; color: #94a3b8; font-weight: bold;">📞 <span id="infoMobile">0000000000</span></span>
+                        <span style="font-size: 11px; color: #94a3b8; font-weight: bold;">📞 <span id="infoMobile">-</span></span>
                     </div>
                     <div style="display: flex; gap: 6px; font-size: 10px; font-weight: 900;">
                         <span id="infoType" style="background: #f39c12; padding: 2px 6px; border-radius: 4px; color: #fff;">NEW</span>
@@ -766,8 +430,8 @@
                 </div>
 
                 <div style="display: flex; gap: 6px;">
-                    <button onclick="let mob=document.getElementById('infoMobile').innerText; if(mob && mob!=='-') window.open('tel:+91'+mob)" style="width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.1); border: none; cursor: pointer; font-size: 14px;">📞</button>
-                    <button onclick="let mob=document.getElementById('infoMobile').innerText; if(mob && mob!=='-') window.open('https://wa.me/91'+mob)" style="width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.1); border: none; cursor: pointer; font-size: 14px;">💬</button>
+                    <button onclick="let mob=document.getElementById('infoMobile').innerText; if(mob && mob!=='-' && mob!=='0000000000') window.open('tel:+91'+mob)" style="width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.1); border: none; cursor: pointer; font-size: 14px;">📞</button>
+                    <button onclick="let mob=document.getElementById('infoMobile').innerText; if(mob && mob!=='-' && mob!=='0000000000') window.open('https://wa.me/91'+mob)" style="width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.1); border: none; cursor: pointer; font-size: 14px;">💬</button>
                 </div>
             </div>
         </div>
@@ -785,65 +449,6 @@
         </div>
     </div>
 
-    <div id="customSchemesStagingModal" class="modal" style="z-index: 99999;">
-        <div class="modal-content" style="max-width: 650px; padding: 16px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid var(--primary); padding-bottom:6px; margin-bottom:10px;">
-                <h3 style="margin:0; color:var(--primary); font-size:16px;">custom schemes staging</h3>
-                <button onclick="closeCustomSchemesStagingModal()" style="background:none; border:none; color:var(--danger); font-size:18px; font-weight:bold; cursor:pointer;">close</button>
-            </div>
-            <p style="font-size:11px; color:#555; margin-bottom:8px;">या स्कीम्स सध्या master excel मध्ये नाहीत. हा डेटा कॉपी करून master data मध्ये टाकू शकता.</p>
-            <div class="table-wrapper" style="max-height: 280px; overflow-y: auto;">
-                <table style="width:100%; font-size:11px;">
-                    <thead style="background:#f1f5f9;">
-                        <tr><th>model</th><th>t/a</th><th>dbd%</th><th>pf</th><th>roi%</th><th>fixed</th><th>act</th></tr>
-                    </thead>
-                    <tbody id="stagingTableBody"></tbody>
-                </table>
-            </div>
-            <div style="display:flex; gap:8px; margin-top:12px;">
-                <button onclick="copyStagingDataForExcel()" style="flex:2; background:var(--success); color:white; padding:10px; border-radius:4px; font-weight:bold; border:none; cursor:pointer;">copy in master data format</button>
-                <button onclick="clearAllStagingSchemes()" style="flex:1; background:var(--danger); color:white; padding:10px; border-radius:4px; font-weight:bold; border:none; cursor:pointer;">clear all</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="dictSingleSchemeModal" class="modal" style="z-index: 99999;">
-        <div class="modal-content" style="max-width: 320px;">
-            <h3 style="margin-top:0; color:var(--indigo);">add single custom scheme</h3>
-            <p style="font-size:11px; color:#555;">current model: <b id="dssModelLabel" style="color:var(--dark);">-</b></p>
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px;">
-                <div><label style="font-size:10px;">tenure</label><input type="number" id="dssTen" placeholder="0"></div>
-                <div><label style="font-size:10px;">advance</label><input type="number" id="dssAdv" placeholder="0"></div>
-                <div><label style="font-size:10px;">dbd %</label><input type="number" id="dssDbd" placeholder="0" step="0.01"></div>
-                <div><label style="font-size:10px;">pf ₹</label><input type="number" id="dssPf" placeholder="0"></div>
-                <div><label style="font-size:10px;">roi %</label><input type="number" id="dssRoi" placeholder="0" step="0.01"></div>
-                <div><label style="font-size:10px;">fixed ₹</label><input type="number" id="dssFix" placeholder="0"></div>
-            </div>
-            <div style="display:flex; gap:8px; margin-top:12px;">
-                <button onclick="saveDictSingleScheme()" style="flex:2; background:var(--success); color:white; padding:8px; border:none; border-radius:4px; font-weight:bold;">save scheme</button>
-                <button onclick="document.getElementById('dictSingleSchemeModal').style.display='none'" style="flex:1; background:var(--danger); color:white; padding:8px; border:none; border-radius:4px;">cancel</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="dictCriteriaPromptModal" class="modal" style="z-index: 99999;">
-        <div class="modal-content" style="max-width: 300px;">
-            <h3 style="margin-top:0; color:var(--warning); font-size:15px;">customer criteria required</h3>
-            <p style="font-size:11px; color:#555; margin-bottom:8px;">non-tieup किंवा manual scheme साठी खालील माहिती आवश्यक आहे:</p>
-            <div style="display:flex; flex-direction:column; gap:6px;">
-                <div><label style="font-size:10px; font-weight:bold;">customer type</label>
-                    <select id="critType" style="width:100%;"><option value="NEW">NEW</option><option value="EMI CARD">EMI CARD</option><option value="VIRTUAL">VIRTUAL</option><option value="W/O CARD">W/O CARD</option></select>
-                </div>
-                <div><label style="font-size:10px; font-weight:bold;">nbfc limit ₹</label><input type="number" id="critLimit" placeholder="50000" style="width:100%;"></div>
-                <div><label style="font-size:10px; font-weight:bold;">max ltv %</label><input type="number" id="critLtv" value="100" max="100" style="width:100%;"></div>
-            </div>
-            <div style="display:flex; gap:8px; margin-top:12px;">
-                <button onclick="dictSubmitCriteriaPrompt()" style="flex:2; background:var(--success); color:white; padding:8px; border:none; border-radius:4px; font-weight:bold;">proceed</button>
-                <button onclick="document.getElementById('dictCriteriaPromptModal').style.display='none'" style="flex:1; background:var(--danger); color:white; padding:8px; border:none; border-radius:4px;">cancel</button>
-            </div>
-        </div>
-    </div>
-
 </main>
 
 <footer>
@@ -852,95 +457,6 @@
         <p class="footer-support">kisi bhi help, support ya suggestions ke liye bejhijhak connect karein:<br><a href="https://wa.me/918087313624" target="_blank" class="wa-link">whatsapp : 8087313624</a></p>
     </div>
 </footer>
-
-<script>
-    const ALL_INLINE_SECTIONS = [
-        'unifiedHome',
-        'finalEligibleArea',
-        'zatpatCalcModal',
-        'customerMessageGenModal',
-        'dealerSearchModal',
-        'dictionarySearchModal',
-        'flyerGenModal'
-    ];
-
-    function hideAllInlineSections() {
-        ALL_INLINE_SECTIONS.forEach(modId => {
-            let mod = document.getElementById(modId);
-            if (mod) mod.style.display = 'none';
-        });
-    }
-
-    function toggleInline(id, openFunc) {
-        hideAllInlineSections();
-
-        ['addProductModal', 'catSelectionModal', 'multiStackModal', 'customSchemesStagingModal'].forEach(mId => {
-            let m = document.getElementById(mId);
-            if (m) m.style.display = 'none';
-        });
-
-        let el = document.getElementById(id);
-        if (el) {
-            el.style.display = (id === 'unifiedHome') ? 'block' : 'flex';
-        }
-
-        if (typeof openFunc === 'function') {
-            openFunc();
-        }
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    function doSearch(inputId, dropdownId) {
-        let inp = document.getElementById(inputId);
-        let dd = document.getElementById(dropdownId);
-        if (!inp || !dd) return;
-
-        let q = inp.value.toUpperCase().trim();
-        if (!q) {
-            dd.style.display = 'none';
-            return;
-        }
-
-        let allRecords = [
-            ...(typeof db_records !== 'undefined' ? db_records : []),
-            ...(typeof customStagingSchemes !== 'undefined' ? customStagingSchemes : [])
-        ];
-
-        let validRecords = allRecords.filter(r => r && r.model && r.model !== "NON TIEUP");
-        if (validRecords.length === 0) {
-            dd.innerHTML = `<div style="padding:10px; color:var(--danger); font-weight:bold; text-align:center;">master data load होत आहे, थांबा.</div>`;
-            dd.style.display = 'block';
-            return;
-        }
-
-        let matches = validRecords.filter(r => {
-            let m = String(r.model || "").toUpperCase();
-            let b = String(r.brand || "").toUpperCase();
-            let c = String(r.category || "").toUpperCase();
-            return m.includes(q) || b.includes(q) || c.includes(q);
-        }).map(r => r.model);
-
-        matches = [...new Set(matches)].slice(0, 30);
-
-        if (matches.length === 0) {
-            dd.innerHTML = `<div style="padding:10px; color:#d35400; font-weight:bold; text-align:center;">कोणतेही मॉडेल सापडले नाही.</div>`;
-            dd.style.display = 'block';
-            return;
-        }
-
-        dd.innerHTML = matches.map(m => {
-            let rec = validRecords.find(x => x.model === m);
-            let catTag = rec && rec.category ? `<span style="font-size:10px; background:#e0e0e0; color:#333; padding:2px 6px; border-radius:4px; float:right;">📁 ${rec.category}</span>` : '';
-            let brandTag = rec && rec.brand ? `<span style="font-size:10px; color:#0984e3; font-weight:900; margin-right:5px;">[${rec.brand}]</span>` : '';
-            let safeModel = String(m).replace(/'/g, "\\'");
-            return `<div style="padding:10px; border-bottom:1px solid #eee; cursor:pointer; font-weight:800; color:var(--dark); display:flex; justify-content:space-between; align-items:center;" onmouseover="this.style.background='#e3f2fd'" onmouseout="this.style.background='#fff'" onclick="selectModel('${safeModel}')">
-                <span style="flex:1; font-size:12px;">${brandTag}📱 ${m}</span> ${catTag}
-            </div>`;
-        }).join('');
-
-        dd.style.display = 'block';
-    }
-</script>
 
 <script src="app.js?v=76.24"></script>
 </body>
