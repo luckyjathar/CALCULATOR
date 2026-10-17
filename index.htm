@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Persistent Portal">
 
-    <title>Persistent Portal V76.27 - Pro Edition</title>
+    <title>Persistent Portal V76.28 - Pro Edition</title>
 
     <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -22,6 +22,31 @@
         /* Capitalize Each Word Across UI */
         h1, h2, h3, h4, label, button, th, .disclaimer-box, input::placeholder {
             text-transform: capitalize;
+        }
+
+        /* Add New Customer Single Line Layout */
+        .single-line-cust-grid {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 6px;
+            margin-bottom: 8px;
+            align-items: end;
+        }
+        .single-line-cust-grid label {
+            font-size: 11px !important;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: block;
+            margin-bottom: 3px;
+        }
+        .single-line-cust-grid input,
+        .single-line-cust-grid select {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 6px !important;
+            font-size: 12px !important;
+            min-height: 36px !important;
         }
 
         .inline-work-panel {
@@ -54,6 +79,25 @@
             transform: scale(0.95);
         }
 
+        .model-remove-icon {
+            background: #fee2e2;
+            color: var(--danger);
+            border: 1px solid #fecaca;
+            border-radius: 6px;
+            padding: 4px 8px;
+            font-size: 14px !important;
+            font-weight: 900;
+            cursor: pointer;
+            min-height: 30px !important;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 6px;
+        }
+        .model-remove-icon:active {
+            transform: scale(0.92);
+        }
+
         @media (max-width: 768px) {
             .forms-row {
                 display: flex;
@@ -73,6 +117,19 @@
             }
             header h1 {
                 font-size: 18px !important;
+            }
+
+            .single-line-cust-grid {
+                gap: 4px;
+            }
+            .single-line-cust-grid label {
+                font-size: 9.5px !important;
+            }
+            .single-line-cust-grid input,
+            .single-line-cust-grid select {
+                padding: 4px !important;
+                font-size: 11px !important;
+                min-height: 34px !important;
             }
 
             #manualModal .modal-content > div:nth-child(3),
@@ -145,7 +202,7 @@
 
 <main>
 
-    <!-- 1. Add New Customer Section -->
+    <!-- 1. Add New Customer Section (सर्व कॉम्पोनंट्स एकाच लाईनमध्ये आणि विना प्री-फिल्ड) -->
     <div id="unifiedHome" style="display: block;">
         <div class="forms-row">
             <div class="form-container" style="flex: 1; width: 100%; background: #e3f2fd; border: 2px solid var(--primary); margin-bottom:0; display: flex; flex-direction: column;">
@@ -164,19 +221,20 @@
                         <input type="text" id="cqMobile" placeholder="10 Digits" maxlength="10" oninput="checkDuplicateMobile(this.value)">
                         <div id="mobileDupWarning" style="color: var(--danger); font-size: 11px !important; font-weight: 900; display: none; margin-top: 3px; background: #ffebee; padding: 4px 6px; border-radius: 4px; border-left: 3px solid var(--danger);"></div>
                     </div>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-bottom: 8px;">
-                        <div><label>Customer Name</label><input type="text" id="cqName" placeholder="Enter Name"></div>
-                        <div><label>Customer Type</label>
+                    <div class="single-line-cust-grid">
+                        <div><label>Name</label><input type="text" id="cqName" placeholder="Name"></div>
+                        <div><label>Type</label>
                             <select id="cqType">
+                                <option value="" selected disabled>Select</option>
                                 <option value="NEW">NEW</option>
                                 <option value="EMI CARD">EMI CARD</option>
                                 <option value="VIRTUAL">VIRTUAL</option>
                                 <option value="W/O CARD">W/O CARD</option>
                             </select>
                         </div>
-                        <div><label>NBFC Limit</label><input type="number" id="cqLimit" placeholder="₹ Amount"></div>
-                        <div><label>Max LTV %</label><input type="number" id="cqLtv" value="100" max="100" oninput="if(this.value>100)this.value=100;"></div>
-                        <div><label>EMI Capping</label><input type="number" id="cqCap" placeholder="₹ Cap"></div>
+                        <div><label>NBFC Limit</label><input type="number" id="cqLimit" placeholder="₹ Limit"></div>
+                        <div><label>Max LTV %</label><input type="number" id="cqLtv" placeholder="%" max="100" oninput="if(this.value>100)this.value=100;"></div>
+                        <div><label>EMI Cap</label><input type="number" id="cqCap" placeholder="₹ Cap"></div>
                     </div>
                 </div>
                 <button id="addToQueueBtn" onclick="addCustomerToQueue()" style="width:100%; background:var(--success); color:white; padding:10px; border-radius:4px; box-shadow: 0 2px 4px rgba(39, 174, 96, 0.3); margin-top: 4px;"><span id="icon_btn_add">➕</span> Add & Select Customer</button>
@@ -235,7 +293,7 @@
                     oninput="doSearch('modalMatrixSearch', 'modalMatrixSearchDropdown')"
                     onkeyup="doSearch('modalMatrixSearch', 'modalMatrixSearchDropdown')"
                     onfocus="doSearch('modalMatrixSearch', 'modalMatrixSearchDropdown')"
-                    placeholder="Type Model, Brand Or Category..." style="width:100%;">
+                    placeholder="Type Model Name..." style="width:100%;">
                 <div id="modalMatrixSearchDropdown" class="custom-scroll" style="position: relative; width: 100%; background: #fff; z-index: 9999; border: 1.5px solid var(--primary); display: none; box-shadow: 0 6px 15px rgba(0,0,0,0.15); border-radius: 6px; max-height: 220px; overflow-y: auto; margin-top: 6px;"></div>
             </div>
             <div style="display:flex; gap:8px;">
@@ -455,6 +513,6 @@
     </div>
 </footer>
 
-<script src="app.js?v=76.27"></script>
+<script src="app.js?v=76.28"></script>
 </body>
 </html>
