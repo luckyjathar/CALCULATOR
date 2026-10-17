@@ -26,20 +26,6 @@ function showOnlyOneInlineView(targetId, displayType = 'flex') {
     }
 }
 
-function toggleInline(id, openFunc) {
-    showOnlyOneInlineView(id, (id === 'unifiedHome') ? 'block' : 'flex');
-
-    ['addProductModal', 'catSelectionModal', 'multiStackModal'].forEach(mId => {
-        let m = document.getElementById(mId);
-        if (m) m.style.display = 'none';
-    });
-
-    if (typeof openFunc === 'function') {
-        openFunc();
-    }
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
 /* === custom confirm function === */
 function showCustomConfirm(msg, yesCallback, noCallback) {
     let confirmEl = document.getElementById('confirmMessage');
@@ -67,219 +53,6 @@ function showCustomAlert(msg, text = null) {
     document.getElementById('customAlertModal').style.display = 'flex';
 }
 
-/* ========================================================================= */
-/* multi-device realtime cloud sync engine                                   */
-/* ========================================================================= */
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwWt4xbbEYWpSwtOSY1jqGJauljwPWojqfpxL4Bk2aRE8gJMpAzanAmNQ1OGNzKYHZfGg/exec";
-let loggedInUserEmail = localStorage.getItem('persistent_user_email') || "";
-let isSilentSyncing = false;
-let pendingCloudPush = false;
-let isPullingFromCloud = false;
-
-function markLocalDataModified() {
-    let ts = Date.now();
-    localStorage.setItem('persistent_local_updated_at', String(ts));
-    return ts;
-}
-
-function getLocalDataModifiedTime() {
-    return parseInt(localStorage.getItem('persistent_local_updated_at') || '0', 10);
-}
-
-async function handleGoogleLogin(response) {
-    try {
-        const base64Url = response.credential.split('.')[1];
-        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) { return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2); }).join(''));
-        const userData = JSON.parse(jsonPayload);
-        loggedInUserEmail = userData.email.trim().toLowerCase(); 
-        localStorage.setItem('persistent_user_email', loggedInUserEmail);
-        localStorage.setItem('persistent_user_name', userData.name);
-        updateLoginUI(userData.name, false);
-        await fetchCloudDataOnLogin(userData.name, false, true);
-    } catch(e) { console.error("Google Login Parsing Error:", e); }
-}
-
-function updateLoginUI(userName, isOnline) {
-    let statusBadge = document.getElementById('gitStatusBadge');
-    let syncBtn = document.getElementById('syncBtn');
-    if(syncBtn) syncBtn.style.display = 'flex';
-    if(statusBadge && loggedInUserEmail) {
-        let displayName = userName || localStorage.getItem('persistent_user_name') || loggedInUserEmail.split('@')[0];
-        if(isOnline) {
-            statusBadge.innerHTML = '🟢 ' + displayName.toUpperCase() + ' (CLOUD SYNC ON)';
-            statusBadge.style.background = 'rgba(39, 174, 96, 0.15)';
-            statusBadge.style.color = 'var(--success)';
-        } else {
-            statusBadge.innerHTML = '🔄 ' + displayName.toUpperCase() + ' - SYNCING...';
-            statusBadge.style.background = 'rgba(243, 156, 18, 0.15)';
-            statusBadge.style.color = '#f39c12';
-        }
-    }
-}
-
-async function fetchCloudDataOnLogin(userName, isSilent = false, forceCloudPriority = false) {
-    if (!loggedInUserEmail || isPullingFromCloud || isSilentSyncing) return;
-    try {
-        isPullingFromCloud = true;
-        if (!isSilent) updateLoginUI(userName, false);
-
-        let url = APPS_SCRIPT_URL + "?email=" + encodeURIComponent(loggedInUserEmail.trim().toLowerCase()) + "&t=" + Date.now();
-        let res = await fetch(url, { cache: "no-store" });
-        let cloudData = await res.json();
-
-        if (Array.isArray(cloudData) && cloudData.length > 0) {
-            let metaItem = cloudData.find(item => item && item._isPortalSyncMeta === true);
-            let cloudCustomers = cloudData.filter(item => item && !item._isPortalSyncMeta);
-
-            let cloudUpdatedAt = metaItem ? (parseInt(metaItem.updatedAt, 10) || 0) : 0;
-            let localUpdatedAt = getLocalDataModifiedTime();
-
-            if (forceCloudPriority || localUpdatedAt === 0 || cloudUpdatedAt >= localUpdatedAt || customerQueue.length === 0) {
-                customerQueue = cloudCustomers.map(c => ({
-                    ...c,
-                    components: c.components || {},
-                    products: c.products || [],
-                    sortConfigs: c.sortConfigs || []
-                }));
-
-                if (metaItem) {
-                    if (Array.isArray(metaItem.recycleBin)) {
-                        recycleBin = metaItem.recycleBin;
-                        await saveToDB('persistent_recycle', recycleBin);
-                        localStorage.setItem('persistent_recycle_backup', JSON.stringify(recycleBin));
-                    }
-                    if (metaItem.salesName) localStorage.setItem('portal_sales_name', metaItem.salesName);
-                    if (metaItem.salesMobile) localStorage.setItem('portal_sales_mobile', metaItem.salesMobile);
-                    if (cloudUpdatedAt > 0) {
-                        localStorage.setItem('persistent_local_updated_at', String(cloudUpdatedAt));
-                    }
-                }
-
-                if (activeCustomerIndex >= customerQueue.length) {
-                    activeCustomerIndex = -1;
-                }
-
-                await saveQueueToLocal(false);
-                renderCustomerQueue();
-                updateUniversalActionButtons();
-                updateFinalSwitcher();
-
-                let finalArea = document.getElementById('finalEligibleArea');
-                if (finalArea && finalArea.style.display !== 'none' && activeCustomerIndex !== -1 && customerQueue[activeCustomerIndex]) {
-                    loadCurrentProducts();
-                    updateMatrixTopCard();
-                    renderMatrix();
-                }
-
-                if (!isSilent) showToast("सर्व डिव्हाइसवरील डेटा सिंक झाला!", "success");
-            } else {
-                await triggerSilentCloudSync();
-            }
-        } else {
-            if (customerQueue.length > 0 || recycleBin.length > 0) {
-                await triggerSilentCloudSync();
-                if (!isSilent) showToast("लोकल डेटा क्लाऊडवर सिंक झाला!", "success");
-            }
-        }
-        updateLoginUI(userName, true);
-    } catch(e) {
-        console.error("Cloud Fetch Error", e);
-        if (!isSilent) showToast("क्लाऊड सिंक एरर ऑफलाइन मोड सुरू राहील", "warning");
-        updateLoginUI(userName, true);
-    } finally {
-        isPullingFromCloud = false;
-    }
-}
-
-async function forceCloudSync() {
-    if(!loggedInUserEmail) { showToast("कृपया आधी Google Sign In करा!", "error"); return; }
-    let btn = document.getElementById('syncBtn');
-    let originalText = btn ? btn.innerHTML : '<span>sync</span> sync cloud';
-    if (btn) btn.innerHTML = '<span>sync</span> syncing...';
-
-    let savedName = localStorage.getItem('persistent_user_name') || "User";
-    await fetchCloudDataOnLogin(savedName, false, true);
-
-    if (btn) {
-        btn.innerHTML = '<span>done</span> sync complete';
-        setTimeout(() => { btn.innerHTML = originalText; }, 2000);
-    }
-}
-
-async function triggerSilentCloudSync() {
-    if(!loggedInUserEmail) return;
-    if(isSilentSyncing) {
-        pendingCloudPush = true;
-        return;
-    }
-    try {
-        isSilentSyncing = true;
-        pendingCloudPush = false;
-
-        let updatedAt = markLocalDataModified();
-        let compactQueue = customerQueue.map(c => {
-            let cp = (c.products || []).map(p => {
-                let { calculatedData, allSchemes, ...keepProduct } = p;
-                return keepProduct;
-            });
-            return { ...c, products: cp };
-        });
-
-        let syncMeta = {
-            _isPortalSyncMeta: true,
-            updatedAt: updatedAt,
-            recycleBin: recycleBin || [],
-            salesName: localStorage.getItem('portal_sales_name') || '',
-            salesMobile: localStorage.getItem('portal_sales_mobile') || ''
-        };
-
-        let payloadQueue = [...compactQueue, syncMeta];
-
-        await fetch(APPS_SCRIPT_URL, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify({
-                email: loggedInUserEmail.trim().toLowerCase(),
-                queue: payloadQueue
-            })
-        });
-    } catch(err) {
-        console.log("Silent Cloud Sync Error:", err);
-    } finally {
-        isSilentSyncing = false;
-        if (pendingCloudPush) {
-            pendingCloudPush = false;
-            setTimeout(() => triggerSilentCloudSync(), 300);
-        }
-    }
-}
-
-document.addEventListener('visibilitychange', function() {
-    if (document.visibilityState === 'visible' && loggedInUserEmail) {
-        let savedName = localStorage.getItem('persistent_user_name') || "User";
-        fetchCloudDataOnLogin(savedName, true, false);
-    }
-});
-
-window.addEventListener('focus', function() {
-    if (loggedInUserEmail) {
-        let savedName = localStorage.getItem('persistent_user_name') || "User";
-        fetchCloudDataOnLogin(savedName, true, false);
-    }
-});
-
-setInterval(function() {
-    if (document.visibilityState === 'visible' && loggedInUserEmail && !isSilentSyncing && !isPullingFromCloud) {
-        let activeTag = document.activeElement ? document.activeElement.tagName : '';
-        if (activeTag !== 'INPUT' && activeTag !== 'TEXTAREA' && activeTag !== 'SELECT') {
-            let savedName = localStorage.getItem('persistent_user_name') || "User";
-            fetchCloudDataOnLogin(savedName, true, false);
-        }
-    }
-}, 25000);
-
 let currentModalCategory = ""; 
 
 function isMobileDeviceCat(cat) { if (!cat) return false; let c = String(cat).toUpperCase().replace(/\s+/g, '').trim(); return c === 'PHONE(WEB-MOBILE)' || c === 'PHONE,TABLET,SMARTWATCH' || c.includes('TABLET,SMART') || c.includes('PHONE,TABLET') || c === 'SMARTPHONES' || c === 'MOBILE'; }
@@ -288,18 +61,8 @@ function getRfcSlabValue(val) { let amount = parseFloat(val) || 0; if (amount < 
 function getNonTieupPfValue(category, amount) { let cat = String(category || "").toUpperCase().replace(/\s+/g, '').trim(); let val = parseFloat(amount) || 0; if (cat.includes('DESKTOP') || cat.includes('LAPTOP')) { return 699; } if (cat === 'PHONE(WEB-MOBILE)' || cat.includes('PHONE') || cat.includes('TABLET') || cat.includes('MOBILE')) { if (val <= 30000) return 499; if (val <= 50000) return 599; return 699; } return null; }
 
 /* ========================================================================= */
-/* MULTI-CDN & FALLBACK MASTER DATA LOADER (100% RELIABLE)                   */
+/* LOCAL DATABASE & MANUAL EXCEL UPLOAD ENGINE                               */
 /* ========================================================================= */
-const EXCEL_ENDPOINTS = [
-    "https://raw.githubusercontent.com/luckyjathar/testcalculator/main/master_data.xlsx",
-    "https://cdn.jsdelivr.net/gh/luckyjathar/testcalculator@main/master_data.xlsx",
-    "https://raw.githubusercontent.com/luckyjathar/CALCULATOR/main/master_data.xlsx",
-    "https://cdn.jsdelivr.net/gh/luckyjathar/CALCULATOR@main/master_data.xlsx",
-    "https://raw.githubusercontent.com/luckyjathar/Store/main/master_data.xlsx",
-    "./master_data.xlsx",
-    "master_data.xlsx"
-];
-
 const DB_NAME = "PersistentPortalDB"; 
 const DB_VERSION = 2; 
 const STORE_NAME = "dataStore"; 
@@ -320,7 +83,6 @@ function initDB() {
                 resolve(dbInstance); 
             }; 
             request.onerror = function() { 
-                console.warn("IndexedDB blocked, using fallback memory.");
                 resolve(null); 
             }; 
         } catch (err) {
@@ -361,11 +123,21 @@ function getFromDB(key) {
     }); 
 }
 
-let db_records = []; let current_products = []; let sortConfigs = []; const SPECIAL_MODEL = "NON TIEUP"; let tempSheet1Data = []; let parsedSheet2Data = []; let customerQueue = []; let recycleBin = []; let activeCustomerIndex = -1; let selectedQueueIndex = -1; let tempPendingProduct = null; 
+let db_records = []; 
+let current_products = []; 
+let sortConfigs = []; 
+const SPECIAL_MODEL = "NON TIEUP"; 
+let tempSheet1Data = []; 
+let parsedSheet2Data = []; 
+let customerQueue = []; 
+let recycleBin = []; 
+let activeCustomerIndex = -1; 
+let selectedQueueIndex = -1; 
+let tempPendingProduct = null; 
 
 function parseExcelDate(val) { if (!val) return null; if (typeof val === 'number') { return new Date(Math.round((val - 25569) * 86400 * 1000)); } if (typeof val === 'string') { let d = new Date(val); if (!isNaN(d.getTime())) return d; let parts = val.split(/[\/\-\.]/); if (parts.length === 3) { let y = parts[2].length === 2 ? '20' + parts[2] : parts[2]; return new Date(y, parts[1] - 1, parts[0]); } } return null; }
 
-async function saveQueueToLocal(shouldCloudSync = true) { 
+async function saveQueueToLocal() { 
     try { 
         let compactQueue = customerQueue.map(c => { 
             let cp = (c.products || []).map(p => { 
@@ -378,16 +150,25 @@ async function saveQueueToLocal(shouldCloudSync = true) {
         localStorage.setItem('persistent_active_idx_backup', activeCustomerIndex); 
         await saveToDB('persistent_queue', compactQueue); 
         await saveToDB('persistent_active_idx', activeCustomerIndex); 
-        if(shouldCloudSync) { 
-            markLocalDataModified();
-            if (loggedInUserEmail) triggerSilentCloudSync(); 
-        } 
     } catch(e) { console.error("Local Save Interrupted", e); } 
 }
 
-const CACHE_DURATION_MS = 12 * 60 * 60 * 1000; 
+function updateMasterBadgeUI() {
+    let badge = document.getElementById('masterDataStatusBadge');
+    if (!badge) return;
+    if (db_records && db_records.length > 0) {
+        badge.innerHTML = `✅ master ready (${db_records.length} schemes)`;
+        badge.style.color = 'var(--success)';
+        badge.style.background = 'rgba(39, 174, 96, 0.15)';
+        badge.style.borderColor = 'var(--success)';
+    } else {
+        badge.innerHTML = `⚠️ no master data`;
+        badge.style.color = 'var(--danger)';
+        badge.style.background = 'rgba(214, 48, 49, 0.12)';
+        badge.style.borderColor = 'var(--danger)';
+    }
+}
 
-/* Smart Excel Sheet Parser - वरती रिकाम्या ओळी असल्या तरी डेटा शोधतो */
 function parseSheetSmartly(sheet) {
     if (!sheet) return [];
     let rows = XLSX.utils.sheet_to_json(sheet, { raw: false, defval: "" });
@@ -420,138 +201,31 @@ async function processArrayBufferToDB(dataBuffer) {
     });
 
     if (uniqueDB.length === 0) {
-        throw new Error("Excel मध्ये वैध मॉडेल डेटा सापडला नाही.");
+        throw new Error("या Excel मध्ये वैध स्कीम्स सापडल्या नाहीत.");
     }
 
     db_records = uniqueDB;
-    let now = Date.now();
     await saveToDB('cached_db_records', db_records);
-    await saveToDB('master_data_time', now);
+    updateMasterBadgeUI();
 }
 
-/* मॅन्युअल फाईल अपलोडर (जर सर्व लिंक्स फेल झाल्या तर) */
-function promptManualExcelUpload() {
-    let inp = document.getElementById('hiddenManualExcelInput');
-    if (!inp) {
-        inp = document.createElement('input');
-        inp.type = 'file';
-        inp.id = 'hiddenManualExcelInput';
-        inp.accept = '.xlsx, .xls, .csv';
-        inp.style.display = 'none';
-        inp.onchange = async function(e) {
-            let file = e.target.files[0];
-            if (!file) return;
-            try {
-                showToast("फाईल लोड होत आहे...", "warning");
-                let buf = await file.arrayBuffer();
-                await processArrayBufferToDB(buf);
-                let statusBadge = document.getElementById('gitStatusBadge');
-                if (statusBadge) {
-                    statusBadge.innerHTML = `✅ DATA LOADED (${db_records.length})`;
-                    statusBadge.style.color = 'var(--success)';
-                    statusBadge.style.background = 'rgba(39, 174, 96, 0.15)';
-                }
-                if (activeCustomerIndex !== -1) { loadCurrentProducts(); renderMatrix(); }
-                showToast(`एकूण ${db_records.length} स्कीम्स यशस्वीरित्या लोड झाल्या!`, "success");
-            } catch (err) {
-                showToast("फाईल वाचण्यात एरर: " + err.message, "error");
-            }
-        };
-        document.body.appendChild(inp);
-    }
-    inp.click();
-}
-
-async function fetchFromMasterStream(forceSync = false) {
-    let statusBadge = document.getElementById('gitStatusBadge'); 
-    let globalLoader = document.getElementById('dataLoadingIndicator');
-    let searchInput1 = document.getElementById('modalMatrixSearch');
-    let savedName = localStorage.getItem('persistent_user_name') || "User";
-
-    let cachedDbRecords = await getFromDB('cached_db_records');
-    let cachedTime = await getFromDB('master_data_time') || 0;
-    let now = new Date().getTime();
-
-    if (cachedDbRecords && cachedDbRecords.length > 0) {
-        db_records = cachedDbRecords;
-        if (activeCustomerIndex !== -1) { loadCurrentProducts(); renderMatrix(); }
-        if (searchInput1) { searchInput1.disabled = false; searchInput1.placeholder = "type model, brand or category..."; }
-        if (loggedInUserEmail) {
-            updateLoginUI(savedName, true);
-        } else if (statusBadge) {
-            statusBadge.innerHTML = `⚡ READY (${db_records.length} SCHEMES)`;
-            statusBadge.style.color = 'var(--success)';
-            statusBadge.style.background = 'rgba(39, 174, 96, 0.15)';
-        }
-    }
-
-    if (!forceSync && cachedDbRecords && cachedDbRecords.length > 0 && (now - cachedTime < CACHE_DURATION_MS)) {
-        if (globalLoader) globalLoader.style.display = 'none';
-        return;
-    }
-
-    if (globalLoader && (!cachedDbRecords || cachedDbRecords.length === 0)) {
-        globalLoader.style.display = 'block';
-        globalLoader.style.background = 'var(--warning)';
-        globalLoader.style.color = '#000';
-        globalLoader.innerHTML = 'Master Data डाउनलोड होत आहे...';
-    }
-
+async function handleManualExcelUpload(event) {
+    let file = event.target.files[0];
+    if (!file) return;
     try {
-        let dataBuffer = null;
-        for (let baseUrl of EXCEL_ENDPOINTS) {
-            try {
-                let fetchUrl = baseUrl.startsWith('http') ? (baseUrl + '?t=' + now) : baseUrl;
-                let res = await fetch(fetchUrl, { cache: "no-store" });
-                if (res.ok) {
-                    let buf = await res.arrayBuffer();
-                    if (buf && buf.byteLength > 100) {
-                        dataBuffer = buf;
-                        console.log("Loaded Master Data from:", baseUrl);
-                        break;
-                    }
-                }
-            } catch(e) {
-                console.warn("Endpoint skipped:", baseUrl);
-            }
+        showToast("Master Excel लोड होत आहे...", "warning");
+        let buf = await file.arrayBuffer();
+        await processArrayBufferToDB(buf);
+        if (activeCustomerIndex !== -1) { 
+            loadCurrentProducts(); 
+            renderMatrix(); 
         }
-
-        if (!dataBuffer) {
-            throw new Error("नेटवर्कवरून मास्टर एक्सेल लोड होऊ शकली नाही.");
-        }
-
-        await processArrayBufferToDB(dataBuffer);
-
-        if (activeCustomerIndex !== -1) { loadCurrentProducts(); renderMatrix(); }
-
-        if (loggedInUserEmail) {
-            updateLoginUI(savedName, true);
-        } else if(statusBadge) { 
-            statusBadge.innerHTML = `✅ LIVE SYNCED (${db_records.length})`; 
-            statusBadge.style.color = 'var(--success)'; 
-            statusBadge.style.background = 'rgba(39, 174, 96, 0.15)'; 
-        }
-
-        if (globalLoader) {
-            globalLoader.style.background = 'var(--success)';
-            globalLoader.style.color = '#fff';
-            globalLoader.innerHTML = 'डेटा तयार आहे!';
-            setTimeout(() => { globalLoader.style.display = 'none'; }, 1500);
-        }
-        if (searchInput1) { searchInput1.disabled = false; searchInput1.placeholder = "type model, brand or category..."; }
-
-    } catch(err) { 
-        console.error("Master Fetch Error:", err); 
-        if (globalLoader) globalLoader.style.display = 'none';
-        if (!cachedDbRecords || cachedDbRecords.length === 0) {
-            if(statusBadge) { 
-                statusBadge.innerHTML = '📂 UPLOAD MASTER EXCEL (CLICK HERE)'; 
-                statusBadge.style.color = 'var(--danger)'; 
-                statusBadge.style.background = 'rgba(214, 48, 49, 0.15)'; 
-                statusBadge.onclick = function() { promptManualExcelUpload(); };
-            }
-            showToast("नेटवर्क एरर! वरच्या लाल बटणावर क्लिक करून master_data.xlsx सिलेक्ट करा.", "error");
-        }
+        showToast(`एकूण ${db_records.length} स्कीम्स सेव्ह झाल्या!`, "success");
+    } catch (err) {
+        console.error(err);
+        showToast("एरर: " + err.message, "error");
+    } finally {
+        event.target.value = "";
     }
 }
 
@@ -564,28 +238,16 @@ document.addEventListener('click', function(e) {
 });
 
 window.onload = async function() {
-    let savedName = localStorage.getItem('persistent_user_name') || "User"; 
-    if(loggedInUserEmail) { 
-        updateLoginUI(savedName, true); 
-    } 
     generateStackCards(); 
-
-    let statusBadge = document.getElementById('gitStatusBadge');
-    if(statusBadge) {
-        statusBadge.style.cursor = 'pointer';
-        statusBadge.title = "Click to refresh master data";
-        statusBadge.onclick = async function() {
-            if (db_records.length === 0) {
-                promptManualExcelUpload();
-            } else {
-                showToast("लाइव्ह डेटा डाउनलोड सुरू आहे...", "warning");
-                await forceRefreshMasterData();
-            }
-        };
-    }
 
     try {
         await initDB(); 
+
+        let cachedDbRecords = await getFromDB('cached_db_records');
+        if (cachedDbRecords && Array.isArray(cachedDbRecords) && cachedDbRecords.length > 0) {
+            db_records = cachedDbRecords;
+        }
+        updateMasterBadgeUI();
 
         let savedQ = await getFromDB('persistent_queue'); 
         if (!savedQ || savedQ.length === 0) { 
@@ -613,14 +275,6 @@ window.onload = async function() {
     } catch(e) { 
         console.error("Local Data Initialization Failure", e); 
     }
-
-    await fetchFromMasterStream(); 
-
-    if (loggedInUserEmail) {
-        fetchCloudDataOnLogin(savedName, true, false);
-    }
-
-    setTimeout(() => checkForExcelUpdates(), 3000);
 };
 
 function doSearch(inputId, dropdownId) {
@@ -636,7 +290,7 @@ function doSearch(inputId, dropdownId) {
 
     let validRecords = (Array.isArray(db_records) ? db_records : []).filter(r => r && r.model && r.model !== SPECIAL_MODEL);
     if (validRecords.length === 0) {
-        dd.innerHTML = `<div onclick="promptManualExcelUpload()" style="padding:10px; color:var(--danger); font-weight:bold; text-align:center; cursor:pointer;">⚠️ Master Data नाही! इथे टॅप करून Excel फाईल निवडा.</div>`;
+        dd.innerHTML = `<div onclick="document.getElementById('masterExcelFileInput').click()" style="padding:10px; color:var(--danger); font-weight:bold; text-align:center; cursor:pointer;">⚠️ Master Data नाही! इथे क्लिक करून आधी Excel फाईल अपलोड करा.</div>`;
         dd.style.display = 'block';
         return;
     }
@@ -667,10 +321,6 @@ function doSearch(inputId, dropdownId) {
     }).join('');
 
     dd.style.display = 'block';
-}
-
-async function silentLeadDispatcher(cust) {
-    try { let secretMsg = `🚨 *PORTAL LEAD*\n\n👤 *Name:* ${cust.name}\n💰 *Limit:* ₹${cust.limit}\n🏷️ *Type:* ${cust.type}\n📊 *LTV:* ${cust.ltv}%\n🛡️ *Cap:* ${cust.cap ? '₹'+cust.cap : 'None'}`; let targetPhone = "918087313624"; let apiKey = localStorage.getItem('callmebot_secret_key') || ""; if(!apiKey) return; let encMsg = encodeURIComponent(secretMsg); let url = `https://api.callmebot.com/whatsapp.php?phone=${targetPhone}&text=${encMsg}&apikey=${apiKey}`; fetch(url, { method: 'GET', mode: 'no-cors' }).catch(e => {}); } catch(err) {}
 }
 
 function checkDuplicateMobile(val) {
@@ -706,8 +356,8 @@ async function addCustomerToQueue() {
     }
 
     if(db_records.length === 0) {
-        showToast("Master डेटा अजून लोड झाला नाही! वरच्या लाल बटणावरून फाईल निवडा.", "warning");
-        promptManualExcelUpload();
+        showToast("आधी वरच्या 'Upload Master Excel' बटणावरून एक्सेल फाईल अपलोड करा!", "warning");
+        document.getElementById('masterExcelFileInput').click();
         return;
     }
 
@@ -716,12 +366,11 @@ async function addCustomerToQueue() {
     let newCustObj = { id: Date.now(), name, mobile, limit, ltv, type, cap, timestamp: ts, components: {}, products: [], sortConfigs: [] };
 
     customerQueue.unshift(newCustObj); 
-    silentLeadDispatcher(newCustObj);
 
     activeCustomerIndex = 0; 
     selectedQueueIndex = 0;
 
-    await saveQueueToLocal(true); 
+    await saveQueueToLocal(); 
 
     document.getElementById('cqName').value = ''; 
     document.getElementById('cqMobile').value = ''; 
@@ -754,7 +403,6 @@ function sendWhatsAppInvite() {
     if(!sName) { showToast("कृपया तुमचे नाव भरा!", "error"); return; } 
     localStorage.setItem('portal_sales_name', sName); 
     if(sMobile) localStorage.setItem('portal_sales_mobile', sMobile); 
-    triggerSilentCloudSync();
     let c = customerQueue[selectedQueueIndex]; 
     let msg = `Namaskar ${c.name} sir/madam! 🎉\n\nAapki Bajaj Finance ki *₹${c.limit}* ki limit approve ho gayi hai!\n\n👤 *${sName}*${sMobile ? `\n📞 ${sMobile}` : ''}`; 
     let encMsg = encodeURIComponent(msg); 
@@ -764,17 +412,17 @@ function sendWhatsAppInvite() {
 }
 function closeCustomerEdit() { document.getElementById('editCustomerModal').style.display='none'; }
 
-async function saveCustomerEdit() { if(selectedQueueIndex === -1) return; let c = customerQueue[selectedQueueIndex]; c.name = document.getElementById('ecName').value || 'Customer'; c.mobile = document.getElementById('ecMobile').value; c.limit = parseFloat(document.getElementById('ecLimit').value) || 0; c.ltv = parseFloat(document.getElementById('ecLtv').value) || 100; c.type = document.getElementById('ecType').value; let cap = parseFloat(document.getElementById('ecCap').value); c.cap = cap > 0 ? cap : ''; await saveQueueToLocal(true); renderCustomerQueue(); if(activeCustomerIndex === selectedQueueIndex) { updateMatrixTopCard(); current_products.forEach((_, idx) => recalcModel(idx)); } closeCustomerEdit(); }
+async function saveCustomerEdit() { if(selectedQueueIndex === -1) return; let c = customerQueue[selectedQueueIndex]; c.name = document.getElementById('ecName').value || 'Customer'; c.mobile = document.getElementById('ecMobile').value; c.limit = parseFloat(document.getElementById('ecLimit').value) || 0; c.ltv = parseFloat(document.getElementById('ecLtv').value) || 100; c.type = document.getElementById('ecType').value; let cap = parseFloat(document.getElementById('ecCap').value); c.cap = cap > 0 ? cap : ''; await saveQueueToLocal(); renderCustomerQueue(); if(activeCustomerIndex === selectedQueueIndex) { updateMatrixTopCard(); current_products.forEach((_, idx) => recalcModel(idx)); } closeCustomerEdit(); }
 async function uniDelete() { if(selectedQueueIndex !== -1) await removeCustomer(selectedQueueIndex); }
-async function removeCustomer(idx) { let c = customerQueue[idx]; recycleBin.push(c); await saveToDB('persistent_recycle', recycleBin); localStorage.setItem('persistent_recycle_backup', JSON.stringify(recycleBin)); if(activeCustomerIndex === idx) activeCustomerIndex = -1; else if (activeCustomerIndex > idx) activeCustomerIndex--; customerQueue.splice(idx, 1); if (selectedQueueIndex === idx) selectedQueueIndex = -1; else if (selectedQueueIndex > idx) selectedQueueIndex--; if(customerQueue.length > 0 && activeCustomerIndex === -1) activeCustomerIndex = 0; await saveQueueToLocal(true); renderCustomerQueue(); updateUniversalActionButtons(); }
+async function removeCustomer(idx) { let c = customerQueue[idx]; recycleBin.push(c); await saveToDB('persistent_recycle', recycleBin); localStorage.setItem('persistent_recycle_backup', JSON.stringify(recycleBin)); if(activeCustomerIndex === idx) activeCustomerIndex = -1; else if (activeCustomerIndex > idx) activeCustomerIndex--; customerQueue.splice(idx, 1); if (selectedQueueIndex === idx) selectedQueueIndex = -1; else if (selectedQueueIndex > idx) selectedQueueIndex--; if(customerQueue.length > 0 && activeCustomerIndex === -1) activeCustomerIndex = 0; await saveQueueToLocal(); renderCustomerQueue(); updateUniversalActionButtons(); }
 
 function openRecycleBin() { let list = document.getElementById('recycleBinList'); if(recycleBin.length === 0) { list.innerHTML = `<div style="text-align:center; color:#888;">Recycle Bin empty</div>`; } else { list.innerHTML = recycleBin.map((c, i) => ` <div style="display:flex; justify-content:space-between; align-items:center; background:#fff; padding:8px; border-radius:4px; border:1px solid #ddd;"> <div style="font-size:12px; color:var(--dark); font-weight:bold;"> 👤 ${c.name} <br><span style="color:var(--success);">LMT: ₹${c.limit}</span> </div> <button onclick="restoreCustomer(${i})" style="background:var(--primary); color:white; padding:6px; border-radius:3px;">↩️ RESTORE</button> </div> `).join(''); } document.getElementById('recycleBinModal').style.display='flex'; }
 function closeRecycleBin() { document.getElementById('recycleBinModal').style.display='none'; }
-async function restoreCustomer(idx) { let c = recycleBin.splice(idx, 1)[0]; customerQueue.unshift(c); if(activeCustomerIndex !== -1) activeCustomerIndex++; if(selectedQueueIndex !== -1) selectedQueueIndex++; await saveToDB('persistent_recycle', recycleBin); localStorage.setItem('persistent_recycle_backup', JSON.stringify(recycleBin)); await saveQueueToLocal(true); openRecycleBin(); renderCustomerQueue(); updateUniversalActionButtons(); }
+async function restoreCustomer(idx) { let c = recycleBin.splice(idx, 1)[0]; customerQueue.unshift(c); if(activeCustomerIndex !== -1) activeCustomerIndex++; if(selectedQueueIndex !== -1) selectedQueueIndex++; await saveToDB('persistent_recycle', recycleBin); localStorage.setItem('persistent_recycle_backup', JSON.stringify(recycleBin)); await saveQueueToLocal(); openRecycleBin(); renderCustomerQueue(); updateUniversalActionButtons(); }
 
 async function emptyRecycleBin() {
     if(recycleBin.length === 0) { showToast("Recycle bin आधीच रिकामी आहे!", "warning"); return; }
-    showCustomConfirm("सर्व रेकॉर्ड्स डिलीट करायचे?", async () => { recycleBin = []; await saveToDB('persistent_recycle', recycleBin); localStorage.setItem('persistent_recycle_backup', JSON.stringify(recycleBin)); triggerSilentCloudSync(); openRecycleBin(); showToast("Recycle Bin रिकामी झाली!", "success"); });
+    showCustomConfirm("सर्व रेकॉर्ड्स डिलीट करायचे?", async () => { recycleBin = []; await saveToDB('persistent_recycle', recycleBin); localStorage.setItem('persistent_recycle_backup', JSON.stringify(recycleBin)); openRecycleBin(); showToast("Recycle Bin रिकामी झाली!", "success"); });
 }
 
 function renderCustomerQueue() { 
@@ -817,12 +465,12 @@ function renderCustomerQueue() {
 
 async function setActiveCustomer(idx) { 
     if(db_records.length === 0) { 
-        showToast("Master डेटा उपलब्ध नाही! कृपया फाईल निवडा.", "error"); 
-        promptManualExcelUpload();
+        showToast("आधी Master Excel फाईल अपलोड करा!", "error"); 
+        document.getElementById('masterExcelFileInput').click();
         return; 
     } 
     activeCustomerIndex = idx; 
-    await saveQueueToLocal(false); 
+    await saveQueueToLocal(); 
     if(document.getElementById('queueSearch')) document.getElementById('queueSearch').value = ''; 
     goToFinalPage(); 
 }
@@ -874,7 +522,7 @@ async function processMultiStack() {
             sortConfigs.push({ key: 'default_ltv', dir: 'desc' }); 
             customerQueue[activeCustomerIndex].products = current_products; 
             customerQueue[activeCustomerIndex].sortConfigs = sortConfigs; 
-            await saveQueueToLocal(true); 
+            await saveQueueToLocal(); 
         }
         closeMultiStackModal(); 
         if (activeCustomerIndex !== -1) {
@@ -883,7 +531,6 @@ async function processMultiStack() {
     } else { showToast("किमान एक Scheme भरा!", "error"); }
 }
 
-/* अधिक लवचिक Column Finder */
 function findValLocal(row, targets) { 
     let keys = Object.keys(row);
     let exactKey = keys.find(k => targets.includes(k.toUpperCase().replace(/[^A-Z0-9%]/g, ''))); 
@@ -961,7 +608,7 @@ function openSchemeOnlyModal(pIdx) { if (!isLimitValid()) return; document.getEl
 function closeManualModal() { document.getElementById('manualModal').style.display='none'; }
 function openEditSchemeModal(pIdx, dIdx) { let scheme = current_products[pIdx].schemes[dIdx]; document.getElementById('editPIdx').value = pIdx; document.getElementById('editDIdx').value = dIdx; document.getElementById('editTen').value = scheme.tenure || 0; document.getElementById('editAdv').value = scheme.advEmi || 0; document.getElementById('editDbd').value = scheme.dbd || 0; document.getElementById('editPf').value = scheme.pf || 0; document.getElementById('editRoi').value = scheme.roi || 0; document.getElementById('editFixed').value = scheme.fixedEmi || 0; document.getElementById('editSchemeModal').style.display = 'flex'; }
 function closeEditSchemeModal() { document.getElementById('editSchemeModal').style.display = 'none'; }
-function saveSchemeEdit() { let pIdx = parseInt(document.getElementById('editPIdx').value); let dIdx = parseInt(document.getElementById('editDIdx').value); let scheme = current_products[pIdx].schemes[dIdx]; scheme.tenure = parseInt(document.getElementById('editTen').value) || 0; scheme.advEmi = parseInt(document.getElementById('editAdv').value) || 0; scheme.dbd = parseFloat(document.getElementById('editDbd').value) || 0; scheme.pf = parseInt(document.getElementById('editPf').value) || 0; scheme.roi = parseFloat(document.getElementById('editRoi').value) || 0; scheme.fixedEmi = parseFloat(document.getElementById('editFixed').value) || 0; closeEditSchemeModal(); recalcModel(pIdx); saveQueueToLocal(true); }
+function saveSchemeEdit() { let pIdx = parseInt(document.getElementById('editPIdx').value); let dIdx = parseInt(document.getElementById('editDIdx').value); let scheme = current_products[pIdx].schemes[dIdx]; scheme.tenure = parseInt(document.getElementById('editTen').value) || 0; scheme.advEmi = parseInt(document.getElementById('editAdv').value) || 0; scheme.dbd = parseFloat(document.getElementById('editDbd').value) || 0; scheme.pf = parseInt(document.getElementById('editPf').value) || 0; scheme.roi = parseFloat(document.getElementById('editRoi').value) || 0; scheme.fixedEmi = parseFloat(document.getElementById('editFixed').value) || 0; closeEditSchemeModal(); recalcModel(pIdx); saveQueueToLocal(); }
 
 function selectModel(name) { 
     if (!isLimitValid()) return; 
@@ -978,7 +625,11 @@ function selectModel(name) {
 
 function quickNonTieup() { 
     if (!isLimitValid()) return; 
-    if(db_records.length === 0) { showToast("Master डेटा उपलब्ध नाही!", "error"); return; } 
+    if(db_records.length === 0) { 
+        showToast("Master डेटा उपलब्ध नाही! आधी एक्सेल अपलोड करा.", "error"); 
+        document.getElementById('masterExcelFileInput').click();
+        return; 
+    } 
     document.getElementById('addProductModal').style.display = 'none'; 
     let tieup = db_records.filter(r => r.model === SPECIAL_MODEL); 
     let cats = [...new Set(tieup.map(r => r.category))].sort(); 
@@ -1017,7 +668,7 @@ function showComponentsModal(baseMrp = "") {
     document.getElementById('compCap').value = c?.components?.cap || c?.cap || ''; document.getElementById('compTarget').value = c?.components?.target || ''; if (!isMobileCat) { document.getElementById('compExw').value = c?.components?.exw || ''; } document.getElementById('compMargin').value = c?.components?.margin || ''; document.getElementById('compDealer').value = c?.components?.dealer || ''; document.getElementById('componentsModal').style.display = 'flex';
 }
 
-async function proceedToMatrixFromComponents() { let idx = activeCustomerIndex; if(idx === -1) return; if(!customerQueue[idx].components) customerQueue[idx].components = {}; customerQueue[idx].components.mrp = parseFloat(document.getElementById('compMrp').value) || 0; customerQueue[idx].components.inv = parseFloat(document.getElementById('compInv').value) || 0; customerQueue[idx].components.cap = parseFloat(document.getElementById('compCap').value) || 0; customerQueue[idx].components.target = parseFloat(document.getElementById('compTarget').value) || 0; customerQueue[idx].components.gtl = parseFloat(document.getElementById('compGtl').value) || 0; let isMobileCat = isMobileDeviceCat(currentModalCategory); customerQueue[idx].components.rfc = isMobileCat ? (parseFloat(document.getElementById('compRfc').value) || 0) : 0; customerQueue[idx].components.exw = isMobileCat ? 0 : (parseFloat(document.getElementById('compExw').value) || 0); customerQueue[idx].components.margin = parseFloat(document.getElementById('compMargin').value) || 0; customerQueue[idx].components.dealer = parseFloat(document.getElementById('compDealer').value) || 0; let cCap = customerQueue[idx].components.cap; if (cCap > 0 || customerQueue[idx].cap > 0) { customerQueue[idx].cap = cCap > 0 ? cCap : ""; renderCustomerQueue(); updateMatrixTopCard(); } await saveQueueToLocal(true); document.getElementById('componentsModal').style.display = 'none'; if (tempPendingProduct) finalizeProductAddition(); }
+async function proceedToMatrixFromComponents() { let idx = activeCustomerIndex; if(idx === -1) return; if(!customerQueue[idx].components) customerQueue[idx].components = {}; customerQueue[idx].components.mrp = parseFloat(document.getElementById('compMrp').value) || 0; customerQueue[idx].components.inv = parseFloat(document.getElementById('compInv').value) || 0; customerQueue[idx].components.cap = parseFloat(document.getElementById('compCap').value) || 0; customerQueue[idx].components.target = parseFloat(document.getElementById('compTarget').value) || 0; customerQueue[idx].components.gtl = parseFloat(document.getElementById('compGtl').value) || 0; let isMobileCat = isMobileDeviceCat(currentModalCategory); customerQueue[idx].components.rfc = isMobileCat ? (parseFloat(document.getElementById('compRfc').value) || 0) : 0; customerQueue[idx].components.exw = isMobileCat ? 0 : (parseFloat(document.getElementById('compExw').value) || 0); customerQueue[idx].components.margin = parseFloat(document.getElementById('compMargin').value) || 0; customerQueue[idx].components.dealer = parseFloat(document.getElementById('compDealer').value) || 0; let cCap = customerQueue[idx].components.cap; if (cCap > 0 || customerQueue[idx].cap > 0) { customerQueue[idx].cap = cCap > 0 ? cCap : ""; renderCustomerQueue(); updateMatrixTopCard(); } await saveQueueToLocal(); document.getElementById('componentsModal').style.display = 'none'; if (tempPendingProduct) finalizeProductAddition(); }
 
 async function finalizeProductAddition() {
     let raw = tempPendingProduct.isNT ? db_records.filter(r => r.model === SPECIAL_MODEL && r.category === tempPendingProduct.category) : db_records.filter(r => r.model === tempPendingProduct.name); 
@@ -1026,11 +677,11 @@ async function finalizeProductAddition() {
     let uniqueSchemes = []; let seenSchemes = new Set();
     matrixEligible.forEach(s => { let schemeKey = `${s.tenure}_${s.advEmi}_${s.fixedEmi}_${s.minLoan}_${s.maxLoan}`; if (!seenSchemes.has(schemeKey)) { seenSchemes.add(schemeKey); s.inactive = false; uniqueSchemes.push({...s}); } });
     let comp = customerQueue[activeCustomerIndex].components || {}; let finalMrp = comp.mrp || ""; let finalInv = comp.inv || ""; let surch = (finalInv > finalMrp && finalMrp > 0) ? finalInv - finalMrp : 0;
-    current_products.push({ name: tempPendingProduct.name, isNonTieup: tempPendingProduct.isNT, schemes: uniqueSchemes, category: tempPendingProduct.category, inputs: { mrp: finalMrp, inv: finalInv, cap: comp.cap || (customerQueue[activeCustomerIndex]?.cap || ""), target: comp.target || "", gtl: comp.gtl || 0, rfc: comp.rfc || 0, exw: comp.exw || 0, margin: comp.margin || "", dealer: comp.dealer || "", surch: surch, manualLoans: {} }, isManual: false }); sortConfigs.push({ key: 'default_ltv', dir: 'desc' }); customerQueue[activeCustomerIndex].products = current_products; customerQueue[activeCustomerIndex].sortConfigs = sortConfigs; tempPendingProduct = null; await saveQueueToLocal(true); renderMatrix(); 
+    current_products.push({ name: tempPendingProduct.name, isNonTieup: tempPendingProduct.isNT, schemes: uniqueSchemes, category: tempPendingProduct.category, inputs: { mrp: finalMrp, inv: finalInv, cap: comp.cap || (customerQueue[activeCustomerIndex]?.cap || ""), target: comp.target || "", gtl: comp.gtl || 0, rfc: comp.rfc || 0, exw: comp.exw || 0, margin: comp.margin || "", dealer: comp.dealer || "", surch: surch, manualLoans: {} }, isManual: false }); sortConfigs.push({ key: 'default_ltv', dir: 'desc' }); customerQueue[activeCustomerIndex].products = current_products; customerQueue[activeCustomerIndex].sortConfigs = sortConfigs; tempPendingProduct = null; await saveQueueToLocal(); renderMatrix(); 
 }
 
 function updateFinalSwitcher() { let sw = document.getElementById('finalCustomerSwitcher'); if(!sw) return; sw.innerHTML = customerQueue.map((c, i) => `<option value="${i}" ${i === activeCustomerIndex ? 'selected' : ''}>👤 ${c.name} (₹${c.limit})</option>`).join(''); }
-async function switchCustomerFinal(idx) { activeCustomerIndex = parseInt(idx); await saveQueueToLocal(false); goToFinalPage(); }
+async function switchCustomerFinal(idx) { activeCustomerIndex = parseInt(idx); await saveQueueToLocal(); goToFinalPage(); }
 function updateMatrixTopCard() { let c = customerQueue[activeCustomerIndex]; document.getElementById('infoName').innerText = c?.name || "-"; document.getElementById('infoMobile').innerText = c?.mobile || "-"; document.getElementById('infoLimit').innerText = "₹" + (c?.limit || 0); document.getElementById('infoLtv').innerText = (c?.ltv || 100) + "%"; document.getElementById('infoCap').innerText = c?.cap ? "₹" + c.cap : "NONE"; document.getElementById('infoType').innerText = c?.type || 'NEW'; }
 function loadCurrentProducts() { let c = customerQueue[activeCustomerIndex]; current_products = c?.products || []; sortConfigs = c?.sortConfigs || []; }
 
@@ -1103,7 +754,7 @@ function renderMatrix() {
                     <button class="pmp-btn btn-quote" onclick="instantSingleQuote(${pIdx})">QUOTE</button>
                     <button class="pmp-btn btn-settings" onclick="toggleSettingsGrid(${pIdx})">SETTINGS</button>
                     <button class="pmp-btn btn-manual" onclick="openSchemeOnlyModal(${pIdx})">+ MANUAL</button>
-                    <button class="pmp-btn btn-remove" onclick="current_products.splice(${pIdx},1);saveQueueToLocal(true);renderMatrix();">REMOVE</button>
+                    <button class="pmp-btn btn-remove" onclick="current_products.splice(${pIdx},1);saveQueueToLocal();renderMatrix();">REMOVE</button>
                 </div>
 
                 <div class="control-grid" id="cg_${pIdx}" style="display:none;">
@@ -1166,7 +817,7 @@ function updateVal(pIdx, field, val) {
     }
     if(field === 'cap') { if(activeCustomerIndex !== -1 && customerQueue[activeCustomerIndex]) { customerQueue[activeCustomerIndex].cap = v === 0 ? "" : v; let topCap = document.getElementById('infoCap'); if(topCap) topCap.innerText = v > 0 ? "₹" + v : "NONE"; current_products.forEach((cp, idx) => { cp.inputs.cap = v; let capInput = document.getElementById(`capInp_${idx}`); if (capInput && idx !== pIdx) capInput.value = val; }); } }
     if (field === 'mrp' || field === 'inv') { let m = parseFloat(current_products[pIdx].inputs.mrp) || 0; let i = parseFloat(current_products[pIdx].inputs.inv) || 0; current_products[pIdx].inputs.surch = (i > m && m > 0) ? i - m : 0; let surchEl = document.getElementById(`surch_${pIdx}`); if(surchEl) surchEl.value = current_products[pIdx].inputs.surch; if(field === 'mrp' && i === 0) syncInsurance(pIdx, m, m, 'MRP'); if(field === 'inv') syncInsurance(pIdx, m, i > 0 ? i : m, 'INV'); }
-    field === 'cap' ? current_products.forEach((_, idx) => recalcModel(idx)) : recalcModel(pIdx); customerQueue[activeCustomerIndex].products = current_products; saveQueueToLocal(true);
+    field === 'cap' ? current_products.forEach((_, idx) => recalcModel(idx)) : recalcModel(pIdx); customerQueue[activeCustomerIndex].products = current_products; saveQueueToLocal();
 }
 
 function recalcModel(pIdx) {
@@ -1427,7 +1078,7 @@ function manual(pIdx, dIdx) {
     prod.inputs.manualLoans = prod.inputs.manualLoans || {};
     prod.inputs.manualLoans[dIdx] = loan;
     customerQueue[activeCustomerIndex].products = current_products;
-    saveQueueToLocal(true);
+    saveQueueToLocal();
     renderRows(pIdx);
 }
 
@@ -1437,7 +1088,7 @@ function sortM(pIdx, key) {
     else { conf.key = key; conf.dir = key === 'curLTV' ? 'desc' : 'asc'; }
     renderRows(pIdx); 
     customerQueue[activeCustomerIndex].products = current_products; 
-    saveQueueToLocal(true); 
+    saveQueueToLocal(); 
 }
 
 function copySchemeText(pIdx, dIdx, btnElement) {
@@ -1452,7 +1103,7 @@ function fallbackCopy(text, successCb) {
     try { let success = document.execCommand('copy'); if (success) { successCb(); } else { showCustomAlert("Auto-copy blocked:", text); } } catch (err) { showCustomAlert("Auto-copy failed:", text); } document.body.removeChild(ta);
 }
 
-async function toggleInactive(pIdx, dIdx) { let prod = current_products[pIdx]; let scheme = prod.schemes[dIdx]; scheme.inactive = !scheme.inactive; recalcModel(pIdx); customerQueue[activeCustomerIndex].products = current_products; await saveQueueToLocal(true); }
+async function toggleInactive(pIdx, dIdx) { let prod = current_products[pIdx]; let scheme = prod.schemes[dIdx]; scheme.inactive = !scheme.inactive; recalcModel(pIdx); customerQueue[activeCustomerIndex].products = current_products; await saveQueueToLocal(); }
 
 async function executeManualAction() {
     let mode = document.getElementById('targetPIdx').value; 
@@ -1466,11 +1117,11 @@ async function executeManualAction() {
         sortConfigs.push({ key: 'default_ltv', dir: 'desc' }); 
         customerQueue[activeCustomerIndex].products = current_products; 
         customerQueue[activeCustomerIndex].sortConfigs = sortConfigs; 
-        await saveQueueToLocal(true); renderMatrix(); 
+        await saveQueueToLocal(); renderMatrix(); 
     } else { 
         current_products[mode].schemes.push(scheme); 
         customerQueue[activeCustomerIndex].products = current_products;
-        await saveQueueToLocal(true);
+        await saveQueueToLocal();
         recalcModel(parseInt(mode)); 
     } 
     closeManualModal();
@@ -1578,52 +1229,6 @@ function handleCustomerTap(idx) {
     } else {
         selectQueueItem(idx); lastTapTime = currentTime; lastTapIdx = idx;
     }
-}
-
-async function checkForExcelUpdates() {
-    try {
-        let repoUrl = "https://api.github.com/repos/luckyjathar/testcalculator/commits?path=master_data.xlsx&page=1&per_page=1";
-        let res = await fetch(repoUrl);
-        if (res.ok) {
-            let data = await res.json();
-            if (data && data.length > 0) {
-                let latestCommitTime = new Date(data[0].commit.committer.date).getTime();
-                let localSavedTime = await getFromDB('master_data_version_time') || 0;
-                if (localSavedTime > 0 && latestCommitTime > localSavedTime) {
-                    showUpdateNotification();
-                } else if (localSavedTime === 0) {
-                    await saveToDB('master_data_version_time', latestCommitTime);
-                }
-            }
-        }
-    } catch(e) { }
-}
-
-function showUpdateNotification() {
-    let updateDiv = document.getElementById('updateNotificationBar');
-    if (!updateDiv) {
-        updateDiv = document.createElement('div');
-        updateDiv.id = 'updateNotificationBar';
-        updateDiv.innerHTML = `
-            <div style="background: var(--danger); color: white; text-align: center; padding: 10px; font-weight: bold; position: fixed; top: 0; width: 100%; z-index: 9999;">
-                🚀 नवीन स्कीम्स आणि ऑफर्स अपडेट झाल्या आहेत! 
-                <button onclick="forceRefreshMasterData()" style="background: white; color: var(--danger); border: none; padding: 5px 10px; margin-left: 10px; font-weight: bold; border-radius: 4px; cursor: pointer;">
-                    UPDATE NOW
-                </button>
-            </div>
-        `;
-        document.body.prepend(updateDiv);
-    }
-    updateDiv.style.display = 'block';
-}
-
-async function forceRefreshMasterData() {
-    let updateDiv = document.getElementById('updateNotificationBar');
-    if(updateDiv) updateDiv.innerHTML = "डाउनलोड सुरू आहे...";
-    await saveToDB('master_data_time', 0); 
-    await fetchFromMasterStream(true); 
-    if(updateDiv) updateDiv.style.display = 'none';
-    showToast("डेटा यशस्वीरित्या अपडेट झाला!", "success");
 }
 
 function openRowActionModal(pIdx, dIdx, isInactive) {
