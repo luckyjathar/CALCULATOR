@@ -1,4 +1,4 @@
-/* === toast notification function === */
+/* === Toast Notification Function === */
 let toastTimeout;
 function showToast(message, type = 'success') {
     const toast = document.getElementById("toastNotification");
@@ -9,7 +9,7 @@ function showToast(message, type = 'success') {
     toastTimeout = setTimeout(function(){ toast.className = "toast-notification"; }, 3000);
 }
 
-/* === inline sub-panels helper (एका वेळी एकच सब-पॅनेल खाली उघडेल) === */
+/* === Inline Sub-Panels Helper === */
 const INLINE_SUB_PANELS = [
     'addProductModal',
     'catSelectionModal',
@@ -46,7 +46,7 @@ function closeCustomerHistoryModal() {
     document.getElementById('customerHistoryModal').style.display = 'none';
 }
 
-/* === custom confirm function === */
+/* === Custom Confirm Function === */
 function showCustomConfirm(msg, yesCallback, noCallback) {
     let confirmEl = document.getElementById('confirmMessage');
     if (!confirmEl) return;
@@ -63,7 +63,7 @@ function showCustomConfirm(msg, yesCallback, noCallback) {
     document.getElementById('customConfirmModal').style.display = 'flex';
 }
 
-/* === custom alert function for copy fallback === */
+/* === Custom Alert Function For Copy Fallback === */
 function showCustomAlert(msg, text = null) {
     let alertEl = document.getElementById('alertMessage');
     if (!alertEl) return;
@@ -177,12 +177,12 @@ function updateMasterBadgeUI() {
     let badge = document.getElementById('masterDataStatusBadge');
     if (!badge) return;
     if (db_records && db_records.length > 0) {
-        badge.innerHTML = `✅ master ready (${db_records.length} schemes)`;
+        badge.innerHTML = `✅ Master Ready (${db_records.length} Schemes)`;
         badge.style.color = 'var(--success)';
         badge.style.background = 'rgba(39, 174, 96, 0.15)';
         badge.style.borderColor = 'var(--success)';
     } else {
-        badge.innerHTML = `⚠️ no master data`;
+        badge.innerHTML = `⚠️ No Master Data`;
         badge.style.color = 'var(--danger)';
         badge.style.background = 'rgba(214, 48, 49, 0.12)';
         badge.style.borderColor = 'var(--danger)';
@@ -375,7 +375,7 @@ async function addCustomerToQueue() {
     let cap = parseFloat(document.getElementById('cqCap').value) || "";
 
     if(!limit || limit <= 0 || isNaN(limit)) { 
-        showToast("वैध NBFC LIMIT भरा!", "error"); 
+        showToast("वैध NBFC Limit भरा!", "error"); 
         return; 
     }
 
@@ -407,7 +407,7 @@ async function addCustomerToQueue() {
     goToFinalPage();
 }
 
-function copyCustomerDetails(idx, btnElement) { let c = customerQueue[idx]; let cappingLine = (c.cap && c.cap !== "") ? `\nEMI CAPPING- ${c.cap}` : ""; let textToCopy = `CUSTOMER NAME- ${c.name}\nLIMIT- ${c.limit}\nLTV- ${c.ltv}${cappingLine}`; function showSuccess() { let originalText = btnElement.innerText; btnElement.innerText = "COPIED!"; btnElement.style.background = "var(--success)"; setTimeout(() => { btnElement.innerText = originalText; btnElement.style.background = "var(--warning)"; }, 2000); } if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(textToCopy).then(showSuccess).catch(() => fallbackCopy(textToCopy, showSuccess)); } else { fallbackCopy(textToCopy, showSuccess); } }
+function copyCustomerDetails(idx, btnElement) { let c = customerQueue[idx]; let cappingLine = (c.cap && c.cap !== "") ? `\nEMI Capping- ${c.cap}` : ""; let textToCopy = `Customer Name- ${c.name}\nLimit- ${c.limit}\nLTV- ${c.ltv}${cappingLine}`; function showSuccess() { let originalText = btnElement.innerText; btnElement.innerText = "Copied!"; btnElement.style.background = "var(--success)"; setTimeout(() => { btnElement.innerText = originalText; btnElement.style.background = "var(--warning)"; }, 2000); } if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(textToCopy).then(showSuccess).catch(() => fallbackCopy(textToCopy, showSuccess)); } else { fallbackCopy(textToCopy, showSuccess); } }
 function maskName(str) { if (!str || str === "-") return str; return str.split(' ').map(word => { if (word.length <= 2) return word; return word[0] + '*'.repeat(word.length - 2) + word[word.length - 1]; }).join(' '); }
 function selectQueueItem(idx) { selectedQueueIndex = idx; renderCustomerQueue(); updateUniversalActionButtons(); }
 
@@ -428,7 +428,7 @@ function sendWhatsAppInvite() {
     localStorage.setItem('portal_sales_name', sName); 
     if(sMobile) localStorage.setItem('portal_sales_mobile', sMobile); 
     let c = customerQueue[selectedQueueIndex]; 
-    let msg = `Namaskar ${c.name} sir/madam! 🎉\n\nAapki Bajaj Finance ki *₹${c.limit}* ki limit approve ho gayi hai!\n\n👤 *${sName}*${sMobile ? `\n📞 ${sMobile}` : ''}`; 
+    let msg = `Namaskar ${c.name} Sir/Madam! 🎉\n\nAapki Bajaj Finance Ki *₹${c.limit}* Ki Limit Approve Ho Gayi Hai!\n\n👤 *${sName}*${sMobile ? `\n📞 ${sMobile}` : ''}`; 
     let encMsg = encodeURIComponent(msg); 
     let url = (c.mobile && c.mobile.length === 10) ? `https://wa.me/91${c.mobile}?text=${encMsg}` : `https://api.whatsapp.com/send?text=${encMsg}`;
     window.open(url, '_blank'); 
@@ -440,12 +440,12 @@ async function saveCustomerEdit() { if(selectedQueueIndex === -1) return; let c 
 async function uniDelete() { if(selectedQueueIndex !== -1) await removeCustomer(selectedQueueIndex); }
 async function removeCustomer(idx) { let c = customerQueue[idx]; recycleBin.push(c); await saveToDB('persistent_recycle', recycleBin); localStorage.setItem('persistent_recycle_backup', JSON.stringify(recycleBin)); if(activeCustomerIndex === idx) activeCustomerIndex = -1; else if (activeCustomerIndex > idx) activeCustomerIndex--; customerQueue.splice(idx, 1); if (selectedQueueIndex === idx) selectedQueueIndex = -1; else if (selectedQueueIndex > idx) selectedQueueIndex--; if(customerQueue.length > 0 && activeCustomerIndex === -1) activeCustomerIndex = 0; await saveQueueToLocal(); renderCustomerQueue(); updateUniversalActionButtons(); if(activeCustomerIndex === -1) goHome(); else goToFinalPage(); }
 
-function openRecycleBin() { let list = document.getElementById('recycleBinList'); if(recycleBin.length === 0) { list.innerHTML = `<div style="text-align:center; color:#888;">Recycle Bin empty</div>`; } else { list.innerHTML = recycleBin.map((c, i) => ` <div style="display:flex; justify-content:space-between; align-items:center; background:#fff; padding:8px; border-radius:4px; border:1px solid #ddd;"> <div style="font-size:12px; color:var(--dark); font-weight:bold;"> 👤 ${c.name} <br><span style="color:var(--success);">LMT: ₹${c.limit}</span> </div> <button onclick="restoreCustomer(${i})" style="background:var(--primary); color:white; padding:6px; border-radius:3px;">↩️ RESTORE</button> </div> `).join(''); } document.getElementById('recycleBinModal').style.display='flex'; }
+function openRecycleBin() { let list = document.getElementById('recycleBinList'); if(recycleBin.length === 0) { list.innerHTML = `<div style="text-align:center; color:#888;">Recycle Bin Empty</div>`; } else { list.innerHTML = recycleBin.map((c, i) => ` <div style="display:flex; justify-content:space-between; align-items:center; background:#fff; padding:8px; border-radius:4px; border:1px solid #ddd;"> <div style="font-size:12px; color:var(--dark); font-weight:bold;"> 👤 ${c.name} <br><span style="color:var(--success);">LMT: ₹${c.limit}</span> </div> <button onclick="restoreCustomer(${i})" style="background:var(--primary); color:white; padding:6px; border-radius:3px;">↩️ Restore</button> </div> `).join(''); } document.getElementById('recycleBinModal').style.display='flex'; }
 function closeRecycleBin() { document.getElementById('recycleBinModal').style.display='none'; }
 async function restoreCustomer(idx) { let c = recycleBin.splice(idx, 1)[0]; customerQueue.unshift(c); if(activeCustomerIndex !== -1) activeCustomerIndex++; if(selectedQueueIndex !== -1) selectedQueueIndex++; await saveToDB('persistent_recycle', recycleBin); localStorage.setItem('persistent_recycle_backup', JSON.stringify(recycleBin)); await saveQueueToLocal(); openRecycleBin(); renderCustomerQueue(); updateUniversalActionButtons(); }
 
 async function emptyRecycleBin() {
-    if(recycleBin.length === 0) { showToast("Recycle bin आधीच रिकामी आहे!", "warning"); return; }
+    if(recycleBin.length === 0) { showToast("Recycle Bin आधीच रिकामी आहे!", "warning"); return; }
     showCustomConfirm("सर्व रेकॉर्ड्स डिलीट करायचे?", async () => { recycleBin = []; await saveToDB('persistent_recycle', recycleBin); localStorage.setItem('persistent_recycle_backup', JSON.stringify(recycleBin)); openRecycleBin(); showToast("Recycle Bin रिकामी झाली!", "success"); });
 }
 
@@ -463,7 +463,7 @@ function renderCustomerQueue() {
     }); 
 
     if(filtered.length === 0) { 
-        list.innerHTML = `<div style="text-align:center; color:#888; padding:15px;">No saved customers found.</div>`; 
+        list.innerHTML = `<div style="text-align:center; color:#888; padding:15px;">No Saved Customers Found.</div>`; 
         return; 
     } 
 
@@ -477,11 +477,11 @@ function renderCustomerQueue() {
 
         return ` <div onclick="handleCustomerTap(${idx})" style="cursor:pointer; display:flex; flex-direction:column; background:${bgStyle}; padding:8px; border-radius:4px; border:1px solid ${borderStyle}; transition:0.2s;"> 
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;"> 
-                <strong style="color:var(--indigo);">👤 ${displayName} ${c.mobile ? `<span style="color:#d35400;">(📞 ${c.mobile})</span>` : ''}</strong> 
+                <strong style="color:var(--indigo); text-transform:capitalize;">👤 ${displayName} ${c.mobile ? `<span style="color:#d35400;">(📞 ${c.mobile})</span>` : ''}</strong> 
                 <span style="color:#888; font-weight:bold; font-size:11px;">${c.timestamp || ''}</span> 
             </div> 
             <div style="color:#555; font-weight:bold; font-size:12px;"> 
-                LMT: <span style="color:var(--success)">₹${c.limit}</span> | LTV: ${c.ltv}% | CAP: ${c.cap ? '₹'+c.cap : 'NO'} | ${c.type} ${isActive ? '<span style="float:right; color:var(--primary);">[ACTIVE ✓]</span>' : ''} 
+                LMT: <span style="color:var(--success)">₹${c.limit}</span> | LTV: ${c.ltv}% | Cap: ${c.cap ? '₹'+c.cap : 'No'} | ${c.type} ${isActive ? '<span style="float:right; color:var(--primary);">[Active ✓]</span>' : ''} 
             </div> 
         </div>`; 
     }).join(''); 
@@ -508,7 +508,7 @@ function isLimitValid() {
     return true; 
 }
 
-function generateStackCards() { let container = document.getElementById('stackInputsContainer'); if(!container) return; container.innerHTML = ""; for(let i=1; i<=10; i++) { container.innerHTML += ` <div class="stack-card"><div style="font-weight:900; color:var(--primary); margin-bottom:4px; border-bottom:1px solid #eee; padding-bottom:2px;">SCHEME #${i}</div> <div class="inner-grid"> <div><label>TENURE (MAX)</label><input type="number" id="msTen_${i}" placeholder="0"></div> <div><label>ADVANCE</label><input type="number" id="msAdv_${i}" placeholder="0"></div> <div><label>DBD %</label><input type="number" id="msDbd_${i}" placeholder="0"></div> <div><label>PF (₹)</label><input type="number" id="msPf_${i}" placeholder="0"></div> <div><label>ROI %</label><input type="number" id="msRoi_${i}" placeholder="0"></div> <div><label>FIXED EMI (₹)</label><input type="number" id="msFix_${i}" placeholder="0"></div> </div> </div>`; } }
+function generateStackCards() { let container = document.getElementById('stackInputsContainer'); if(!container) return; container.innerHTML = ""; for(let i=1; i<=10; i++) { container.innerHTML += ` <div class="stack-card"><div style="font-weight:900; color:var(--primary); margin-bottom:4px; border-bottom:1px solid #eee; padding-bottom:2px;">Scheme #${i}</div> <div class="inner-grid"> <div><label>Tenure (Max)</label><input type="number" id="msTen_${i}" placeholder="0"></div> <div><label>Advance</label><input type="number" id="msAdv_${i}" placeholder="0"></div> <div><label>DBD %</label><input type="number" id="msDbd_${i}" placeholder="0"></div> <div><label>PF (₹)</label><input type="number" id="msPf_${i}" placeholder="0"></div> <div><label>ROI %</label><input type="number" id="msRoi_${i}" placeholder="0"></div> <div><label>Fixed EMI (₹)</label><input type="number" id="msFix_${i}" placeholder="0"></div> </div> </div>`; } }
 
 function openMultiStackModal() { 
     if (!isLimitValid()) return; 
@@ -664,14 +664,14 @@ function quickNonTieup() {
     let tieup = db_records.filter(r => r.model === SPECIAL_MODEL); 
     let cats = [...new Set(tieup.map(r => r.category))].sort(); 
     document.getElementById('categoryGrid').innerHTML = cats.map(c => { 
-        let label = (c === 'PHONE(WEB-MOBILE)') ? 'PHONE, TABLET, SMART WATCH' : c; 
-        return `<div style="background:var(--indigo);color:white;padding:12px;border-radius:4px;cursor:pointer;font-weight:900;text-align:center;" onclick="selectCategory('${c}')">${label}</div>`; 
+        let label = (c === 'PHONE(WEB-MOBILE)') ? 'Phone, Tablet, Smart Watch' : c; 
+        return `<div style="background:var(--indigo);color:white;padding:12px;border-radius:4px;cursor:pointer;font-weight:900;text-align:center;text-transform:capitalize;" onclick="selectCategory('${c}')">${label}</div>`; 
     }).join(''); 
     showInlineSubPanel('catSelectionModal');
 }
 
 function selectCategory(catName) { 
-    let displayName = (catName === 'PHONE(WEB-MOBILE)') ? 'PHONE / TABLET / SMART WATCH' : catName; 
+    let displayName = (catName === 'PHONE(WEB-MOBILE)') ? 'Phone / Tablet / Smart Watch' : catName; 
     let fullName = SPECIAL_MODEL + " - " + displayName;
     tempPendingProduct = { name: fullName, isNT: true, category: catName }; 
     currentModalCategory = catName; 
@@ -745,10 +745,9 @@ async function finalizeProductAddition() {
 
 function updateFinalSwitcher() { let sw = document.getElementById('finalCustomerSwitcher'); if(!sw) return; sw.innerHTML = customerQueue.map((c, i) => `<option value="${i}" ${i === activeCustomerIndex ? 'selected' : ''}>👤 ${c.name} (₹${c.limit})</option>`).join(''); }
 async function switchCustomerFinal(idx) { activeCustomerIndex = parseInt(idx); await saveQueueToLocal(); goToFinalPage(); }
-function updateMatrixTopCard() { let c = customerQueue[activeCustomerIndex]; document.getElementById('infoName').innerText = c?.name || "-"; document.getElementById('infoMobile').innerText = c?.mobile || "-"; document.getElementById('infoLimit').innerText = "₹" + (c?.limit || 0); document.getElementById('infoLtv').innerText = (c?.ltv || 100) + "%"; document.getElementById('infoCap').innerText = c?.cap ? "₹" + c.cap : "NONE"; document.getElementById('infoType').innerText = c?.type || 'NEW'; }
+function updateMatrixTopCard() { let c = customerQueue[activeCustomerIndex]; document.getElementById('infoName').innerText = c?.name || "-"; document.getElementById('infoMobile').innerText = c?.mobile || "-"; document.getElementById('infoLimit').innerText = "₹" + (c?.limit || 0); document.getElementById('infoLtv').innerText = (c?.ltv || 100) + "%"; document.getElementById('infoCap').innerText = c?.cap ? "₹" + c.cap : "None"; document.getElementById('infoType').innerText = c?.type || 'NEW'; }
 function loadCurrentProducts() { let c = customerQueue[activeCustomerIndex]; current_products = c?.products || []; sortConfigs = c?.sortConfigs || []; }
 
-/* कस्टमर सिलेक्ट केल्यावर unifiedHome न लपवता त्याच्या खालीच finalEligibleArea उघडतो */
 function goToFinalPage() {
     if(activeCustomerIndex === -1 || !customerQueue[activeCustomerIndex]) return; 
     loadCurrentProducts(); 
@@ -808,11 +807,11 @@ function renderMatrix() {
                         <input type="number" id="mrp_${pIdx}" value="${prod.inputs.mrp}" oninput="updateVal(${pIdx},'mrp',this.value)">
                     </div>
                     <div class="pmp-input-group">
-                        <label>INV:</label>
+                        <label>Inv:</label>
                         <input type="number" id="inv_${pIdx}" value="${prod.inputs.inv}" oninput="updateVal(${pIdx},'inv',this.value)">
                     </div>
                     <div class="pmp-input-group readonly-group">
-                        <label>VAR:</label>
+                        <label>Var:</label>
                         <input type="number" id="surch_${pIdx}" value="${prod.inputs.surch}" readonly>
                     </div>
                 </div>
@@ -820,20 +819,20 @@ function renderMatrix() {
 
             <div id="tw_${pIdx}" style="display:${displayStyle};">
                 <div class="pmp-toolbar">
-                    <button class="pmp-btn btn-quote" onclick="instantSingleQuote(${pIdx})">QUOTE</button>
-                    <button class="pmp-btn btn-settings" onclick="toggleSettingsGrid(${pIdx})">SETTINGS</button>
-                    <button class="pmp-btn btn-manual" onclick="openSchemeOnlyModal(${pIdx})">+ MANUAL</button>
-                    <button class="pmp-btn btn-remove" onclick="current_products.splice(${pIdx},1);saveQueueToLocal();renderMatrix();">REMOVE</button>
+                    <button class="pmp-btn btn-quote" onclick="instantSingleQuote(${pIdx})">Quote</button>
+                    <button class="pmp-btn btn-settings" onclick="toggleSettingsGrid(${pIdx})">Settings</button>
+                    <button class="pmp-btn btn-manual" onclick="openSchemeOnlyModal(${pIdx})">+ Manual</button>
+                    <button class="pmp-btn btn-remove" onclick="current_products.splice(${pIdx},1);saveQueueToLocal();renderMatrix();">Remove</button>
                 </div>
 
                 <div class="control-grid" id="cg_${pIdx}" style="display:none;">
-                    <div><label>EMI CAPPING</label><input type="number" id="capInp_${pIdx}" value="${prod.inputs.cap}" placeholder="MAX" oninput="updateVal(${pIdx},'cap',this.value)"></div>
-                    <div><label>TARGET DP</label><input type="number" value="${prod.inputs.target}" placeholder="0" oninput="updateVal(${pIdx},'target',this.value)"></div>
+                    <div><label>EMI Capping</label><input type="number" id="capInp_${pIdx}" value="${prod.inputs.cap}" placeholder="Max" oninput="updateVal(${pIdx},'cap',this.value)"></div>
+                    <div><label>Target DP</label><input type="number" value="${prod.inputs.target}" placeholder="0" oninput="updateVal(${pIdx},'target',this.value)"></div>
                     <div><label>GTL</label><select id="gtl_${pIdx}" onchange="updateVal(${pIdx},'gtl',this.value)"><option value="0" ${prod.inputs.gtl == 0 ? 'selected' : ''}>0</option><option value="699" ${prod.inputs.gtl == 699 ? 'selected' : ''}>699</option><option value="1099" ${prod.inputs.gtl == 1099 ? 'selected' : ''}>1099</option><option value="1199" ${prod.inputs.gtl == 1199 ? 'selected' : ''}>1199</option><option value="1499" ${prod.inputs.gtl == 1499 ? 'selected' : ''}>1499</option><option value="1799" ${prod.inputs.gtl == 1799 ? 'selected' : ''}>1799</option><option value="2398" ${prod.inputs.gtl == 2398 ? 'selected' : ''}>2398</option></select></div>
                     <div><label>RFC</label><select id="rfc_${pIdx}" onchange="updateVal(${pIdx},'rfc',this.value)" ${isPhoneWebMobile ? '' : 'disabled style="background:#e9ecef; cursor:not-allowed;"'}><option value="0">0</option>${isPhoneWebMobile ? `<option id="rfc_opt_${pIdx}" value="${rfcSlab}" ${prod.inputs.rfc > 0 ? 'selected' : ''}>${rfcSlab}</option>` : ''}</select></div>
                     <div><label>EXW</label><input type="number" id="exw_${pIdx}" value="${prod.inputs.exw}" placeholder="0" oninput="updateVal(${pIdx},'exw',this.value)" ${isPhoneWebMobile ? 'disabled style="background:#e9ecef; cursor:not-allowed;"' : 'style="background:#fff;"'}></div>
-                    <div><label>MARGIN</label><input type="number" value="${prod.inputs.margin}" placeholder="0" oninput="updateVal(${pIdx},'margin',this.value)"></div>
-                    <div><label>DEALER</label><input type="number" value="${prod.inputs.dealer}" placeholder="0" oninput="updateVal(${pIdx},'dealer',this.value)"></div>
+                    <div><label>Margin</label><input type="number" value="${prod.inputs.margin}" placeholder="0" oninput="updateVal(${pIdx},'margin',this.value)"></div>
+                    <div><label>Dealer</label><input type="number" value="${prod.inputs.dealer}" placeholder="0" oninput="updateVal(${pIdx},'dealer',this.value)"></div>
                 </div>
 
                 <div class="table-wrapper pmp-table-wrapper">
@@ -841,12 +840,12 @@ function renderMatrix() {
                         <thead style="background: #f1f5f9; color: #475569; border-bottom: 2px solid #cbd5e1;">
                             <tr style="font-size: 11px; font-weight: 900; letter-spacing: 0.5px; text-align:center;">
                                 <th style="padding: 10px 4px; width: 12%;">T/A</th>
-                                <th style="padding: 10px 4px; width: 18%;">LOAN</th>
-                                <th style="padding: 10px 4px; width: 18%;">NET DP</th>
+                                <th style="padding: 10px 4px; width: 18%;">Loan</th>
+                                <th style="padding: 10px 4px; width: 18%;">Net DP</th>
                                 <th style="padding: 10px 4px; width: 16%;">EMI</th>
                                 <th style="padding: 10px 4px; width: 10%;">M</th>
-                                <th style="padding: 10px 4px; width: 14%;">DAILY</th>
-                                <th style="padding: 10px 4px; width: 12%;">ACT</th>
+                                <th style="padding: 10px 4px; width: 14%;">Daily</th>
+                                <th style="padding: 10px 4px; width: 12%;">Act</th>
                             </tr>
                         </thead>
                         <tbody id="body_${pIdx}"></tbody>
@@ -884,7 +883,7 @@ function updateVal(pIdx, field, val) {
     if (field === 'mrp' || field === 'inv' || field === 'target' || field === 'cap') {
         current_products[pIdx].inputs.manualLoans = {};
     }
-    if(field === 'cap') { if(activeCustomerIndex !== -1 && customerQueue[activeCustomerIndex]) { customerQueue[activeCustomerIndex].cap = v === 0 ? "" : v; let topCap = document.getElementById('infoCap'); if(topCap) topCap.innerText = v > 0 ? "₹" + v : "NONE"; current_products.forEach((cp, idx) => { cp.inputs.cap = v; let capInput = document.getElementById(`capInp_${idx}`); if (capInput && idx !== pIdx) capInput.value = val; }); } }
+    if(field === 'cap') { if(activeCustomerIndex !== -1 && customerQueue[activeCustomerIndex]) { customerQueue[activeCustomerIndex].cap = v === 0 ? "" : v; let topCap = document.getElementById('infoCap'); if(topCap) topCap.innerText = v > 0 ? "₹" + v : "None"; current_products.forEach((cp, idx) => { cp.inputs.cap = v; let capInput = document.getElementById(`capInp_${idx}`); if (capInput && idx !== pIdx) capInput.value = val; }); } }
     if (field === 'mrp' || field === 'inv') { let m = parseFloat(current_products[pIdx].inputs.mrp) || 0; let i = parseFloat(current_products[pIdx].inputs.inv) || 0; current_products[pIdx].inputs.surch = (i > m && m > 0) ? i - m : 0; let surchEl = document.getElementById(`surch_${pIdx}`); if(surchEl) surchEl.value = current_products[pIdx].inputs.surch; if(field === 'mrp' && i === 0) syncInsurance(pIdx, m, m, 'MRP'); if(field === 'inv') syncInsurance(pIdx, m, i > 0 ? i : m, 'INV'); }
     field === 'cap' ? current_products.forEach((_, idx) => recalcModel(idx)) : recalcModel(pIdx); customerQueue[activeCustomerIndex].products = current_products; saveQueueToLocal();
 }
@@ -1043,19 +1042,19 @@ function renderRows(pIdx) {
 
     document.getElementById(`body_${pIdx}`).innerHTML = visibleSchemes.map(d => {
         let isInactive = d.inactive; 
-        let actionMenuBtnHtml = `<button onclick="openRowActionModal(${pIdx}, ${d.dIdx}, ${isInactive})" style="background:var(--primary); color:white; border:none; padding:6px 12px; border-radius:6px; font-weight:900; cursor:pointer; font-size: 11px;">ACT</button>`;
+        let actionMenuBtnHtml = `<button onclick="openRowActionModal(${pIdx}, ${d.dIdx}, ${isInactive})" style="background:var(--primary); color:white; border:none; padding:6px 12px; border-radius:6px; font-weight:900; cursor:pointer; font-size: 11px;">Act</button>`;
         let bgCol = isInactive ? '#f8f9fa' : (d.isExpired ? '#fff4e6' : '#ffffff');
         let textOpacity = isInactive ? '0.5' : '1';
         let subRowBg = isInactive ? '#f8f9fa' : '#f8fafc';
         let dbdStr = `${+parseFloat(d.dbd).toFixed(3)}% (₹${Math.round(d.dbdAmt||0)})`;
         let roiStr = `${+parseFloat(d.roi).toFixed(2)}% (₹${Math.round(d.roiAmt||0)})`;
-        let limitStr = isNT ? `MIN:₹${d.minLoan} MAX:${d.maxLoan < 9999999 ? d.maxLoan : 'NO'}` : `LMT:₹${Math.floor(d.nbfcMaxL)}`;
+        let limitStr = isNT ? `Min:₹${d.minLoan} Max:${d.maxLoan < 9999999 ? d.maxLoan : 'No'}` : `Lmt:₹${Math.floor(d.nbfcMaxL)}`;
 
         return `
         <tr id="row_${pIdx}_${d.dIdx}" style="background: ${bgCol}; opacity: ${textOpacity};">
             <td style="padding: 12px 4px; text-align: center; vertical-align: middle;">
                 <div style="font-size: 15px; font-weight: 900; color: var(--indigo);"><span id="ta_${pIdx}_${d.dIdx}">${d.currentTenure}/${d.advEmi}</span></div>
-                ${d.isExpired && !isInactive ? `<div style="color:#d35400; font-size:9px; font-weight:900;">⚠️ EXPIRED</div>` : ''}
+                ${d.isExpired && !isInactive ? `<div style="color:#d35400; font-size:9px; font-weight:900;">⚠️ Expired</div>` : ''}
             </td>
             <td style="padding:12px 4px; text-align:center; vertical-align:middle; white-space:nowrap;">
                 <div style="display:inline-flex; justify-content:center; align-items:center; background: #e0f2fe; padding: 2px 6px; border-radius: 4px; border: 1px solid #bae6fd;">
@@ -1076,10 +1075,10 @@ function renderRows(pIdx) {
                     <span><b style="color:var(--bajaj-blue);">PF:</b> ₹<span id="pf_${pIdx}_${d.dIdx}">${d.pf}</span></span>
                     <span><b style="color:var(--bajaj-blue);">DBD:</b> <span id="dbd_${pIdx}_${d.dIdx}">${dbdStr}</span></span>
                     <span><b style="color:var(--bajaj-blue);">ROI:</b> <span id="roi_${pIdx}_${d.dIdx}">${roiStr}</span></span>
-                    <span><b style="color:var(--success);">NET DISB:</b> <span id="nd_${pIdx}_${d.dIdx}">₹${Math.round(d.netDisb).toLocaleString()}</span></span>
-                    ${d.fixedEmi > 0 ? `<span><b style="color:var(--bajaj-blue);">FIXED:</b> ₹${d.fixedEmi}</span>` : ''}
+                    <span><b style="color:var(--success);">Net Disb:</b> <span id="nd_${pIdx}_${d.dIdx}">₹${Math.round(d.netDisb).toLocaleString()}</span></span>
+                    ${d.fixedEmi > 0 ? `<span><b style="color:var(--bajaj-blue);">Fixed:</b> ₹${d.fixedEmi}</span>` : ''}
                     <span><b style="color:#8b5cf6;">${limitStr}</b></span>
-                    <span id="extra_${pIdx}_${d.dIdx}" onclick="sortM(${pIdx}, 'extra')" style="cursor:pointer; background:#fee2e2; color:#b91c1c; padding:3px 8px; border-radius:4px; font-weight:900; margin-left:auto;">EXTRA: ₹${Math.round(d.extra).toLocaleString()} ↕</span>
+                    <span id="extra_${pIdx}_${d.dIdx}" onclick="sortM(${pIdx}, 'extra')" style="cursor:pointer; background:#fee2e2; color:#b91c1c; padding:3px 8px; border-radius:4px; font-weight:900; margin-left:auto;">Extra: ₹${Math.round(d.extra).toLocaleString()} ↕</span>
                 </div>
             </td>
         </tr>
@@ -1161,15 +1160,15 @@ function sortM(pIdx, key) {
 }
 
 function copySchemeText(pIdx, dIdx, btnElement) {
-    let prod = current_products[pIdx], d = prod.calculatedData.find(x => x.dIdx === dIdx); let invAmt = prod.inputs.inv > 0 ? prod.inputs.inv : prod.inputs.mrp; let c = customerQueue[activeCustomerIndex]; let cappingLine = (c.cap && c.cap !== "") ? `\nEMI CAPPING- ${c.cap}` : ""; let custDetails = `Customer Name- ${c.name}\nLimit- ${c.limit}\nLTV- ${c.ltv}${cappingLine}\n\n`;
-    let textToCopy = `${custDetails}📱 *${prod.name}*\n${invAmt > 0 ? `*INVOICE AMOUNT:* ₹${invAmt}\n\n` : "" }✅ *Scheme:* ${d.currentTenure}/${d.advEmi}\n💰 *DP:* ₹${Math.round(d.dp).toLocaleString()}\n🗓️ *EMI:* ₹${Math.round(d.emi).toLocaleString()} x ${d.inst}\n✨ *Daily EMI:* ₹${Math.round(d.daily).toLocaleString()}`;
-    function showSuccess() { let originalText = btnElement.innerText; btnElement.innerText = "COPIED!"; btnElement.style.background = "var(--success)"; setTimeout(() => { btnElement.innerText = originalText; btnElement.style.background = "var(--primary)"; }, 2000); }
+    let prod = current_products[pIdx], d = prod.calculatedData.find(x => x.dIdx === dIdx); let invAmt = prod.inputs.inv > 0 ? prod.inputs.inv : prod.inputs.mrp; let c = customerQueue[activeCustomerIndex]; let cappingLine = (c.cap && c.cap !== "") ? `\nEMI Capping- ${c.cap}` : ""; let custDetails = `Customer Name- ${c.name}\nLimit- ${c.limit}\nLTV- ${c.ltv}${cappingLine}\n\n`;
+    let textToCopy = `${custDetails}📱 *${prod.name}*\n${invAmt > 0 ? `*Invoice Amount:* ₹${invAmt}\n\n` : "" }✅ *Scheme:* ${d.currentTenure}/${d.advEmi}\n💰 *DP:* ₹${Math.round(d.dp).toLocaleString()}\n🗓️ *EMI:* ₹${Math.round(d.emi).toLocaleString()} x ${d.inst}\n✨ *Daily EMI:* ₹${Math.round(d.daily).toLocaleString()}`;
+    function showSuccess() { let originalText = btnElement.innerText; btnElement.innerText = "Copied!"; btnElement.style.background = "var(--success)"; setTimeout(() => { btnElement.innerText = originalText; btnElement.style.background = "var(--primary)"; }, 2000); }
     if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(textToCopy).then(showSuccess).catch(() => fallbackCopy(textToCopy, showSuccess)); } else { fallbackCopy(textToCopy, showSuccess); }
 }
 
 function fallbackCopy(text, successCb) {
     let ta = document.createElement("textarea"); ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = "absolute"; ta.style.left = "-9999px"; document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, 99999); 
-    try { let success = document.execCommand('copy'); if (success) { successCb(); } else { showCustomAlert("Auto-copy blocked:", text); } } catch (err) { showCustomAlert("Auto-copy failed:", text); } document.body.removeChild(ta);
+    try { let success = document.execCommand('copy'); if (success) { successCb(); } else { showCustomAlert("Auto-Copy Blocked:", text); } } catch (err) { showCustomAlert("Auto-Copy Failed:", text); } document.body.removeChild(ta);
 }
 
 async function toggleInactive(pIdx, dIdx) { let prod = current_products[pIdx]; let scheme = prod.schemes[dIdx]; scheme.inactive = !scheme.inactive; recalcModel(pIdx); customerQueue[activeCustomerIndex].products = current_products; await saveQueueToLocal(); }
@@ -1197,7 +1196,7 @@ async function executeManualAction() {
 }
 
 function openQuoteSelectionModal() {
-    if(current_products.length === 0) { showToast("आधी matrix मध्ये product add करा!", "warning"); return; }
+    if(current_products.length === 0) { showToast("आधी Matrix मध्ये Product Add करा!", "warning"); return; }
     let html = current_products.map((p, idx) => ` <div style="display:flex; align-items:center; gap:8px; padding:8px; background:#f8f9fa; border:1px solid #ddd; border-radius:4px;"> <input type="checkbox" id="qchk_${idx}" class="quote-model-chk" value="${idx}" style="width:16px; height:16px; cursor:pointer;"> <label for="qchk_${idx}" style="font-size:14px; font-weight:bold; cursor:pointer; flex:1; margin:0;">${p.name}</label> </div> `).join('');
     document.getElementById('quoteModelCheckboxes').innerHTML = html; document.getElementById('quoteSelectionModal').style.display = 'flex';
 }
@@ -1229,11 +1228,11 @@ function doGenerateCustomerImage() {
     let html = `
     <div style="background: #ffffff; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); overflow: hidden; border: 1px solid #e2e8f0;">
         <div style="background: linear-gradient(180deg, #095797 0%, #153e75 100%); padding: 20px 16px; color: #ffffff; text-align: center;">
-            <h2 style="margin: 0 0 10px 0; font-size: 26px; font-weight: 900;">🎉 SPECIAL LOAN OFFERS</h2> 
+            <h2 style="margin: 0 0 10px 0; font-size: 26px; font-weight: 900;">🎉 Special Loan Offers</h2> 
             <div style="display: flex; gap: 14px; font-size: 15px; font-weight: 900; justify-content: center; background: rgba(255,255,255,0.1); padding: 8px; border-radius: 8px;">
                 <span>👤 ${custName}</span>
-                <span>| LIMIT: ₹${c?.limit ? c.limit.toLocaleString() : 0}</span>
-                <span>| MAX LTV: ${ltvLimit}%</span>
+                <span>| Limit: ₹${c?.limit ? c.limit.toLocaleString() : 0}</span>
+                <span>| Max LTV: ${ltvLimit}%</span>
                 <span>| ${c?.type || 'NEW'}</span>
             </div>
         </div>
@@ -1253,11 +1252,11 @@ function doGenerateCustomerImage() {
             <div style="border-left: 10px solid #034887; background: #ffffff; margin-bottom: 16px; border: 1px solid #cbd5e1;">
                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-bottom: 2px solid #e2e8f0;">
                     <div style="font-size: 20px; font-weight: 900; color: #034887;">📱 ${prod.name.toUpperCase()}</div>
-                    <div style="background: #034887; color: #fff; padding: 6px 14px; border-radius: 6px; font-weight: 900;">INV: ₹${invAmt.toLocaleString()}</div>
+                    <div style="background: #034887; color: #fff; padding: 6px 14px; border-radius: 6px; font-weight: 900;">Inv: ₹${invAmt.toLocaleString()}</div>
                 </div>
                 <table style="width: 100%; border-collapse: collapse; text-align: center;">
                     <thead style="background: #f8fafc; border-bottom: 2px solid #cbd5e1; font-size: 14px;">
-                        <tr><th style="padding:10px;">SCHEME</th><th style="padding:10px;">DP</th><th style="padding:10px;">EMI</th><th style="padding:10px;">MONTHS</th><th style="padding:10px;">DAILY</th></tr>
+                        <tr><th style="padding:10px;">Scheme</th><th style="padding:10px;">DP</th><th style="padding:10px;">EMI</th><th style="padding:10px;">Months</th><th style="padding:10px;">Daily</th></tr>
                     </thead>
                     <tbody>
         `;
@@ -1303,9 +1302,9 @@ function handleCustomerTap(idx) {
 function openRowActionModal(pIdx, dIdx, isInactive) {
     let container = document.getElementById('rowActionButtons');
     container.innerHTML = `
-        <button onclick="copySchemeText(${pIdx}, ${dIdx}, this); closeRowActionModal();" style="background:#f8fafc; color:var(--dark); border:1px solid #cbd5e1; padding:14px; border-radius:8px; font-weight:900; font-size:14px; width:100%;">COPY SCHEME</button>
-        <button onclick="openEditSchemeModal(${pIdx}, ${dIdx}); closeRowActionModal();" style="background:#fff7ed; color:#d97706; border:1px solid #fed7aa; padding:14px; border-radius:8px; font-weight:900; font-size:14px; width:100%;">EDIT SCHEME</button>
-        <button onclick="toggleInactive(${pIdx}, ${dIdx}); closeRowActionModal();" style="background:${isInactive ? '#ecfdf5' : '#fef2f2'}; color:${isInactive ? '#059669' : '#dc2626'}; border:1px solid ${isInactive ? '#a7f3d0' : '#fecaca'}; padding:14px; border-radius:8px; font-weight:900; font-size:14px; width:100%;">${isInactive ? 'ADD TO ACTIVE' : 'DISABLE SCHEME'}</button>
+        <button onclick="copySchemeText(${pIdx}, ${dIdx}, this); closeRowActionModal();" style="background:#f8fafc; color:var(--dark); border:1px solid #cbd5e1; padding:14px; border-radius:8px; font-weight:900; font-size:14px; width:100%;">Copy Scheme</button>
+        <button onclick="openEditSchemeModal(${pIdx}, ${dIdx}); closeRowActionModal();" style="background:#fff7ed; color:#d97706; border:1px solid #fed7aa; padding:14px; border-radius:8px; font-weight:900; font-size:14px; width:100%;">Edit Scheme</button>
+        <button onclick="toggleInactive(${pIdx}, ${dIdx}); closeRowActionModal();" style="background:${isInactive ? '#ecfdf5' : '#fef2f2'}; color:${isInactive ? '#059669' : '#dc2626'}; border:1px solid ${isInactive ? '#a7f3d0' : '#fecaca'}; padding:14px; border-radius:8px; font-weight:900; font-size:14px; width:100%;">${isInactive ? 'Add To Active' : 'Disable Scheme'}</button>
     `;
     document.getElementById('rowActionModal').style.display = 'flex';
 }
