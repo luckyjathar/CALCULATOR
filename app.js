@@ -9,21 +9,41 @@ function showToast(message, type = 'success') {
     toastTimeout = setTimeout(function(){ toast.className = "toast-notification"; }, 3000);
 }
 
-/* === single-view navigation helper === */
-const INLINE_VIEW_IDS = [
-    'unifiedHome',
-    'finalEligibleArea'
+/* === inline sub-panels helper (एका वेळी एकच सब-पॅनेल खाली उघडेल) === */
+const INLINE_SUB_PANELS = [
+    'addProductModal',
+    'catSelectionModal',
+    'componentsModal',
+    'multiStackModal'
 ];
 
-function showOnlyOneInlineView(targetId, displayType = 'flex') {
-    INLINE_VIEW_IDS.forEach(id => {
+function hideAllInlineSubPanels() {
+    INLINE_SUB_PANELS.forEach(id => {
         let el = document.getElementById(id);
         if (el) el.style.display = 'none';
     });
-    let targetEl = document.getElementById(targetId);
-    if (targetEl) {
-        targetEl.style.display = (targetId === 'unifiedHome') ? 'block' : displayType;
+}
+
+function showInlineSubPanel(targetId) {
+    hideAllInlineSubPanels();
+    let el = document.getElementById(targetId);
+    if (el) {
+        el.style.display = 'block';
+        setTimeout(() => {
+            el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 80);
     }
+}
+
+/* === History Modal Functions === */
+function openCustomerHistoryModal() {
+    renderCustomerQueue();
+    updateUniversalActionButtons();
+    document.getElementById('customerHistoryModal').style.display = 'flex';
+}
+
+function closeCustomerHistoryModal() {
+    document.getElementById('customerHistoryModal').style.display = 'none';
 }
 
 /* === custom confirm function === */
@@ -272,6 +292,10 @@ window.onload = async function() {
 
         renderCustomerQueue(); 
         updateUniversalActionButtons();
+
+        if (activeCustomerIndex !== -1 && customerQueue[activeCustomerIndex] && db_records.length > 0) {
+            goToFinalPage();
+        }
     } catch(e) { 
         console.error("Local Data Initialization Failure", e); 
     }
@@ -358,7 +382,7 @@ async function addCustomerToQueue() {
     if(db_records.length === 0) {
         showToast("आधी वरच्या 'Upload Master Excel' बटणावरून एक्सेल फाईल अपलोड करा!", "warning");
         document.getElementById('masterExcelFileInput').click();
-        return;
+        return; 
     }
 
     let now = new Date(); 
@@ -414,7 +438,7 @@ function closeCustomerEdit() { document.getElementById('editCustomerModal').styl
 
 async function saveCustomerEdit() { if(selectedQueueIndex === -1) return; let c = customerQueue[selectedQueueIndex]; c.name = document.getElementById('ecName').value || 'Customer'; c.mobile = document.getElementById('ecMobile').value; c.limit = parseFloat(document.getElementById('ecLimit').value) || 0; c.ltv = parseFloat(document.getElementById('ecLtv').value) || 100; c.type = document.getElementById('ecType').value; let cap = parseFloat(document.getElementById('ecCap').value); c.cap = cap > 0 ? cap : ''; await saveQueueToLocal(); renderCustomerQueue(); if(activeCustomerIndex === selectedQueueIndex) { updateMatrixTopCard(); current_products.forEach((_, idx) => recalcModel(idx)); } closeCustomerEdit(); }
 async function uniDelete() { if(selectedQueueIndex !== -1) await removeCustomer(selectedQueueIndex); }
-async function removeCustomer(idx) { let c = customerQueue[idx]; recycleBin.push(c); await saveToDB('persistent_recycle', recycleBin); localStorage.setItem('persistent_recycle_backup', JSON.stringify(recycleBin)); if(activeCustomerIndex === idx) activeCustomerIndex = -1; else if (activeCustomerIndex > idx) activeCustomerIndex--; customerQueue.splice(idx, 1); if (selectedQueueIndex === idx) selectedQueueIndex = -1; else if (selectedQueueIndex > idx) selectedQueueIndex--; if(customerQueue.length > 0 && activeCustomerIndex === -1) activeCustomerIndex = 0; await saveQueueToLocal(); renderCustomerQueue(); updateUniversalActionButtons(); }
+async function removeCustomer(idx) { let c = customerQueue[idx]; recycleBin.push(c); await saveToDB('persistent_recycle', recycleBin); localStorage.setItem('persistent_recycle_backup', JSON.stringify(recycleBin)); if(activeCustomerIndex === idx) activeCustomerIndex = -1; else if (activeCustomerIndex > idx) activeCustomerIndex--; customerQueue.splice(idx, 1); if (selectedQueueIndex === idx) selectedQueueIndex = -1; else if (selectedQueueIndex > idx) selectedQueueIndex--; if(customerQueue.length > 0 && activeCustomerIndex === -1) activeCustomerIndex = 0; await saveQueueToLocal(); renderCustomerQueue(); updateUniversalActionButtons(); if(activeCustomerIndex === -1) goHome(); else goToFinalPage(); }
 
 function openRecycleBin() { let list = document.getElementById('recycleBinList'); if(recycleBin.length === 0) { list.innerHTML = `<div style="text-align:center; color:#888;">Recycle Bin empty</div>`; } else { list.innerHTML = recycleBin.map((c, i) => ` <div style="display:flex; justify-content:space-between; align-items:center; background:#fff; padding:8px; border-radius:4px; border:1px solid #ddd;"> <div style="font-size:12px; color:var(--dark); font-weight:bold;"> 👤 ${c.name} <br><span style="color:var(--success);">LMT: ₹${c.limit}</span> </div> <button onclick="restoreCustomer(${i})" style="background:var(--primary); color:white; padding:6px; border-radius:3px;">↩️ RESTORE</button> </div> `).join(''); } document.getElementById('recycleBinModal').style.display='flex'; }
 function closeRecycleBin() { document.getElementById('recycleBinModal').style.display='none'; }
@@ -439,7 +463,7 @@ function renderCustomerQueue() {
     }); 
 
     if(filtered.length === 0) { 
-        list.innerHTML = `<div style="text-align:center; color:#888;">No customers found.</div>`; 
+        list.innerHTML = `<div style="text-align:center; color:#888; padding:15px;">No saved customers found.</div>`; 
         return; 
     } 
 
@@ -454,9 +478,9 @@ function renderCustomerQueue() {
         return ` <div onclick="handleCustomerTap(${idx})" style="cursor:pointer; display:flex; flex-direction:column; background:${bgStyle}; padding:8px; border-radius:4px; border:1px solid ${borderStyle}; transition:0.2s;"> 
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;"> 
                 <strong style="color:var(--indigo);">👤 ${displayName} ${c.mobile ? `<span style="color:#d35400;">(📞 ${c.mobile})</span>` : ''}</strong> 
-                <span style="color:#888; font-weight:bold;">${c.timestamp || ''}</span> 
+                <span style="color:#888; font-weight:bold; font-size:11px;">${c.timestamp || ''}</span> 
             </div> 
-            <div style="color:#555; font-weight:bold;"> 
+            <div style="color:#555; font-weight:bold; font-size:12px;"> 
                 LMT: <span style="color:var(--success)">₹${c.limit}</span> | LTV: ${c.ltv}% | CAP: ${c.cap ? '₹'+c.cap : 'NO'} | ${c.type} ${isActive ? '<span style="float:right; color:var(--primary);">[ACTIVE ✓]</span>' : ''} 
             </div> 
         </div>`; 
@@ -472,20 +496,28 @@ async function setActiveCustomer(idx) {
     activeCustomerIndex = idx; 
     await saveQueueToLocal(); 
     if(document.getElementById('queueSearch')) document.getElementById('queueSearch').value = ''; 
+    closeCustomerHistoryModal();
     goToFinalPage(); 
 }
 
 function isLimitValid() { 
     if (activeCustomerIndex === -1 || !customerQueue[activeCustomerIndex]) { 
-        showToast("आधी Queue मध्ये Customer सिलेक्ट किंवा ॲड करा!", "warning"); 
+        showToast("आधी Customer ॲड करा किंवा 🕒 History मधून सिलेक्ट करा!", "warning"); 
         return false; 
     } 
     return true; 
 }
 
 function generateStackCards() { let container = document.getElementById('stackInputsContainer'); if(!container) return; container.innerHTML = ""; for(let i=1; i<=10; i++) { container.innerHTML += ` <div class="stack-card"><div style="font-weight:900; color:var(--primary); margin-bottom:4px; border-bottom:1px solid #eee; padding-bottom:2px;">SCHEME #${i}</div> <div class="inner-grid"> <div><label>TENURE (MAX)</label><input type="number" id="msTen_${i}" placeholder="0"></div> <div><label>ADVANCE</label><input type="number" id="msAdv_${i}" placeholder="0"></div> <div><label>DBD %</label><input type="number" id="msDbd_${i}" placeholder="0"></div> <div><label>PF (₹)</label><input type="number" id="msPf_${i}" placeholder="0"></div> <div><label>ROI %</label><input type="number" id="msRoi_${i}" placeholder="0"></div> <div><label>FIXED EMI (₹)</label><input type="number" id="msFix_${i}" placeholder="0"></div> </div> </div>`; } }
-function openMultiStackModal() { if (!isLimitValid()) return; document.getElementById('addProductModal').style.display='none'; document.getElementById('multiStackModal').style.display='flex'; }
-function closeMultiStackModal() { document.getElementById('multiStackModal').style.display='none'; }
+
+function openMultiStackModal() { 
+    if (!isLimitValid()) return; 
+    showInlineSubPanel('multiStackModal'); 
+}
+
+function closeMultiStackModal() { 
+    document.getElementById('multiStackModal').style.display='none'; 
+}
 
 async function processMultiStack() {
     let msNameInput = document.getElementById('multiStackModelName').value.trim().toUpperCase();
@@ -583,8 +615,8 @@ function mapData(row, type) {
 }
 
 function goHome() { 
-    document.getElementById('catSelectionModal').style.display = 'none'; 
-    showOnlyOneInlineView('unifiedHome', 'block'); 
+    hideAllInlineSubPanels();
+    document.getElementById('finalEligibleArea').style.display = 'none';
     activeCustomerIndex = -1; 
     selectedQueueIndex = -1; 
     renderCustomerQueue(); 
@@ -600,7 +632,7 @@ function openAddProductModal() {
     let dd = document.getElementById('modalMatrixSearchDropdown');
     if(sInp) sInp.value = ''; 
     if(dd) dd.style.display = 'none'; 
-    document.getElementById('addProductModal').style.display = 'flex'; 
+    showInlineSubPanel('addProductModal');
     setTimeout(() => { if(sInp) sInp.focus(); }, 100);
 }
 
@@ -619,7 +651,6 @@ function selectModel(name) {
     currentModalCategory = cat; 
     document.getElementById('modalMatrixSearchDropdown').style.display = 'none'; 
     document.getElementById('modalMatrixSearch').value = ''; 
-    document.getElementById('addProductModal').style.display = 'none'; 
     showComponentsModal(baseMrp); 
 }
 
@@ -630,18 +661,16 @@ function quickNonTieup() {
         document.getElementById('masterExcelFileInput').click();
         return; 
     } 
-    document.getElementById('addProductModal').style.display = 'none'; 
     let tieup = db_records.filter(r => r.model === SPECIAL_MODEL); 
     let cats = [...new Set(tieup.map(r => r.category))].sort(); 
     document.getElementById('categoryGrid').innerHTML = cats.map(c => { 
         let label = (c === 'PHONE(WEB-MOBILE)') ? 'PHONE, TABLET, SMART WATCH' : c; 
         return `<div style="background:var(--indigo);color:white;padding:12px;border-radius:4px;cursor:pointer;font-weight:900;text-align:center;" onclick="selectCategory('${c}')">${label}</div>`; 
     }).join(''); 
-    document.getElementById('catSelectionModal').style.display = 'flex'; 
+    showInlineSubPanel('catSelectionModal');
 }
 
 function selectCategory(catName) { 
-    document.getElementById('catSelectionModal').style.display = 'none'; 
     let displayName = (catName === 'PHONE(WEB-MOBILE)') ? 'PHONE / TABLET / SMART WATCH' : catName; 
     let fullName = SPECIAL_MODEL + " - " + displayName;
     tempPendingProduct = { name: fullName, isNT: true, category: catName }; 
@@ -661,14 +690,48 @@ function compMrpChanged() {
 }
 
 function showComponentsModal(baseMrp = "") {
-    let c = customerQueue[activeCustomerIndex]; let rfcSelect = document.getElementById('compRfc'); let exwInput = document.getElementById('compExw'); let isMobileCat = isMobileDeviceCat(currentModalCategory);
+    let c = customerQueue[activeCustomerIndex]; 
+    let rfcSelect = document.getElementById('compRfc'); 
+    let exwInput = document.getElementById('compExw'); 
+    let isMobileCat = isMobileDeviceCat(currentModalCategory);
+
+    let pendingNameEl = document.getElementById('compPendingModelName');
+    if (pendingNameEl && tempPendingProduct) {
+        pendingNameEl.innerText = tempPendingProduct.name;
+    }
+
     if (isMobileCat) { rfcSelect.disabled = false; rfcSelect.style.background = '#fff'; exwInput.disabled = true; exwInput.style.background = '#e9ecef'; exwInput.value = ""; } else { rfcSelect.disabled = true; rfcSelect.style.background = '#e9ecef'; rfcSelect.value = "0"; exwInput.disabled = false; exwInput.style.background = '#fff'; }
     let currentMrp = baseMrp !== "" ? baseMrp : (c?.components?.mrp || ''); document.getElementById('compMrp').value = currentMrp; let mrpForRfc = parseFloat(currentMrp) || 0; let rfcSlab = getRfcSlabValue(mrpForRfc); let rfcOpt = document.getElementById('compRfcOpt'); if(rfcOpt) { rfcOpt.value = rfcSlab; rfcOpt.innerText = rfcSlab; }
     if (baseMrp !== "") { compMrpChanged(); } else { document.getElementById('compInv').value = c?.components?.inv || ''; document.getElementById('compGtl').value = c?.components?.gtl || 0; if (isMobileCat) { document.getElementById('compRfc').value = c?.components?.rfc || 0; } }
-    document.getElementById('compCap').value = c?.components?.cap || c?.cap || ''; document.getElementById('compTarget').value = c?.components?.target || ''; if (!isMobileCat) { document.getElementById('compExw').value = c?.components?.exw || ''; } document.getElementById('compMargin').value = c?.components?.margin || ''; document.getElementById('compDealer').value = c?.components?.dealer || ''; document.getElementById('componentsModal').style.display = 'flex';
+    document.getElementById('compCap').value = c?.components?.cap || c?.cap || ''; document.getElementById('compTarget').value = c?.components?.target || ''; if (!isMobileCat) { document.getElementById('compExw').value = c?.components?.exw || ''; } document.getElementById('compMargin').value = c?.components?.margin || ''; document.getElementById('compDealer').value = c?.components?.dealer || ''; 
+    
+    showInlineSubPanel('componentsModal');
 }
 
-async function proceedToMatrixFromComponents() { let idx = activeCustomerIndex; if(idx === -1) return; if(!customerQueue[idx].components) customerQueue[idx].components = {}; customerQueue[idx].components.mrp = parseFloat(document.getElementById('compMrp').value) || 0; customerQueue[idx].components.inv = parseFloat(document.getElementById('compInv').value) || 0; customerQueue[idx].components.cap = parseFloat(document.getElementById('compCap').value) || 0; customerQueue[idx].components.target = parseFloat(document.getElementById('compTarget').value) || 0; customerQueue[idx].components.gtl = parseFloat(document.getElementById('compGtl').value) || 0; let isMobileCat = isMobileDeviceCat(currentModalCategory); customerQueue[idx].components.rfc = isMobileCat ? (parseFloat(document.getElementById('compRfc').value) || 0) : 0; customerQueue[idx].components.exw = isMobileCat ? 0 : (parseFloat(document.getElementById('compExw').value) || 0); customerQueue[idx].components.margin = parseFloat(document.getElementById('compMargin').value) || 0; customerQueue[idx].components.dealer = parseFloat(document.getElementById('compDealer').value) || 0; let cCap = customerQueue[idx].components.cap; if (cCap > 0 || customerQueue[idx].cap > 0) { customerQueue[idx].cap = cCap > 0 ? cCap : ""; renderCustomerQueue(); updateMatrixTopCard(); } await saveQueueToLocal(); document.getElementById('componentsModal').style.display = 'none'; if (tempPendingProduct) finalizeProductAddition(); }
+async function proceedToMatrixFromComponents() { 
+    let idx = activeCustomerIndex; 
+    if(idx === -1) return; 
+    if(!customerQueue[idx].components) customerQueue[idx].components = {}; 
+    customerQueue[idx].components.mrp = parseFloat(document.getElementById('compMrp').value) || 0; 
+    customerQueue[idx].components.inv = parseFloat(document.getElementById('compInv').value) || 0; 
+    customerQueue[idx].components.cap = parseFloat(document.getElementById('compCap').value) || 0; 
+    customerQueue[idx].components.target = parseFloat(document.getElementById('compTarget').value) || 0; 
+    customerQueue[idx].components.gtl = parseFloat(document.getElementById('compGtl').value) || 0; 
+    let isMobileCat = isMobileDeviceCat(currentModalCategory); 
+    customerQueue[idx].components.rfc = isMobileCat ? (parseFloat(document.getElementById('compRfc').value) || 0) : 0; 
+    customerQueue[idx].components.exw = isMobileCat ? 0 : (parseFloat(document.getElementById('compExw').value) || 0); 
+    customerQueue[idx].components.margin = parseFloat(document.getElementById('compMargin').value) || 0; 
+    customerQueue[idx].components.dealer = parseFloat(document.getElementById('compDealer').value) || 0; 
+    let cCap = customerQueue[idx].components.cap; 
+    if (cCap > 0 || customerQueue[idx].cap > 0) { 
+        customerQueue[idx].cap = cCap > 0 ? cCap : ""; 
+        renderCustomerQueue(); 
+        updateMatrixTopCard(); 
+    } 
+    await saveQueueToLocal(); 
+    hideAllInlineSubPanels(); 
+    if (tempPendingProduct) finalizeProductAddition(); 
+}
 
 async function finalizeProductAddition() {
     let raw = tempPendingProduct.isNT ? db_records.filter(r => r.model === SPECIAL_MODEL && r.category === tempPendingProduct.category) : db_records.filter(r => r.model === tempPendingProduct.name); 
@@ -685,20 +748,26 @@ async function switchCustomerFinal(idx) { activeCustomerIndex = parseInt(idx); a
 function updateMatrixTopCard() { let c = customerQueue[activeCustomerIndex]; document.getElementById('infoName').innerText = c?.name || "-"; document.getElementById('infoMobile').innerText = c?.mobile || "-"; document.getElementById('infoLimit').innerText = "₹" + (c?.limit || 0); document.getElementById('infoLtv').innerText = (c?.ltv || 100) + "%"; document.getElementById('infoCap').innerText = c?.cap ? "₹" + c.cap : "NONE"; document.getElementById('infoType').innerText = c?.type || 'NEW'; }
 function loadCurrentProducts() { let c = customerQueue[activeCustomerIndex]; current_products = c?.products || []; sortConfigs = c?.sortConfigs || []; }
 
+/* कस्टमर सिलेक्ट केल्यावर unifiedHome न लपवता त्याच्या खालीच finalEligibleArea उघडतो */
 function goToFinalPage() {
     if(activeCustomerIndex === -1 || !customerQueue[activeCustomerIndex]) return; 
     loadCurrentProducts(); 
     updateMatrixTopCard(); 
     updateFinalSwitcher(); 
-    showOnlyOneInlineView('finalEligibleArea', 'flex');
+    
+    document.getElementById('unifiedHome').style.display = 'block';
+    let finalArea = document.getElementById('finalEligibleArea');
+    finalArea.style.display = 'flex';
+    
     renderMatrix(); 
     setTimeout(() => { 
-        let finalArea = document.getElementById('finalEligibleArea');
-        if (finalArea) finalArea.scrollIntoView({ behavior: 'smooth', block: 'start' }); 
         if(current_products.length === 0) {
             openAddProductModal();
+        } else {
+            hideAllInlineSubPanels();
+            finalArea.scrollIntoView({ behavior: 'smooth', block: 'start' }); 
         }
-    }, 120);
+    }, 100);
 }
 
 function toggleModelView(pIdx) { 
