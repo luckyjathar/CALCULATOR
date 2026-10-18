@@ -29,6 +29,9 @@ function showInlineSubPanel(targetId) {
     let el = document.getElementById(targetId);
     if (el) {
         el.style.display = 'block';
+        setTimeout(() => {
+            el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 80);
     }
 }
 
@@ -39,7 +42,8 @@ function openCustomerHistoryModal() {
 }
 
 function closeCustomerHistoryModal() {
-    document.getElementById('customerHistoryModal').style.display = 'none';
+    let el = document.getElementById('customerHistoryModal');
+    if(el) el.style.display = 'none';
 }
 
 /* === Custom Confirm Function === */
@@ -54,9 +58,18 @@ function showCustomConfirm(msg, yesCallback, noCallback) {
     yesBtn.replaceWith(newYesBtn);
     noBtn.replaceWith(newNoBtn);
 
-    newYesBtn.onclick = function() { document.getElementById('customConfirmModal').style.display = 'none'; if(yesCallback) yesCallback(); };
-    newNoBtn.onclick = function() { document.getElementById('customConfirmModal').style.display = 'none'; if(noCallback) noCallback(); };
-    document.getElementById('customConfirmModal').style.display = 'flex';
+    newYesBtn.onclick = function() { 
+        let modal = document.getElementById('customConfirmModal');
+        if(modal) modal.style.display = 'none'; 
+        if(yesCallback) yesCallback(); 
+    };
+    newNoBtn.onclick = function() { 
+        let modal = document.getElementById('customConfirmModal');
+        if(modal) modal.style.display = 'none'; 
+        if(noCallback) noCallback(); 
+    };
+    let modal = document.getElementById('customConfirmModal');
+    if(modal) modal.style.display = 'flex';
 }
 
 /* === Custom Alert Function For Copy Fallback === */
@@ -65,8 +78,9 @@ function showCustomAlert(msg, text = null) {
     if (!alertEl) return;
     alertEl.innerText = msg;
     let ta = document.getElementById('alertTextarea');
-    if(text) { ta.value = text; ta.style.display = 'block'; } else { ta.style.display = 'none'; }
-    document.getElementById('customAlertModal').style.display = 'flex';
+    if(text && ta) { ta.value = text; ta.style.display = 'block'; } else if(ta) { ta.style.display = 'none'; }
+    let modal = document.getElementById('customAlertModal');
+    if(modal) modal.style.display = 'flex';
 }
 
 let currentModalCategory = ""; 
@@ -155,7 +169,7 @@ let tempPendingProduct = null;
 
 function parseExcelDate(val) { if (!val) return null; if (typeof val === 'number') { return new Date(Math.round((val - 25569) * 86400 * 1000)); } if (typeof val === 'string') { let d = new Date(val); if (!isNaN(d.getTime())) return d; let parts = val.split(/[\/\-\.]/); if (parts.length === 3) { let y = parts[2].length === 2 ? '20' + parts[2] : parts[2]; return new Date(y, parts[1] - 1, parts[0]); } } return null; }
 
-function saveQueueToLocal() { 
+async function saveQueueToLocal() { 
     try { 
         let compactQueue = customerQueue.map(c => { 
             let cp = (c.products || []).map(p => { 
@@ -166,8 +180,8 @@ function saveQueueToLocal() {
         }); 
         localStorage.setItem('persistent_queue_backup', JSON.stringify(compactQueue)); 
         localStorage.setItem('persistent_active_idx_backup', activeCustomerIndex); 
-        saveToDB('persistent_queue', compactQueue); 
-        saveToDB('persistent_active_idx', activeCustomerIndex); 
+        await saveToDB('persistent_queue', compactQueue); 
+        await saveToDB('persistent_active_idx', activeCustomerIndex); 
     } catch(e) { console.error("Local Save Interrupted", e); } 
 }
 
@@ -288,6 +302,8 @@ window.onload = async function() {
         if (savedIdx !== null && savedIdx !== undefined) activeCustomerIndex = parseInt(savedIdx); 
         if(activeCustomerIndex >= customerQueue.length) activeCustomerIndex = -1;
 
+        renderCustomerQueue(); 
+
         if (activeCustomerIndex !== -1 && customerQueue[activeCustomerIndex] && db_records.length > 0) {
             goToFinalPage();
         }
@@ -356,13 +372,28 @@ function checkDuplicateMobile(val) {
     addBtn.disabled = false;
 }
 
-function addCustomerToQueue() {
-    let name = document.getElementById('cqName').value.trim() || `Cust ${customerQueue.length + 1}`; 
-    let mobile = document.getElementById('cqMobile').value.trim() || ""; 
-    let limit = parseFloat(document.getElementById('cqLimit').value); 
-    let ltv = parseFloat(document.getElementById('cqLtv').value) || 100; 
-    let type = document.getElementById('cqType').value || "NEW"; 
-    let cap = parseFloat(document.getElementById('cqCap').value) || "";
+async function addCustomerToQueue() {
+    let cqNameEl = document.getElementById('cqName');
+    let name = cqNameEl ? cqNameEl.value.trim() : "";
+    if(!name) name = `Cust ${customerQueue.length + 1}`; 
+    
+    let cqMobileEl = document.getElementById('cqMobile');
+    let mobile = cqMobileEl ? cqMobileEl.value.trim() : ""; 
+    
+    let cqLimitEl = document.getElementById('cqLimit');
+    let limit = cqLimitEl ? parseFloat(cqLimitEl.value) : 0; 
+    
+    let cqLtvEl = document.getElementById('cqLtv');
+    let ltv = cqLtvEl ? parseFloat(cqLtvEl.value) : 100;
+    if(isNaN(ltv)) ltv = 100;
+    
+    let cqTypeEl = document.getElementById('cqType');
+    let type = cqTypeEl ? cqTypeEl.value : "NEW";
+    if(!type) type = "NEW"; 
+    
+    let cqCapEl = document.getElementById('cqCap');
+    let cap = cqCapEl ? parseFloat(cqCapEl.value) : "";
+    if(isNaN(cap)) cap = "";
 
     if(!limit || limit <= 0 || isNaN(limit)) { 
         showToast("वैध NBFC Limit भरा!", "error"); 
@@ -371,7 +402,8 @@ function addCustomerToQueue() {
 
     if(db_records.length === 0) {
         showToast("आधी वरच्या 'Upload Master Excel' बटणावरून एक्सेल फाईल अपलोड करा!", "warning");
-        document.getElementById('masterExcelFileInput').click();
+        let feInput = document.getElementById('masterExcelFileInput');
+        if(feInput) feInput.click();
         return; 
     }
 
@@ -380,27 +412,31 @@ function addCustomerToQueue() {
     let newCustObj = { id: Date.now(), name, mobile, limit, ltv, type, cap, targetDp: "", timestamp: ts, components: {}, products: [], sortConfigs: [] };
 
     customerQueue.unshift(newCustObj); 
+
     activeCustomerIndex = 0; 
     selectedQueueIndex = 0;
 
-    saveQueueToLocal(); 
+    await saveQueueToLocal(); 
 
-    document.getElementById('cqName').value = ''; 
-    document.getElementById('cqMobile').value = ''; 
-    document.getElementById('cqType').value = ''; 
-    document.getElementById('cqLimit').value = ''; 
-    document.getElementById('cqLtv').value = ''; 
-    document.getElementById('cqCap').value = '';
+    if(cqNameEl) cqNameEl.value = ''; 
+    if(cqMobileEl) cqMobileEl.value = ''; 
+    if(cqTypeEl) cqTypeEl.value = ''; 
+    if(cqLimitEl) cqLimitEl.value = ''; 
+    if(cqLtvEl) cqLtvEl.value = ''; 
+    if(cqCapEl) cqCapEl.value = ''; 
 
+    renderCustomerQueue(); 
     goToFinalPage();
 }
 
 function copyCustomerDetails(idx, btnElement) { 
     let c = customerQueue[idx]; 
+    if(!c) return;
     let cappingLine = (c.cap && c.cap !== "") ? `\nEMI Capping- ${c.cap}` : ""; 
     let custName = c.name ? c.name : "Valued Customer";
     let textToCopy = `Customer Name- ${custName}\nLimit- ${c.limit}\nLTV- ${c.ltv}${cappingLine}`; 
     function showSuccess() { 
+        if(!btnElement) return;
         let originalText = btnElement.innerText; 
         btnElement.innerText = "Copied!"; 
         btnElement.style.background = "var(--success)"; 
@@ -416,35 +452,59 @@ function copyCustomerDetails(idx, btnElement) {
 function maskName(str) { if (!str || str === "-") return str; return str.split(' ').map(word => { if (word.length <= 2) return word; return word[0] + '*'.repeat(word.length - 2) + word[word.length - 1]; }).join(' '); }
 function selectQueueItem(idx) { selectedQueueIndex = idx; renderCustomerQueue(); }
 
-function uniEdit() { if(selectedQueueIndex === -1) return; let c = customerQueue[selectedQueueIndex]; document.getElementById('ecName').value = c.name || ''; document.getElementById('ecMobile').value = c.mobile || ''; document.getElementById('ecLimit').value = c.limit; document.getElementById('ecLtv').value = c.ltv || 100; document.getElementById('ecType').value = c.type; document.getElementById('ecCap').value = c.cap || ''; document.getElementById('editCustomerModal').style.display='flex'; }
-function uniInvite() { if(selectedQueueIndex === -1) return; document.getElementById('invSenderName').value = localStorage.getItem('portal_sales_name') || ""; document.getElementById('invSenderMobile').value = localStorage.getItem('portal_sales_mobile') || ""; document.getElementById('inviteModal').style.display = 'flex'; }
+function uniEdit() { 
+    if(selectedQueueIndex === -1) return; 
+    let c = customerQueue[selectedQueueIndex]; 
+    if(!c) return;
+    let ecNameEl = document.getElementById('ecName'); if(ecNameEl) ecNameEl.value = c.name || ''; 
+    let ecMobileEl = document.getElementById('ecMobile'); if(ecMobileEl) ecMobileEl.value = c.mobile || ''; 
+    let ecLimitEl = document.getElementById('ecLimit'); if(ecLimitEl) ecLimitEl.value = c.limit; 
+    let ecLtvEl = document.getElementById('ecLtv'); if(ecLtvEl) ecLtvEl.value = c.ltv || 100; 
+    let ecTypeEl = document.getElementById('ecType'); if(ecTypeEl) ecTypeEl.value = c.type; 
+    let ecCapEl = document.getElementById('ecCap'); if(ecCapEl) ecCapEl.value = c.cap || ''; 
+    let modal = document.getElementById('editCustomerModal'); if(modal) modal.style.display='flex'; 
+}
+
+function uniInvite() { 
+    if(selectedQueueIndex === -1) return; 
+    let snEl = document.getElementById('invSenderName'); if(snEl) snEl.value = localStorage.getItem('portal_sales_name') || ""; 
+    let smEl = document.getElementById('invSenderMobile'); if(smEl) smEl.value = localStorage.getItem('portal_sales_mobile') || ""; 
+    let modal = document.getElementById('inviteModal'); if(modal) modal.style.display = 'flex'; 
+}
+
 function sendWhatsAppInvite() { 
-    let sName = document.getElementById('invSenderName').value.trim(); 
-    let sMobile = document.getElementById('invSenderMobile').value.trim(); 
+    let snEl = document.getElementById('invSenderName'); let sName = snEl ? snEl.value.trim() : ""; 
+    let smEl = document.getElementById('invSenderMobile'); let sMobile = smEl ? smEl.value.trim() : ""; 
     if(!sName) { showToast("कृपया तुमचे नाव भरा!", "error"); return; } 
     localStorage.setItem('portal_sales_name', sName); 
     if(sMobile) localStorage.setItem('portal_sales_mobile', sMobile); 
     let c = customerQueue[selectedQueueIndex]; 
+    if(!c) return;
     let cName = c.name ? c.name : 'Sir/Madam';
     let msg = `Namaskar ${cName}! 🎉\n\nAapki Bajaj Finance Ki *₹${c.limit}* Ki Limit Approve Ho Gayi Hai!\n\n👤 *${sName}*${sMobile ? `\n📞 ${sMobile}` : ''}`; 
     let encMsg = encodeURIComponent(msg); 
     let url = (c.mobile && c.mobile.length === 10) ? `https://wa.me/91${c.mobile}?text=${encMsg}` : `https://api.whatsapp.com/send?text=${encMsg}`;
     window.open(url, '_blank'); 
-    document.getElementById('inviteModal').style.display = 'none'; 
+    let modal = document.getElementById('inviteModal'); if(modal) modal.style.display = 'none'; 
 }
-function closeCustomerEdit() { document.getElementById('editCustomerModal').style.display='none'; }
 
-function saveCustomerEdit() { 
+function closeCustomerEdit() { 
+    let modal = document.getElementById('editCustomerModal'); 
+    if(modal) modal.style.display='none'; 
+}
+
+async function saveCustomerEdit() { 
     if(selectedQueueIndex === -1) return; 
     let c = customerQueue[selectedQueueIndex]; 
-    c.name = document.getElementById('ecName').value || ''; 
-    c.mobile = document.getElementById('ecMobile').value; 
-    c.limit = parseFloat(document.getElementById('ecLimit').value) || 0; 
-    c.ltv = parseFloat(document.getElementById('ecLtv').value) || 100; 
-    c.type = document.getElementById('ecType').value; 
-    let cap = parseFloat(document.getElementById('ecCap').value); 
+    if(!c) return;
+    let ecNameEl = document.getElementById('ecName'); if(ecNameEl) c.name = ecNameEl.value || ''; 
+    let ecMobileEl = document.getElementById('ecMobile'); if(ecMobileEl) c.mobile = ecMobileEl.value; 
+    let ecLimitEl = document.getElementById('ecLimit'); if(ecLimitEl) c.limit = parseFloat(ecLimitEl.value) || 0; 
+    let ecLtvEl = document.getElementById('ecLtv'); if(ecLtvEl) c.ltv = parseFloat(ecLtvEl.value) || 100; 
+    let ecTypeEl = document.getElementById('ecType'); if(ecTypeEl) c.type = ecTypeEl.value; 
+    let ecCapEl = document.getElementById('ecCap'); let cap = ecCapEl ? parseFloat(ecCapEl.value) : 0; 
     c.cap = cap > 0 ? cap : ''; 
-    saveQueueToLocal(); 
+    await saveQueueToLocal(); 
     renderCustomerQueue(); 
     if(activeCustomerIndex === selectedQueueIndex) { 
         updateMatrixTopCard(); 
@@ -453,16 +513,63 @@ function saveCustomerEdit() {
     closeCustomerEdit(); 
 }
 
-function uniDelete() { if(selectedQueueIndex !== -1) removeCustomer(selectedQueueIndex); }
-function removeCustomer(idx) { let c = customerQueue[idx]; recycleBin.push(c); saveToDB('persistent_recycle', recycleBin); localStorage.setItem('persistent_recycle_backup', JSON.stringify(recycleBin)); if(activeCustomerIndex === idx) activeCustomerIndex = -1; else if (activeCustomerIndex > idx) activeCustomerIndex--; customerQueue.splice(idx, 1); if (selectedQueueIndex === idx) selectedQueueIndex = -1; else if (selectedQueueIndex > idx) selectedQueueIndex--; if(customerQueue.length > 0 && activeCustomerIndex === -1) activeCustomerIndex = 0; saveQueueToLocal(); renderCustomerQueue(); if(activeCustomerIndex === -1) goHome(); else goToFinalPage(); }
+async function uniDelete() { if(selectedQueueIndex !== -1) await removeCustomer(selectedQueueIndex); }
+async function removeCustomer(idx) { 
+    let c = customerQueue[idx]; 
+    if(!c) return;
+    recycleBin.push(c); 
+    await saveToDB('persistent_recycle', recycleBin); 
+    localStorage.setItem('persistent_recycle_backup', JSON.stringify(recycleBin)); 
+    if(activeCustomerIndex === idx) activeCustomerIndex = -1; 
+    else if (activeCustomerIndex > idx) activeCustomerIndex--; 
+    customerQueue.splice(idx, 1); 
+    if (selectedQueueIndex === idx) selectedQueueIndex = -1; 
+    else if (selectedQueueIndex > idx) selectedQueueIndex--; 
+    if(customerQueue.length > 0 && activeCustomerIndex === -1) activeCustomerIndex = 0; 
+    await saveQueueToLocal(); 
+    renderCustomerQueue(); 
+    if(activeCustomerIndex === -1) goHome(); else goToFinalPage(); 
+}
 
-function openRecycleBin() { let list = document.getElementById('recycleBinList'); if(recycleBin.length === 0) { list.innerHTML = `<div style="text-align:center; color:#888;">Recycle Bin Empty</div>`; } else { list.innerHTML = recycleBin.map((c, i) => ` <div style="display:flex; justify-content:space-between; align-items:center; background:#fff; padding:8px; border-radius:4px; border:1px solid #ddd;"> <div style="font-size:12px; color:var(--dark); font-weight:bold;"> 👤 ${c.name ? c.name : 'No Name'} <br><span style="color:var(--success);">Limit: ₹${c.limit}</span> </div> <button onclick="restoreCustomer(${i})" style="background:var(--primary); color:white; padding:6px; border-radius:3px;">↩️ Restore</button> </div> `).join(''); } document.getElementById('recycleBinModal').style.display='flex'; }
-function closeRecycleBin() { document.getElementById('recycleBinModal').style.display='none'; }
-function restoreCustomer(idx) { let c = recycleBin.splice(idx, 1)[0]; customerQueue.unshift(c); if(activeCustomerIndex !== -1) activeCustomerIndex++; if(selectedQueueIndex !== -1) selectedQueueIndex++; saveToDB('persistent_recycle', recycleBin); localStorage.setItem('persistent_recycle_backup', JSON.stringify(recycleBin)); saveQueueToLocal(); openRecycleBin(); renderCustomerQueue(); }
+function openRecycleBin() { 
+    let list = document.getElementById('recycleBinList'); 
+    if(!list) return;
+    if(recycleBin.length === 0) { 
+        list.innerHTML = `<div style="text-align:center; color:#888;">Recycle Bin Empty</div>`; 
+    } else { 
+        list.innerHTML = recycleBin.map((c, i) => ` <div style="display:flex; justify-content:space-between; align-items:center; background:#fff; padding:8px; border-radius:4px; border:1px solid #ddd;"> <div style="font-size:12px; color:var(--dark); font-weight:bold;"> 👤 ${c.name ? c.name : 'No Name'} <br><span style="color:var(--success);">LMT: ₹${c.limit}</span> </div> <button onclick="restoreCustomer(${i})" style="background:var(--primary); color:white; padding:6px; border-radius:3px;">↩️ Restore</button> </div> `).join(''); 
+    } 
+    let modal = document.getElementById('recycleBinModal');
+    if(modal) modal.style.display='flex'; 
+}
 
-function emptyRecycleBin() {
+function closeRecycleBin() { 
+    let modal = document.getElementById('recycleBinModal');
+    if(modal) modal.style.display='none'; 
+}
+
+async function restoreCustomer(idx) { 
+    let c = recycleBin.splice(idx, 1)[0]; 
+    if(!c) return;
+    customerQueue.unshift(c); 
+    if(activeCustomerIndex !== -1) activeCustomerIndex++; 
+    if(selectedQueueIndex !== -1) selectedQueueIndex++; 
+    await saveToDB('persistent_recycle', recycleBin); 
+    localStorage.setItem('persistent_recycle_backup', JSON.stringify(recycleBin)); 
+    await saveQueueToLocal(); 
+    openRecycleBin(); 
+    renderCustomerQueue(); 
+}
+
+async function emptyRecycleBin() {
     if(recycleBin.length === 0) { showToast("Recycle Bin आधीच रिकामी आहे!", "warning"); return; }
-    showCustomConfirm("सर्व रेकॉर्ड्स डिलीट करायचे?", () => { recycleBin = []; saveToDB('persistent_recycle', recycleBin); localStorage.setItem('persistent_recycle_backup', JSON.stringify(recycleBin)); openRecycleBin(); showToast("Recycle Bin रिकामी झाली!", "success"); });
+    showCustomConfirm("सर्व रेकॉर्ड्स डिलीट करायचे?", async () => { 
+        recycleBin = []; 
+        await saveToDB('persistent_recycle', recycleBin); 
+        localStorage.setItem('persistent_recycle_backup', JSON.stringify(recycleBin)); 
+        openRecycleBin(); 
+        showToast("Recycle Bin रिकामी झाली!", "success"); 
+    });
 }
 
 function renderCustomerQueue() { 
@@ -471,12 +578,13 @@ function renderCustomerQueue() {
     let list = document.getElementById('customerQueueList'); 
     if(!list) return; 
 
-    let qSearch = document.getElementById('queueSearch') ? document.getElementById('queueSearch').value.toLowerCase().trim() : ""; 
+    let qSearchEl = document.getElementById('queueSearch');
+    let qSearch = qSearchEl ? qSearchEl.value.toLowerCase().trim() : ""; 
     let isSearching = qSearch !== ""; 
     let filtered = customerQueue.map((c, idx) => ({...c, originalIdx: idx})).filter(c => { 
         if(!isSearching) return true; 
         let cName = c.name ? c.name.toLowerCase() : "";
-        return cName.includes(qSearch) || (c.mobile && c.mobile.includes(qSearch)) || c.limit.toString().includes(qSearch) || (c.cap && c.cap.toString().includes(qSearch)) || c.type.toLowerCase().includes(qSearch); 
+        return cName.includes(qSearch) || (c.mobile && c.mobile.includes(qSearch)) || (c.limit && c.limit.toString().includes(qSearch)) || (c.cap && c.cap.toString().includes(qSearch)) || (c.type && c.type.toLowerCase().includes(qSearch)); 
     }); 
 
     if(filtered.length === 0) { 
@@ -494,7 +602,7 @@ function renderCustomerQueue() {
         return ` <div style="display:flex; flex-direction:column; background:${bgStyle}; padding:8px; border-radius:4px; border:1px solid ${borderStyle}; transition:0.2s;"> 
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;"> 
                 <div onclick="setActiveCustomer(${idx})" style="flex:1; cursor:pointer;">
-                    <strong style="color:var(--indigo); text-transform:capitalize; font-size:14px;">👤 ${displayName} ${c.mobile ? `<span style="color:#d35400;">(📞 ${c.mobile})</span>` : ''}</strong> 
+                    <strong style="color:var(--indigo); text-transform:capitalize; font-size:14px;">👤 ${displayName}</strong> 
                 </div>
                 <div style="display:flex; gap:6px;">
                     <button onclick="copyCustomerDetails(${idx}, this)" style="background:var(--success); color:white; border:none; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:bold; cursor:pointer;">📋 Copy</button>
@@ -509,16 +617,18 @@ function renderCustomerQueue() {
     }).join(''); 
 }
 
-function setActiveCustomer(idx) { 
+async function setActiveCustomer(idx) { 
     if(db_records.length === 0) { 
         showToast("आधी Master Excel फाईल अपलोड करा!", "error"); 
-        document.getElementById('masterExcelFileInput').click();
+        let feInput = document.getElementById('masterExcelFileInput');
+        if(feInput) feInput.click();
         return; 
     } 
     activeCustomerIndex = idx; 
     selectedQueueIndex = idx;
-    saveQueueToLocal(); 
-    if(document.getElementById('queueSearch')) document.getElementById('queueSearch').value = ''; 
+    await saveQueueToLocal(); 
+    let qSearchEl = document.getElementById('queueSearch');
+    if(qSearchEl) qSearchEl.value = ''; 
     closeCustomerHistoryModal();
     
     let c = customerQueue[idx];
@@ -526,6 +636,7 @@ function setActiveCustomer(idx) {
         current_products = c.products || [];
         sortConfigs = c.sortConfigs || [];
     }
+    
     goToFinalPage(); 
 }
 
@@ -537,7 +648,14 @@ function isLimitValid() {
     return true; 
 }
 
-function generateStackCards() { let container = document.getElementById('stackInputsContainer'); if(!container) return; container.innerHTML = ""; for(let i=1; i<=10; i++) { container.innerHTML += ` <div class="stack-card"><div style="font-weight:900; color:var(--primary); margin-bottom:4px; border-bottom:1px solid #eee; padding-bottom:2px;">Scheme #${i}</div> <div class="inner-grid"> <div><label>Tenure (Max)</label><input type="number" id="msTen_${i}" placeholder="0"></div> <div><label>Advance</label><input type="number" id="msAdv_${i}" placeholder="0"></div> <div><label>DBD %</label><input type="number" id="msDbd_${i}" placeholder="0"></div> <div><label>PF (₹)</label><input type="number" id="msPf_${i}" placeholder="0"></div> <div><label>ROI %</label><input type="number" id="msRoi_${i}" placeholder="0"></div> <div><label>Fixed EMI (₹)</label><input type="number" id="msFix_${i}" placeholder="0"></div> </div> </div>`; } }
+function generateStackCards() { 
+    let container = document.getElementById('stackInputsContainer'); 
+    if(!container) return; 
+    container.innerHTML = ""; 
+    for(let i=1; i<=10; i++) { 
+        container.innerHTML += ` <div class="stack-card"><div style="font-weight:900; color:var(--primary); margin-bottom:4px; border-bottom:1px solid #eee; padding-bottom:2px;">Scheme #${i}</div> <div class="inner-grid"> <div><label>Tenure (Max)</label><input type="number" id="msTen_${i}" placeholder="0"></div> <div><label>Advance</label><input type="number" id="msAdv_${i}" placeholder="0"></div> <div><label>DBD %</label><input type="number" id="msDbd_${i}" placeholder="0"></div> <div><label>PF (₹)</label><input type="number" id="msPf_${i}" placeholder="0"></div> <div><label>ROI %</label><input type="number" id="msRoi_${i}" placeholder="0"></div> <div><label>Fixed EMI (₹)</label><input type="number" id="msFix_${i}" placeholder="0"></div> </div> </div>`; 
+    } 
+}
 
 function openMultiStackModal() { 
     if (!isLimitValid()) return; 
@@ -545,16 +663,20 @@ function openMultiStackModal() {
 }
 
 function closeMultiStackModal() { 
-    document.getElementById('multiStackModal').style.display='none'; 
+    let modal = document.getElementById('multiStackModal');
+    if(modal) modal.style.display='none'; 
 }
 
-function processMultiStack() {
-    let msNameInput = document.getElementById('multiStackModelName').value.trim().toUpperCase();
+async function processMultiStack() {
+    let msNameInputEl = document.getElementById('multiStackModelName');
+    let msNameInput = msNameInputEl ? msNameInputEl.value.trim().toUpperCase() : "";
     if (!msNameInput) { showToast("Model Name भरा!", "error"); return; } 
     let validSchemes = [];
     for(let i=1; i<=10; i++) { 
-        let ten = parseInt(document.getElementById(`msTen_${i}`).value) || 0; 
-        let fix = parseInt(document.getElementById(`msFix_${i}`).value) || 0; 
+        let tenEl = document.getElementById(`msTen_${i}`);
+        let ten = tenEl ? parseInt(tenEl.value) || 0 : 0; 
+        let fixEl = document.getElementById(`msFix_${i}`);
+        let fix = fixEl ? parseInt(fixEl.value) || 0 : 0; 
         if(ten > 0 || fix > 0) { 
             validSchemes.push({ 
                 model: msNameInput,
@@ -585,6 +707,7 @@ function processMultiStack() {
 }
 
 function findValLocal(row, targets) { 
+    if(!row) return null;
     let keys = Object.keys(row);
     let exactKey = keys.find(k => targets.includes(k.toUpperCase().replace(/[^A-Z0-9%]/g, ''))); 
     if (exactKey !== undefined) return row[exactKey];
@@ -637,14 +760,18 @@ function mapData(row, type) {
 
 function goHome() { 
     hideAllInlineSubPanels();
-    document.getElementById('finalEligibleArea').style.display = 'none';
+    let finalArea = document.getElementById('finalEligibleArea');
+    if(finalArea) finalArea.style.display = 'none';
     activeCustomerIndex = -1; 
     selectedQueueIndex = -1; 
     renderCustomerQueue(); 
     window.scrollTo({ top: 0, behavior: 'smooth' }); 
 }
 
-function closeImageViewer() { document.getElementById('imageViewerModal').style.display='none'; }
+function closeImageViewer() { 
+    let modal = document.getElementById('imageViewerModal');
+    if(modal) modal.style.display='none'; 
+}
 
 function openAddProductModal() { 
     if (!isLimitValid()) return; 
@@ -654,14 +781,55 @@ function openAddProductModal() {
     if(sInp) sInp.value = ''; 
     if(dd) dd.style.display = 'none'; 
     showInlineSubPanel('addProductModal');
-    if(sInp) sInp.focus();
+    setTimeout(() => { if(sInp) sInp.focus(); }, 100);
 }
 
-function openSchemeOnlyModal(pIdx) { if (!isLimitValid()) return; document.getElementById('modalTitle').innerText = "Add Custom Scheme"; document.getElementById('modelNameInputArea').style.display = 'none'; document.getElementById('targetPIdx').value = pIdx; document.getElementById('manualModal').style.display='flex'; }
-function closeManualModal() { document.getElementById('manualModal').style.display='none'; }
-function openEditSchemeModal(pIdx, dIdx) { let scheme = current_products[pIdx].schemes[dIdx]; document.getElementById('editPIdx').value = pIdx; document.getElementById('editDIdx').value = dIdx; document.getElementById('editTen').value = scheme.tenure || 0; document.getElementById('editAdv').value = scheme.advEmi || 0; document.getElementById('editDbd').value = scheme.dbd || 0; document.getElementById('editPf').value = scheme.pf || 0; document.getElementById('editRoi').value = scheme.roi || 0; document.getElementById('editFixed').value = scheme.fixedEmi || 0; document.getElementById('editSchemeModal').style.display = 'flex'; }
-function closeEditSchemeModal() { document.getElementById('editSchemeModal').style.display = 'none'; }
-function saveSchemeEdit() { let pIdx = parseInt(document.getElementById('editPIdx').value); let dIdx = parseInt(document.getElementById('editDIdx').value); let scheme = current_products[pIdx].schemes[dIdx]; scheme.tenure = parseInt(document.getElementById('editTen').value) || 0; scheme.advEmi = parseInt(document.getElementById('editAdv').value) || 0; scheme.dbd = parseFloat(document.getElementById('editDbd').value) || 0; scheme.pf = parseInt(document.getElementById('editPf').value) || 0; scheme.roi = parseFloat(document.getElementById('editRoi').value) || 0; scheme.fixedEmi = parseFloat(document.getElementById('editFixed').value) || 0; closeEditSchemeModal(); recalcModel(pIdx); saveQueueToLocal(); }
+function openSchemeOnlyModal(pIdx) { 
+    if (!isLimitValid()) return; 
+    let mt = document.getElementById('modalTitle'); if(mt) mt.innerText = "Add Custom Scheme"; 
+    let mia = document.getElementById('modelNameInputArea'); if(mia) mia.style.display = 'none'; 
+    let tpi = document.getElementById('targetPIdx'); if(tpi) tpi.value = pIdx; 
+    let mm = document.getElementById('manualModal'); if(mm) mm.style.display='flex'; 
+}
+function closeManualModal() { 
+    let mm = document.getElementById('manualModal');
+    if(mm) mm.style.display='none'; 
+}
+function openEditSchemeModal(pIdx, dIdx) { 
+    let prod = current_products[pIdx];
+    if(!prod) return;
+    let scheme = prod.schemes[dIdx]; 
+    if(!scheme) return;
+    let ep = document.getElementById('editPIdx'); if(ep) ep.value = pIdx; 
+    let ed = document.getElementById('editDIdx'); if(ed) ed.value = dIdx; 
+    let et = document.getElementById('editTen'); if(et) et.value = scheme.tenure || 0; 
+    let ea = document.getElementById('editAdv'); if(ea) ea.value = scheme.advEmi || 0; 
+    let edb = document.getElementById('editDbd'); if(edb) edb.value = scheme.dbd || 0; 
+    let epf = document.getElementById('editPf'); if(epf) epf.value = scheme.pf || 0; 
+    let er = document.getElementById('editRoi'); if(er) er.value = scheme.roi || 0; 
+    let ef = document.getElementById('editFixed'); if(ef) ef.value = scheme.fixedEmi || 0; 
+    let esm = document.getElementById('editSchemeModal'); if(esm) esm.style.display = 'flex'; 
+}
+function closeEditSchemeModal() { 
+    let esm = document.getElementById('editSchemeModal');
+    if(esm) esm.style.display = 'none'; 
+}
+function saveSchemeEdit() { 
+    let pIdxEl = document.getElementById('editPIdx'); let pIdx = pIdxEl ? parseInt(pIdxEl.value) : -1; 
+    let dIdxEl = document.getElementById('editDIdx'); let dIdx = dIdxEl ? parseInt(dIdxEl.value) : -1; 
+    if(pIdx === -1 || dIdx === -1) return;
+    let prod = current_products[pIdx];
+    if(!prod) return;
+    let scheme = prod.schemes[dIdx]; 
+    if(!scheme) return;
+    let et = document.getElementById('editTen'); if(et) scheme.tenure = parseInt(et.value) || 0; 
+    let ea = document.getElementById('editAdv'); if(ea) scheme.advEmi = parseInt(ea.value) || 0; 
+    let edb = document.getElementById('editDbd'); if(edb) scheme.dbd = parseFloat(edb.value) || 0; 
+    let epf = document.getElementById('editPf'); if(epf) scheme.pf = parseInt(epf.value) || 0; 
+    let er = document.getElementById('editRoi'); if(er) scheme.roi = parseFloat(er.value) || 0; 
+    let ef = document.getElementById('editFixed'); if(ef) scheme.fixedEmi = parseFloat(ef.value) || 0; 
+    closeEditSchemeModal(); recalcModel(pIdx); saveQueueToLocal(); 
+}
 
 function selectModel(name) { 
     if (!isLimitValid()) return; 
@@ -671,8 +839,8 @@ function selectModel(name) {
     let cat = raw[0]?.category || "OTHER"; 
     tempPendingProduct = { name: name, isNT: false, category: cat }; 
     currentModalCategory = cat; 
-    document.getElementById('modalMatrixSearchDropdown').style.display = 'none'; 
-    document.getElementById('modalMatrixSearch').value = ''; 
+    let mmsdd = document.getElementById('modalMatrixSearchDropdown'); if(mmsdd) mmsdd.style.display = 'none'; 
+    let mms = document.getElementById('modalMatrixSearch'); if(mms) mms.value = ''; 
     showComponentsModal(baseMrp); 
 }
 
@@ -680,16 +848,20 @@ function quickNonTieup() {
     if (!isLimitValid()) return; 
     if(db_records.length === 0) { 
         showToast("Master डेटा उपलब्ध नाही! आधी एक्सेल अपलोड करा.", "error"); 
-        document.getElementById('masterExcelFileInput').click();
+        let feInput = document.getElementById('masterExcelFileInput');
+        if(feInput) feInput.click();
         return; 
     } 
     editingProductIdx = -1;
     let tieup = db_records.filter(r => r.model === SPECIAL_MODEL); 
     let cats = [...new Set(tieup.map(r => r.category))].sort(); 
-    document.getElementById('categoryGrid').innerHTML = cats.map(c => { 
-        let label = (c === 'PHONE(WEB-MOBILE)') ? 'Phone, Tablet, Smart Watch' : c; 
-        return `<div style="background:var(--indigo);color:white;padding:12px;border-radius:4px;cursor:pointer;font-weight:900;text-align:center;text-transform:capitalize;" onclick="selectCategory('${c}')">${label}</div>`; 
-    }).join(''); 
+    let cg = document.getElementById('categoryGrid');
+    if(cg) {
+        cg.innerHTML = cats.map(c => { 
+            let label = (c === 'PHONE(WEB-MOBILE)') ? 'Phone, Tablet, Smart Watch' : c; 
+            return `<div style="background:var(--indigo);color:white;padding:12px;border-radius:4px;cursor:pointer;font-weight:900;text-align:center;text-transform:capitalize;" onclick="selectCategory('${c}')">${label}</div>`; 
+        }).join(''); 
+    }
     showInlineSubPanel('catSelectionModal');
 }
 
@@ -703,12 +875,12 @@ function selectCategory(catName) {
 }
 
 function compPriceChanged() { 
-    let mrp = parseFloat(document.getElementById('compMrp').value) || 0; 
-    let inv = parseFloat(document.getElementById('compInv').value) || 0; 
+    let cMrp = document.getElementById('compMrp'); let mrp = cMrp ? (parseFloat(cMrp.value) || 0) : 0; 
+    let cInv = document.getElementById('compInv'); let inv = cInv ? (parseFloat(cInv.value) || 0) : 0; 
     let effectiveAmt = inv > 0 ? inv : mrp;
 
     let gtl = getGtlSlabValue(effectiveAmt);
-    document.getElementById('compGtl').value = String(gtl);
+    let cGtl = document.getElementById('compGtl'); if(cGtl) cGtl.value = String(gtl);
 
     let rfcSlab = getRfcSlabValue(effectiveAmt); 
     let rfcOpt = document.getElementById('compRfcOpt'); 
@@ -717,14 +889,15 @@ function compPriceChanged() {
         rfcOpt.innerText = rfcSlab; 
     } 
     if (!isMobileDeviceCat(currentModalCategory)) { 
-        document.getElementById('compRfc').value = "0"; 
+        let cRfc = document.getElementById('compRfc'); if(cRfc) cRfc.value = "0"; 
     } 
 }
 
 function cancelComponentsModal() {
     editingProductIdx = -1;
     tempPendingProduct = null;
-    document.getElementById('componentsModal').style.display = 'none';
+    let cm = document.getElementById('componentsModal');
+    if(cm) cm.style.display = 'none';
 }
 
 function showComponentsModal(baseMrp = "") {
@@ -734,50 +907,45 @@ function showComponentsModal(baseMrp = "") {
     let exwInput = document.getElementById('compExw'); 
     let isMobileCat = isMobileDeviceCat(currentModalCategory);
 
-    document.getElementById('compModalHeadingText').innerText = "Edit Components";
+    let cmht = document.getElementById('compModalHeadingText');
+    if(cmht) cmht.innerText = "Edit Components";
     let pendingNameEl = document.getElementById('compPendingModelName');
     if (pendingNameEl && tempPendingProduct) {
         pendingNameEl.innerText = tempPendingProduct.name;
     }
 
     if (isMobileCat) { 
-        rfcSelect.disabled = false; 
-        rfcSelect.style.background = '#fff'; 
-        exwInput.disabled = true; 
-        exwInput.style.background = '#e9ecef'; 
-        exwInput.value = ""; 
+        if(rfcSelect) { rfcSelect.disabled = false; rfcSelect.style.background = '#fff'; }
+        if(exwInput) { exwInput.disabled = true; exwInput.style.background = '#e9ecef'; exwInput.value = ""; }
     } else { 
-        rfcSelect.disabled = true; 
-        rfcSelect.style.background = '#e9ecef'; 
-        rfcSelect.value = "0"; 
-        exwInput.disabled = false; 
-        exwInput.style.background = '#fff'; 
+        if(rfcSelect) { rfcSelect.disabled = true; rfcSelect.style.background = '#e9ecef'; rfcSelect.value = "0"; }
+        if(exwInput) { exwInput.disabled = false; exwInput.style.background = '#fff'; }
     }
 
     let currentMrp = baseMrp !== "" ? baseMrp : ""; 
-    document.getElementById('compMrp').value = currentMrp; 
+    let compMrpEl = document.getElementById('compMrp'); if(compMrpEl) compMrpEl.value = currentMrp; 
     let mrpNum = parseFloat(currentMrp) || 0; 
 
-    document.getElementById('compGtl').value = String(getGtlSlabValue(mrpNum));
+    let compGtlEl = document.getElementById('compGtl'); if(compGtlEl) compGtlEl.value = String(getGtlSlabValue(mrpNum));
     let rfcSlab = getRfcSlabValue(mrpNum); 
     let rfcOpt = document.getElementById('compRfcOpt'); 
     if(rfcOpt) { rfcOpt.value = rfcSlab; rfcOpt.innerText = rfcSlab; }
-    document.getElementById('compRfc').value = "0"; 
+    let compRfcEl = document.getElementById('compRfc'); if(compRfcEl) compRfcEl.value = "0"; 
 
-    document.getElementById('compInv').value = ""; 
-    document.getElementById('compCap').value = ""; 
-    document.getElementById('compExw').value = ""; 
-    document.getElementById('compMargin').value = ""; 
-    document.getElementById('compDealer').value = ""; 
+    let compInvEl = document.getElementById('compInv'); if(compInvEl) compInvEl.value = ""; 
+    let compCapEl = document.getElementById('compCap'); if(compCapEl) compCapEl.value = ""; 
+    let compExwEl = document.getElementById('compExw'); if(compExwEl) compExwEl.value = ""; 
+    let compMarEl = document.getElementById('compMargin'); if(compMarEl) compMarEl.value = ""; 
+    let compDelEl = document.getElementById('compDealer'); if(compDelEl) compDelEl.value = ""; 
 
     let sharedTargetDp = c?.targetDp || c?.components?.target || "";
-    document.getElementById('compTarget').value = sharedTargetDp > 0 ? sharedTargetDp : ""; 
+    let compTarEl = document.getElementById('compTarget'); if(compTarEl) compTarEl.value = sharedTargetDp > 0 ? sharedTargetDp : ""; 
     
     showInlineSubPanel('componentsModal');
     setTimeout(() => {
         let invInp = document.getElementById('compInv');
         if (invInp) invInp.focus();
-    }, 50);
+    }, 120);
 }
 
 function openEditModelComponents(pIdx, event) {
@@ -789,66 +957,61 @@ function openEditModelComponents(pIdx, event) {
     tempPendingProduct = null;
     currentModalCategory = prod.category;
 
-    document.getElementById('compModalHeadingText').innerText = "Edit Components";
-    document.getElementById('compPendingModelName').innerText = prod.name;
+    let cmht = document.getElementById('compModalHeadingText'); if(cmht) cmht.innerText = "Edit Components";
+    let cpmn = document.getElementById('compPendingModelName'); if(cpmn) cpmn.innerText = prod.name;
 
     let rfcSelect = document.getElementById('compRfc'); 
     let exwInput = document.getElementById('compExw'); 
     let isMobileCat = isMobileDeviceCat(currentModalCategory);
 
     if (isMobileCat) { 
-        rfcSelect.disabled = false; 
-        rfcSelect.style.background = '#fff'; 
-        exwInput.disabled = true; 
-        exwInput.style.background = '#e9ecef'; 
-        exwInput.value = ""; 
+        if(rfcSelect) { rfcSelect.disabled = false; rfcSelect.style.background = '#fff'; }
+        if(exwInput) { exwInput.disabled = true; exwInput.style.background = '#e9ecef'; exwInput.value = ""; }
     } else { 
-        rfcSelect.disabled = true; 
-        rfcSelect.style.background = '#e9ecef'; 
-        rfcSelect.value = "0"; 
-        exwInput.disabled = false; 
-        exwInput.style.background = '#fff'; 
+        if(rfcSelect) { rfcSelect.disabled = true; rfcSelect.style.background = '#e9ecef'; rfcSelect.value = "0"; }
+        if(exwInput) { exwInput.disabled = false; exwInput.style.background = '#fff'; }
     }
 
     let inp = prod.inputs;
-    document.getElementById('compMrp').value = inp.mrp !== "" ? inp.mrp : "";
-    document.getElementById('compInv').value = inp.inv !== "" ? inp.inv : "";
-    document.getElementById('compCap').value = inp.cap !== "" ? inp.cap : "";
-    document.getElementById('compTarget').value = inp.target !== "" ? inp.target : "";
+    let cmrp = document.getElementById('compMrp'); if(cmrp) cmrp.value = inp.mrp !== "" ? inp.mrp : "";
+    let cinv = document.getElementById('compInv'); if(cinv) cinv.value = inp.inv !== "" ? inp.inv : "";
+    let ccap = document.getElementById('compCap'); if(ccap) ccap.value = inp.cap !== "" ? inp.cap : "";
+    let ctar = document.getElementById('compTarget'); if(ctar) ctar.value = inp.target !== "" ? inp.target : "";
 
     let effectiveAmt = (parseFloat(inp.inv) || 0) > 0 ? parseFloat(inp.inv) : (parseFloat(inp.mrp) || 0);
     let rfcSlab = getRfcSlabValue(effectiveAmt);
     let rfcOpt = document.getElementById('compRfcOpt');
     if (rfcOpt) { rfcOpt.value = rfcSlab; rfcOpt.innerText = rfcSlab; }
 
-    document.getElementById('compGtl').value = String(inp.gtl || 0);
-    document.getElementById('compRfc').value = isMobileCat && inp.rfc > 0 ? String(rfcSlab) : "0";
+    let cgtl = document.getElementById('compGtl'); if(cgtl) cgtl.value = String(inp.gtl || 0);
+    let crfc = document.getElementById('compRfc'); if(crfc) crfc.value = isMobileCat && inp.rfc > 0 ? String(rfcSlab) : "0";
     if (!isMobileCat) {
-        document.getElementById('compExw').value = inp.exw !== "" ? inp.exw : "";
+        let cexw = document.getElementById('compExw'); if(cexw) cexw.value = inp.exw !== "" ? inp.exw : "";
     }
-    document.getElementById('compMargin').value = inp.margin !== "" ? inp.margin : "";
-    document.getElementById('compDealer').value = inp.dealer !== "" ? inp.dealer : "";
+    let cmar = document.getElementById('compMargin'); if(cmar) cmar.value = inp.margin !== "" ? inp.margin : "";
+    let cdel = document.getElementById('compDealer'); if(cdel) cdel.value = inp.dealer !== "" ? inp.dealer : "";
 
     showInlineSubPanel('componentsModal');
     setTimeout(() => {
         let invInp = document.getElementById('compInv');
         if (invInp) invInp.focus();
-    }, 50);
+    }, 120);
 }
 
-function proceedToMatrixFromComponents() { 
+async function proceedToMatrixFromComponents() { 
     let idx = activeCustomerIndex; 
     if(idx === -1) return; 
     let c = customerQueue[idx];
+    if(!c) return;
     if(!c.components) c.components = {}; 
     
-    let mrpVal = document.getElementById('compMrp').value;
-    let invVal = document.getElementById('compInv').value;
-    let capVal = document.getElementById('compCap').value;
-    let targetVal = document.getElementById('compTarget').value;
-    let exwVal = document.getElementById('compExw').value;
-    let marginVal = document.getElementById('compMargin').value;
-    let dealerVal = document.getElementById('compDealer').value;
+    let cmrp = document.getElementById('compMrp'); let mrpVal = cmrp ? cmrp.value : "";
+    let cinv = document.getElementById('compInv'); let invVal = cinv ? cinv.value : "";
+    let ccap = document.getElementById('compCap'); let capVal = ccap ? ccap.value : "";
+    let ctar = document.getElementById('compTarget'); let targetVal = ctar ? ctar.value : "";
+    let cexw = document.getElementById('compExw'); let exwVal = cexw ? cexw.value : "";
+    let cmar = document.getElementById('compMargin'); let marginVal = cmar ? cmar.value : "";
+    let cdel = document.getElementById('compDealer'); let dealerVal = cdel ? cdel.value : "";
 
     let parsedInv = invVal !== "" ? (parseFloat(invVal) || 0) : 0;
     if (parsedInv <= 0) {
@@ -861,10 +1024,10 @@ function proceedToMatrixFromComponents() {
     let parsedMrp = mrpVal !== "" ? (parseFloat(mrpVal) || 0) : ""; 
     let parsedCap = capVal !== "" ? (parseFloat(capVal) || 0) : ""; 
     let parsedTarget = targetVal !== "" ? (parseFloat(targetVal) || 0) : ""; 
-    let parsedGtl = parseFloat(document.getElementById('compGtl').value) || 0; 
+    let cGtl = document.getElementById('compGtl'); let parsedGtl = cGtl ? (parseFloat(cGtl.value) || 0) : 0; 
     
     let isMobileCat = isMobileDeviceCat(currentModalCategory); 
-    let parsedRfc = isMobileCat ? (parseFloat(document.getElementById('compRfc').value) || 0) : 0; 
+    let cRfc = document.getElementById('compRfc'); let parsedRfc = isMobileCat ? (cRfc ? (parseFloat(cRfc.value) || 0) : 0) : 0; 
     let parsedExw = isMobileCat ? "" : (exwVal !== "" ? (parseFloat(exwVal) || 0) : ""); 
     let parsedMargin = marginVal !== "" ? (parseFloat(marginVal) || 0) : ""; 
     let parsedDealer = dealerVal !== "" ? (parseFloat(dealerVal) || 0) : ""; 
@@ -885,22 +1048,28 @@ function proceedToMatrixFromComponents() {
     if (parsedTarget !== "") {
         c.targetDp = parsedTarget;
         current_products.forEach(cp => {
-            cp.inputs.target = parsedTarget;
-            cp.inputs.manualLoans = {};
+            if(cp.inputs) {
+                cp.inputs.target = parsedTarget;
+                cp.inputs.manualLoans = {};
+            }
         });
     } else if (editingProductIdx !== -1) {
         c.targetDp = "";
         current_products.forEach(cp => {
-            cp.inputs.target = "";
-            cp.inputs.manualLoans = {};
+            if(cp.inputs) {
+                cp.inputs.target = "";
+                cp.inputs.manualLoans = {};
+            }
         });
     }
 
     if (parsedCap !== "") { 
         c.cap = parsedCap > 0 ? parsedCap : ""; 
         current_products.forEach(cp => {
-            cp.inputs.cap = c.cap;
-            cp.inputs.manualLoans = {};
+            if(cp.inputs) {
+                cp.inputs.cap = c.cap;
+                cp.inputs.manualLoans = {};
+            }
         });
         renderCustomerQueue(); 
         updateMatrixTopCard(); 
@@ -908,6 +1077,7 @@ function proceedToMatrixFromComponents() {
 
     if (editingProductIdx !== -1 && current_products[editingProductIdx]) {
         let p = current_products[editingProductIdx];
+        if(!p.inputs) p.inputs = {};
         p.inputs = {
             mrp: parsedMrp,
             inv: parsedInv,
@@ -922,19 +1092,20 @@ function proceedToMatrixFromComponents() {
             manualLoans: {}
         };
         editingProductIdx = -1;
-        saveQueueToLocal();
+        await saveQueueToLocal();
         hideAllInlineSubPanels();
         renderMatrix();
         return;
     }
 
-    saveQueueToLocal(); 
+    await saveQueueToLocal(); 
     hideAllInlineSubPanels(); 
     if (tempPendingProduct) finalizeProductAddition(); 
 }
 
-function finalizeProductAddition() {
+async function finalizeProductAddition() {
     let c = customerQueue[activeCustomerIndex];
+    if(!c) return;
     let ltvLimit = c?.ltv || 100; 
     let uniqueSchemes = [];
 
@@ -981,14 +1152,31 @@ function finalizeProductAddition() {
     c.products = current_products; 
     c.sortConfigs = sortConfigs; 
     tempPendingProduct = null; 
-    saveQueueToLocal(); 
+    await saveQueueToLocal(); 
     renderMatrix(); 
 }
 
 function updateFinalSwitcher() { let sw = document.getElementById('finalCustomerSwitcher'); if(!sw) return; sw.innerHTML = customerQueue.map((c, i) => `<option value="${i}" ${i === activeCustomerIndex ? 'selected' : ''}>👤 ${c.name ? c.name : 'No Name'} (₹${c.limit})</option>`).join(''); }
-function switchCustomerFinal(idx) { activeCustomerIndex = parseInt(idx); saveQueueToLocal(); goToFinalPage(); }
-function updateMatrixTopCard() { let c = customerQueue[activeCustomerIndex]; document.getElementById('infoName').innerText = c?.name || ""; document.getElementById('infoMobile').innerText = c?.mobile || ""; document.getElementById('infoLimit').innerText = "₹" + (c?.limit || 0); document.getElementById('infoLtv').innerText = (c?.ltv || 100) + "%"; document.getElementById('infoCap').innerText = c?.cap ? "₹" + c.cap : "None"; document.getElementById('infoType').innerText = c?.type || 'NEW'; }
-function loadCurrentProducts() { let c = customerQueue[activeCustomerIndex]; current_products = c?.products || []; sortConfigs = c?.sortConfigs || []; }
+async function switchCustomerFinal(idx) { activeCustomerIndex = parseInt(idx); await saveQueueToLocal(); goToFinalPage(); }
+
+/* Null-Safe Top Card Updater */
+function updateMatrixTopCard() { 
+    let c = customerQueue[activeCustomerIndex]; 
+    if(!c) return;
+    let n = document.getElementById('infoName'); if(n) n.innerText = c.name || "";
+    let m = document.getElementById('infoMobile'); if(m) m.innerText = c.mobile || "";
+    let l = document.getElementById('infoLimit'); if(l) l.innerText = "₹" + (c.limit || 0);
+    let ltv = document.getElementById('infoLtv'); if(ltv) ltv.innerText = (c.ltv || 100) + "%";
+    let cap = document.getElementById('infoCap'); if(cap) cap.innerText = c.cap ? "₹" + c.cap : "None";
+    let type = document.getElementById('infoType'); if(type) type.innerText = c.type || 'NEW';
+}
+
+function loadCurrentProducts() { 
+    let c = customerQueue[activeCustomerIndex]; 
+    if(!c) return;
+    current_products = c.products || []; 
+    sortConfigs = c.sortConfigs || []; 
+}
 
 function goToFinalPage() {
     if(activeCustomerIndex === -1 || !customerQueue[activeCustomerIndex]) return; 
@@ -996,22 +1184,25 @@ function goToFinalPage() {
     updateMatrixTopCard(); 
     updateFinalSwitcher(); 
     
-    document.getElementById('unifiedHome').style.display = 'block';
+    let uh = document.getElementById('unifiedHome'); if(uh) uh.style.display = 'block';
     let finalArea = document.getElementById('finalEligibleArea');
-    finalArea.style.display = 'flex';
+    if(finalArea) finalArea.style.display = 'flex';
     
     renderMatrix(); 
-    
-    if(current_products.length === 0) {
-        openAddProductModal();
-    } else {
-        hideAllInlineSubPanels();
-    }
+    setTimeout(() => { 
+        if(current_products.length === 0) {
+            openAddProductModal();
+        } else {
+            hideAllInlineSubPanels();
+            if(finalArea) finalArea.scrollIntoView({ behavior: 'smooth', block: 'start' }); 
+        }
+    }, 100);
 }
 
 function toggleModelView(pIdx) { 
     let wrapper = document.getElementById(`tw_${pIdx}`); 
     let icon = document.getElementById(`togIcon_${pIdx}`); 
+    if(!wrapper || !icon) return;
     if(wrapper.style.display === 'none') { wrapper.style.display = 'block'; icon.innerText = '▼'; } else { wrapper.style.display = 'none'; icon.innerText = '▶'; } 
 }
 
@@ -1031,8 +1222,11 @@ function instantSingleQuote(pIdx) { window.tempImageGenIndices = [pIdx]; request
 
 /* Model Name Complete Top-Left & Edit/Close Icons Complete Top-Right */
 function renderMatrix() {
-    let container = document.getElementById('multiModelContainer'); container.innerHTML = "";
+    let container = document.getElementById('multiModelContainer'); 
+    if(!container) return;
+    container.innerHTML = "";
     let c = customerQueue[activeCustomerIndex];
+    if(!c) return;
 
     current_products.forEach((prod, pIdx) => {
         let div = document.createElement('div'); div.className = 'premium-model-panel'; 
@@ -1040,6 +1234,8 @@ function renderMatrix() {
         let displayStyle = isCollapsed ? 'none' : 'block'; 
         let toggleIcon = isCollapsed ? '▶' : '▼'; 
         let isPhoneWebMobile = isMobileDeviceCat(prod.category); 
+        
+        if(!prod.inputs) prod.inputs = {};
         if (!isPhoneWebMobile) prod.inputs.rfc = 0; 
         if (isPhoneWebMobile) prod.inputs.exw = ""; 
 
@@ -1105,6 +1301,7 @@ function renderMatrix() {
 
 function syncInsurance(pIdx, mrpVal, baseLoanVal) {
     let prod = current_products[pIdx]; 
+    if(!prod || !prod.inputs) return;
     let isPhoneWebMobile = isMobileDeviceCat(prod.category); 
     let inp = prod.inputs;
     if (!isPhoneWebMobile) inp.rfc = 0; 
@@ -1116,7 +1313,7 @@ function recalcModel(pIdx) {
 
     let c = customerQueue[activeCustomerIndex];
     let prod = current_products[pIdx], limit = c?.limit || 0, type = c?.type || 'NEW'; 
-    let fee = (type === 'EMI CARD') ? 270 : (type === 'W/O CARD' ? 320 : 850), inp = prod.inputs; 
+    let fee = (type === 'EMI CARD') ? 270 : (type === 'W/O CARD' ? 320 : 850), inp = prod.inputs || {}; 
     let totalFees = fee + (parseFloat(inp.margin)||0) + (parseFloat(inp.dealer)||0); 
     let currentLimit = limit > 0 ? limit : 9999999; 
     let inputMrp = parseFloat(inp.mrp) || 0; 
@@ -1256,10 +1453,13 @@ function recalcModel(pIdx) {
 
 function renderRows(pIdx) {
     let prod = current_products[pIdx]; 
+    if(!prod) return;
     if(!sortConfigs[pIdx]) sortConfigs[pIdx] = {key: 'default_ltv', dir: 'desc'}; 
     let conf = sortConfigs[pIdx]; 
     let ltvLimit = customerQueue[activeCustomerIndex]?.ltv || 100; 
     let isNT = prod.isNonTieup;
+
+    if(!prod.calculatedData) return;
 
     let visibleSchemes = prod.calculatedData.filter(d => {
         let curLTV = d.curLTV; 
@@ -1298,7 +1498,10 @@ function renderRows(pIdx) {
         }
     });
 
-    document.getElementById(`body_${pIdx}`).innerHTML = visibleSchemes.map(d => {
+    let bodyEl = document.getElementById(`body_${pIdx}`);
+    if(!bodyEl) return;
+
+    bodyEl.innerHTML = visibleSchemes.map(d => {
         let isInactive = d.inactive; 
         let actionMenuBtnHtml = `<button onclick="openRowActionModal(${pIdx}, ${d.dIdx}, ${isInactive})" style="background:var(--primary); color:white; border:none; padding:4px 10px; border-radius:4px; font-weight:900; cursor:pointer; font-size: 11px;">Act ⚙️</button>`;
         let bgCol = isInactive ? '#f8f9fa' : (d.isExpired ? '#fff4e6' : '#ffffff');
@@ -1323,7 +1526,7 @@ function renderRows(pIdx) {
             <td id="emi_${pIdx}_${d.dIdx}" style="padding: 12px 4px; text-align: center; font-size: 15px; font-weight: 900; color: var(--primary);">₹${Math.round(d.emi).toLocaleString()}</td>
             <td id="inst_${pIdx}_${d.dIdx}" style="padding: 12px 4px; text-align: center; font-size: 14px; font-weight: 900; color: #475569;">${d.inst}</td>
             <td id="day_${pIdx}_${d.dIdx}" style="padding: 12px 4px; text-align: center; font-size: 14px; font-weight: 900; color: #ea580c;">₹${Math.round(d.daily).toLocaleString()}</td>
-            <td style="padding: 12px 4px; text-align: center; font-size: 14px; font-weight: 900; color: #b91c1c;">₹${Math.round(d.extra).toLocaleString()}</td>
+            <td style="padding: 12px 4px; text-align: center; font-size: 13px; font-weight: 900; color: #b91c1c;">₹${Math.round(d.extra).toLocaleString()}</td>
         </tr>
         <tr style="background: ${subRowBg}; border-bottom: 2px solid #e2e8f0; opacity: ${textOpacity};">
             <td colspan="7" style="padding: 6px 10px; font-size: 11px; font-weight: 700; color: #64748b; text-align: left;">
@@ -1355,7 +1558,11 @@ function sortMatrixTable(pIdx, key) {
 
 function manual(pIdx, dIdx) {
     let c = customerQueue[activeCustomerIndex];
-    let el = document.getElementById(`l_${pIdx}_${dIdx}`), loan = parseFloat(el.value) || 0, prod = current_products[pIdx], d = prod.calculatedData.find(x => x.dIdx === dIdx), inp = prod.inputs, type = c?.type || 'NEW';
+    let el = document.getElementById(`l_${pIdx}_${dIdx}`);
+    if(!el) return;
+    let loan = parseFloat(el.value) || 0, prod = current_products[pIdx];
+    if(!prod) return;
+    let d = prod.calculatedData.find(x => x.dIdx === dIdx), inp = prod.inputs, type = c?.type || 'NEW';
     let fee = (type === 'EMI CARD') ? 270 : (type === 'W/O CARD' ? 320 : 850); let totalFees = fee + (parseFloat(inp.margin)||0) + (parseFloat(inp.dealer)||0); 
     let inputMrp = parseFloat(inp.mrp) || 0; let inputInv = parseFloat(inp.inv) || 0; 
     if (inputInv <= 0) return;
@@ -1447,9 +1654,20 @@ function fallbackCopy(text, successCb) {
 async function toggleInactive(pIdx, dIdx) { let prod = current_products[pIdx]; let scheme = prod.schemes[dIdx]; scheme.inactive = !scheme.inactive; recalcModel(pIdx); customerQueue[activeCustomerIndex].products = current_products; await saveQueueToLocal(); }
 
 async function executeManualAction() {
-    let mode = document.getElementById('targetPIdx').value; 
-    let manNameInput = document.getElementById('manName').value.toUpperCase().trim();
-    let scheme = { tenure: parseInt(document.getElementById('manTen').value)||0, advEmi: parseInt(document.getElementById('manAdv').value)||0, dbd: parseFloat(document.getElementById('manDbd').value)||0, pf: parseInt(document.getElementById('manPf').value)||0, roi: parseFloat(document.getElementById('manRoi').value)||0, fixedEmi: parseInt(document.getElementById('manFixed').value)||0, minLoan: 0, maxLoan: 9999999, category: "MANUAL", inactive: false, isExpired: false, expiryDateStr: "" };
+    let tpi = document.getElementById('targetPIdx');
+    let mode = tpi ? tpi.value : "NEW"; 
+    let manNameInputEl = document.getElementById('manName');
+    let manNameInput = manNameInputEl ? manNameInputEl.value.toUpperCase().trim() : "";
+    
+    let manTenEl = document.getElementById('manTen'); let ten = manTenEl ? parseInt(manTenEl.value)||0 : 0;
+    let manAdvEl = document.getElementById('manAdv'); let adv = manAdvEl ? parseInt(manAdvEl.value)||0 : 0;
+    let manDbdEl = document.getElementById('manDbd'); let dbd = manDbdEl ? parseFloat(manDbdEl.value)||0 : 0;
+    let manPfEl = document.getElementById('manPf'); let pf = manPfEl ? parseInt(manPfEl.value)||0 : 0;
+    let manRoiEl = document.getElementById('manRoi'); let roi = manRoiEl ? parseFloat(manRoiEl.value)||0 : 0;
+    let manFixEl = document.getElementById('manFixed'); let fix = manFixEl ? parseInt(manFixEl.value)||0 : 0;
+    
+    let scheme = { tenure: ten, advEmi: adv, dbd: dbd, pf: pf, roi: roi, fixedEmi: fix, minLoan: 0, maxLoan: 9999999, category: "MANUAL", inactive: false, isExpired: false, expiryDateStr: "" };
+    
     if(mode === "NEW") { 
         let name = manNameInput !== "" ? manNameInput : "MANUAL MODEL"; 
         closeManualModal();
@@ -1458,10 +1676,13 @@ async function executeManualAction() {
         showComponentsModal("");
         return;
     } else { 
-        current_products[mode].schemes.push(scheme); 
-        customerQueue[activeCustomerIndex].products = current_products;
-        await saveQueueToLocal();
-        recalcModel(parseInt(mode)); 
+        let pIdx = parseInt(mode);
+        if(current_products[pIdx]) {
+            current_products[pIdx].schemes.push(scheme); 
+            if(customerQueue[activeCustomerIndex]) customerQueue[activeCustomerIndex].products = current_products;
+            await saveQueueToLocal();
+            recalcModel(pIdx); 
+        }
     } 
     closeManualModal();
 }
@@ -1469,17 +1690,24 @@ async function executeManualAction() {
 function openQuoteSelectionModal() {
     if(current_products.length === 0) { showToast("आधी Matrix मध्ये Product Add करा!", "warning"); return; }
     let html = current_products.map((p, idx) => ` <div style="display:flex; align-items:center; gap:8px; padding:8px; background:#f8f9fa; border:1px solid #ddd; border-radius:4px;"> <input type="checkbox" id="qchk_${idx}" class="quote-model-chk" value="${idx}" style="width:16px; height:16px; cursor:pointer;"> <label for="qchk_${idx}" style="font-size:14px; font-weight:bold; cursor:pointer; flex:1; margin:0;">${p.name}</label> </div> `).join('');
-    document.getElementById('quoteModelCheckboxes').innerHTML = html; document.getElementById('quoteSelectionModal').style.display = 'flex';
+    let qmc = document.getElementById('quoteModelCheckboxes');
+    if(qmc) qmc.innerHTML = html; 
+    let qsm = document.getElementById('quoteSelectionModal');
+    if(qsm) qsm.style.display = 'flex';
 }
 
 function promptForSelectedImageGeneration() {
     let chks = document.querySelectorAll('.quote-model-chk:checked'); if(chks.length === 0) { showToast("किमान एक मॉडेल निवडा!", "warning"); return; }
-    window.tempImageGenIndices = Array.from(chks).map(c => parseInt(c.value)); document.getElementById('quoteSelectionModal').style.display = 'none'; requestWhatsAppDispatch = false; doGenerateCustomerImage();
+    window.tempImageGenIndices = Array.from(chks).map(c => parseInt(c.value)); 
+    let qsm = document.getElementById('quoteSelectionModal');
+    if(qsm) qsm.style.display = 'none'; 
+    requestWhatsAppDispatch = false; 
+    doGenerateCustomerImage();
 }
 
 let requestWhatsAppDispatch = false;
-function proceedGenerateImage() { requestWhatsAppDispatch = false; document.getElementById('custInfoPromptModal').style.display = 'none'; doGenerateCustomerImage(); }
-function proceedGenerateImageAndWhatsAppCopy() { requestWhatsAppDispatch = true; document.getElementById('custInfoPromptModal').style.display = 'none'; doGenerateCustomerImage(); }
+function proceedGenerateImage() { requestWhatsAppDispatch = false; let cm = document.getElementById('custInfoPromptModal'); if(cm) cm.style.display = 'none'; doGenerateCustomerImage(); }
+function proceedGenerateImageAndWhatsAppCopy() { requestWhatsAppDispatch = true; let cm = document.getElementById('custInfoPromptModal'); if(cm) cm.style.display = 'none'; doGenerateCustomerImage(); }
 
 function doGenerateCustomerImage() {
     let quoteDiv = document.createElement('div'); 
@@ -1578,20 +1806,25 @@ function doGenerateCustomerImage() {
 
     html2canvas(quoteDiv, {scale: 2, useCORS: true, backgroundColor: "#ffffff"}).then(canvas => { 
         let imgDataUrl = canvas.toDataURL("image/png"); 
-        document.getElementById('generatedImage').src = imgDataUrl; 
-        document.getElementById('imageViewerModal').style.display = 'flex'; 
+        let gim = document.getElementById('generatedImage'); if(gim) gim.src = imgDataUrl; 
+        let ivm = document.getElementById('imageViewerModal'); if(ivm) ivm.style.display = 'flex'; 
         document.body.removeChild(quoteDiv); 
     });
 }
 
 function openRowActionModal(pIdx, dIdx, isInactive) {
     let container = document.getElementById('rowActionButtons');
+    if(!container) return;
     container.innerHTML = `
         <button onclick="copySchemeText(${pIdx}, ${dIdx}, this); closeRowActionModal();" style="background:#f8fafc; color:var(--dark); border:1px solid #cbd5e1; padding:14px; border-radius:8px; font-weight:900; font-size:14px; width:100%;">Copy Scheme</button>
         <button onclick="openEditSchemeModal(${pIdx}, ${dIdx}); closeRowActionModal();" style="background:#fff7ed; color:#d97706; border:1px solid #fed7aa; padding:14px; border-radius:8px; font-weight:900; font-size:14px; width:100%;">Edit Scheme</button>
         <button onclick="toggleInactive(${pIdx}, ${dIdx}); closeRowActionModal();" style="background:${isInactive ? '#ecfdf5' : '#fef2f2'}; color:${isInactive ? '#059669' : '#dc2626'}; border:1px solid ${isInactive ? '#a7f3d0' : '#fecaca'}; padding:14px; border-radius:8px; font-weight:900; font-size:14px; width:100%;">${isInactive ? 'Add To Active' : 'Disable Scheme'}</button>
     `;
-    document.getElementById('rowActionModal').style.display = 'flex';
+    let ram = document.getElementById('rowActionModal');
+    if(ram) ram.style.display = 'flex';
 }
 
-function closeRowActionModal() { document.getElementById('rowActionModal').style.display = 'none'; }
+function closeRowActionModal() { 
+    let ram = document.getElementById('rowActionModal');
+    if(ram) ram.style.display = 'none'; 
+}
