@@ -406,7 +406,24 @@ async function addCustomerToQueue() {
     goToFinalPage();
 }
 
-function copyCustomerDetails(idx, btnElement) { let c = customerQueue[idx]; let cappingLine = (c.cap && c.cap !== "") ? `\nEMI Capping- ${c.cap}` : ""; let textToCopy = `Customer Name- ${c.name}\nLimit- ${c.limit}\nLTV- ${c.ltv}${cappingLine}`; function showSuccess() { let originalText = btnElement.innerText; btnElement.innerText = "Copied!"; btnElement.style.background = "var(--success)"; setTimeout(() => { btnElement.innerText = originalText; btnElement.style.background = "var(--warning)"; }, 2000); } if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(textToCopy).then(showSuccess).catch(() => fallbackCopy(textToCopy, showSuccess)); } else { fallbackCopy(textToCopy, showSuccess); } }
+function copyCustomerDetails(idx, btnElement) { 
+    let c = customerQueue[idx]; 
+    let cappingLine = (c.cap && c.cap !== "") ? `\nEMI Capping- ${c.cap}` : ""; 
+    let custName = c.name ? c.name : "Valued Customer";
+    let textToCopy = `Customer Name- ${custName}\nLimit- ${c.limit}\nLTV- ${c.ltv}${cappingLine}`; 
+    function showSuccess() { 
+        let originalText = btnElement.innerText; 
+        btnElement.innerText = "Copied!"; 
+        btnElement.style.background = "var(--success)"; 
+        setTimeout(() => { btnElement.innerText = originalText; btnElement.style.background = "var(--warning)"; }, 2000); 
+    } 
+    if (navigator.clipboard && window.isSecureContext) { 
+        navigator.clipboard.writeText(textToCopy).then(showSuccess).catch(() => fallbackCopy(textToCopy, showSuccess)); 
+    } else { 
+        fallbackCopy(textToCopy, showSuccess); 
+    } 
+}
+
 function maskName(str) { if (!str || str === "-") return str; return str.split(' ').map(word => { if (word.length <= 2) return word; return word[0] + '*'.repeat(word.length - 2) + word[word.length - 1]; }).join(' '); }
 function selectQueueItem(idx) { selectedQueueIndex = idx; renderCustomerQueue(); updateUniversalActionButtons(); }
 
@@ -418,7 +435,7 @@ function updateUniversalActionButtons() {
 
 function uniCopy() { if(selectedQueueIndex !== -1) copyCustomerDetails(selectedQueueIndex, document.getElementById('uniCopyBtn')); }
 function uniSelect() { if(selectedQueueIndex !== -1) setActiveCustomer(selectedQueueIndex); }
-function uniEdit() { if(selectedQueueIndex === -1) return; let c = customerQueue[selectedQueueIndex]; document.getElementById('ecName').value = c.name; document.getElementById('ecMobile').value = c.mobile || ''; document.getElementById('ecLimit').value = c.limit; document.getElementById('ecLtv').value = c.ltv || 100; document.getElementById('ecType').value = c.type; document.getElementById('ecCap').value = c.cap || ''; document.getElementById('editCustomerModal').style.display='flex'; }
+function uniEdit() { if(selectedQueueIndex === -1) return; let c = customerQueue[selectedQueueIndex]; document.getElementById('ecName').value = c.name || ''; document.getElementById('ecMobile').value = c.mobile || ''; document.getElementById('ecLimit').value = c.limit; document.getElementById('ecLtv').value = c.ltv || 100; document.getElementById('ecType').value = c.type; document.getElementById('ecCap').value = c.cap || ''; document.getElementById('editCustomerModal').style.display='flex'; }
 function uniInvite() { if(selectedQueueIndex === -1) return; document.getElementById('invSenderName').value = localStorage.getItem('portal_sales_name') || ""; document.getElementById('invSenderMobile').value = localStorage.getItem('portal_sales_mobile') || ""; document.getElementById('inviteModal').style.display = 'flex'; }
 function sendWhatsAppInvite() { 
     let sName = document.getElementById('invSenderName').value.trim(); 
@@ -427,7 +444,8 @@ function sendWhatsAppInvite() {
     localStorage.setItem('portal_sales_name', sName); 
     if(sMobile) localStorage.setItem('portal_sales_mobile', sMobile); 
     let c = customerQueue[selectedQueueIndex]; 
-    let msg = `Namaskar ${c.name ? c.name : 'Sir/Madam'}! 🎉\n\nAapki Bajaj Finance Ki *₹${c.limit}* Ki Limit Approve Ho Gayi Hai!\n\n👤 *${sName}*${sMobile ? `\n📞 ${sMobile}` : ''}`; 
+    let cName = c.name ? c.name : 'Sir/Madam';
+    let msg = `Namaskar ${cName}! 🎉\n\nAapki Bajaj Finance Ki *₹${c.limit}* Ki Limit Approve Ho Gayi Hai!\n\n👤 *${sName}*${sMobile ? `\n📞 ${sMobile}` : ''}`; 
     let encMsg = encodeURIComponent(msg); 
     let url = (c.mobile && c.mobile.length === 10) ? `https://wa.me/91${c.mobile}?text=${encMsg}` : `https://api.whatsapp.com/send?text=${encMsg}`;
     window.open(url, '_blank'); 
@@ -453,6 +471,7 @@ async function saveCustomerEdit() {
     } 
     closeCustomerEdit(); 
 }
+
 async function uniDelete() { if(selectedQueueIndex !== -1) await removeCustomer(selectedQueueIndex); }
 async function removeCustomer(idx) { let c = customerQueue[idx]; recycleBin.push(c); await saveToDB('persistent_recycle', recycleBin); localStorage.setItem('persistent_recycle_backup', JSON.stringify(recycleBin)); if(activeCustomerIndex === idx) activeCustomerIndex = -1; else if (activeCustomerIndex > idx) activeCustomerIndex--; customerQueue.splice(idx, 1); if (selectedQueueIndex === idx) selectedQueueIndex = -1; else if (selectedQueueIndex > idx) selectedQueueIndex--; if(customerQueue.length > 0 && activeCustomerIndex === -1) activeCustomerIndex = 0; await saveQueueToLocal(); renderCustomerQueue(); updateUniversalActionButtons(); if(activeCustomerIndex === -1) goHome(); else goToFinalPage(); }
 
@@ -511,9 +530,17 @@ async function setActiveCustomer(idx) {
         return; 
     } 
     activeCustomerIndex = idx; 
+    selectedQueueIndex = idx;
     await saveQueueToLocal(); 
     if(document.getElementById('queueSearch')) document.getElementById('queueSearch').value = ''; 
     closeCustomerHistoryModal();
+    
+    let c = customerQueue[idx];
+    if (c) {
+        current_products = c.products || [];
+        sortConfigs = c.sortConfigs || [];
+    }
+    
     goToFinalPage(); 
 }
 
@@ -1088,7 +1115,7 @@ function renderMatrix() {
                         <tbody id="body_${pIdx}"></tbody>
                     </table>
                 </div>
-            `;
+            </div>`;
         container.appendChild(div); 
         recalcModel(pIdx);
     });
@@ -1264,7 +1291,6 @@ function renderRows(pIdx) {
         return true;
     });
 
-    /* हेडिंग क्लिक केल्यावर होणारे सॉर्टिंग लॉजिक */
     visibleSchemes.sort((a,b) => {
         let key = conf.key;
         let dir = conf.dir === 'asc' ? 1 : -1;
@@ -1296,7 +1322,6 @@ function renderRows(pIdx) {
         let subRowBg = isInactive ? '#f8f9fa' : '#f8fafc';
         let dbdStr = `${+parseFloat(d.dbd).toFixed(3)}% (₹${Math.round(d.dbdAmt||0)})`;
         let roiStr = `${+parseFloat(d.roi).toFixed(2)}% (₹${Math.round(d.roiAmt||0)})`;
-        let limitStr = isNT ? `Min:₹${d.minLoan} Max:${d.maxLoan < 9999999 ? d.maxLoan : 'No'}` : `Lmt:₹${Math.floor(d.nbfcMaxL)}`;
 
         return `
         <tr id="row_${pIdx}_${d.dIdx}" style="background: ${bgCol}; opacity: ${textOpacity};">
@@ -1325,8 +1350,6 @@ function renderRows(pIdx) {
                     <span><b style="color:var(--bajaj-blue);">ROI:</b> <span id="roi_${pIdx}_${d.dIdx}">${roiStr}</span></span>
                     <span><b style="color:var(--success);">Net Disb:</b> <span id="nd_${pIdx}_${d.dIdx}">₹${Math.round(d.netDisb).toLocaleString()}</span></span>
                     ${d.fixedEmi > 0 ? `<span><b style="color:var(--bajaj-blue);">Fixed:</b> ₹${d.fixedEmi}</span>` : ''}
-                    <span><b style="color:#8b5cf6;">${limitStr}</b></span>
-                    <!-- Extra आता वरती मुख्य ओळीत (Action च्या जागी) दाखवला आहे -->
                     <span id="extra_${pIdx}_${d.dIdx}" style="background:#fee2e2; color:#b91c1c; padding:3px 8px; border-radius:4px; font-weight:900; margin-left:auto;">Extra: ₹${Math.round(d.extra).toLocaleString()}</span>
                 </div>
             </td>
@@ -1350,8 +1373,7 @@ function manual(pIdx, dIdx) {
     let c = customerQueue[activeCustomerIndex];
     let el = document.getElementById(`l_${pIdx}_${dIdx}`), loan = parseFloat(el.value) || 0, prod = current_products[pIdx], d = prod.calculatedData.find(x => x.dIdx === dIdx), inp = prod.inputs, type = c?.type || 'NEW';
     let fee = (type === 'EMI CARD') ? 270 : (type === 'W/O CARD' ? 320 : 850); let totalFees = fee + (parseFloat(inp.margin)||0) + (parseFloat(inp.dealer)||0); 
-    let limit = c?.limit || 0; 
-    let currentLimit = limit > 0 ? limit : 9999999; let inputMrp = parseFloat(inp.mrp) || 0; let inputInv = parseFloat(inp.inv) || 0; 
+    let inputMrp = parseFloat(inp.mrp) || 0; let inputInv = parseFloat(inp.inv) || 0; 
     if (inputInv <= 0) return;
 
     let effectivePrice = inputInv; 
@@ -1389,6 +1411,7 @@ function manual(pIdx, dIdx) {
         d.loan = loan; d.currentTenure = calcTenure; d.dp = dpR; d.inst = inst; d.emi = emi; 
     } else { 
         let inst = d.tenure - d.advEmi; if(inst < 1) inst = 1;
+        let limit = c?.limit || 0; let currentLimit = limit > 0 ? limit : 9999999;
         let nbfcMaxL = (currentLimit * d.tenure) / (d.tenure - d.advEmi || 1); 
         let maxBoundary = Math.min(loanCapPrice > 0 ? loanCapPrice : 999999, nbfcMaxL, prod.isNonTieup ? d.maxLoan : 9999999); 
         
@@ -1435,7 +1458,7 @@ function sortM(pIdx, key) {
 }
 
 function copySchemeText(pIdx, dIdx, btnElement) {
-    let prod = current_products[pIdx], d = prod.calculatedData.find(x => x.dIdx === dIdx); let invAmt = prod.inputs.inv; let c = customerQueue[activeCustomerIndex]; let cappingLine = (c.cap && c.cap !== "") ? `\nEMI Capping- ${c.cap}` : ""; let custDetails = `Customer Name- ${c.name ? c.name : 'Valued Customer'}\nLimit- ${c.limit}\nLTV- ${c.ltv}${cappingLine}\n\n`;
+    let prod = current_products[pIdx], d = prod.calculatedData.find(x => x.dIdx === dIdx); let invAmt = prod.inputs.inv; let c = customerQueue[activeCustomerIndex]; let cappingLine = (c.cap && c.cap !== "") ? `\nEMI Capping- ${c.cap}` : ""; let custName = c.name ? c.name : 'Valued Customer'; let custDetails = `Customer Name- ${custName}\nLimit- ${c.limit}\nLTV- ${c.ltv}${cappingLine}\n\n`;
     let textToCopy = `${custDetails}📱 *${prod.name}*\n${invAmt > 0 ? `*Invoice Amount:* ₹${invAmt}\n\n` : "" }✅ *Scheme:* ${d.currentTenure}/${d.advEmi}\n💰 *DP:* ₹${Math.round(d.dp).toLocaleString()}\n🗓️ *EMI:* ₹${Math.round(d.emi).toLocaleString()} x ${d.inst}\n✨ *Daily EMI:* ₹${Math.round(d.daily).toLocaleString()}`;
     function showSuccess() { let originalText = btnElement.innerText; btnElement.innerText = "Copied!"; btnElement.style.background = "var(--success)"; setTimeout(() => { btnElement.innerText = originalText; btnElement.style.background = "var(--primary)"; }, 2000); }
     if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(textToCopy).then(showSuccess).catch(() => fallbackCopy(textToCopy, showSuccess)); } else { fallbackCopy(textToCopy, showSuccess); }
