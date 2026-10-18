@@ -364,7 +364,7 @@ function checkDuplicateMobile(val) {
 }
 
 async function addCustomerToQueue() {
-    let name = document.getElementById('cqName').value.trim() || `Cust ${customerQueue.length + 1}`; 
+    let name = document.getElementById('cqName').value.trim(); 
     let mobile = document.getElementById('cqMobile').value.trim() || ""; 
     let limit = parseFloat(document.getElementById('cqLimit').value); 
     let ltv = parseFloat(document.getElementById('cqLtv').value) || 100; 
@@ -427,7 +427,7 @@ function sendWhatsAppInvite() {
     localStorage.setItem('portal_sales_name', sName); 
     if(sMobile) localStorage.setItem('portal_sales_mobile', sMobile); 
     let c = customerQueue[selectedQueueIndex]; 
-    let msg = `Namaskar ${c.name} Sir/Madam! 🎉\n\nAapki Bajaj Finance Ki *₹${c.limit}* Ki Limit Approve Ho Gayi Hai!\n\n👤 *${sName}*${sMobile ? `\n📞 ${sMobile}` : ''}`; 
+    let msg = `Namaskar ${c.name ? c.name : 'Sir/Madam'}! 🎉\n\nAapki Bajaj Finance Ki *₹${c.limit}* Ki Limit Approve Ho Gayi Hai!\n\n👤 *${sName}*${sMobile ? `\n📞 ${sMobile}` : ''}`; 
     let encMsg = encodeURIComponent(msg); 
     let url = (c.mobile && c.mobile.length === 10) ? `https://wa.me/91${c.mobile}?text=${encMsg}` : `https://api.whatsapp.com/send?text=${encMsg}`;
     window.open(url, '_blank'); 
@@ -438,7 +438,7 @@ function closeCustomerEdit() { document.getElementById('editCustomerModal').styl
 async function saveCustomerEdit() { 
     if(selectedQueueIndex === -1) return; 
     let c = customerQueue[selectedQueueIndex]; 
-    c.name = document.getElementById('ecName').value || 'Customer'; 
+    c.name = document.getElementById('ecName').value || ''; 
     c.mobile = document.getElementById('ecMobile').value; 
     c.limit = parseFloat(document.getElementById('ecLimit').value) || 0; 
     c.ltv = parseFloat(document.getElementById('ecLtv').value) || 100; 
@@ -456,7 +456,7 @@ async function saveCustomerEdit() {
 async function uniDelete() { if(selectedQueueIndex !== -1) await removeCustomer(selectedQueueIndex); }
 async function removeCustomer(idx) { let c = customerQueue[idx]; recycleBin.push(c); await saveToDB('persistent_recycle', recycleBin); localStorage.setItem('persistent_recycle_backup', JSON.stringify(recycleBin)); if(activeCustomerIndex === idx) activeCustomerIndex = -1; else if (activeCustomerIndex > idx) activeCustomerIndex--; customerQueue.splice(idx, 1); if (selectedQueueIndex === idx) selectedQueueIndex = -1; else if (selectedQueueIndex > idx) selectedQueueIndex--; if(customerQueue.length > 0 && activeCustomerIndex === -1) activeCustomerIndex = 0; await saveQueueToLocal(); renderCustomerQueue(); updateUniversalActionButtons(); if(activeCustomerIndex === -1) goHome(); else goToFinalPage(); }
 
-function openRecycleBin() { let list = document.getElementById('recycleBinList'); if(recycleBin.length === 0) { list.innerHTML = `<div style="text-align:center; color:#888;">Recycle Bin Empty</div>`; } else { list.innerHTML = recycleBin.map((c, i) => ` <div style="display:flex; justify-content:space-between; align-items:center; background:#fff; padding:8px; border-radius:4px; border:1px solid #ddd;"> <div style="font-size:12px; color:var(--dark); font-weight:bold;"> 👤 ${c.name} <br><span style="color:var(--success);">LMT: ₹${c.limit}</span> </div> <button onclick="restoreCustomer(${i})" style="background:var(--primary); color:white; padding:6px; border-radius:3px;">↩️ Restore</button> </div> `).join(''); } document.getElementById('recycleBinModal').style.display='flex'; }
+function openRecycleBin() { let list = document.getElementById('recycleBinList'); if(recycleBin.length === 0) { list.innerHTML = `<div style="text-align:center; color:#888;">Recycle Bin Empty</div>`; } else { list.innerHTML = recycleBin.map((c, i) => ` <div style="display:flex; justify-content:space-between; align-items:center; background:#fff; padding:8px; border-radius:4px; border:1px solid #ddd;"> <div style="font-size:12px; color:var(--dark); font-weight:bold;"> 👤 ${c.name ? c.name : 'No Name'} <br><span style="color:var(--success);">LMT: ₹${c.limit}</span> </div> <button onclick="restoreCustomer(${i})" style="background:var(--primary); color:white; padding:6px; border-radius:3px;">↩️ Restore</button> </div> `).join(''); } document.getElementById('recycleBinModal').style.display='flex'; }
 function closeRecycleBin() { document.getElementById('recycleBinModal').style.display='none'; }
 async function restoreCustomer(idx) { let c = recycleBin.splice(idx, 1)[0]; customerQueue.unshift(c); if(activeCustomerIndex !== -1) activeCustomerIndex++; if(selectedQueueIndex !== -1) selectedQueueIndex++; await saveToDB('persistent_recycle', recycleBin); localStorage.setItem('persistent_recycle_backup', JSON.stringify(recycleBin)); await saveQueueToLocal(); openRecycleBin(); renderCustomerQueue(); updateUniversalActionButtons(); }
 
@@ -475,7 +475,8 @@ function renderCustomerQueue() {
     let isSearching = qSearch !== ""; 
     let filtered = customerQueue.map((c, idx) => ({...c, originalIdx: idx})).filter(c => { 
         if(!isSearching) return true; 
-        return c.name.toLowerCase().includes(qSearch) || (c.mobile && c.mobile.includes(qSearch)) || c.limit.toString().includes(qSearch) || (c.cap && c.cap.toString().includes(qSearch)) || c.type.toLowerCase().includes(qSearch); 
+        let cName = c.name ? c.name.toLowerCase() : "";
+        return cName.includes(qSearch) || (c.mobile && c.mobile.includes(qSearch)) || c.limit.toString().includes(qSearch) || (c.cap && c.cap.toString().includes(qSearch)) || c.type.toLowerCase().includes(qSearch); 
     }); 
 
     if(filtered.length === 0) { 
@@ -487,7 +488,7 @@ function renderCustomerQueue() {
         let idx = c.originalIdx; 
         let isSelected = (selectedQueueIndex === idx); 
         let isActive = (activeCustomerIndex === idx); 
-        let displayName = (isSearching || isSelected) ? c.name : maskName(c.name); 
+        let displayName = c.name ? ((isSearching || isSelected) ? c.name : maskName(c.name)) : "No Name"; 
         let bgStyle = isSelected ? '#e3f2fd' : (isActive ? '#f0f8ff' : '#fff'); 
         let borderStyle = isSelected ? 'var(--primary)' : (isActive ? '#0088cc' : '#ddd'); 
 
@@ -973,7 +974,7 @@ async function finalizeProductAddition() {
     renderMatrix(); 
 }
 
-function updateFinalSwitcher() { let sw = document.getElementById('finalCustomerSwitcher'); if(!sw) return; sw.innerHTML = customerQueue.map((c, i) => `<option value="${i}" ${i === activeCustomerIndex ? 'selected' : ''}>👤 ${c.name} (₹${c.limit})</option>`).join(''); }
+function updateFinalSwitcher() { let sw = document.getElementById('finalCustomerSwitcher'); if(!sw) return; sw.innerHTML = customerQueue.map((c, i) => `<option value="${i}" ${i === activeCustomerIndex ? 'selected' : ''}>👤 ${c.name ? c.name : 'No Name'} (₹${c.limit})</option>`).join(''); }
 async function switchCustomerFinal(idx) { activeCustomerIndex = parseInt(idx); await saveQueueToLocal(); goToFinalPage(); }
 function updateMatrixTopCard() { let c = customerQueue[activeCustomerIndex]; document.getElementById('infoName').innerText = c?.name || "-"; document.getElementById('infoMobile').innerText = c?.mobile || "-"; document.getElementById('infoLimit').innerText = "₹" + (c?.limit || 0); document.getElementById('infoLtv').innerText = (c?.ltv || 100) + "%"; document.getElementById('infoCap').innerText = c?.cap ? "₹" + c.cap : "None"; document.getElementById('infoType').innerText = c?.type || 'NEW'; }
 function loadCurrentProducts() { let c = customerQueue[activeCustomerIndex]; current_products = c?.products || []; sortConfigs = c?.sortConfigs || []; }
@@ -1075,19 +1076,19 @@ function renderMatrix() {
                     <table style="width: 100%; border-collapse: collapse;">
                         <thead style="background: #f1f5f9; color: #475569; border-bottom: 2px solid #cbd5e1;">
                             <tr style="font-size: 11px; font-weight: 900; letter-spacing: 0.5px; text-align:center;">
-                                <th style="padding: 10px 4px; width: 12%;">T/A</th>
-                                <th style="padding: 10px 4px; width: 18%;">Loan</th>
-                                <th style="padding: 10px 4px; width: 18%;">Net DP</th>
-                                <th style="padding: 10px 4px; width: 16%;">EMI</th>
-                                <th style="padding: 10px 4px; width: 10%;">M</th>
-                                <th style="padding: 10px 4px; width: 14%;">Daily</th>
-                                <th style="padding: 10px 4px; width: 12%;">Act</th>
+                                <th onclick="sortMatrixTable(${pIdx}, 'tenure')" style="padding: 10px 4px; width: 12%; cursor:pointer;" title="Sort by Tenure">T/A ↕</th>
+                                <th onclick="sortMatrixTable(${pIdx}, 'loan')" style="padding: 10px 4px; width: 18%; cursor:pointer;" title="Sort by Loan">Loan ↕</th>
+                                <th onclick="sortMatrixTable(${pIdx}, 'dp')" style="padding: 10px 4px; width: 18%; cursor:pointer;" title="Sort by DP">Net DP ↕</th>
+                                <th onclick="sortMatrixTable(${pIdx}, 'emi')" style="padding: 10px 4px; width: 16%; cursor:pointer;" title="Sort by EMI">EMI ↕</th>
+                                <th onclick="sortMatrixTable(${pIdx}, 'months')" style="padding: 10px 4px; width: 10%; cursor:pointer;" title="Sort by Months">M ↕</th>
+                                <th onclick="sortMatrixTable(${pIdx}, 'daily')" style="padding: 10px 4px; width: 14%; cursor:pointer;" title="Sort by Daily">Daily ↕</th>
+                                <th style="padding: 10px 4px; width: 12%;">Extra</th>
                             </tr>
                         </thead>
                         <tbody id="body_${pIdx}"></tbody>
                     </table>
                 </div>
-            </div>`;
+            `;
         container.appendChild(div); 
         recalcModel(pIdx);
     });
@@ -1263,13 +1264,27 @@ function renderRows(pIdx) {
         return true;
     });
 
+    /* हेडिंग क्लिक केल्यावर होणारे सॉर्टिंग लॉजिक */
     visibleSchemes.sort((a,b) => {
-        if (conf.key === 'extra') {
-            return conf.dir === 'asc' ? a.extra - b.extra : b.extra - a.extra;
+        let key = conf.key;
+        let dir = conf.dir === 'asc' ? 1 : -1;
+
+        if (key === 'tenure') {
+            return (a.currentTenure - b.currentTenure) * dir;
+        } else if (key === 'loan') {
+            return (a.loan - b.loan) * dir;
+        } else if (key === 'dp') {
+            return (a.dp - b.dp) * dir;
+        } else if (key === 'emi') {
+            return (a.emi - b.emi) * dir;
+        } else if (key === 'months') {
+            return (a.inst - b.inst) * dir;
+        } else if (key === 'daily') {
+            return (a.daily - b.daily) * dir;
         } else {
-            if (Math.round(b.curLTV) !== Math.round(a.curLTV)) { return b.curLTV - a.curLTV; }
-            if (a.dp !== b.dp) { return a.dp - b.dp; }
-            return a.emi - b.emi;
+            if (Math.round(b.curLTV) !== Math.round(a.curLTV)) { return (b.curLTV - a.curLTV); }
+            if (a.dp !== b.dp) { return (a.dp - b.dp); }
+            return (a.emi - b.emi);
         }
     });
 
@@ -1311,12 +1326,24 @@ function renderRows(pIdx) {
                     <span><b style="color:var(--success);">Net Disb:</b> <span id="nd_${pIdx}_${d.dIdx}">₹${Math.round(d.netDisb).toLocaleString()}</span></span>
                     ${d.fixedEmi > 0 ? `<span><b style="color:var(--bajaj-blue);">Fixed:</b> ₹${d.fixedEmi}</span>` : ''}
                     <span><b style="color:#8b5cf6;">${limitStr}</b></span>
-                    <span id="extra_${pIdx}_${d.dIdx}" onclick="sortM(${pIdx}, 'extra')" style="cursor:pointer; background:#fee2e2; color:#b91c1c; padding:3px 8px; border-radius:4px; font-weight:900; margin-left:auto;">Extra: ₹${Math.round(d.extra).toLocaleString()} ↕</span>
+                    <!-- Extra आता वरती मुख्य ओळीत (Action च्या जागी) दाखवला आहे -->
+                    <span id="extra_${pIdx}_${d.dIdx}" style="background:#fee2e2; color:#b91c1c; padding:3px 8px; border-radius:4px; font-weight:900; margin-left:auto;">Extra: ₹${Math.round(d.extra).toLocaleString()}</span>
                 </div>
             </td>
         </tr>
         `;
     }).join('');
+}
+
+function sortMatrixTable(pIdx, key) {
+    let conf = sortConfigs[pIdx];
+    if (conf.key === key) {
+        conf.dir = conf.dir === 'asc' ? 'desc' : 'asc';
+    } else {
+        conf.key = key;
+        conf.dir = 'asc';
+    }
+    renderRows(pIdx);
 }
 
 function manual(pIdx, dIdx) {
@@ -1408,7 +1435,7 @@ function sortM(pIdx, key) {
 }
 
 function copySchemeText(pIdx, dIdx, btnElement) {
-    let prod = current_products[pIdx], d = prod.calculatedData.find(x => x.dIdx === dIdx); let invAmt = prod.inputs.inv; let c = customerQueue[activeCustomerIndex]; let cappingLine = (c.cap && c.cap !== "") ? `\nEMI Capping- ${c.cap}` : ""; let custDetails = `Customer Name- ${c.name}\nLimit- ${c.limit}\nLTV- ${c.ltv}${cappingLine}\n\n`;
+    let prod = current_products[pIdx], d = prod.calculatedData.find(x => x.dIdx === dIdx); let invAmt = prod.inputs.inv; let c = customerQueue[activeCustomerIndex]; let cappingLine = (c.cap && c.cap !== "") ? `\nEMI Capping- ${c.cap}` : ""; let custDetails = `Customer Name- ${c.name ? c.name : 'Valued Customer'}\nLimit- ${c.limit}\nLTV- ${c.ltv}${cappingLine}\n\n`;
     let textToCopy = `${custDetails}📱 *${prod.name}*\n${invAmt > 0 ? `*Invoice Amount:* ₹${invAmt}\n\n` : "" }✅ *Scheme:* ${d.currentTenure}/${d.advEmi}\n💰 *DP:* ₹${Math.round(d.dp).toLocaleString()}\n🗓️ *EMI:* ₹${Math.round(d.emi).toLocaleString()} x ${d.inst}\n✨ *Daily EMI:* ₹${Math.round(d.daily).toLocaleString()}`;
     function showSuccess() { let originalText = btnElement.innerText; btnElement.innerText = "Copied!"; btnElement.style.background = "var(--success)"; setTimeout(() => { btnElement.innerText = originalText; btnElement.style.background = "var(--primary)"; }, 2000); }
     if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(textToCopy).then(showSuccess).catch(() => fallbackCopy(textToCopy, showSuccess)); } else { fallbackCopy(textToCopy, showSuccess); }
@@ -1458,76 +1485,100 @@ function proceedGenerateImageAndWhatsAppCopy() { requestWhatsAppDispatch = true;
 
 function doGenerateCustomerImage() {
     let quoteDiv = document.createElement('div'); 
-    quoteDiv.style.width = "780px"; 
-    quoteDiv.style.padding = "16px"; 
-    quoteDiv.style.background = "#f8fafc"; 
+    quoteDiv.style.width = "680px"; 
+    quoteDiv.style.padding = "28px 32px"; 
+    quoteDiv.style.background = "#ffffff"; 
     quoteDiv.style.position = "absolute"; 
     quoteDiv.style.top = "-9999px"; 
     quoteDiv.style.boxSizing = "border-box";
-    quoteDiv.style.fontFamily = "sans-serif";
+    quoteDiv.style.fontFamily = "Arial, Helvetica, sans-serif";
+    quoteDiv.style.color = "#1e293b";
 
     let c = customerQueue[activeCustomerIndex]; 
     let ltvLimit = c?.ltv || 100;
-    let rawName = c?.name && c.name !== "-" ? c.name : "Valued Customer";
-    let custName = rawName.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
-
-    let html = `
-    <div style="background: #ffffff; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); overflow: hidden; border: 1px solid #e2e8f0;">
-        <div style="background: linear-gradient(180deg, #095797 0%, #153e75 100%); padding: 20px 16px; color: #ffffff; text-align: center;">
-            <h2 style="margin: 0 0 10px 0; font-size: 26px; font-weight: 900;">🎉 Special Loan Offers</h2> 
-            <div style="display: flex; gap: 14px; font-size: 15px; font-weight: 900; justify-content: center; background: rgba(255,255,255,0.1); padding: 8px; border-radius: 8px;">
-                <span>👤 ${custName}</span>
-                <span>| Limit: ₹${c?.limit ? c.limit.toLocaleString() : 0}</span>
-                <span>| Max LTV: ${ltvLimit}%</span>
-                <span>| ${c?.type || 'NEW'}</span>
-            </div>
-        </div>
-        <div style="padding: 16px;">
-    `;
+    let custType = (c?.type || 'NEW').toUpperCase();
+    let custLimit = c?.limit ? Number(c.limit).toLocaleString('en-IN') : '0';
 
     let hasV = false; 
     let productsToRender = window.tempImageGenIndices.map(idx => current_products[idx]);
 
-    productsToRender.forEach((prod) => {
-        if (!prod.calculatedData || prod.calculatedData.length === 0) return;
+    let firstValidProd = productsToRender.find(p => p && p.inputs && p.inputs.inv > 0) || productsToRender[0];
+    let topInvPrice = firstValidProd && firstValidProd.inputs.inv ? Number(firstValidProd.inputs.inv).toLocaleString('en-IN') : '0';
+    let effectiveCapVal = (firstValidProd && parseFloat(firstValidProd.inputs.cap)) || parseFloat(c?.cap) || 0;
+    let capDisplay = effectiveCapVal > 0 ? `₹${Number(effectiveCapVal).toLocaleString('en-IN')}` : 'NONE';
+
+    let html = `
+        <div style="border: 2px solid #2b4c7e; padding: 18px 22px; margin-bottom: 24px; background: #ffffff;">
+            <div style="text-align: center; margin-bottom: 16px;">
+                <div style="display: inline-block; font-size: 27px; font-weight: 900; color: #1e428a; letter-spacing: 0.8px; padding-bottom: 4px; border-bottom: 4px double #2b4c7e;">
+                    BAJAJ FINSERV LOAN OFFER
+                </div>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 16px; font-weight: 800; color: #1e293b; margin-bottom: 10px;">
+                <span>CUSTOMER TYPE: ${custType}</span>
+                <span>APPROVED LIMIT: ₹${custLimit}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 16px; font-weight: 800; color: #1e293b; margin-bottom: 10px;">
+                <span>MAX LTV: ${ltvLimit}%</span>
+                <span>EMI CAPPING: ${capDisplay}</span>
+            </div>
+            <div style="font-size: 16px; font-weight: 800; color: #1e293b;">
+                INVOICE PRICE: ₹${topInvPrice}
+            </div>
+        </div>
+    `;
+
+    productsToRender.forEach((prod, idx) => {
+        if (!prod || !prod.calculatedData || prod.calculatedData.length === 0) return;
         let validS = prod.calculatedData.filter(d => !d.inactive && !d.isInv50Breach && !d.isCapBreach && d.loan > 0);
         if(validS.length === 0) return; 
         hasV = true; 
-        let invAmt = prod.inputs.inv;
+        let invAmt = prod.inputs.inv ? Number(prod.inputs.inv).toLocaleString('en-IN') : '0';
 
         html += `
-            <div style="border-left: 10px solid #034887; background: #ffffff; margin-bottom: 16px; border: 1px solid #cbd5e1;">
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-bottom: 2px solid #e2e8f0;">
-                    <div style="font-size: 20px; font-weight: 900; color: #034887;">📱 ${prod.name.toUpperCase()}</div>
-                    <div style="background: #034887; color: #fff; padding: 6px 14px; border-radius: 6px; font-weight: 900;">Inv: ₹${invAmt ? invAmt.toLocaleString() : 0}</div>
+            <div style="${idx > 0 ? 'margin-top: 28px;' : ''}">
+                <div style="font-size: 21px; font-weight: 900; color: #1e428a; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.3px;">
+                    ${prod.name.toUpperCase()}
                 </div>
-                <table style="width: 100%; border-collapse: collapse; text-align: center;">
-                    <thead style="background: #f8fafc; border-bottom: 2px solid #cbd5e1; font-size: 14px;">
-                        <tr><th style="padding:10px;">Scheme</th><th style="padding:10px;">DP</th><th style="padding:10px;">EMI</th><th style="padding:10px;">Months</th><th style="padding:10px;">Daily</th></tr>
+                <div style="font-size: 18px; font-weight: 800; color: #1e293b; margin-bottom: 14px;">
+                    PRICE : Rs ${invAmt}
+                </div>
+                <table style="width: 100%; border-collapse: collapse; border: 2px solid #2b4c7e;">
+                    <thead>
+                        <tr style="background: #ffffff; color: #1e428a; font-size: 15px; font-weight: 900;">
+                            <th style="border: 1.5px solid #2b4c7e; padding: 10px 6px; text-align: center; width: 16%;">SCHEME</th>
+                            <th style="border: 1.5px solid #2b4c7e; padding: 10px 6px; text-align: center; width: 26%;">DOWN<br>PAYMENT</th>
+                            <th style="border: 1.5px solid #2b4c7e; padding: 10px 6px; text-align: center; width: 25%;">MONTHLY<br>EMI</th>
+                            <th style="border: 1.5px solid #2b4c7e; padding: 10px 6px; text-align: center; width: 16%;">MONTHS</th>
+                            <th style="border: 1.5px solid #2b4c7e; padding: 10px 6px; text-align: center; width: 17%;">PER<br>DAY</th>
+                        </tr>
                     </thead>
                     <tbody>
         `;
 
         validS.forEach((d) => {
             html += `
-                <tr style="border-bottom: 1px solid #e2e8f0; font-size: 15px; font-weight: bold;">
-                    <td style="padding: 12px; font-weight: 900; color: #0f172a;">${d.currentTenure}/${d.advEmi}</td>
-                    <td style="padding: 12px; color: #059669; font-weight: 900;">₹${Math.round(d.dp).toLocaleString()}</td>
-                    <td style="padding: 12px; color: #095797; font-weight: 900;">₹${Math.round(d.emi).toLocaleString()}</td>
-                    <td style="padding: 12px; color: #1e293b;">${d.inst}</td>
-                    <td style="padding: 12px; color: #ea580c;">₹${Math.round(d.daily).toLocaleString()}</td>
+                <tr style="font-size: 17px; font-weight: 800; color: #1e293b; background: #ffffff;">
+                    <td style="border: 1.5px solid #2b4c7e; padding: 9px 8px; text-align: center;">${d.currentTenure}/${d.advEmi}</td>
+                    <td style="border: 1.5px solid #2b4c7e; padding: 9px 14px; text-align: right;">₹${Math.round(d.dp).toLocaleString('en-IN')}</td>
+                    <td style="border: 1.5px solid #2b4c7e; padding: 9px 14px; text-align: right;">₹${Math.round(d.emi).toLocaleString('en-IN')}</td>
+                    <td style="border: 1.5px solid #2b4c7e; padding: 9px 8px; text-align: center;">${d.inst}</td>
+                    <td style="border: 1.5px solid #2b4c7e; padding: 9px 8px; text-align: center;">₹${Math.round(d.daily).toLocaleString('en-IN')}</td>
                 </tr>
             `;
         });
         html += `</tbody></table></div>`;
     });
 
-    if(!hasV) { showToast("कोणतीही Eligible Scheme नाही (कृपया आधी Invoice Value भरा)!", "error"); return; }
-    html += `</div></div>`;
+    if(!hasV) { 
+        showToast("कोणतीही Eligible Scheme नाही (कृपया आधी Invoice Value भरा)!", "error"); 
+        return; 
+    }
+
     quoteDiv.innerHTML = html; 
     document.body.appendChild(quoteDiv);
 
-    html2canvas(quoteDiv, {scale: 2, useCORS: true}).then(canvas => { 
+    html2canvas(quoteDiv, {scale: 2, useCORS: true, backgroundColor: "#ffffff"}).then(canvas => { 
         let imgDataUrl = canvas.toDataURL("image/png"); 
         document.getElementById('generatedImage').src = imgDataUrl; 
         document.getElementById('imageViewerModal').style.display = 'flex'; 
