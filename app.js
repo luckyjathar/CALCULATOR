@@ -38,7 +38,6 @@ function showInlineSubPanel(targetId) {
 /* === History Modal Functions === */
 function openCustomerHistoryModal() {
     renderCustomerQueue();
-    updateUniversalActionButtons();
     document.getElementById('customerHistoryModal').style.display = 'flex';
 }
 
@@ -293,7 +292,6 @@ window.onload = async function() {
         if(activeCustomerIndex >= customerQueue.length) activeCustomerIndex = -1;
 
         renderCustomerQueue(); 
-        updateUniversalActionButtons();
 
         if (activeCustomerIndex !== -1 && customerQueue[activeCustomerIndex] && db_records.length > 0) {
             goToFinalPage();
@@ -364,7 +362,7 @@ function checkDuplicateMobile(val) {
 }
 
 async function addCustomerToQueue() {
-    let name = document.getElementById('cqName').value.trim(); 
+    let name = document.getElementById('cqName').value.trim() || `Cust ${customerQueue.length + 1}`; 
     let mobile = document.getElementById('cqMobile').value.trim() || ""; 
     let limit = parseFloat(document.getElementById('cqLimit').value); 
     let ltv = parseFloat(document.getElementById('cqLtv').value) || 100; 
@@ -401,8 +399,6 @@ async function addCustomerToQueue() {
     document.getElementById('cqCap').value = '';
 
     renderCustomerQueue(); 
-    updateUniversalActionButtons();
-
     goToFinalPage();
 }
 
@@ -415,7 +411,7 @@ function copyCustomerDetails(idx, btnElement) {
         let originalText = btnElement.innerText; 
         btnElement.innerText = "Copied!"; 
         btnElement.style.background = "var(--success)"; 
-        setTimeout(() => { btnElement.innerText = originalText; btnElement.style.background = "var(--warning)"; }, 2000); 
+        setTimeout(() => { btnElement.innerText = originalText; btnElement.style.background = "var(--success)"; }, 2000); 
     } 
     if (navigator.clipboard && window.isSecureContext) { 
         navigator.clipboard.writeText(textToCopy).then(showSuccess).catch(() => fallbackCopy(textToCopy, showSuccess)); 
@@ -425,32 +421,10 @@ function copyCustomerDetails(idx, btnElement) {
 }
 
 function maskName(str) { if (!str || str === "-") return str; return str.split(' ').map(word => { if (word.length <= 2) return word; return word[0] + '*'.repeat(word.length - 2) + word[word.length - 1]; }).join(' '); }
-function selectQueueItem(idx) { selectedQueueIndex = idx; renderCustomerQueue(); updateUniversalActionButtons(); }
+function selectQueueItem(idx) { selectedQueueIndex = idx; renderCustomerQueue(); }
 
-function updateUniversalActionButtons() {
-    let copyB = document.getElementById('uniCopyBtn'); let selB = document.getElementById('uniSelectBtn'); let editB = document.getElementById('uniEditBtn'); let delB = document.getElementById('uniDeleteBtn'); let invB = document.getElementById('uniInviteBtn');
-    if (selectedQueueIndex !== -1 && customerQueue[selectedQueueIndex]) { copyB.style.opacity = '1'; copyB.style.pointerEvents = 'auto'; selB.style.opacity = '1'; selB.style.pointerEvents = 'auto'; editB.style.opacity = '1'; editB.style.pointerEvents = 'auto'; delB.style.opacity = '1'; delB.style.pointerEvents = 'auto'; invB.style.opacity = '1'; invB.style.pointerEvents = 'auto'; } 
-    else { copyB.style.opacity = '0.5'; copyB.style.pointerEvents = 'none'; selB.style.opacity = '0.5'; selB.style.pointerEvents = 'none'; editB.style.opacity = '0.5'; editB.style.pointerEvents = 'none'; delB.style.opacity = '0.5'; delB.style.pointerEvents = 'none'; invB.style.opacity = '0.5'; invB.style.pointerEvents = 'none'; }
-}
-
-function uniCopy() { if(selectedQueueIndex !== -1) copyCustomerDetails(selectedQueueIndex, document.getElementById('uniCopyBtn')); }
-function uniSelect() { if(selectedQueueIndex !== -1) setActiveCustomer(selectedQueueIndex); }
 function uniEdit() { if(selectedQueueIndex === -1) return; let c = customerQueue[selectedQueueIndex]; document.getElementById('ecName').value = c.name || ''; document.getElementById('ecMobile').value = c.mobile || ''; document.getElementById('ecLimit').value = c.limit; document.getElementById('ecLtv').value = c.ltv || 100; document.getElementById('ecType').value = c.type; document.getElementById('ecCap').value = c.cap || ''; document.getElementById('editCustomerModal').style.display='flex'; }
-function uniInvite() { if(selectedQueueIndex === -1) return; document.getElementById('invSenderName').value = localStorage.getItem('portal_sales_name') || ""; document.getElementById('invSenderMobile').value = localStorage.getItem('portal_sales_mobile') || ""; document.getElementById('inviteModal').style.display = 'flex'; }
-function sendWhatsAppInvite() { 
-    let sName = document.getElementById('invSenderName').value.trim(); 
-    let sMobile = document.getElementById('invSenderMobile').value.trim(); 
-    if(!sName) { showToast("कृपया तुमचे नाव भरा!", "error"); return; } 
-    localStorage.setItem('portal_sales_name', sName); 
-    if(sMobile) localStorage.setItem('portal_sales_mobile', sMobile); 
-    let c = customerQueue[selectedQueueIndex]; 
-    let cName = c.name ? c.name : 'Sir/Madam';
-    let msg = `Namaskar ${cName}! 🎉\n\nAapki Bajaj Finance Ki *₹${c.limit}* Ki Limit Approve Ho Gayi Hai!\n\n👤 *${sName}*${sMobile ? `\n📞 ${sMobile}` : ''}`; 
-    let encMsg = encodeURIComponent(msg); 
-    let url = (c.mobile && c.mobile.length === 10) ? `https://wa.me/91${c.mobile}?text=${encMsg}` : `https://api.whatsapp.com/send?text=${encMsg}`;
-    window.open(url, '_blank'); 
-    document.getElementById('inviteModal').style.display = 'none'; 
-}
+
 function closeCustomerEdit() { document.getElementById('editCustomerModal').style.display='none'; }
 
 async function saveCustomerEdit() { 
@@ -473,17 +447,18 @@ async function saveCustomerEdit() {
 }
 
 async function uniDelete() { if(selectedQueueIndex !== -1) await removeCustomer(selectedQueueIndex); }
-async function removeCustomer(idx) { let c = customerQueue[idx]; recycleBin.push(c); await saveToDB('persistent_recycle', recycleBin); localStorage.setItem('persistent_recycle_backup', JSON.stringify(recycleBin)); if(activeCustomerIndex === idx) activeCustomerIndex = -1; else if (activeCustomerIndex > idx) activeCustomerIndex--; customerQueue.splice(idx, 1); if (selectedQueueIndex === idx) selectedQueueIndex = -1; else if (selectedQueueIndex > idx) selectedQueueIndex--; if(customerQueue.length > 0 && activeCustomerIndex === -1) activeCustomerIndex = 0; await saveQueueToLocal(); renderCustomerQueue(); updateUniversalActionButtons(); if(activeCustomerIndex === -1) goHome(); else goToFinalPage(); }
+async function removeCustomer(idx) { let c = customerQueue[idx]; recycleBin.push(c); await saveToDB('persistent_recycle', recycleBin); localStorage.setItem('persistent_recycle_backup', JSON.stringify(recycleBin)); if(activeCustomerIndex === idx) activeCustomerIndex = -1; else if (activeCustomerIndex > idx) activeCustomerIndex--; customerQueue.splice(idx, 1); if (selectedQueueIndex === idx) selectedQueueIndex = -1; else if (selectedQueueIndex > idx) selectedQueueIndex--; if(customerQueue.length > 0 && activeCustomerIndex === -1) activeCustomerIndex = 0; await saveQueueToLocal(); renderCustomerQueue(); if(activeCustomerIndex === -1) goHome(); else goToFinalPage(); }
 
 function openRecycleBin() { let list = document.getElementById('recycleBinList'); if(recycleBin.length === 0) { list.innerHTML = `<div style="text-align:center; color:#888;">Recycle Bin Empty</div>`; } else { list.innerHTML = recycleBin.map((c, i) => ` <div style="display:flex; justify-content:space-between; align-items:center; background:#fff; padding:8px; border-radius:4px; border:1px solid #ddd;"> <div style="font-size:12px; color:var(--dark); font-weight:bold;"> 👤 ${c.name ? c.name : 'No Name'} <br><span style="color:var(--success);">LMT: ₹${c.limit}</span> </div> <button onclick="restoreCustomer(${i})" style="background:var(--primary); color:white; padding:6px; border-radius:3px;">↩️ Restore</button> </div> `).join(''); } document.getElementById('recycleBinModal').style.display='flex'; }
 function closeRecycleBin() { document.getElementById('recycleBinModal').style.display='none'; }
-async function restoreCustomer(idx) { let c = recycleBin.splice(idx, 1)[0]; customerQueue.unshift(c); if(activeCustomerIndex !== -1) activeCustomerIndex++; if(selectedQueueIndex !== -1) selectedQueueIndex++; await saveToDB('persistent_recycle', recycleBin); localStorage.setItem('persistent_recycle_backup', JSON.stringify(recycleBin)); await saveQueueToLocal(); openRecycleBin(); renderCustomerQueue(); updateUniversalActionButtons(); }
+async function restoreCustomer(idx) { let c = recycleBin.splice(idx, 1)[0]; customerQueue.unshift(c); if(activeCustomerIndex !== -1) activeCustomerIndex++; if(selectedQueueIndex !== -1) selectedQueueIndex++; await saveToDB('persistent_recycle', recycleBin); localStorage.setItem('persistent_recycle_backup', JSON.stringify(recycleBin)); await saveQueueToLocal(); openRecycleBin(); renderCustomerQueue(); }
 
 async function emptyRecycleBin() {
     if(recycleBin.length === 0) { showToast("Recycle Bin आधीच रिकामी आहे!", "warning"); return; }
     showCustomConfirm("सर्व रेकॉर्ड्स डिलीट करायचे?", async () => { recycleBin = []; await saveToDB('persistent_recycle', recycleBin); localStorage.setItem('persistent_recycle_backup', JSON.stringify(recycleBin)); openRecycleBin(); showToast("Recycle Bin रिकामी झाली!", "success"); });
 }
 
+/* History मधील कस्टमर आता सिंगल टॅपवर उघडतो आणि तिथेच Edit/Delete ची बटणे आहेत */
 function renderCustomerQueue() { 
     let documentCount = document.getElementById('queueCount'); 
     if(documentCount) documentCount.innerText = customerQueue.length; 
@@ -505,19 +480,24 @@ function renderCustomerQueue() {
 
     list.innerHTML = filtered.map((c) => { 
         let idx = c.originalIdx; 
-        let isSelected = (selectedQueueIndex === idx); 
         let isActive = (activeCustomerIndex === idx); 
-        let displayName = c.name ? ((isSearching || isSelected) ? c.name : maskName(c.name)) : "No Name"; 
-        let bgStyle = isSelected ? '#e3f2fd' : (isActive ? '#f0f8ff' : '#fff'); 
-        let borderStyle = isSelected ? 'var(--primary)' : (isActive ? '#0088cc' : '#ddd'); 
+        let displayName = c.name ? ((isSearching) ? c.name : maskName(c.name)) : "No Name"; 
+        let bgStyle = isActive ? '#f0f8ff' : '#fff'; 
+        let borderStyle = isActive ? '#0088cc' : '#ddd'; 
 
-        return ` <div onclick="handleCustomerTap(${idx})" style="cursor:pointer; display:flex; flex-direction:column; background:${bgStyle}; padding:8px; border-radius:4px; border:1px solid ${borderStyle}; transition:0.2s;"> 
+        return ` <div style="display:flex; flex-direction:column; background:${bgStyle}; padding:8px; border-radius:4px; border:1px solid ${borderStyle}; transition:0.2s;"> 
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;"> 
-                <strong style="color:var(--indigo); text-transform:capitalize;">👤 ${displayName} ${c.mobile ? `<span style="color:#d35400;">(📞 ${c.mobile})</span>` : ''}</strong> 
-                <span style="color:#888; font-weight:bold; font-size:11px;">${c.timestamp || ''}</span> 
+                <div onclick="setActiveCustomer(${idx})" style="flex:1; cursor:pointer;">
+                    <strong style="color:var(--indigo); text-transform:capitalize; font-size:14px;">👤 ${displayName} ${c.mobile ? `<span style="color:#d35400;">(📞 ${c.mobile})</span>` : ''}</strong> 
+                </div>
+                <div style="display:flex; gap:6px;">
+                    <button onclick="copyCustomerDetails(${idx}, this)" style="background:var(--success); color:white; border:none; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:bold; cursor:pointer;">📋 Copy</button>
+                    <button onclick="selectedQueueIndex=${idx}; uniEdit();" style="background:var(--indigo); color:white; border:none; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:bold; cursor:pointer;">✏️ Edit</button>
+                    <button onclick="selectedQueueIndex=${idx}; uniDelete();" style="background:var(--danger); color:white; border:none; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:bold; cursor:pointer;">🗑️</button>
+                </div>
             </div> 
-            <div style="color:#555; font-weight:bold; font-size:12px;"> 
-                LMT: <span style="color:var(--success)">₹${c.limit}</span> | LTV: ${c.ltv}% | Cap: ${c.cap ? '₹'+c.cap : 'No'} | ${c.type} ${isActive ? '<span style="float:right; color:var(--primary);">[Active ✓]</span>' : ''} 
+            <div onclick="setActiveCustomer(${idx})" style="color:#555; font-weight:bold; font-size:12px; cursor:pointer; margin-top:4px;"> 
+                Limit: <span style="color:var(--success)">₹${c.limit}</span> | LTV: ${c.ltv}% | Cap: ${c.cap ? '₹'+c.cap : 'No'} | ${c.type} ${isActive ? '<span style="float:right; color:var(--primary);">[Active ✓]</span>' : ''} 
             </div> 
         </div>`; 
     }).join(''); 
@@ -656,7 +636,6 @@ function goHome() {
     activeCustomerIndex = -1; 
     selectedQueueIndex = -1; 
     renderCustomerQueue(); 
-    updateUniversalActionButtons(); 
     window.scrollTo({ top: 0, behavior: 'smooth' }); 
 }
 
@@ -1109,7 +1088,7 @@ function renderMatrix() {
                                 <th onclick="sortMatrixTable(${pIdx}, 'emi')" style="padding: 10px 4px; width: 16%; cursor:pointer;" title="Sort by EMI">EMI ↕</th>
                                 <th onclick="sortMatrixTable(${pIdx}, 'months')" style="padding: 10px 4px; width: 10%; cursor:pointer;" title="Sort by Months">M ↕</th>
                                 <th onclick="sortMatrixTable(${pIdx}, 'daily')" style="padding: 10px 4px; width: 14%; cursor:pointer;" title="Sort by Daily">Daily ↕</th>
-                                <th style="padding: 10px 4px; width: 12%;">Extra</th>
+                                <th onclick="sortMatrixTable(${pIdx}, 'extra')" style="padding: 10px 4px; width: 12%; cursor:pointer;" title="Sort by Extra">Extra ↕</th>
                             </tr>
                         </thead>
                         <tbody id="body_${pIdx}"></tbody>
@@ -1307,10 +1286,12 @@ function renderRows(pIdx) {
             return (a.inst - b.inst) * dir;
         } else if (key === 'daily') {
             return (a.daily - b.daily) * dir;
+        } else if (key === 'extra') {
+            return (a.extra - b.extra) * dir;
         } else {
-            if (Math.round(b.curLTV) !== Math.round(a.curLTV)) { return (b.curLTV - a.curLTV); }
-            if (a.dp !== b.dp) { return (a.dp - b.dp); }
-            return (a.emi - b.emi);
+            if (Math.round(b.curLTV) !== Math.round(a.curLTV)) { return (b.curLTV - a.curLTV) * dir; }
+            if (a.dp !== b.dp) { return (a.dp - b.dp) * dir; }
+            return (a.emi - b.emi) * dir;
         }
     });
 
@@ -1339,7 +1320,7 @@ function renderRows(pIdx) {
             <td id="emi_${pIdx}_${d.dIdx}" style="padding: 12px 4px; text-align: center; font-size: 15px; font-weight: 900; color: var(--primary);">₹${Math.round(d.emi).toLocaleString()}</td>
             <td id="inst_${pIdx}_${d.dIdx}" style="padding: 12px 4px; text-align: center; font-size: 14px; font-weight: 900; color: #475569;">${d.inst}</td>
             <td id="day_${pIdx}_${d.dIdx}" style="padding: 12px 4px; text-align: center; font-size: 14px; font-weight: 900; color: #ea580c;">₹${Math.round(d.daily).toLocaleString()}</td>
-            <td style="padding: 12px 4px; text-align: center;">${actionMenuBtnHtml}</td>
+            <td style="padding: 12px 4px; text-align: center; font-size: 13px; font-weight: 900; color: #b91c1c;">₹${Math.round(d.extra).toLocaleString()}</td>
         </tr>
         <tr style="background: ${subRowBg}; border-bottom: 2px solid #e2e8f0; opacity: ${textOpacity};">
             <td colspan="7" style="padding: 6px 10px; font-size: 11px; font-weight: 700; color: #64748b; text-align: left;">
@@ -1350,7 +1331,7 @@ function renderRows(pIdx) {
                     <span><b style="color:var(--bajaj-blue);">ROI:</b> <span id="roi_${pIdx}_${d.dIdx}">${roiStr}</span></span>
                     <span><b style="color:var(--success);">Net Disb:</b> <span id="nd_${pIdx}_${d.dIdx}">₹${Math.round(d.netDisb).toLocaleString()}</span></span>
                     ${d.fixedEmi > 0 ? `<span><b style="color:var(--bajaj-blue);">Fixed:</b> ₹${d.fixedEmi}</span>` : ''}
-                    <span id="extra_${pIdx}_${d.dIdx}" style="background:#fee2e2; color:#b91c1c; padding:3px 8px; border-radius:4px; font-weight:900; margin-left:auto;">Extra: ₹${Math.round(d.extra).toLocaleString()}</span>
+                    <div style="margin-left:auto;">${actionMenuBtnHtml}</div>
                 </div>
             </td>
         </tr>
@@ -1446,15 +1427,6 @@ function manual(pIdx, dIdx) {
     customerQueue[activeCustomerIndex].products = current_products;
     saveQueueToLocal();
     renderRows(pIdx);
-}
-
-function sortM(pIdx, key) { 
-    let conf = sortConfigs[pIdx]; 
-    if(conf.key === key) { conf.dir = conf.dir === 'asc' ? 'desc' : 'asc'; } 
-    else { conf.key = key; conf.dir = key === 'curLTV' ? 'desc' : 'asc'; }
-    renderRows(pIdx); 
-    customerQueue[activeCustomerIndex].products = current_products; 
-    saveQueueToLocal(); 
 }
 
 function copySchemeText(pIdx, dIdx, btnElement) {
@@ -1607,17 +1579,6 @@ function doGenerateCustomerImage() {
         document.getElementById('imageViewerModal').style.display = 'flex'; 
         document.body.removeChild(quoteDiv); 
     });
-}
-
-let lastTapTime = 0; let lastTapIdx = -1;
-function handleCustomerTap(idx) {
-    let currentTime = new Date().getTime();
-    let tapLength = currentTime - lastTapTime;
-    if (tapLength < 400 && tapLength > 0 && lastTapIdx === idx) {
-        setActiveCustomer(idx); lastTapTime = 0; 
-    } else {
-        selectQueueItem(idx); lastTapTime = currentTime; lastTapIdx = idx;
-    }
 }
 
 function openRowActionModal(pIdx, dIdx, isInactive) {
