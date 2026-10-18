@@ -450,7 +450,6 @@ function copyCustomerDetails(idx, btnElement) {
 }
 
 function maskName(str) { if (!str || str === "-") return str; return str.split(' ').map(word => { if (word.length <= 2) return word; return word[0] + '*'.repeat(word.length - 2) + word[word.length - 1]; }).join(' '); }
-function selectQueueItem(idx) { selectedQueueIndex = idx; renderCustomerQueue(); }
 
 function uniEdit() { 
     if(selectedQueueIndex === -1) return; 
@@ -537,7 +536,7 @@ function openRecycleBin() {
     if(recycleBin.length === 0) { 
         list.innerHTML = `<div style="text-align:center; color:#888;">Recycle Bin Empty</div>`; 
     } else { 
-        list.innerHTML = recycleBin.map((c, i) => ` <div style="display:flex; justify-content:space-between; align-items:center; background:#fff; padding:8px; border-radius:4px; border:1px solid #ddd;"> <div style="font-size:12px; color:var(--dark); font-weight:bold;"> 👤 ${c.name ? c.name : 'No Name'} <br><span style="color:var(--success);">LMT: ₹${c.limit}</span> </div> <button onclick="restoreCustomer(${i})" style="background:var(--primary); color:white; padding:6px; border-radius:3px;">↩️ Restore</button> </div> `).join(''); 
+        list.innerHTML = recycleBin.map((c, i) => ` <div style="display:flex; justify-content:space-between; align-items:center; background:#fff; padding:8px; border-radius:4px; border:1px solid #ddd;"> <div style="font-size:12px; color:var(--dark); font-weight:bold;"> 👤 ${c.name ? c.name : 'No Name'} <br><span style="color:var(--success);">Limit: ₹${c.limit}</span> </div> <button onclick="restoreCustomer(${i})" style="background:var(--primary); color:white; padding:6px; border-radius:3px;">↩️ Restore</button> </div> `).join(''); 
     } 
     let modal = document.getElementById('recycleBinModal');
     if(modal) modal.style.display='flex'; 
@@ -592,6 +591,7 @@ function renderCustomerQueue() {
         return; 
     } 
 
+    /* Single Tap List: Edit and Delete buttons inline */
     list.innerHTML = filtered.map((c) => { 
         let idx = c.originalIdx; 
         let isActive = (activeCustomerIndex === idx); 
@@ -617,6 +617,7 @@ function renderCustomerQueue() {
     }).join(''); 
 }
 
+/* Single Tap Customer Selection Logic */
 async function setActiveCustomer(idx) { 
     if(db_records.length === 0) { 
         showToast("आधी Master Excel फाईल अपलोड करा!", "error"); 
@@ -1071,7 +1072,6 @@ async function proceedToMatrixFromComponents() {
                 cp.inputs.manualLoans = {};
             }
         });
-        renderCustomerQueue(); 
         updateMatrixTopCard(); 
     }
 
