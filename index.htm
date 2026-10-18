@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Persistent Portal">
 
-    <title>Persistent Portal V76.32 - Pro Edition</title>
+    <title>Persistent Portal V76.33 - Pro Edition</title>
 
     <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -79,7 +79,7 @@
             transform: scale(0.95);
         }
 
-        /* Model Header Styles */
+        /* Model Header */
         .premium-model-panel {
             position: relative !important;
             width: 100% !important;
@@ -338,7 +338,7 @@
             <button onclick="goHome()" style="flex:0.8; background:var(--danger); color:white;">Close View</button>
         </div>
 
-        <!-- Customer Details Strip (Model Header सारखी डार्क पट्टी, कॉल/मेसेज बटणांशिवाय) -->
+        <!-- Customer Details Strip (Without Call/Msg icons) -->
         <div style="background: #253241; border-radius: 8px; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.2); margin-bottom: 12px; border: 1px solid #3b4b5e;">
             <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
                 <div style="width: 38px; height: 38px; background: rgba(0,0,0,0.3); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 18px; flex-shrink: 0;">👤</div>
@@ -391,7 +391,7 @@
             <div id="categoryGrid" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:8px;"></div>
         </div>
 
-        <!-- INLINE 3: Edit Components Panel (मॉडेल सिलेक्ट केल्यावर उघडेल) -->
+        <!-- INLINE 3: Edit Components Panel -->
         <div id="componentsModal" class="inline-work-panel" style="display: none;">
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 2px solid #ddd; padding-bottom: 6px; margin-bottom: 10px;">
                 <h3 style="margin:0; color:var(--indigo);"><span id="compModalHeadingText">Edit Components</span> (<span id="compPendingModelName" style="color:var(--primary);"></span>)</h3>
@@ -593,6 +593,6 @@
     </div>
 </footer>
 
-<script src="app.js?v=76.32"></script>
+<script src="app.js?v=76.33"></script>
 </body>
 </html>
