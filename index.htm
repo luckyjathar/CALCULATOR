@@ -450,7 +450,7 @@
                 </div>
             </div>
             <input type="text" id="queueSearch" placeholder="Search Saved Customer By Name, Limit..." oninput="renderCustomerQueue()" style="margin-bottom: 8px; border-color:var(--bajaj-blue);">
-            <div id="customerQueueList" class="custom-scroll" style="display:flex; flex-direction:column; gap:6px; overflow-y:auto; max-height: 350px; padding-right:4px;"></div>
+            <div id="customerQueueList" class="custom-scroll" style="display:flex; flex-direction:column; gap:6px; overflow-y:auto; max-height: 280px; padding-right:4px;"></div>
         </div>
     </div>
 
@@ -591,11 +591,17 @@
 </footer>
 
 <script>
-    // JS Error Catcher (To detect screen freezes)
+    // JS Error Catcher (To detect screen freezes and prevent silent failures)
     window.onerror = function(msg, url, line) {
-        alert("JS Error: " + msg + "\nLine: " + line);
+        console.error("JS Error: " + msg + "\nLine: " + line);
+        let errorToast = document.getElementById("toastNotification");
+        if(errorToast) {
+            errorToast.className = "toast-notification show error";
+            errorToast.innerText = "System Error! Please refresh page.";
+            setTimeout(() => { errorToast.className = "toast-notification"; }, 4000);
+        }
     };
 </script>
-<script src="app.js?v=76.34"></script>
+<script src="app.js?v=76.35"></script>
 </body>
 </html>
