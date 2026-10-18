@@ -29,9 +29,6 @@ function showInlineSubPanel(targetId) {
     let el = document.getElementById(targetId);
     if (el) {
         el.style.display = 'block';
-        setTimeout(() => {
-            el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }, 80);
     }
 }
 
@@ -158,7 +155,7 @@ let tempPendingProduct = null;
 
 function parseExcelDate(val) { if (!val) return null; if (typeof val === 'number') { return new Date(Math.round((val - 25569) * 86400 * 1000)); } if (typeof val === 'string') { let d = new Date(val); if (!isNaN(d.getTime())) return d; let parts = val.split(/[\/\-\.]/); if (parts.length === 3) { let y = parts[2].length === 2 ? '20' + parts[2] : parts[2]; return new Date(y, parts[1] - 1, parts[0]); } } return null; }
 
-async function saveQueueToLocal() { 
+function saveQueueToLocal() { 
     try { 
         let compactQueue = customerQueue.map(c => { 
             let cp = (c.products || []).map(p => { 
@@ -169,8 +166,8 @@ async function saveQueueToLocal() {
         }); 
         localStorage.setItem('persistent_queue_backup', JSON.stringify(compactQueue)); 
         localStorage.setItem('persistent_active_idx_backup', activeCustomerIndex); 
-        await saveToDB('persistent_queue', compactQueue); 
-        await saveToDB('persistent_active_idx', activeCustomerIndex); 
+        saveToDB('persistent_queue', compactQueue); 
+        saveToDB('persistent_active_idx', activeCustomerIndex); 
     } catch(e) { console.error("Local Save Interrupted", e); } 
 }
 
@@ -291,8 +288,6 @@ window.onload = async function() {
         if (savedIdx !== null && savedIdx !== undefined) activeCustomerIndex = parseInt(savedIdx); 
         if(activeCustomerIndex >= customerQueue.length) activeCustomerIndex = -1;
 
-        renderCustomerQueue(); 
-
         if (activeCustomerIndex !== -1 && customerQueue[activeCustomerIndex] && db_records.length > 0) {
             goToFinalPage();
         }
@@ -361,7 +356,7 @@ function checkDuplicateMobile(val) {
     addBtn.disabled = false;
 }
 
-async function addCustomerToQueue() {
+function addCustomerToQueue() {
     let name = document.getElementById('cqName').value.trim() || `Cust ${customerQueue.length + 1}`; 
     let mobile = document.getElementById('cqMobile').value.trim() || ""; 
     let limit = parseFloat(document.getElementById('cqLimit').value); 
@@ -385,11 +380,10 @@ async function addCustomerToQueue() {
     let newCustObj = { id: Date.now(), name, mobile, limit, ltv, type, cap, targetDp: "", timestamp: ts, components: {}, products: [], sortConfigs: [] };
 
     customerQueue.unshift(newCustObj); 
-
     activeCustomerIndex = 0; 
     selectedQueueIndex = 0;
 
-    await saveQueueToLocal(); 
+    saveQueueToLocal(); 
 
     document.getElementById('cqName').value = ''; 
     document.getElementById('cqMobile').value = ''; 
@@ -398,7 +392,6 @@ async function addCustomerToQueue() {
     document.getElementById('cqLtv').value = ''; 
     document.getElementById('cqCap').value = '';
 
-    renderCustomerQueue(); 
     goToFinalPage();
 }
 
@@ -424,10 +417,24 @@ function maskName(str) { if (!str || str === "-") return str; return str.split('
 function selectQueueItem(idx) { selectedQueueIndex = idx; renderCustomerQueue(); }
 
 function uniEdit() { if(selectedQueueIndex === -1) return; let c = customerQueue[selectedQueueIndex]; document.getElementById('ecName').value = c.name || ''; document.getElementById('ecMobile').value = c.mobile || ''; document.getElementById('ecLimit').value = c.limit; document.getElementById('ecLtv').value = c.ltv || 100; document.getElementById('ecType').value = c.type; document.getElementById('ecCap').value = c.cap || ''; document.getElementById('editCustomerModal').style.display='flex'; }
-
+function uniInvite() { if(selectedQueueIndex === -1) return; document.getElementById('invSenderName').value = localStorage.getItem('portal_sales_name') || ""; document.getElementById('invSenderMobile').value = localStorage.getItem('portal_sales_mobile') || ""; document.getElementById('inviteModal').style.display = 'flex'; }
+function sendWhatsAppInvite() { 
+    let sName = document.getElementById('invSenderName').value.trim(); 
+    let sMobile = document.getElementById('invSenderMobile').value.trim(); 
+    if(!sName) { showToast("कृपया तुमचे नाव भरा!", "error"); return; } 
+    localStorage.setItem('portal_sales_name', sName); 
+    if(sMobile) localStorage.setItem('portal_sales_mobile', sMobile); 
+    let c = customerQueue[selectedQueueIndex]; 
+    let cName = c.name ? c.name : 'Sir/Madam';
+    let msg = `Namaskar ${cName}! 🎉\n\nAapki Bajaj Finance Ki *₹${c.limit}* Ki Limit Approve Ho Gayi Hai!\n\n👤 *${sName}*${sMobile ? `\n📞 ${sMobile}` : ''}`; 
+    let encMsg = encodeURIComponent(msg); 
+    let url = (c.mobile && c.mobile.length === 10) ? `https://wa.me/91${c.mobile}?text=${encMsg}` : `https://api.whatsapp.com/send?text=${encMsg}`;
+    window.open(url, '_blank'); 
+    document.getElementById('inviteModal').style.display = 'none'; 
+}
 function closeCustomerEdit() { document.getElementById('editCustomerModal').style.display='none'; }
 
-async function saveCustomerEdit() { 
+function saveCustomerEdit() { 
     if(selectedQueueIndex === -1) return; 
     let c = customerQueue[selectedQueueIndex]; 
     c.name = document.getElementById('ecName').value || ''; 
@@ -437,7 +444,7 @@ async function saveCustomerEdit() {
     c.type = document.getElementById('ecType').value; 
     let cap = parseFloat(document.getElementById('ecCap').value); 
     c.cap = cap > 0 ? cap : ''; 
-    await saveQueueToLocal(); 
+    saveQueueToLocal(); 
     renderCustomerQueue(); 
     if(activeCustomerIndex === selectedQueueIndex) { 
         updateMatrixTopCard(); 
@@ -446,19 +453,18 @@ async function saveCustomerEdit() {
     closeCustomerEdit(); 
 }
 
-async function uniDelete() { if(selectedQueueIndex !== -1) await removeCustomer(selectedQueueIndex); }
-async function removeCustomer(idx) { let c = customerQueue[idx]; recycleBin.push(c); await saveToDB('persistent_recycle', recycleBin); localStorage.setItem('persistent_recycle_backup', JSON.stringify(recycleBin)); if(activeCustomerIndex === idx) activeCustomerIndex = -1; else if (activeCustomerIndex > idx) activeCustomerIndex--; customerQueue.splice(idx, 1); if (selectedQueueIndex === idx) selectedQueueIndex = -1; else if (selectedQueueIndex > idx) selectedQueueIndex--; if(customerQueue.length > 0 && activeCustomerIndex === -1) activeCustomerIndex = 0; await saveQueueToLocal(); renderCustomerQueue(); if(activeCustomerIndex === -1) goHome(); else goToFinalPage(); }
+function uniDelete() { if(selectedQueueIndex !== -1) removeCustomer(selectedQueueIndex); }
+function removeCustomer(idx) { let c = customerQueue[idx]; recycleBin.push(c); saveToDB('persistent_recycle', recycleBin); localStorage.setItem('persistent_recycle_backup', JSON.stringify(recycleBin)); if(activeCustomerIndex === idx) activeCustomerIndex = -1; else if (activeCustomerIndex > idx) activeCustomerIndex--; customerQueue.splice(idx, 1); if (selectedQueueIndex === idx) selectedQueueIndex = -1; else if (selectedQueueIndex > idx) selectedQueueIndex--; if(customerQueue.length > 0 && activeCustomerIndex === -1) activeCustomerIndex = 0; saveQueueToLocal(); renderCustomerQueue(); if(activeCustomerIndex === -1) goHome(); else goToFinalPage(); }
 
-function openRecycleBin() { let list = document.getElementById('recycleBinList'); if(recycleBin.length === 0) { list.innerHTML = `<div style="text-align:center; color:#888;">Recycle Bin Empty</div>`; } else { list.innerHTML = recycleBin.map((c, i) => ` <div style="display:flex; justify-content:space-between; align-items:center; background:#fff; padding:8px; border-radius:4px; border:1px solid #ddd;"> <div style="font-size:12px; color:var(--dark); font-weight:bold;"> 👤 ${c.name ? c.name : 'No Name'} <br><span style="color:var(--success);">LMT: ₹${c.limit}</span> </div> <button onclick="restoreCustomer(${i})" style="background:var(--primary); color:white; padding:6px; border-radius:3px;">↩️ Restore</button> </div> `).join(''); } document.getElementById('recycleBinModal').style.display='flex'; }
+function openRecycleBin() { let list = document.getElementById('recycleBinList'); if(recycleBin.length === 0) { list.innerHTML = `<div style="text-align:center; color:#888;">Recycle Bin Empty</div>`; } else { list.innerHTML = recycleBin.map((c, i) => ` <div style="display:flex; justify-content:space-between; align-items:center; background:#fff; padding:8px; border-radius:4px; border:1px solid #ddd;"> <div style="font-size:12px; color:var(--dark); font-weight:bold;"> 👤 ${c.name ? c.name : 'No Name'} <br><span style="color:var(--success);">Limit: ₹${c.limit}</span> </div> <button onclick="restoreCustomer(${i})" style="background:var(--primary); color:white; padding:6px; border-radius:3px;">↩️ Restore</button> </div> `).join(''); } document.getElementById('recycleBinModal').style.display='flex'; }
 function closeRecycleBin() { document.getElementById('recycleBinModal').style.display='none'; }
-async function restoreCustomer(idx) { let c = recycleBin.splice(idx, 1)[0]; customerQueue.unshift(c); if(activeCustomerIndex !== -1) activeCustomerIndex++; if(selectedQueueIndex !== -1) selectedQueueIndex++; await saveToDB('persistent_recycle', recycleBin); localStorage.setItem('persistent_recycle_backup', JSON.stringify(recycleBin)); await saveQueueToLocal(); openRecycleBin(); renderCustomerQueue(); }
+function restoreCustomer(idx) { let c = recycleBin.splice(idx, 1)[0]; customerQueue.unshift(c); if(activeCustomerIndex !== -1) activeCustomerIndex++; if(selectedQueueIndex !== -1) selectedQueueIndex++; saveToDB('persistent_recycle', recycleBin); localStorage.setItem('persistent_recycle_backup', JSON.stringify(recycleBin)); saveQueueToLocal(); openRecycleBin(); renderCustomerQueue(); }
 
-async function emptyRecycleBin() {
+function emptyRecycleBin() {
     if(recycleBin.length === 0) { showToast("Recycle Bin आधीच रिकामी आहे!", "warning"); return; }
-    showCustomConfirm("सर्व रेकॉर्ड्स डिलीट करायचे?", async () => { recycleBin = []; await saveToDB('persistent_recycle', recycleBin); localStorage.setItem('persistent_recycle_backup', JSON.stringify(recycleBin)); openRecycleBin(); showToast("Recycle Bin रिकामी झाली!", "success"); });
+    showCustomConfirm("सर्व रेकॉर्ड्स डिलीट करायचे?", () => { recycleBin = []; saveToDB('persistent_recycle', recycleBin); localStorage.setItem('persistent_recycle_backup', JSON.stringify(recycleBin)); openRecycleBin(); showToast("Recycle Bin रिकामी झाली!", "success"); });
 }
 
-/* History मधील कस्टमर आता सिंगल टॅपवर उघडतो आणि तिथेच Edit/Delete ची बटणे आहेत */
 function renderCustomerQueue() { 
     let documentCount = document.getElementById('queueCount'); 
     if(documentCount) documentCount.innerText = customerQueue.length; 
@@ -503,7 +509,7 @@ function renderCustomerQueue() {
     }).join(''); 
 }
 
-async function setActiveCustomer(idx) { 
+function setActiveCustomer(idx) { 
     if(db_records.length === 0) { 
         showToast("आधी Master Excel फाईल अपलोड करा!", "error"); 
         document.getElementById('masterExcelFileInput').click();
@@ -511,7 +517,7 @@ async function setActiveCustomer(idx) {
     } 
     activeCustomerIndex = idx; 
     selectedQueueIndex = idx;
-    await saveQueueToLocal(); 
+    saveQueueToLocal(); 
     if(document.getElementById('queueSearch')) document.getElementById('queueSearch').value = ''; 
     closeCustomerHistoryModal();
     
@@ -520,7 +526,6 @@ async function setActiveCustomer(idx) {
         current_products = c.products || [];
         sortConfigs = c.sortConfigs || [];
     }
-    
     goToFinalPage(); 
 }
 
@@ -543,7 +548,7 @@ function closeMultiStackModal() {
     document.getElementById('multiStackModal').style.display='none'; 
 }
 
-async function processMultiStack() {
+function processMultiStack() {
     let msNameInput = document.getElementById('multiStackModelName').value.trim().toUpperCase();
     if (!msNameInput) { showToast("Model Name भरा!", "error"); return; } 
     let validSchemes = [];
@@ -649,7 +654,7 @@ function openAddProductModal() {
     if(sInp) sInp.value = ''; 
     if(dd) dd.style.display = 'none'; 
     showInlineSubPanel('addProductModal');
-    setTimeout(() => { if(sInp) sInp.focus(); }, 100);
+    if(sInp) sInp.focus();
 }
 
 function openSchemeOnlyModal(pIdx) { if (!isLimitValid()) return; document.getElementById('modalTitle').innerText = "Add Custom Scheme"; document.getElementById('modelNameInputArea').style.display = 'none'; document.getElementById('targetPIdx').value = pIdx; document.getElementById('manualModal').style.display='flex'; }
@@ -772,7 +777,7 @@ function showComponentsModal(baseMrp = "") {
     setTimeout(() => {
         let invInp = document.getElementById('compInv');
         if (invInp) invInp.focus();
-    }, 120);
+    }, 50);
 }
 
 function openEditModelComponents(pIdx, event) {
@@ -828,10 +833,10 @@ function openEditModelComponents(pIdx, event) {
     setTimeout(() => {
         let invInp = document.getElementById('compInv');
         if (invInp) invInp.focus();
-    }, 120);
+    }, 50);
 }
 
-async function proceedToMatrixFromComponents() { 
+function proceedToMatrixFromComponents() { 
     let idx = activeCustomerIndex; 
     if(idx === -1) return; 
     let c = customerQueue[idx];
@@ -917,18 +922,18 @@ async function proceedToMatrixFromComponents() {
             manualLoans: {}
         };
         editingProductIdx = -1;
-        await saveQueueToLocal();
+        saveQueueToLocal();
         hideAllInlineSubPanels();
         renderMatrix();
         return;
     }
 
-    await saveQueueToLocal(); 
+    saveQueueToLocal(); 
     hideAllInlineSubPanels(); 
     if (tempPendingProduct) finalizeProductAddition(); 
 }
 
-async function finalizeProductAddition() {
+function finalizeProductAddition() {
     let c = customerQueue[activeCustomerIndex];
     let ltvLimit = c?.ltv || 100; 
     let uniqueSchemes = [];
@@ -976,13 +981,13 @@ async function finalizeProductAddition() {
     c.products = current_products; 
     c.sortConfigs = sortConfigs; 
     tempPendingProduct = null; 
-    await saveQueueToLocal(); 
+    saveQueueToLocal(); 
     renderMatrix(); 
 }
 
 function updateFinalSwitcher() { let sw = document.getElementById('finalCustomerSwitcher'); if(!sw) return; sw.innerHTML = customerQueue.map((c, i) => `<option value="${i}" ${i === activeCustomerIndex ? 'selected' : ''}>👤 ${c.name ? c.name : 'No Name'} (₹${c.limit})</option>`).join(''); }
-async function switchCustomerFinal(idx) { activeCustomerIndex = parseInt(idx); await saveQueueToLocal(); goToFinalPage(); }
-function updateMatrixTopCard() { let c = customerQueue[activeCustomerIndex]; document.getElementById('infoName').innerText = c?.name || "-"; document.getElementById('infoMobile').innerText = c?.mobile || "-"; document.getElementById('infoLimit').innerText = "₹" + (c?.limit || 0); document.getElementById('infoLtv').innerText = (c?.ltv || 100) + "%"; document.getElementById('infoCap').innerText = c?.cap ? "₹" + c.cap : "None"; document.getElementById('infoType').innerText = c?.type || 'NEW'; }
+function switchCustomerFinal(idx) { activeCustomerIndex = parseInt(idx); saveQueueToLocal(); goToFinalPage(); }
+function updateMatrixTopCard() { let c = customerQueue[activeCustomerIndex]; document.getElementById('infoName').innerText = c?.name || ""; document.getElementById('infoMobile').innerText = c?.mobile || ""; document.getElementById('infoLimit').innerText = "₹" + (c?.limit || 0); document.getElementById('infoLtv').innerText = (c?.ltv || 100) + "%"; document.getElementById('infoCap').innerText = c?.cap ? "₹" + c.cap : "None"; document.getElementById('infoType').innerText = c?.type || 'NEW'; }
 function loadCurrentProducts() { let c = customerQueue[activeCustomerIndex]; current_products = c?.products || []; sortConfigs = c?.sortConfigs || []; }
 
 function goToFinalPage() {
@@ -996,14 +1001,12 @@ function goToFinalPage() {
     finalArea.style.display = 'flex';
     
     renderMatrix(); 
-    setTimeout(() => { 
-        if(current_products.length === 0) {
-            openAddProductModal();
-        } else {
-            hideAllInlineSubPanels();
-            finalArea.scrollIntoView({ behavior: 'smooth', block: 'start' }); 
-        }
-    }, 100);
+    
+    if(current_products.length === 0) {
+        openAddProductModal();
+    } else {
+        hideAllInlineSubPanels();
+    }
 }
 
 function toggleModelView(pIdx) { 
@@ -1297,7 +1300,7 @@ function renderRows(pIdx) {
 
     document.getElementById(`body_${pIdx}`).innerHTML = visibleSchemes.map(d => {
         let isInactive = d.inactive; 
-        let actionMenuBtnHtml = `<button onclick="openRowActionModal(${pIdx}, ${d.dIdx}, ${isInactive})" style="background:var(--primary); color:white; border:none; padding:6px 12px; border-radius:6px; font-weight:900; cursor:pointer; font-size: 11px;">Act</button>`;
+        let actionMenuBtnHtml = `<button onclick="openRowActionModal(${pIdx}, ${d.dIdx}, ${isInactive})" style="background:var(--primary); color:white; border:none; padding:4px 10px; border-radius:4px; font-weight:900; cursor:pointer; font-size: 11px;">Act ⚙️</button>`;
         let bgCol = isInactive ? '#f8f9fa' : (d.isExpired ? '#fff4e6' : '#ffffff');
         let textOpacity = isInactive ? '0.5' : '1';
         let subRowBg = isInactive ? '#f8f9fa' : '#f8fafc';
@@ -1320,7 +1323,7 @@ function renderRows(pIdx) {
             <td id="emi_${pIdx}_${d.dIdx}" style="padding: 12px 4px; text-align: center; font-size: 15px; font-weight: 900; color: var(--primary);">₹${Math.round(d.emi).toLocaleString()}</td>
             <td id="inst_${pIdx}_${d.dIdx}" style="padding: 12px 4px; text-align: center; font-size: 14px; font-weight: 900; color: #475569;">${d.inst}</td>
             <td id="day_${pIdx}_${d.dIdx}" style="padding: 12px 4px; text-align: center; font-size: 14px; font-weight: 900; color: #ea580c;">₹${Math.round(d.daily).toLocaleString()}</td>
-            <td style="padding: 12px 4px; text-align: center; font-size: 13px; font-weight: 900; color: #b91c1c;">₹${Math.round(d.extra).toLocaleString()}</td>
+            <td style="padding: 12px 4px; text-align: center; font-size: 14px; font-weight: 900; color: #b91c1c;">₹${Math.round(d.extra).toLocaleString()}</td>
         </tr>
         <tr style="background: ${subRowBg}; border-bottom: 2px solid #e2e8f0; opacity: ${textOpacity};">
             <td colspan="7" style="padding: 6px 10px; font-size: 11px; font-weight: 700; color: #64748b; text-align: left;">
