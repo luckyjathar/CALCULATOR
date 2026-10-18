@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Persistent Portal">
 
-    <title>Persistent Portal V76.35 - Pro Edition</title>
+    <title>Persistent Portal V76.36 - Pro Edition</title>
 
     <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -84,6 +84,8 @@
             position: relative !important;
             width: 100% !important;
             box-sizing: border-box !important;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
         .pmp-header-bar {
             position: relative !important;
@@ -342,24 +344,20 @@
             <button onclick="goHome()" style="flex:0.8; background:var(--danger); color:white;">Close View</button>
         </div>
 
-        <!-- Customer Details Strip (Without Call/Msg icons) -->
-        <div style="background: #253241; border-radius: 8px; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.2); margin-bottom: 12px; border: 1px solid #3b4b5e;">
-            <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
-                <div style="width: 38px; height: 38px; background: rgba(0,0,0,0.3); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 18px; flex-shrink: 0;">👤</div>
-                <div style="display: flex; flex-direction: column; gap: 4px; width: 100%;">
-                    <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-                        <span id="infoName" style="font-size: 15px; font-weight: 900; text-transform: capitalize;">-</span>
-                        <div style="text-align: right; background: rgba(0,0,0,0.2); padding: 2px 10px; border-radius: 4px; border-right: 3px solid #2ecc71;">
-                            <div style="font-size: 8px; color: #94a3b8; font-weight: 900; letter-spacing: 0.5px; text-transform: capitalize;">Approved Limit</div>
-                            <div id="infoLimit" style="font-size: 15px; font-weight: 900; color: #2ecc71;">₹0</div>
-                        </div>
-                    </div>
-                    <div style="display: flex; gap: 8px; font-size: 10px; font-weight: 900; flex-wrap: wrap;">
-                        <span id="infoType" style="background: #f39c12; padding: 2px 6px; border-radius: 4px; color: #fff;">NEW</span>
-                        <span style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px;">LTV: <span id="infoLtv">100%</span></span>
-                        <span style="border: 1px dashed rgba(255,255,255,0.3); padding: 2px 6px; border-radius: 4px;">Cap: <span id="infoCap">None</span></span>
-                    </div>
+        <!-- Customer Details Strip (Now exactly matches the premium-model-panel design) -->
+        <div class="premium-model-panel" style="margin-bottom: 12px; border: 1px solid #cbd5e1;">
+            <div class="pmp-header-bar" style="border-radius: 8px 8px 0 0; padding: 8px 10px !important;">
+                <div class="pmp-model-left" style="max-width: 100%; cursor: default;">
+                    <span>👤</span>
+                    <span id="infoName" style="text-transform: capitalize;">-</span>
+                    <span style="display:none;" id="infoMobile">-</span>
                 </div>
+            </div>
+            <div class="val-summary-bar" style="border-radius: 0 0 8px 8px; border-top: none;">
+                <span class="val-chip"><b>Type:</b> <span id="infoType">NEW</span></span>
+                <span class="val-chip"><b>Limit:</b> <span id="infoLimit">₹0</span></span>
+                <span class="val-chip"><b>LTV:</b> <span id="infoLtv">100%</span></span>
+                <span class="val-chip"><b>Cap:</b> <span id="infoCap">None</span></span>
             </div>
         </div>
 
@@ -450,20 +448,7 @@
                 </div>
             </div>
             <input type="text" id="queueSearch" placeholder="Search Saved Customer By Name, Limit..." oninput="renderCustomerQueue()" style="margin-bottom: 8px; border-color:var(--bajaj-blue);">
-            <div id="customerQueueList" class="custom-scroll" style="display:flex; flex-direction:column; gap:6px; overflow-y:auto; max-height: 280px; padding-right:4px;"></div>
-        </div>
-    </div>
-
-    <div id="inviteModal" class="modal">
-        <div class="modal-content" style="max-width: 320px;">
-            <h3 style="margin-top:0; color:#25D366; border-bottom: 2px solid #ddd; padding-bottom: 6px;">Send Invitation</h3>
-            <p style="font-size:12px; color:#555; margin-bottom:12px; text-transform: capitalize;">Customer Ko WhatsApp Se Invite Karein</p>
-            <div style="margin-bottom:6px;"><label>Your Name Salesperson</label><input type="text" id="invSenderName" placeholder="Lakshya"></div>
-            <div style="display:none;"><label>Your Mobile No.</label><input type="text" id="invSenderMobile" placeholder="10 Digits" maxlength="10"></div>
-            <div style="display:flex; gap:8px;">
-                <button onclick="sendWhatsAppInvite()" style="flex:2; background:#25D366; color:white;">Send On WhatsApp</button>
-                <button onclick="document.getElementById('inviteModal').style.display='none'" style="flex:1; background:var(--danger); color:white;">Cancel</button>
-            </div>
+            <div id="customerQueueList" class="custom-scroll" style="display:flex; flex-direction:column; gap:6px; overflow-y:auto; max-height: 350px; padding-right:4px;"></div>
         </div>
     </div>
 
@@ -512,15 +497,7 @@
     <div id="custInfoPromptModal" class="modal">
         <div class="modal-content" style="max-width:320px;">
             <h3 style="margin-top:0; color:var(--bajaj-blue); text-align: center;">Verify Details Before Export</h3>
-            <div style="margin-bottom:8px;">
-                <label style="color:var(--indigo);">Customer Name</label>
-                <input type="text" id="promptCustName" readonly style="background:#f0f0f0; cursor:not-allowed;">
-            </div>
-            <div style="display:none;">
-                <label style="color:var(--indigo);">Mobile Number</label>
-                <input type="text" id="promptCustMobile" readonly style="background:#f0f0f0; cursor:not-allowed;">
-            </div>
-            <div style="display:flex; flex-direction:column; gap:6px;">
+            <div style="display:flex; flex-direction:column; gap:6px; margin-top: 10px;">
                 <button onclick="proceedGenerateImage()" style="width:100%; background:var(--bajaj-blue); color:white;">Generate Image Only</button>
                 <button onclick="proceedGenerateImageAndWhatsAppCopy()" style="width:100%; background:#25D366; color:white; display:flex; align-items:center; justify-content:center; gap:6px;">Copy Image And Open WhatsApp</button>
                 <button onclick="document.getElementById('custInfoPromptModal').style.display='none'" style="width:100%; background:var(--danger); color:white;">Cancel</button>
@@ -602,6 +579,6 @@
         }
     };
 </script>
-<script src="app.js?v=76.35"></script>
+<script src="app.js?v=76.36"></script>
 </body>
 </html>
