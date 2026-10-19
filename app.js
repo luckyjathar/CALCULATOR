@@ -57,7 +57,7 @@ function closeAddCustomerModal() {
     if(modal) modal.style.display = 'none';
 }
 
-/* === Custom Confirm & Alert === */
+/* === Custom Confirm Function === */
 function showCustomConfirm(msg, yesCallback, noCallback) {
     let confirmEl = document.getElementById('confirmMessage');
     if (!confirmEl) return;
@@ -83,6 +83,7 @@ function showCustomConfirm(msg, yesCallback, noCallback) {
     if(modal) modal.style.display = 'flex';
 }
 
+/* === Custom Alert Function For Copy Fallback === */
 function showCustomAlert(msg, text = null) {
     let alertEl = document.getElementById('alertMessage');
     if (!alertEl) return;
@@ -109,6 +110,14 @@ const DB_NAME = "PersistentPortalDB";
 const DB_VERSION = 2; 
 const STORE_NAME = "dataStore"; 
 let dbInstance;
+
+/* MASTER DATA SYNC (GITHUB + LOCAL FALLBACK) */
+const EXCEL_ENDPOINTS = [
+    "https://raw.githubusercontent.com/luckyjathar/testcalculator/main/master_data.xlsx",
+    "https://cdn.jsdelivr.net/gh/luckyjathar/testcalculator@main/master_data.xlsx",
+    "https://raw.githubusercontent.com/luckyjathar/CALCULATOR/main/master_data.xlsx",
+    "https://raw.githubusercontent.com/luckyjathar/Store/main/master_data.xlsx"
+];
 
 function initDB() { 
     return new Promise((resolve) => { 
@@ -249,6 +258,10 @@ async function processArrayBufferToDB(dataBuffer) {
     db_records = uniqueDB;
     await saveToDB('cached_db_records', db_records);
     updateMasterBadgeUI();
+    if (activeCustomerIndex !== -1) { 
+        loadCurrentProducts(); 
+        renderMatrix(); 
+    }
 }
 
 async function handleManualExcelUpload(event) {
@@ -258,10 +271,6 @@ async function handleManualExcelUpload(event) {
         showToast("Master Excel लोड होत आहे...", "warning");
         let buf = await file.arrayBuffer();
         await processArrayBufferToDB(buf);
-        if (activeCustomerIndex !== -1) { 
-            loadCurrentProducts(); 
-            renderMatrix(); 
-        }
         showToast(`एकूण ${db_records.length} स्कीम्स सेव्ह झाल्या!`, "success");
     } catch (err) {
         console.error(err);
@@ -269,6 +278,58 @@ async function handleManualExcelUpload(event) {
     } finally {
         event.target.value = "";
     }
+}
+
+/* GitHub Auto-Sync Fetching Logic */
+async function fetchFromMasterStream(forceSync = false) {
+    let cachedDbRecords = await getFromDB('cached_db_records');
+    if (cachedDbRecords && cachedDbRecords.length > 0 && !forceSync) {
+        db_records = cachedDbRecords;
+        updateMasterBadgeUI();
+        fetchLatestExcelBackground(false); 
+        return;
+    }
+
+    if (forceSync) {
+        let badge = document.getElementById('masterDataStatusBadge');
+        if (badge) {
+            badge.innerHTML = `🔄 Syncing GitHub...`;
+            badge.style.color = 'var(--warning)';
+            badge.style.borderColor = 'var(--warning)';
+        }
+    }
+    await fetchLatestExcelBackground(forceSync);
+}
+
+async function fetchLatestExcelBackground(showToasts = false) {
+    let now = Date.now();
+    let dataBuffer = null;
+    for (let url of EXCEL_ENDPOINTS) {
+        try {
+            let fetchUrl = url + '?t=' + now;
+            let res = await fetch(fetchUrl, { cache: "no-store" });
+            if (res.ok) {
+                dataBuffer = await res.arrayBuffer();
+                break;
+            }
+        } catch(e) {}
+    }
+    
+    if (dataBuffer) {
+        try {
+            await processArrayBufferToDB(dataBuffer);
+            if (showToasts) showToast("GitHub वरून Master Data अपडेट झाला!", "success");
+        } catch(err) {
+            if (showToasts) showToast("Excel डेटा प्रोसेस करण्यात प्रॉब्लेम आला.", "error");
+        }
+    } else {
+        if (showToasts) showToast("GitHub वरून डेटा घेता आला नाही. इंटरनेट तपासा.", "error");
+    }
+}
+
+async function forceRefreshMasterData() {
+    showToast("GitHub वरून Latest Excel डाउनलोड सुरु आहे...", "warning");
+    await fetchFromMasterStream(true);
 }
 
 document.addEventListener('click', function(e) {
@@ -317,6 +378,9 @@ window.onload = async function() {
         if (activeCustomerIndex !== -1 && customerQueue[activeCustomerIndex] && db_records.length > 0) {
             goToFinalPage();
         }
+
+        /* Call Auto-Fetch on load */
+        fetchFromMasterStream(false);
     } catch(e) { 
         console.error("Local Data Initialization Failure", e); 
     }
@@ -335,7 +399,7 @@ function doSearch(inputId, dropdownId) {
 
     let validRecords = (Array.isArray(db_records) ? db_records : []).filter(r => r && r.model && r.model !== SPECIAL_MODEL);
     if (validRecords.length === 0) {
-        dd.innerHTML = `<div onclick="document.getElementById('masterExcelFileInput').click()" style="padding:10px; color:var(--danger); font-weight:bold; text-align:center; cursor:pointer;">⚠️ Master Data नाही! इथे क्लिक करून आधी Excel फाईल अपलोड करा.</div>`;
+        dd.innerHTML = `<div onclick="forceRefreshMasterData()" style="padding:10px; color:var(--danger); font-weight:bold; text-align:center; cursor:pointer;">⚠️ Master Data नाही! इथे क्लिक करा.</div>`;
         dd.style.display = 'block';
         return;
     }
@@ -366,20 +430,17 @@ function doSearch(inputId, dropdownId) {
 function checkDuplicateMobile(val) {
     let warningEl = document.getElementById('mobileDupWarning');
     let mobileInp = document.getElementById('cqMobile');
-    let addBtn = document.getElementById('addToQueueBtn');
-    if (!warningEl || !mobileInp || !addBtn) return;
+    if (!warningEl || !mobileInp) return;
     let cleanVal = val.trim();
     if (cleanVal.length === 10) {
         let existingCust = customerQueue.find(c => c.mobile && c.mobile === cleanVal);
         if (existingCust) {
             warningEl.innerHTML = `⚠️ नंबर आधीच Queue मध्ये <b>'${existingCust.name}'</b> नावाने आहे!`;
             warningEl.style.display = 'block';
-            addBtn.disabled = true;
             return;
         }
     }
     warningEl.style.display = 'none';
-    addBtn.disabled = false;
 }
 
 async function addCustomerToQueue() {
@@ -411,9 +472,8 @@ async function addCustomerToQueue() {
     }
 
     if(db_records.length === 0) {
-        showToast("आधी वरच्या 'Upload Master Excel' बटणावरून एक्सेल फाईल अपलोड करा!", "warning");
-        let feInput = document.getElementById('masterExcelFileInput');
-        if(feInput) feInput.click();
+        showToast("Master Data डाउनलोड होत आहे, थोडा वेळ थांबा किंवा मॅन्युअली अपडेट करा!", "warning");
+        forceRefreshMasterData();
         return; 
     }
 
@@ -524,7 +584,7 @@ function openRecycleBin() {
     if(recycleBin.length === 0) { 
         list.innerHTML = `<div style="text-align:center; color:#888;">Recycle Bin Empty</div>`; 
     } else { 
-        list.innerHTML = recycleBin.map((c, i) => ` <div style="display:flex; justify-content:space-between; align-items:center; background:#fff; padding:8px; border-radius:4px; border:1px solid #ddd;"> <div style="font-size:12px; color:var(--dark); font-weight:bold;"> 👤 ${c.name ? c.name : 'No Name'} <br><span style="color:var(--success);">Limit: ₹${c.limit}</span> </div> <button onclick="restoreCustomer(${i})" style="background:var(--primary); color:white; padding:6px; border-radius:3px;">↩️ Restore</button> </div> `).join(''); 
+        list.innerHTML = recycleBin.map((c, i) => ` <div style="display:flex; justify-content:space-between; align-items:center; background:#fff; padding:8px; border-radius:4px; border:1px solid #ddd;"> <div style="font-size:12px; color:var(--dark); font-weight:bold;"> 👤 ${c.name ? c.name : 'No Name'} <br><span style="color:var(--success);">LMT: ₹${c.limit}</span> </div> <button onclick="restoreCustomer(${i})" style="background:var(--primary); color:white; padding:6px; border-radius:3px;">↩️ Restore</button> </div> `).join(''); 
     } 
     let modal = document.getElementById('recycleBinModal');
     if(modal) modal.style.display='flex'; 
@@ -582,7 +642,6 @@ function renderCustomerQueue() {
         return; 
     } 
 
-    /* Single Tap List: Edit and Delete buttons inline */
     list.innerHTML = filtered.map((c) => { 
         let idx = c.originalIdx; 
         let isActive = (activeCustomerIndex === idx); 
@@ -611,7 +670,7 @@ function renderCustomerQueue() {
 /* Single Tap Customer Selection Logic */
 async function setActiveCustomer(idx) { 
     if(db_records.length === 0) { 
-        showToast("Aadhi Master Excel File Upload Kara!", "error"); 
+        showToast("आधी Master Excel फाईल अपलोड करा!", "error"); 
         let feInput = document.getElementById('masterExcelFileInput');
         if(feInput) feInput.click();
         return; 
@@ -1065,7 +1124,6 @@ async function proceedToMatrixFromComponents() {
                 cp.inputs.manualLoans = {};
             }
         });
-        renderCustomerQueue(); 
         updateMatrixTopCard(); 
     }
 
@@ -1150,18 +1208,19 @@ async function finalizeProductAddition() {
     renderMatrix(); 
 }
 
-function updateFinalSwitcher() { let sw = document.getElementById('finalCustomerSwitcher'); if(!sw) return; sw.innerHTML = customerQueue.map((c, i) => `<option value="${i}" ${i === activeCustomerIndex ? 'selected' : ''}>👤 ${c.name ? c.name : 'No Name'}</option>`).join(''); }
+function updateFinalSwitcher() { let sw = document.getElementById('finalCustomerSwitcher'); if(!sw) return; sw.innerHTML = customerQueue.map((c, i) => `<option value="${i}" ${i === activeCustomerIndex ? 'selected' : ''}>👤 ${c.name ? c.name : 'No Name'} (₹${c.limit})</option>`).join(''); }
 async function switchCustomerFinal(idx) { activeCustomerIndex = parseInt(idx); await saveQueueToLocal(); goToFinalPage(); }
+
 function updateMatrixTopCard() { 
     let c = customerQueue[activeCustomerIndex]; 
     if(!c) return;
     let n = document.getElementById('infoName'); if(n) n.innerText = c.name || "";
-    let m = document.getElementById('infoMobile'); if(m) m.innerText = c.mobile || "";
     let l = document.getElementById('infoLimit'); if(l) l.innerText = "₹" + (c.limit || 0);
     let ltv = document.getElementById('infoLtv'); if(ltv) ltv.innerText = (c.ltv || 100) + "%";
     let cap = document.getElementById('infoCap'); if(cap) cap.innerText = c.cap ? "₹" + c.cap : "None";
     let type = document.getElementById('infoType'); if(type) type.innerText = c.type || 'NEW';
 }
+
 function loadCurrentProducts() { 
     let c = customerQueue[activeCustomerIndex]; 
     if(!c) return;
