@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Persistent Portal">
 
-    <title>Persistent Portal V76.40 - Pro Edition</title>
+    <title>Persistent Portal V76.41 - Pro Edition</title>
 
     <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -463,6 +463,19 @@
         </div>
     </div>
 
+    <div id="inviteModal" class="modal">
+        <div class="modal-content" style="max-width: 320px;">
+            <h3 style="margin-top:0; color:#25D366; border-bottom: 2px solid #ddd; padding-bottom: 6px;">Send Invitation</h3>
+            <p style="font-size:12px; color:#555; margin-bottom:12px; text-transform: capitalize;">Customer Ko WhatsApp Se Invite Karein</p>
+            <div style="margin-bottom:6px;"><label>Your Name Salesperson</label><input type="text" id="invSenderName" placeholder="Lakshya"></div>
+            <div style="display:none;"><label>Your Mobile No.</label><input type="text" id="invSenderMobile" placeholder="10 Digits" maxlength="10"></div>
+            <div style="display:flex; gap:8px;">
+                <button onclick="sendWhatsAppInvite()" style="flex:2; background:#25D366; color:white;">Send On WhatsApp</button>
+                <button onclick="document.getElementById('inviteModal').style.display='none'" style="flex:1; background:var(--danger); color:white;">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <div id="editCustomerModal" class="modal">
         <div class="modal-content" style="max-width:300px;">
             <h3 style="margin-top:0; color:var(--indigo); border-bottom: 2px solid #ddd; padding-bottom: 6px;">Edit Customer Details</h3>
@@ -510,6 +523,7 @@
             <h3 style="margin-top:0; color:var(--bajaj-blue); text-align: center;">Verify Details Before Export</h3>
             <div style="display:flex; flex-direction:column; gap:6px; margin-top: 10px;">
                 <button onclick="proceedGenerateImage()" style="width:100%; background:var(--bajaj-blue); color:white; border:none; padding:10px; border-radius:4px; font-weight:bold;">Generate Image Only</button>
+                <button onclick="proceedGenerateImageAndWhatsAppCopy()" style="width:100%; background:#25D366; color:white; display:flex; align-items:center; justify-content:center; gap:6px;">Copy Image And Open WhatsApp</button>
                 <button onclick="document.getElementById('custInfoPromptModal').style.display='none'" style="width:100%; background:var(--danger); color:white; border:none; padding:10px; border-radius:4px; font-weight:bold;">Cancel</button>
             </div>
         </div>
@@ -590,6 +604,6 @@
         }
     };
 </script>
-<script src="app.js?v=76.39"></script>
+<script src="app.js?v=76.41"></script>
 </body>
 </html>
