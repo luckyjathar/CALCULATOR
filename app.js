@@ -46,7 +46,18 @@ function closeCustomerHistoryModal() {
     if(el) el.style.display = 'none';
 }
 
-/* === Custom Confirm Function === */
+/* === Add Customer Modal Functions === */
+function openAddCustomerModal() {
+    let modal = document.getElementById('addCustomerModal');
+    if(modal) modal.style.display = 'flex';
+}
+
+function closeAddCustomerModal() {
+    let modal = document.getElementById('addCustomerModal');
+    if(modal) modal.style.display = 'none';
+}
+
+/* === Custom Confirm & Alert === */
 function showCustomConfirm(msg, yesCallback, noCallback) {
     let confirmEl = document.getElementById('confirmMessage');
     if (!confirmEl) return;
@@ -72,7 +83,6 @@ function showCustomConfirm(msg, yesCallback, noCallback) {
     if(modal) modal.style.display = 'flex';
 }
 
-/* === Custom Alert Function For Copy Fallback === */
 function showCustomAlert(msg, text = null) {
     let alertEl = document.getElementById('alertMessage');
     if (!alertEl) return;
@@ -425,6 +435,7 @@ async function addCustomerToQueue() {
     if(cqLtvEl) cqLtvEl.value = ''; 
     if(cqCapEl) cqCapEl.value = ''; 
 
+    closeAddCustomerModal();
     renderCustomerQueue(); 
     goToFinalPage();
 }
@@ -462,29 +473,6 @@ function uniEdit() {
     let ecTypeEl = document.getElementById('ecType'); if(ecTypeEl) ecTypeEl.value = c.type; 
     let ecCapEl = document.getElementById('ecCap'); if(ecCapEl) ecCapEl.value = c.cap || ''; 
     let modal = document.getElementById('editCustomerModal'); if(modal) modal.style.display='flex'; 
-}
-
-function uniInvite() { 
-    if(selectedQueueIndex === -1) return; 
-    let snEl = document.getElementById('invSenderName'); if(snEl) snEl.value = localStorage.getItem('portal_sales_name') || ""; 
-    let smEl = document.getElementById('invSenderMobile'); if(smEl) smEl.value = localStorage.getItem('portal_sales_mobile') || ""; 
-    let modal = document.getElementById('inviteModal'); if(modal) modal.style.display = 'flex'; 
-}
-
-function sendWhatsAppInvite() { 
-    let snEl = document.getElementById('invSenderName'); let sName = snEl ? snEl.value.trim() : ""; 
-    let smEl = document.getElementById('invSenderMobile'); let sMobile = smEl ? smEl.value.trim() : ""; 
-    if(!sName) { showToast("कृपया तुमचे नाव भरा!", "error"); return; } 
-    localStorage.setItem('portal_sales_name', sName); 
-    if(sMobile) localStorage.setItem('portal_sales_mobile', sMobile); 
-    let c = customerQueue[selectedQueueIndex]; 
-    if(!c) return;
-    let cName = c.name ? c.name : 'Sir/Madam';
-    let msg = `Namaskar ${cName}! 🎉\n\nAapki Bajaj Finance Ki *₹${c.limit}* Ki Limit Approve Ho Gayi Hai!\n\n👤 *${sName}*${sMobile ? `\n📞 ${sMobile}` : ''}`; 
-    let encMsg = encodeURIComponent(msg); 
-    let url = (c.mobile && c.mobile.length === 10) ? `https://wa.me/91${c.mobile}?text=${encMsg}` : `https://api.whatsapp.com/send?text=${encMsg}`;
-    window.open(url, '_blank'); 
-    let modal = document.getElementById('inviteModal'); if(modal) modal.style.display = 'none'; 
 }
 
 function closeCustomerEdit() { 
@@ -574,6 +562,9 @@ async function emptyRecycleBin() {
 function renderCustomerQueue() { 
     let documentCount = document.getElementById('queueCount'); 
     if(documentCount) documentCount.innerText = customerQueue.length; 
+    let homeCount = document.getElementById('queueCountHome');
+    if(homeCount) homeCount.innerText = customerQueue.length;
+
     let list = document.getElementById('customerQueueList'); 
     if(!list) return; 
 
@@ -620,7 +611,7 @@ function renderCustomerQueue() {
 /* Single Tap Customer Selection Logic */
 async function setActiveCustomer(idx) { 
     if(db_records.length === 0) { 
-        showToast("आधी Master Excel फाईल अपलोड करा!", "error"); 
+        showToast("Aadhi Master Excel File Upload Kara!", "error"); 
         let feInput = document.getElementById('masterExcelFileInput');
         if(feInput) feInput.click();
         return; 
@@ -763,6 +754,8 @@ function goHome() {
     hideAllInlineSubPanels();
     let finalArea = document.getElementById('finalEligibleArea');
     if(finalArea) finalArea.style.display = 'none';
+    let uh = document.getElementById('unifiedHome');
+    if(uh) uh.style.display = 'block';
     activeCustomerIndex = -1; 
     selectedQueueIndex = -1; 
     renderCustomerQueue(); 
@@ -1072,6 +1065,7 @@ async function proceedToMatrixFromComponents() {
                 cp.inputs.manualLoans = {};
             }
         });
+        renderCustomerQueue(); 
         updateMatrixTopCard(); 
     }
 
@@ -1156,10 +1150,8 @@ async function finalizeProductAddition() {
     renderMatrix(); 
 }
 
-function updateFinalSwitcher() { let sw = document.getElementById('finalCustomerSwitcher'); if(!sw) return; sw.innerHTML = customerQueue.map((c, i) => `<option value="${i}" ${i === activeCustomerIndex ? 'selected' : ''}>👤 ${c.name ? c.name : 'No Name'} (₹${c.limit})</option>`).join(''); }
+function updateFinalSwitcher() { let sw = document.getElementById('finalCustomerSwitcher'); if(!sw) return; sw.innerHTML = customerQueue.map((c, i) => `<option value="${i}" ${i === activeCustomerIndex ? 'selected' : ''}>👤 ${c.name ? c.name : 'No Name'}</option>`).join(''); }
 async function switchCustomerFinal(idx) { activeCustomerIndex = parseInt(idx); await saveQueueToLocal(); goToFinalPage(); }
-
-/* Null-Safe Top Card Updater */
 function updateMatrixTopCard() { 
     let c = customerQueue[activeCustomerIndex]; 
     if(!c) return;
@@ -1170,7 +1162,6 @@ function updateMatrixTopCard() {
     let cap = document.getElementById('infoCap'); if(cap) cap.innerText = c.cap ? "₹" + c.cap : "None";
     let type = document.getElementById('infoType'); if(type) type.innerText = c.type || 'NEW';
 }
-
 function loadCurrentProducts() { 
     let c = customerQueue[activeCustomerIndex]; 
     if(!c) return;
@@ -1184,7 +1175,7 @@ function goToFinalPage() {
     updateMatrixTopCard(); 
     updateFinalSwitcher(); 
     
-    let uh = document.getElementById('unifiedHome'); if(uh) uh.style.display = 'block';
+    let uh = document.getElementById('unifiedHome'); if(uh) uh.style.display = 'none';
     let finalArea = document.getElementById('finalEligibleArea');
     if(finalArea) finalArea.style.display = 'flex';
     
@@ -1272,11 +1263,6 @@ function renderMatrix() {
             </div>
 
             <div id="tw_${pIdx}" style="display:${displayStyle};">
-                <div class="pmp-toolbar">
-                    <button class="pmp-btn btn-quote" onclick="instantSingleQuote(${pIdx})">Quote</button>
-                    <button class="pmp-btn btn-manual" onclick="openSchemeOnlyModal(${pIdx})">+ Manual</button>
-                </div>
-
                 <div class="table-wrapper pmp-table-wrapper">
                     <table style="width: 100%; border-collapse: collapse;">
                         <thead style="background: #f1f5f9; color: #475569; border-bottom: 2px solid #cbd5e1;">
