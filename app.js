@@ -584,7 +584,7 @@ function openRecycleBin() {
     if(recycleBin.length === 0) { 
         list.innerHTML = `<div style="text-align:center; color:#888;">Recycle Bin Empty</div>`; 
     } else { 
-        list.innerHTML = recycleBin.map((c, i) => ` <div style="display:flex; justify-content:space-between; align-items:center; background:#fff; padding:8px; border-radius:4px; border:1px solid #ddd;"> <div style="font-size:12px; color:var(--dark); font-weight:bold;"> 👤 ${c.name ? c.name : 'No Name'} <br><span style="color:var(--success);">LMT: ₹${c.limit}</span> </div> <button onclick="restoreCustomer(${i})" style="background:var(--primary); color:white; padding:6px; border-radius:3px;">↩️ Restore</button> </div> `).join(''); 
+        list.innerHTML = recycleBin.map((c, i) => ` <div style="display:flex; justify-content:space-between; align-items:center; background:#fff; padding:8px; border-radius:4px; border:1px solid #ddd;"> <div style="font-size:12px; color:var(--dark); font-weight:bold;"> 👤 ${c.name ? c.name : 'No Name'} <br><span style="color:var(--success);">Limit: ₹${c.limit}</span> </div> <button onclick="restoreCustomer(${i})" style="background:var(--primary); color:white; padding:6px; border-radius:3px;">↩️ Restore</button> </div> `).join(''); 
     } 
     let modal = document.getElementById('recycleBinModal');
     if(modal) modal.style.display='flex'; 
@@ -841,13 +841,24 @@ function openSchemeOnlyModal(pIdx) {
     if (!isLimitValid()) return; 
     let mt = document.getElementById('modalTitle'); if(mt) mt.innerText = "Add Custom Scheme"; 
     let mia = document.getElementById('modelNameInputArea'); if(mia) mia.style.display = 'none'; 
+    
+    // Clear the previous values
+    let manTen = document.getElementById('manTen'); if(manTen) manTen.value = '';
+    let manAdv = document.getElementById('manAdv'); if(manAdv) manAdv.value = '0';
+    let manDbd = document.getElementById('manDbd'); if(manDbd) manDbd.value = '0';
+    let manPf = document.getElementById('manPf'); if(manPf) manPf.value = '0';
+    let manRoi = document.getElementById('manRoi'); if(manRoi) manRoi.value = '0';
+    let manFixed = document.getElementById('manFixed'); if(manFixed) manFixed.value = '';
+
     let tpi = document.getElementById('targetPIdx'); if(tpi) tpi.value = pIdx; 
     let mm = document.getElementById('manualModal'); if(mm) mm.style.display='flex'; 
 }
+
 function closeManualModal() { 
     let mm = document.getElementById('manualModal');
     if(mm) mm.style.display='none'; 
 }
+
 function openEditSchemeModal(pIdx, dIdx) { 
     let prod = current_products[pIdx];
     if(!prod) return;
@@ -1124,6 +1135,7 @@ async function proceedToMatrixFromComponents() {
                 cp.inputs.manualLoans = {};
             }
         });
+        renderCustomerQueue(); 
         updateMatrixTopCard(); 
     }
 
@@ -1200,7 +1212,7 @@ async function finalizeProductAddition() {
         }, 
         isManual: tempPendingProduct.isManual || false 
     }); 
-    sortConfigs.push({ key: 'default_ltv', dir: 'desc' }); 
+    sortConfigs.push({ key: 'dp', dir: 'asc' }); 
     c.products = current_products; 
     c.sortConfigs = sortConfigs; 
     tempPendingProduct = null; 
@@ -1208,9 +1220,8 @@ async function finalizeProductAddition() {
     renderMatrix(); 
 }
 
-function updateFinalSwitcher() { let sw = document.getElementById('finalCustomerSwitcher'); if(!sw) return; sw.innerHTML = customerQueue.map((c, i) => `<option value="${i}" ${i === activeCustomerIndex ? 'selected' : ''}>👤 ${c.name ? c.name : 'No Name'} (₹${c.limit})</option>`).join(''); }
+function updateFinalSwitcher() { let sw = document.getElementById('finalCustomerSwitcher'); if(!sw) return; sw.innerHTML = customerQueue.map((c, i) => `<option value="${i}" ${i === activeCustomerIndex ? 'selected' : ''}>👤 ${c.name ? c.name : 'No Name'}</option>`).join(''); }
 async function switchCustomerFinal(idx) { activeCustomerIndex = parseInt(idx); await saveQueueToLocal(); goToFinalPage(); }
-
 function updateMatrixTopCard() { 
     let c = customerQueue[activeCustomerIndex]; 
     if(!c) return;
@@ -1220,7 +1231,6 @@ function updateMatrixTopCard() {
     let cap = document.getElementById('infoCap'); if(cap) cap.innerText = c.cap ? "₹" + c.cap : "None";
     let type = document.getElementById('infoType'); if(type) type.innerText = c.type || 'NEW';
 }
-
 function loadCurrentProducts() { 
     let c = customerQueue[activeCustomerIndex]; 
     if(!c) return;
@@ -1270,7 +1280,6 @@ function removeModelFromMatrix(pIdx, event) {
 
 function instantSingleQuote(pIdx) { window.tempImageGenIndices = [pIdx]; requestWhatsAppDispatch = false; doGenerateCustomerImage(); }
 
-/* Model Name Complete Top-Left & Edit/Close Icons Complete Top-Right */
 function renderMatrix() {
     let container = document.getElementById('multiModelContainer'); 
     if(!container) return;
@@ -1312,6 +1321,7 @@ function renderMatrix() {
                     <span>${prod.name}</span>
                 </div>
                 <div class="pmp-actions-right">
+                    <button class="model-action-icon model-add-icon" onclick="openSchemeOnlyModal(${pIdx})" title="Add Manual Scheme">➕</button>
                     <button class="model-action-icon model-edit-icon" onclick="openEditModelComponents(${pIdx}, event)" title="Edit Components">✏️</button>
                     <button class="model-action-icon model-close-icon" onclick="removeModelFromMatrix(${pIdx}, event)" title="Remove Model">✖</button>
                 </div>
@@ -1322,6 +1332,10 @@ function renderMatrix() {
             </div>
 
             <div id="tw_${pIdx}" style="display:${displayStyle};">
+                <div class="pmp-toolbar" style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0; background: #f8fafc;">
+                    <button class="pmp-btn btn-quote" onclick="instantSingleQuote(${pIdx})" style="width: 100%;">📋 Generate Quote For This Model</button>
+                </div>
+
                 <div class="table-wrapper pmp-table-wrapper">
                     <table style="width: 100%; border-collapse: collapse;">
                         <thead style="background: #f1f5f9; color: #475569; border-bottom: 2px solid #cbd5e1;">
@@ -1499,7 +1513,7 @@ function recalcModel(pIdx) {
 function renderRows(pIdx) {
     let prod = current_products[pIdx]; 
     if(!prod) return;
-    if(!sortConfigs[pIdx]) sortConfigs[pIdx] = {key: 'default_ltv', dir: 'desc'}; 
+    if(!sortConfigs[pIdx]) sortConfigs[pIdx] = {key: 'dp', dir: 'asc'}; 
     let conf = sortConfigs[pIdx]; 
     let ltvLimit = customerQueue[activeCustomerIndex]?.ltv || 100; 
     let isNT = prod.isNonTieup;
@@ -1527,7 +1541,9 @@ function renderRows(pIdx) {
         } else if (key === 'loan') {
             return (a.loan - b.loan) * dir;
         } else if (key === 'dp') {
-            return (a.dp - b.dp) * dir;
+            let dpDiff = a.dp - b.dp;
+            if (dpDiff !== 0) return dpDiff * dir;
+            return (a.emi - b.emi) * dir;
         } else if (key === 'emi') {
             return (a.emi - b.emi) * dir;
         } else if (key === 'months') {
@@ -1537,9 +1553,9 @@ function renderRows(pIdx) {
         } else if (key === 'extra') {
             return (a.extra - b.extra) * dir;
         } else {
-            if (Math.round(b.curLTV) !== Math.round(a.curLTV)) { return (b.curLTV - a.curLTV) * dir; }
-            if (a.dp !== b.dp) { return (a.dp - b.dp) * dir; }
-            return (a.emi - b.emi) * dir;
+            if (a.dp !== b.dp) return (a.dp - b.dp) * dir;
+            if (a.emi !== b.emi) return (a.emi - b.emi) * dir;
+            return (b.curLTV - a.curLTV) * dir;
         }
     });
 
@@ -1591,6 +1607,7 @@ function renderRows(pIdx) {
 }
 
 function sortMatrixTable(pIdx, key) {
+    if(!sortConfigs[pIdx]) sortConfigs[pIdx] = {key: 'dp', dir: 'asc'};
     let conf = sortConfigs[pIdx];
     if (conf.key === key) {
         conf.dir = conf.dir === 'asc' ? 'desc' : 'asc';
@@ -1759,8 +1776,10 @@ function doGenerateCustomerImage() {
     quoteDiv.style.width = "680px"; 
     quoteDiv.style.padding = "28px 32px"; 
     quoteDiv.style.background = "#ffffff"; 
-    quoteDiv.style.position = "absolute"; 
-    quoteDiv.style.top = "-9999px"; 
+    quoteDiv.style.position = "fixed"; 
+    quoteDiv.style.top = "0"; 
+    quoteDiv.style.left = "0";
+    quoteDiv.style.zIndex = "-9999";
     quoteDiv.style.boxSizing = "border-box";
     quoteDiv.style.fontFamily = "Arial, Helvetica, sans-serif";
     quoteDiv.style.color = "#1e293b";
@@ -1803,6 +1822,13 @@ function doGenerateCustomerImage() {
         if (!prod || !prod.calculatedData || prod.calculatedData.length === 0) return;
         let validS = prod.calculatedData.filter(d => !d.inactive && !d.isInv50Breach && !d.isCapBreach && d.loan > 0);
         if(validS.length === 0) return; 
+        
+        validS.sort((a,b) => {
+            if (a.dp !== b.dp) return a.dp - b.dp;
+            if (a.emi !== b.emi) return a.emi - b.emi;
+            return b.curLTV - a.curLTV;
+        });
+
         hasV = true; 
         let invAmt = prod.inputs.inv ? Number(prod.inputs.inv).toLocaleString('en-IN') : '0';
 
