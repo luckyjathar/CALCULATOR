@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Persistent Portal">
 
-    <title>Persistent Portal V76.37 - Pro Edition</title>
+    <title>Persistent Portal V76.38 - Pro Edition</title>
 
     <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -216,7 +216,8 @@
     </h1>
 
     <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-        <div id="masterDataStatusBadge" style="font-weight: 900; font-size: 11px; background: rgba(214, 48, 49, 0.12); color: var(--danger); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--danger); letter-spacing: 0.5px; text-align: center; white-space: nowrap; text-transform: capitalize;">
+        <!-- GitHub Sync Badge -->
+        <div id="masterDataStatusBadge" onclick="forceRefreshMasterData()" title="Tap to Sync from GitHub" style="cursor: pointer; font-weight: 900; font-size: 11px; background: rgba(214, 48, 49, 0.12); color: var(--danger); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--danger); letter-spacing: 0.5px; text-align: center; white-space: nowrap; text-transform: capitalize;">
             ⚠️ No Master Data
         </div>
 
@@ -229,7 +230,7 @@
 
 <main>
 
-    <!-- 1. Landing Screen (Add New Customer Section removed from flow) -->
+    <!-- 1. Landing Screen -->
     <div id="unifiedHome" style="display: block; padding: 30px 15px; text-align: center; background: #f8fafc; border-radius: 8px; margin: 15px 0;">
         <h2 style="color: var(--bajaj-blue); margin-bottom: 25px;">Welcome to Persistent Portal</h2>
         <button onclick="openAddCustomerModal()" style="background: var(--success); color: white; border: none; padding: 14px 20px; border-radius: 8px; font-weight: 900; font-size: 16px; width: 100%; max-width: 280px; margin-bottom: 12px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">➕ Add New Customer</button>
@@ -519,6 +520,7 @@
 </footer>
 
 <script>
+    // JS Error Catcher (To detect screen freezes and prevent silent failures)
     window.onerror = function(msg, url, line) {
         console.error("JS Error: " + msg + "\nLine: " + line);
         let errorToast = document.getElementById("toastNotification");
@@ -529,6 +531,6 @@
         }
     };
 </script>
-<script src="app.js?v=76.37"></script>
+<script src="app.js?v=76.38"></script>
 </body>
 </html>
