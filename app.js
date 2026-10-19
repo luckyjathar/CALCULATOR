@@ -35,6 +35,30 @@ function showInlineSubPanel(targetId) {
     }
 }
 
+/* === GitHub Settings Modal === */
+function openGithubConfig() {
+    let repoEl = document.getElementById('ghRepoName');
+    let patEl = document.getElementById('ghPatToken');
+    if(repoEl) repoEl.value = localStorage.getItem('gh_repo') || "luckyjathar/testcalculator";
+    if(patEl) patEl.value = localStorage.getItem('gh_pat') || "";
+    let modal = document.getElementById('githubConfigModal');
+    if(modal) modal.style.display = 'flex';
+}
+
+function closeGithubConfig() {
+    let modal = document.getElementById('githubConfigModal');
+    if(modal) modal.style.display = 'none';
+}
+
+function saveGithubConfig() {
+    let repoEl = document.getElementById('ghRepoName');
+    let patEl = document.getElementById('ghPatToken');
+    if(repoEl) localStorage.setItem('gh_repo', repoEl.value.trim());
+    if(patEl) localStorage.setItem('gh_pat', patEl.value.trim());
+    showToast("GitHub Settings Saved!", "success");
+    closeGithubConfig();
+}
+
 /* === History Modal Functions === */
 function openCustomerHistoryModal() {
     renderCustomerQueue();
@@ -330,6 +354,105 @@ async function fetchLatestExcelBackground(showToasts = false) {
 async function forceRefreshMasterData() {
     showToast("GitHub वरून Latest Excel डाउनलोड सुरु आहे...", "warning");
     await fetchFromMasterStream(true);
+}
+
+/* === GitHub Push Functionality === */
+async function pushProductToMaster(pIdx) {
+    let repo = localStorage.getItem('gh_repo') || "luckyjathar/testcalculator";
+    let token = localStorage.getItem('gh_pat');
+    
+    if (!token) {
+        showToast("कृपया आधी GitHub Token (PAT) सेट करा!", "warning");
+        openGithubConfig();
+        return;
+    }
+
+    let prod = current_products[pIdx];
+    if (!prod || !prod.schemes || prod.schemes.length === 0) return;
+
+    let btn = document.getElementById(`pushBtn_${pIdx}`);
+    if(btn) btn.innerText = "⏳ Syncing...";
+    showToast("GitHub शी कनेक्ट करत आहे...", "warning");
+
+    try {
+        let apiUrl = `https://api.github.com/repos/${repo}/contents/master_data.xlsx`;
+        let res = await fetch(apiUrl, {
+            headers: { 'Authorization': `token ${token}` }
+        });
+        
+        if(!res.ok) throw new Error("GitHub Repo किंवा Token चुकीचा आहे.");
+        let fileData = await res.json();
+        let sha = fileData.sha;
+        let downloadUrl = fileData.download_url;
+
+        let xlsxRes = await fetch(downloadUrl);
+        let arrayBuffer = await xlsxRes.arrayBuffer();
+
+        let wb = XLSX.read(new Uint8Array(arrayBuffer), {type: 'array'});
+        let sheetName = wb.SheetNames[0]; 
+        let sheetData = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], {defval: ""});
+
+        let newRowsAdded = 0;
+        prod.schemes.forEach(s => {
+            let exists = sheetData.some(row => 
+                String(row['MODEL']||"").trim().toUpperCase() === prod.name.trim().toUpperCase() &&
+                parseInt(row['TOTAL TENURE']||0) === parseInt(s.tenure||0) &&
+                parseInt(row['ADVANCE EMI']||0) === parseInt(s.advEmi||0) &&
+                parseFloat(row['DBD%']||0) === parseFloat(s.dbd||0)
+            );
+            if(!exists) {
+                sheetData.push({
+                    "MODEL": prod.name.toUpperCase(),
+                    "BRAND": s.brand ? s.brand.toUpperCase() : "MANUAL",
+                    "MRP": prod.inputs.mrp || 0,
+                    "TOTAL TENURE": s.tenure || 0,
+                    "ADVANCE EMI": s.advEmi || 0,
+                    "DBD%": s.dbd || 0,
+                    "PF": s.pf || 0,
+                    "ROI%": s.roi || 0,
+                    "FIXED EMI": s.fixedEmi || 0,
+                    "CATEGORY": prod.category || "OTHER",
+                    "MIN LOAN": s.minLoan || 0,
+                    "MAX LOAN": s.maxLoan || 9999999
+                });
+                newRowsAdded++;
+            }
+        });
+
+        if(newRowsAdded === 0) {
+            showToast("या सर्व स्कीम्स मास्टरमध्ये आधीच आहेत!", "warning");
+            if(btn) btn.innerText = "🚀 Push To Master";
+            return;
+        }
+
+        let newSheet = XLSX.utils.json_to_sheet(sheetData);
+        wb.Sheets[sheetName] = newSheet;
+        let newBase64 = XLSX.write(wb, {type: 'base64', bookType: 'xlsx'});
+
+        let putRes = await fetch(apiUrl, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `token ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                message: `Portal Auto-Sync: Added ${newRowsAdded} schemes for ${prod.name}`,
+                content: newBase64,
+                sha: sha
+            })
+        });
+
+        if(!putRes.ok) throw new Error("Upload Failed. Access rights चेक करा.");
+
+        showToast(`✅ Success! ${newRowsAdded} स्कीम्स GitHub वर अपलोड झाल्या!`, "success");
+        if(btn) btn.innerText = "✅ Synced";
+        
+        forceRefreshMasterData();
+
+    } catch(err) {
+        showToast("Error: " + err.message, "error");
+        if(btn) btn.innerText = "🚀 Push To Master";
+    }
 }
 
 document.addEventListener('click', function(e) {
@@ -667,7 +790,6 @@ function renderCustomerQueue() {
     }).join(''); 
 }
 
-/* Single Tap Customer Selection Logic */
 async function setActiveCustomer(idx) { 
     if(db_records.length === 0) { 
         showToast("आधी Master Excel फाईल अपलोड करा!", "error"); 
@@ -1135,7 +1257,6 @@ async function proceedToMatrixFromComponents() {
                 cp.inputs.manualLoans = {};
             }
         });
-        renderCustomerQueue(); 
         updateMatrixTopCard(); 
     }
 
@@ -1222,6 +1343,7 @@ async function finalizeProductAddition() {
 
 function updateFinalSwitcher() { let sw = document.getElementById('finalCustomerSwitcher'); if(!sw) return; sw.innerHTML = customerQueue.map((c, i) => `<option value="${i}" ${i === activeCustomerIndex ? 'selected' : ''}>👤 ${c.name ? c.name : 'No Name'}</option>`).join(''); }
 async function switchCustomerFinal(idx) { activeCustomerIndex = parseInt(idx); await saveQueueToLocal(); goToFinalPage(); }
+
 function updateMatrixTopCard() { 
     let c = customerQueue[activeCustomerIndex]; 
     if(!c) return;
@@ -1231,6 +1353,7 @@ function updateMatrixTopCard() {
     let cap = document.getElementById('infoCap'); if(cap) cap.innerText = c.cap ? "₹" + c.cap : "None";
     let type = document.getElementById('infoType'); if(type) type.innerText = c.type || 'NEW';
 }
+
 function loadCurrentProducts() { 
     let c = customerQueue[activeCustomerIndex]; 
     if(!c) return;
@@ -1280,6 +1403,7 @@ function removeModelFromMatrix(pIdx, event) {
 
 function instantSingleQuote(pIdx) { window.tempImageGenIndices = [pIdx]; requestWhatsAppDispatch = false; doGenerateCustomerImage(); }
 
+/* Model Name Complete Top-Left & Edit/Close/Add Icons Complete Top-Right */
 function renderMatrix() {
     let container = document.getElementById('multiModelContainer'); 
     if(!container) return;
@@ -1332,8 +1456,9 @@ function renderMatrix() {
             </div>
 
             <div id="tw_${pIdx}" style="display:${displayStyle};">
-                <div class="pmp-toolbar" style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0; background: #f8fafc;">
+                <div class="pmp-toolbar" style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0; background: #f8fafc; display:flex; gap:8px;">
                     <button class="pmp-btn btn-quote" onclick="instantSingleQuote(${pIdx})" style="width: 100%;">📋 Generate Quote For This Model</button>
+                    <button class="pmp-btn" id="pushBtn_${pIdx}" onclick="pushProductToMaster(${pIdx})" style="background:#10b981; color:#fff; border-color:#059669; width: 100%;">🚀 Push To Master</button>
                 </div>
 
                 <div class="table-wrapper pmp-table-wrapper">
@@ -1857,8 +1982,8 @@ function doGenerateCustomerImage() {
             html += `
                 <tr style="font-size: 17px; font-weight: 800; color: #1e293b; background: #ffffff;">
                     <td style="border: 1.5px solid #2b4c7e; padding: 9px 8px; text-align: center;">${d.currentTenure}/${d.advEmi}</td>
-                    <td style="border: 1.5px solid #2b4c7e; padding: 9px 14px; text-align: right;">₹${Math.round(d.dp).toLocaleString('en-IN')}</td>
-                    <td style="border: 1.5px solid #2b4c7e; padding: 9px 14px; text-align: right;">₹${Math.round(d.emi).toLocaleString('en-IN')}</td>
+                    <td style="border: 1.5px solid #2b4c7e; padding: 9px 14px; text-align: center;">₹${Math.round(d.dp).toLocaleString('en-IN')}</td>
+                    <td style="border: 1.5px solid #2b4c7e; padding: 9px 14px; text-align: center;">₹${Math.round(d.emi).toLocaleString('en-IN')}</td>
                     <td style="border: 1.5px solid #2b4c7e; padding: 9px 8px; text-align: center;">${d.inst}</td>
                     <td style="border: 1.5px solid #2b4c7e; padding: 9px 8px; text-align: center;">₹${Math.round(d.daily).toLocaleString('en-IN')}</td>
                 </tr>
