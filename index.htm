@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Persistent Portal">
 
-    <title>Persistent Portal V76.38 - Pro Edition</title>
+    <title>Persistent Portal V76.39 - Pro Edition</title>
 
     <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -35,7 +35,7 @@
             box-sizing: border-box;
         }
 
-        /* Model Header: Model Name Complete Top-Left & Edit/Close Icons Complete Top-Right */
+        /* Model Header: Model Name Complete Top-Left & Icons Complete Top-Right */
         .premium-model-panel {
             position: relative !important;
             width: 100% !important;
@@ -51,7 +51,7 @@
             align-items: center !important;
             width: 100% !important;
             box-sizing: border-box !important;
-            padding: 8px 65px 8px 10px !important;
+            padding: 8px 90px 8px 10px !important; /* increased right padding for 3 icons */
             background: #034887;
             color: #ffffff;
             border-bottom: 1px solid #e2e8f0;
@@ -108,6 +108,11 @@
             background: #fee2e2 !important;
             color: var(--danger) !important;
             border-color: #fecaca !important;
+        }
+        .model-add-icon {
+            background: #dcfce7 !important;
+            color: #166534 !important;
+            border-color: #bbf7d0 !important;
         }
         .model-action-icon:active {
             transform: scale(0.9);
@@ -276,7 +281,7 @@
             <button onclick="openCustomerHistoryModal()" style="flex:0.8; background:var(--bajaj-blue); color:white; border:none; border-radius:4px; font-weight:bold; font-size:12px; padding:8px; display:inline-flex; align-items:center; justify-content:center; gap:4px;" title="Saved Customers History">🕒 History (<span id="queueCount">0</span>)</button>
         </div>
 
-        <!-- Customer Details Strip with Gen Quote Button -->
+        <!-- Customer Details Strip -->
         <div style="background: #253241; border-radius: 8px; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.2); margin: 12px 0; border: 1px solid #3b4b5e;">
             <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
                 <div style="width: 38px; height: 38px; background: rgba(0,0,0,0.3); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 18px; flex-shrink: 0;">👤</div>
@@ -480,9 +485,10 @@
         <img id="generatedImage" src="" alt="Quotation">
     </div>
 
+    <!-- Reusable Add Custom Scheme Modal -->
     <div id="manualModal" class="modal">
         <div class="modal-content" style="max-width:300px;">
-            <h3 id="modalTitle" style="margin-top:0;">Add Custom Scheme</h3>
+            <h3 id="modalTitle" style="margin-top:0; color:var(--indigo);">Add Scheme</h3>
             <div id="modelNameInputArea" style="display:none;">
                 <label>Model Name</label>
                 <input type="text" id="manName" placeholder="Enter Model Name" value="">
@@ -490,14 +496,14 @@
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-top:8px;">
                 <div><label>Tenure Max</label><input type="number" id="manTen" placeholder="0"></div>
                 <div><label>Advance</label><input type="number" id="manAdv" placeholder="0"></div>
-                <div><label>DBD %</label><input type="number" id="manDbd" placeholder="0"></div>
+                <div><label>DBD %</label><input type="number" id="manDbd" placeholder="0" step="0.01"></div>
                 <div><label>PF ₹</label><input type="number" id="manPf" placeholder="0"></div>
-                <div><label>ROI %</label><input type="number" id="manRoi" placeholder="0"></div>
+                <div><label>ROI %</label><input type="number" id="manRoi" placeholder="0" step="0.01"></div>
                 <div><label>Fixed EMI ₹</label><input type="number" id="manFixed" placeholder="0"></div>
             </div>
             <input type="hidden" id="targetPIdx" value="">
-            <button onclick="executeManualAction()" style="width:100%; background:var(--success); color:white; margin-top:12px;">Add Scheme</button>
-            <button onclick="closeManualModal()" style="width:100%; background:var(--danger); color:white; margin-top:6px;">Cancel</button>
+            <button onclick="executeManualAction()" style="width:100%; background:var(--success); color:white; margin-top:12px; padding:10px; border-radius:4px; font-weight:bold;">Add Scheme</button>
+            <button onclick="closeManualModal()" style="width:100%; background:var(--danger); color:white; margin-top:6px; padding:10px; border-radius:4px; font-weight:bold;">Cancel</button>
         </div>
     </div>
 
@@ -526,11 +532,11 @@
         let errorToast = document.getElementById("toastNotification");
         if(errorToast) {
             errorToast.className = "toast-notification show error";
-            errorToast.innerText = "System Error! Please refresh page.";
+            errorToast.innerText = "System Error! Please check data or refresh.";
             setTimeout(() => { errorToast.className = "toast-notification"; }, 4000);
         }
     };
 </script>
-<script src="app.js?v=76.38"></script>
+<script src="app.js?v=76.39"></script>
 </body>
 </html>
