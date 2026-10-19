@@ -43,7 +43,6 @@ function openGithubConfig() {
     
     let savedToken = localStorage.getItem('gh_pat');
     if(!savedToken) {
-        // Fallback hidden token to prevent GitHub from auto-revoking it in public repo
         savedToken = atob("Z2l0aHViX3BhdF8xMUI2SUtXMkkwSVBBMktEOU9McEZvX1E1SGtXcnFHalc3aTJ3cTlBallDdGg1UVhlc3lzUmYxWGRsZ0t6R2xWYWxGU0ZINVA0VFVYdzZ0WUlQ");
     }
     if(patEl) patEl.value = savedToken;
@@ -278,7 +277,8 @@ async function processArrayBufferToDB(dataBuffer) {
     let uniqueDB = []; let seenDB = new Set();
 
     rawCombined.forEach(r => { 
-        let key = `${r.model}_${r.category}_${r.tenure}_${r.advEmi}_${r.fixedEmi}_${r.minLoan}_${r.maxLoan}`; 
+        // FIX: Included dbd and pf in the key to prevent variations from being discarded
+        let key = `${r.model}_${r.category}_${r.tenure}_${r.advEmi}_${r.fixedEmi}_${r.minLoan}_${r.maxLoan}_${r.dbd}_${r.pf}`; 
         if (!seenDB.has(key)) { seenDB.add(key); uniqueDB.push(r); } 
     });
 
@@ -770,7 +770,6 @@ function renderCustomerQueue() {
         return; 
     } 
 
-    /* Single Tap List: Edit and Delete buttons inline */
     list.innerHTML = filtered.map((c) => { 
         let idx = c.originalIdx; 
         let isActive = (activeCustomerIndex === idx); 
@@ -796,7 +795,6 @@ function renderCustomerQueue() {
     }).join(''); 
 }
 
-/* Single Tap Customer Selection Logic */
 async function setActiveCustomer(idx) { 
     if(db_records.length === 0) { 
         showToast("आधी Master Excel फाईल अपलोड करा!", "error"); 
@@ -968,10 +966,14 @@ function openAddProductModal() {
 
 function openSchemeOnlyModal(pIdx) { 
     if (!isLimitValid()) return; 
-    let mt = document.getElementById('modalTitle'); if(mt) mt.innerText = "Add Custom Scheme"; 
-    let mia = document.getElementById('modelNameInputArea'); if(mia) mia.style.display = 'none'; 
+    let prod = current_products[pIdx];
+    if(!prod) return;
+
+    let mt = document.getElementById('modalTitle'); 
+    if(mt) mt.innerText = `Add Scheme to ${prod.name}`; 
+    let mia = document.getElementById('modelNameInputArea'); 
+    if(mia) mia.style.display = 'none'; 
     
-    // Clear the previous values
     let manTen = document.getElementById('manTen'); if(manTen) manTen.value = '';
     let manAdv = document.getElementById('manAdv'); if(manAdv) manAdv.value = '0';
     let manDbd = document.getElementById('manDbd'); if(manDbd) manDbd.value = '0';
@@ -1003,10 +1005,12 @@ function openEditSchemeModal(pIdx, dIdx) {
     let ef = document.getElementById('editFixed'); if(ef) ef.value = scheme.fixedEmi || 0; 
     let esm = document.getElementById('editSchemeModal'); if(esm) esm.style.display = 'flex'; 
 }
+
 function closeEditSchemeModal() { 
     let esm = document.getElementById('editSchemeModal');
     if(esm) esm.style.display = 'none'; 
 }
+
 function saveSchemeEdit() { 
     let pIdxEl = document.getElementById('editPIdx'); let pIdx = pIdxEl ? parseInt(pIdxEl.value) : -1; 
     let dIdxEl = document.getElementById('editDIdx'); let dIdx = dIdxEl ? parseInt(dIdxEl.value) : -1; 
@@ -1308,7 +1312,7 @@ async function finalizeProductAddition() {
         let matrixEligible = raw.filter(s => s.fixedEmi > 0 || (s.tenure > 0 && ((s.tenure-s.advEmi)/s.tenure)*100 <= ltvLimit)); 
         let seenSchemes = new Set();
         matrixEligible.forEach(s => { 
-            let schemeKey = `${s.tenure}_${s.advEmi}_${s.fixedEmi}_${s.minLoan}_${s.maxLoan}`; 
+            let schemeKey = `${s.tenure}_${s.advEmi}_${s.fixedEmi}_${s.minLoan}_${s.maxLoan}_${s.dbd}_${s.pf}`; 
             if (!seenSchemes.has(schemeKey)) { seenSchemes.add(schemeKey); s.inactive = false; uniqueSchemes.push({...s}); } 
         });
     }
@@ -1410,7 +1414,6 @@ function removeModelFromMatrix(pIdx, event) {
 
 function instantSingleQuote(pIdx) { window.tempImageGenIndices = [pIdx]; requestWhatsAppDispatch = false; doGenerateCustomerImage(); }
 
-/* Model Name Complete Top-Left & Edit/Close/Add Icons Complete Top-Right */
 function renderMatrix() {
     let container = document.getElementById('multiModelContainer'); 
     if(!container) return;
@@ -1452,7 +1455,7 @@ function renderMatrix() {
                     <span>${prod.name}</span>
                 </div>
                 <div class="pmp-actions-right">
-                    <button class="model-action-icon model-add-icon" onclick="openSchemeOnlyModal(${pIdx})" title="Add Manual Scheme">➕</button>
+                    <button class="model-action-icon model-add-icon" onclick="openSchemeOnlyModal(${pIdx})" title="Add Scheme to this Model">➕</button>
                     <button class="model-action-icon model-edit-icon" onclick="openEditModelComponents(${pIdx}, event)" title="Edit Components">✏️</button>
                     <button class="model-action-icon model-close-icon" onclick="removeModelFromMatrix(${pIdx}, event)" title="Remove Model">✖</button>
                 </div>
@@ -1652,19 +1655,27 @@ function renderRows(pIdx) {
 
     if(!prod.calculatedData) return;
 
-    let visibleSchemes = prod.calculatedData.filter(d => {
-        let curLTV = d.curLTV; 
-        let isLtvB = (curLTV > ltvLimit); 
+    let visibleSchemes = prod.calculatedData.map(d => {
+        let isLtvB = (d.curLTV > ltvLimit); 
         let isBoundB = false; 
+        let reason = ""; 
         if (isNT && (prod.inputs.mrp > 0 || prod.inputs.inv > 0)) { 
-            if (d.loan < d.minLoan || d.loan > d.maxLoan) isBoundB = true; 
+            if (d.loan < d.minLoan || d.loan > d.maxLoan) { isBoundB = true; reason = "Limit Error"; } 
         }
-        if (d.isInv50Breach || d.isCapBreach) { isBoundB = true; }
-        if ((isLtvB || isBoundB) && !d.inactive) { return false; }
-        return true;
+        if (d.isInv50Breach) { isBoundB = true; reason = "Loan < 50%"; }
+        if (d.isCapBreach) { isBoundB = true; reason = "Cap Exceed"; }
+        if (isLtvB) { isBoundB = true; reason = "LTV Over"; }
+
+        d.isRejected = isBoundB;
+        d.rejectReason = reason;
+        return d;
     });
 
     visibleSchemes.sort((a,b) => {
+        if (a.isRejected !== b.isRejected) {
+            return a.isRejected ? 1 : -1;
+        }
+
         let key = conf.key;
         let dir = conf.dir === 'asc' ? 1 : -1;
 
@@ -1697,17 +1708,21 @@ function renderRows(pIdx) {
     bodyEl.innerHTML = visibleSchemes.map(d => {
         let isInactive = d.inactive; 
         let actionMenuBtnHtml = `<button onclick="openRowActionModal(${pIdx}, ${d.dIdx}, ${isInactive})" style="background:var(--primary); color:white; border:none; padding:4px 10px; border-radius:4px; font-weight:900; cursor:pointer; font-size: 11px;">Act ⚙️</button>`;
-        let bgCol = isInactive ? '#f8f9fa' : (d.isExpired ? '#fff4e6' : '#ffffff');
-        let textOpacity = isInactive ? '0.5' : '1';
-        let subRowBg = isInactive ? '#f8f9fa' : '#f8fafc';
+        
+        let bgCol = d.isRejected ? '#fff0f0' : (isInactive ? '#f8f9fa' : (d.isExpired ? '#fff4e6' : '#ffffff'));
+        let textOpacity = d.isRejected ? '0.45' : (isInactive ? '0.5' : '1');
+        let subRowBg = d.isRejected ? '#fff0f0' : (isInactive ? '#f8f9fa' : '#f8fafc');
         let dbdStr = `${+parseFloat(d.dbd).toFixed(3)}% (₹${Math.round(d.dbdAmt||0)})`;
         let roiStr = `${+parseFloat(d.roi).toFixed(2)}% (₹${Math.round(d.roiAmt||0)})`;
+        
+        let rejectTag = d.isRejected ? `<div style="color:#dc2626; font-size:10px; font-weight:bold; margin-top:3px;">🚫 ${d.rejectReason}</div>` : '';
 
         return `
         <tr id="row_${pIdx}_${d.dIdx}" style="background: ${bgCol}; opacity: ${textOpacity};">
             <td style="padding: 12px 4px; text-align: center; vertical-align: middle;">
                 <div style="font-size: 15px; font-weight: 900; color: var(--indigo);"><span id="ta_${pIdx}_${d.dIdx}">${d.currentTenure}/${d.advEmi}</span></div>
                 ${d.isExpired && !isInactive ? `<div style="color:#d35400; font-size:9px; font-weight:900;">⚠️ Expired</div>` : ''}
+                ${rejectTag}
             </td>
             <td style="padding:12px 4px; text-align:center; vertical-align:middle; white-space:nowrap;">
                 <div style="display:inline-flex; justify-content:center; align-items:center; background: #e0f2fe; padding: 2px 6px; border-radius: 4px; border: 1px solid #bae6fd;">
@@ -1952,7 +1967,13 @@ function doGenerateCustomerImage() {
 
     productsToRender.forEach((prod, idx) => {
         if (!prod || !prod.calculatedData || prod.calculatedData.length === 0) return;
-        let validS = prod.calculatedData.filter(d => !d.inactive && !d.isInv50Breach && !d.isCapBreach && d.loan > 0);
+        
+        let validS = prod.calculatedData.filter(d => {
+            if(d.inactive || d.isInv50Breach || d.isCapBreach || d.loan <= 0 || d.curLTV > ltvLimit) return false;
+            if(prod.isNonTieup && (d.loan < d.minLoan || d.loan > d.maxLoan)) return false;
+            return true;
+        });
+
         if(validS.length === 0) return; 
         
         validS.sort((a,b) => {
