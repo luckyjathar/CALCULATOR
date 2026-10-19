@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Persistent Portal">
 
-    <title>Persistent Portal V76.36 - Pro Edition</title>
+    <title>Persistent Portal V76.37 - Pro Edition</title>
 
     <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -24,31 +24,6 @@
             text-transform: capitalize;
         }
 
-        /* Add New Customer Single Line Layout */
-        .single-line-cust-grid {
-            display: grid;
-            grid-template-columns: repeat(5, minmax(0, 1fr));
-            gap: 6px;
-            margin-bottom: 8px;
-            align-items: end;
-        }
-        .single-line-cust-grid label {
-            font-size: 11px !important;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            display: block;
-            margin-bottom: 3px;
-        }
-        .single-line-cust-grid input,
-        .single-line-cust-grid select {
-            width: 100%;
-            box-sizing: border-box;
-            padding: 6px !important;
-            font-size: 12px !important;
-            min-height: 36px !important;
-        }
-
         .inline-work-panel {
             background: #ffffff;
             border: 2px solid var(--bajaj-blue);
@@ -58,25 +33,6 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.08);
             width: 100%;
             box-sizing: border-box;
-        }
-
-        .history-btn {
-            background: var(--bajaj-blue);
-            color: #ffffff;
-            border: none;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 12px !important;
-            font-weight: 900;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            min-height: 30px !important;
-        }
-        .history-btn:active {
-            transform: scale(0.95);
         }
 
         /* Model Header: Model Name Complete Top-Left & Edit/Close Icons Complete Top-Right */
@@ -198,16 +154,6 @@
         }
 
         @media (max-width: 768px) {
-            .forms-row {
-                display: flex;
-                flex-direction: column !important;
-                gap: 15px;
-            }
-            .form-container {
-                width: 100% !important;
-                margin: 0 !important;
-                min-width: unset !important;
-            }
             header {
                 flex-direction: column;
                 align-items: flex-start !important;
@@ -216,19 +162,6 @@
             }
             header h1 {
                 font-size: 18px !important;
-            }
-
-            .single-line-cust-grid {
-                gap: 4px;
-            }
-            .single-line-cust-grid label {
-                font-size: 9.5px !important;
-            }
-            .single-line-cust-grid input,
-            .single-line-cust-grid select {
-                padding: 4px !important;
-                font-size: 11px !important;
-                min-height: 34px !important;
             }
 
             #manualModal .modal-content > div:nth-child(3),
@@ -296,68 +229,73 @@
 
 <main>
 
-    <!-- 1. Add New Customer Section -->
-    <div id="unifiedHome" style="display: block;">
-        <div class="forms-row">
-            <div class="form-container" style="flex: 1; width: 100%; background: #e3f2fd; border: 2px solid var(--primary); margin-bottom:0; display: flex; flex-direction: column;">
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--primary); padding-bottom: 6px; margin-bottom: 10px;">
-                    <label style="color:var(--primary); font-size:14px !important; font-weight:900; margin:0;">
-                        <span id="icon_add">📝</span> Add New Customer
-                    </label>
-                    <button onclick="openCustomerHistoryModal()" class="history-btn" title="Saved Customers History">
-                        🕒 History (<span id="queueCount">0</span>)
-                    </button>
-                </div>
+    <!-- 1. Landing Screen (Add New Customer Section removed from flow) -->
+    <div id="unifiedHome" style="display: block; padding: 30px 15px; text-align: center; background: #f8fafc; border-radius: 8px; margin: 15px 0;">
+        <h2 style="color: var(--bajaj-blue); margin-bottom: 25px;">Welcome to Persistent Portal</h2>
+        <button onclick="openAddCustomerModal()" style="background: var(--success); color: white; border: none; padding: 14px 20px; border-radius: 8px; font-weight: 900; font-size: 16px; width: 100%; max-width: 280px; margin-bottom: 12px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">➕ Add New Customer</button>
+        <br>
+        <button onclick="openCustomerHistoryModal()" style="background: var(--bajaj-blue); color: white; border: none; padding: 14px 20px; border-radius: 8px; font-weight: 900; font-size: 16px; width: 100%; max-width: 280px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">🕒 View History (<span id="queueCountHome">0</span>)</button>
+    </div>
 
-                <div style="flex: 1;">
-                    <div style="display:none;">
-                        <label>Mobile No.</label>
-                        <input type="text" id="cqMobile" placeholder="10 Digits" maxlength="10" oninput="checkDuplicateMobile(this.value)">
-                        <div id="mobileDupWarning" style="color: var(--danger); font-size: 11px !important; font-weight: 900; display: none; margin-top: 3px; background: #ffebee; padding: 4px 6px; border-radius: 4px; border-left: 3px solid var(--danger);"></div>
-                    </div>
-                    <div class="single-line-cust-grid">
-                        <div><label>Name</label><input type="text" id="cqName" placeholder="Name"></div>
-                        <div><label>Type</label>
-                            <select id="cqType">
-                                <option value="" selected disabled>Select</option>
-                                <option value="NEW">NEW</option>
-                                <option value="EMI CARD">EMI CARD</option>
-                                <option value="VIRTUAL">VIRTUAL</option>
-                                <option value="W/O CARD">W/O CARD</option>
-                            </select>
-                        </div>
-                        <div><label>NBFC Limit</label><input type="number" id="cqLimit" placeholder="₹ Limit"></div>
-                        <div><label>Max LTV %</label><input type="number" id="cqLtv" placeholder="%" max="100" oninput="if(this.value>100)this.value=100;"></div>
-                        <div><label>EMI Cap</label><input type="number" id="cqCap" placeholder="₹ Cap"></div>
-                    </div>
-                </div>
-                <button id="addToQueueBtn" onclick="addCustomerToQueue()" style="width:100%; background:var(--success); color:white; padding:10px; border-radius:4px; box-shadow: 0 2px 4px rgba(39, 174, 96, 0.3); margin-top: 4px;"><span id="icon_btn_add">➕</span> Add & Select Customer</button>
+    <!-- Add Customer Modal -->
+    <div id="addCustomerModal" class="modal">
+        <div class="modal-content" style="max-width: 320px;">
+            <h3 style="margin-top:0; color:var(--primary); border-bottom: 2px solid var(--primary); padding-bottom: 6px;">Add New Customer</h3>
+            <div style="display:none;"><input type="text" id="cqMobile" maxlength="10" oninput="checkDuplicateMobile(this.value)"><div id="mobileDupWarning" style="color: var(--danger); font-size: 11px !important; font-weight: 900; display: none;"></div></div>
+            <div style="margin-bottom:8px;"><label style="font-size:11px; font-weight:bold;">Customer Name</label><input type="text" id="cqName" placeholder="Name" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;"></div>
+            <div style="margin-bottom:8px;"><label style="font-size:11px; font-weight:bold;">Type</label>
+                <select id="cqType" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+                    <option value="" selected disabled>Select Type</option>
+                    <option value="NEW">NEW</option>
+                    <option value="EMI CARD">EMI CARD</option>
+                    <option value="VIRTUAL">VIRTUAL</option>
+                    <option value="W/O CARD">W/O CARD</option>
+                </select>
+            </div>
+            <div style="margin-bottom:8px;"><label style="font-size:11px; font-weight:bold;">NBFC Limit ₹</label><input type="number" id="cqLimit" placeholder="₹ Limit" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;"></div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:15px;">
+                <div><label style="font-size:11px; font-weight:bold;">Max LTV %</label><input type="number" id="cqLtv" placeholder="%" max="100" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;" oninput="if(this.value>100)this.value=100;"></div>
+                <div><label style="font-size:11px; font-weight:bold;">EMI Cap</label><input type="number" id="cqCap" placeholder="₹ Max" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;"></div>
+            </div>
+            <div style="display:flex; gap:8px;">
+                <button onclick="addCustomerToQueue()" style="flex:2; background:var(--success); color:white; border:none; padding:10px; border-radius:4px; font-weight:bold;">Save & Select</button>
+                <button onclick="closeAddCustomerModal()" style="flex:1; background:var(--danger); color:white; border:none; padding:10px; border-radius:4px; font-weight:bold;">Cancel</button>
             </div>
         </div>
     </div>
 
-    <!-- 2. Final Eligible Area (Below Add New Customer) -->
-    <div id="finalEligibleArea" style="display: none; flex-direction: column; margin-top: 15px;">
-        <div class="top-nav-box" style="margin-top: 4px; border-top: 2px dashed #ccc; padding-top: 8px;">
-            <button id="genQuoteBtn" onclick="openQuoteSelectionModal()" style="flex:1; background:var(--bajaj-blue); color:white;">Gen Quote</button>
-            <select id="finalCustomerSwitcher" onchange="switchCustomerFinal(this.value)" style="flex:1.5; font-weight:bold; color:var(--indigo); padding:2px;"></select>
-            <button onclick="goHome()" style="flex:0.8; background:var(--danger); color:white;">Close View</button>
+    <!-- 2. Final Eligible Area -->
+    <div id="finalEligibleArea" style="display: none; flex-direction: column; margin-top: 10px;">
+        
+        <!-- Updated Top Nav Box -->
+        <div class="top-nav-box" style="display: flex; margin-top: 4px; border-top: 2px dashed #ccc; padding-top: 8px; gap: 6px;">
+            <button onclick="openAddCustomerModal()" style="flex:1; background:var(--success); color:white; border:none; border-radius:4px; font-weight:bold; font-size:12px; padding:8px;">➕ Add Customer</button>
+            <select id="finalCustomerSwitcher" onchange="switchCustomerFinal(this.value)" style="flex:1.5; font-weight:bold; color:var(--indigo); padding:4px; border-radius:4px; border:1px solid #ccc;"></select>
+            <button onclick="goHome()" style="flex:0.8; background:var(--danger); color:white; border:none; border-radius:4px; font-weight:bold; font-size:12px; padding:8px;">Close View</button>
+            <button onclick="openCustomerHistoryModal()" style="flex:0.8; background:var(--bajaj-blue); color:white; border:none; border-radius:4px; font-weight:bold; font-size:12px; padding:8px; display:inline-flex; align-items:center; justify-content:center; gap:4px;" title="Saved Customers History">🕒 History (<span id="queueCount">0</span>)</button>
         </div>
 
-        <!-- Customer Details Strip (Now exactly matches the premium-model-panel design) -->
-        <div class="premium-model-panel" style="margin-bottom: 12px; border: 1px solid #cbd5e1;">
-            <div class="pmp-header-bar" style="border-radius: 8px 8px 0 0; padding: 8px 10px !important;">
-                <div class="pmp-model-left" style="max-width: 100%; cursor: default;">
-                    <span>👤</span>
-                    <span id="infoName" style="text-transform: capitalize;">-</span>
-                    <span style="display:none;" id="infoMobile">-</span>
+        <!-- Customer Details Strip with Gen Quote Button -->
+        <div style="background: #253241; border-radius: 8px; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.2); margin: 12px 0; border: 1px solid #3b4b5e;">
+            <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
+                <div style="width: 38px; height: 38px; background: rgba(0,0,0,0.3); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 18px; flex-shrink: 0;">👤</div>
+                <div style="display: flex; flex-direction: column; gap: 4px; width: 100%;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                        <span id="infoName" style="font-size: 15px; font-weight: 900; text-transform: capitalize;">-</span>
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <button onclick="openQuoteSelectionModal()" style="background: #2563eb; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 900; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Gen Quote</button>
+                            <div style="text-align: right; background: rgba(0,0,0,0.2); padding: 2px 10px; border-radius: 4px; border-right: 3px solid #2ecc71;">
+                                <div style="font-size: 8px; color: #94a3b8; font-weight: 900; letter-spacing: 0.5px; text-transform: capitalize;">Approved Limit</div>
+                                <div id="infoLimit" style="font-size: 15px; font-weight: 900; color: #2ecc71;">₹0</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 8px; font-size: 10px; font-weight: 900; flex-wrap: wrap;">
+                        <span id="infoType" style="background: #f39c12; padding: 2px 6px; border-radius: 4px; color: #fff;">NEW</span>
+                        <span style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px;">LTV: <span id="infoLtv">100%</span></span>
+                        <span style="border: 1px dashed rgba(255,255,255,0.3); padding: 2px 6px; border-radius: 4px;">Cap: <span id="infoCap">None</span></span>
+                    </div>
                 </div>
-            </div>
-            <div class="val-summary-bar" style="border-radius: 0 0 8px 8px; border-top: none;">
-                <span class="val-chip"><b>Type:</b> <span id="infoType">NEW</span></span>
-                <span class="val-chip"><b>Limit:</b> <span id="infoLimit">₹0</span></span>
-                <span class="val-chip"><b>LTV:</b> <span id="infoLtv">100%</span></span>
-                <span class="val-chip"><b>Cap:</b> <span id="infoCap">None</span></span>
             </div>
         </div>
 
@@ -449,6 +387,19 @@
             </div>
             <input type="text" id="queueSearch" placeholder="Search Saved Customer By Name, Limit..." oninput="renderCustomerQueue()" style="margin-bottom: 8px; border-color:var(--bajaj-blue);">
             <div id="customerQueueList" class="custom-scroll" style="display:flex; flex-direction:column; gap:6px; overflow-y:auto; max-height: 350px; padding-right:4px;"></div>
+        </div>
+    </div>
+
+    <div id="inviteModal" class="modal">
+        <div class="modal-content" style="max-width: 320px;">
+            <h3 style="margin-top:0; color:#25D366; border-bottom: 2px solid #ddd; padding-bottom: 6px;">Send Invitation</h3>
+            <p style="font-size:12px; color:#555; margin-bottom:12px; text-transform: capitalize;">Customer Ko WhatsApp Se Invite Karein</p>
+            <div style="margin-bottom:6px;"><label>Your Name Salesperson</label><input type="text" id="invSenderName" placeholder="Lakshya"></div>
+            <div style="display:none;"><label>Your Mobile No.</label><input type="text" id="invSenderMobile" placeholder="10 Digits" maxlength="10"></div>
+            <div style="display:flex; gap:8px;">
+                <button onclick="sendWhatsAppInvite()" style="flex:2; background:#25D366; color:white;">Send On WhatsApp</button>
+                <button onclick="document.getElementById('inviteModal').style.display='none'" style="flex:1; background:var(--danger); color:white;">Cancel</button>
+            </div>
         </div>
     </div>
 
@@ -568,7 +519,6 @@
 </footer>
 
 <script>
-    // JS Error Catcher (To detect screen freezes and prevent silent failures)
     window.onerror = function(msg, url, line) {
         console.error("JS Error: " + msg + "\nLine: " + line);
         let errorToast = document.getElementById("toastNotification");
@@ -579,6 +529,6 @@
         }
     };
 </script>
-<script src="app.js?v=76.36"></script>
+<script src="app.js?v=76.37"></script>
 </body>
 </html>
