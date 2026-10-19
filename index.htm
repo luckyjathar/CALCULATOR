@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Persistent Portal">
 
-    <title>Persistent Portal V76.39 - Pro Edition</title>
+    <title>Persistent Portal V76.40 - Pro Edition</title>
 
     <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -24,6 +24,31 @@
             text-transform: capitalize;
         }
 
+        /* Add New Customer Single Line Layout */
+        .single-line-cust-grid {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 6px;
+            margin-bottom: 8px;
+            align-items: end;
+        }
+        .single-line-cust-grid label {
+            font-size: 11px !important;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: block;
+            margin-bottom: 3px;
+        }
+        .single-line-cust-grid input,
+        .single-line-cust-grid select {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 6px !important;
+            font-size: 12px !important;
+            min-height: 36px !important;
+        }
+
         .inline-work-panel {
             background: #ffffff;
             border: 2px solid var(--bajaj-blue);
@@ -35,7 +60,26 @@
             box-sizing: border-box;
         }
 
-        /* Model Header: Model Name Complete Top-Left & Icons Complete Top-Right */
+        .history-btn {
+            background: var(--bajaj-blue);
+            color: #ffffff;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px !important;
+            font-weight: 900;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            min-height: 30px !important;
+        }
+        .history-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Model Header */
         .premium-model-panel {
             position: relative !important;
             width: 100% !important;
@@ -51,7 +95,7 @@
             align-items: center !important;
             width: 100% !important;
             box-sizing: border-box !important;
-            padding: 8px 90px 8px 10px !important; /* increased right padding for 3 icons */
+            padding: 8px 90px 8px 10px !important; 
             background: #034887;
             color: #ffffff;
             border-bottom: 1px solid #e2e8f0;
@@ -215,12 +259,35 @@
     </div>
 </div>
 
+<!-- GitHub Setting Modal -->
+<div id="githubConfigModal" class="modal" style="z-index: 99999;">
+    <div class="modal-content" style="max-width:320px;">
+        <h3 style="margin-top:0; color:var(--indigo);">⚙️ GitHub Setup</h3>
+        <p style="font-size:11px; color:#555; margin-bottom:12px;">Direct Portal varun Master Excel update karnyasathi GitHub details taka.</p>
+        <div style="margin-bottom:8px;">
+            <label style="font-size:11px; font-weight:bold;">GitHub Repo</label>
+            <input type="text" id="ghRepoName" placeholder="e.g. luckyjathar/testcalculator" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+        </div>
+        <div style="margin-bottom:12px;">
+            <label style="font-size:11px; font-weight:bold;">Personal Access Token (PAT)</label>
+            <input type="password" id="ghPatToken" placeholder="ghp_xxxxxxxxxxxx" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+        </div>
+        <div style="display:flex; gap:8px;">
+            <button onclick="saveGithubConfig()" style="flex:2; background:var(--success); color:white; border:none; padding:10px; border-radius:4px; font-weight:bold;">Save Setup</button>
+            <button onclick="closeGithubConfig()" style="flex:1; background:var(--danger); color:white; border:none; padding:10px; border-radius:4px; font-weight:bold;">Cancel</button>
+        </div>
+    </div>
+</div>
+
 <header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; padding: 12px 15px; background: #fff; border-bottom: 2px solid #e2e8f0; gap: 12px;">
     <h1 style="margin: 0; color: var(--bajaj-blue); font-size: 20px; display: flex; align-items: center; gap: 8px;">
         Persistent Portal
     </h1>
 
     <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+        <!-- Settings Icon -->
+        <button onclick="openGithubConfig()" style="background: transparent; border: 1px solid #cbd5e1; border-radius: 5px; cursor: pointer; padding: 6px 10px; font-size: 14px;" title="GitHub API Setup">⚙️</button>
+        
         <!-- GitHub Sync Badge -->
         <div id="masterDataStatusBadge" onclick="forceRefreshMasterData()" title="Tap to Sync from GitHub" style="cursor: pointer; font-weight: 900; font-size: 11px; background: rgba(214, 48, 49, 0.12); color: var(--danger); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--danger); letter-spacing: 0.5px; text-align: center; white-space: nowrap; text-transform: capitalize;">
             ⚠️ No Master Data
@@ -355,8 +422,8 @@
                 <div><label>Dealer Contri ₹</label><input type="number" id="compDealer" placeholder="0"></div>
             </div>
             <div style="display:flex; gap:8px;">
-                <button onclick="proceedToMatrixFromComponents()" style="flex:2; background:var(--success); color:white;">Continue & Calculate</button>
-                <button onclick="cancelComponentsModal()" style="flex:1; background:var(--danger); color:white;">Cancel</button>
+                <button onclick="proceedToMatrixFromComponents()" style="flex:2; background:var(--success); color:white; border:none; padding:10px; border-radius:4px; font-weight:bold;">Continue & Calculate</button>
+                <button onclick="cancelComponentsModal()" style="flex:1; background:var(--danger); color:white; border:none; padding:10px; border-radius:4px; font-weight:bold;">Cancel</button>
             </div>
         </div>
 
@@ -372,8 +439,8 @@
             </div>
             <div class="stack-grid" id="stackInputsContainer"></div>
             <div style="margin-top:12px; display:flex; gap:8px;">
-                <button onclick="processMultiStack()" style="flex:2; background:var(--success); color:white;">Proceed</button>
-                <button onclick="closeMultiStackModal()" style="flex:1; background:var(--danger); color:white;">Cancel</button>
+                <button onclick="processMultiStack()" style="flex:2; background:var(--success); color:white; border:none; padding:10px; border-radius:4px; font-weight:bold;">Proceed</button>
+                <button onclick="closeMultiStackModal()" style="flex:1; background:var(--danger); color:white; border:none; padding:10px; border-radius:4px; font-weight:bold;">Cancel</button>
             </div>
         </div>
 
@@ -396,19 +463,6 @@
         </div>
     </div>
 
-    <div id="inviteModal" class="modal">
-        <div class="modal-content" style="max-width: 320px;">
-            <h3 style="margin-top:0; color:#25D366; border-bottom: 2px solid #ddd; padding-bottom: 6px;">Send Invitation</h3>
-            <p style="font-size:12px; color:#555; margin-bottom:12px; text-transform: capitalize;">Customer Ko WhatsApp Se Invite Karein</p>
-            <div style="margin-bottom:6px;"><label>Your Name Salesperson</label><input type="text" id="invSenderName" placeholder="Lakshya"></div>
-            <div style="display:none;"><label>Your Mobile No.</label><input type="text" id="invSenderMobile" placeholder="10 Digits" maxlength="10"></div>
-            <div style="display:flex; gap:8px;">
-                <button onclick="sendWhatsAppInvite()" style="flex:2; background:#25D366; color:white;">Send On WhatsApp</button>
-                <button onclick="document.getElementById('inviteModal').style.display='none'" style="flex:1; background:var(--danger); color:white;">Cancel</button>
-            </div>
-        </div>
-    </div>
-
     <div id="editCustomerModal" class="modal">
         <div class="modal-content" style="max-width:300px;">
             <h3 style="margin-top:0; color:var(--indigo); border-bottom: 2px solid #ddd; padding-bottom: 6px;">Edit Customer Details</h3>
@@ -423,8 +477,8 @@
                 <div><label>EMI Capping</label><input type="number" id="ecCap"></div>
             </div>
             <div style="display:flex; gap:8px;">
-                <button onclick="saveCustomerEdit()" style="flex:2; background:var(--success); color:white;">Save Changes</button>
-                <button onclick="closeCustomerEdit()" style="flex:1; background:var(--danger); color:white;">Cancel</button>
+                <button onclick="saveCustomerEdit()" style="flex:2; background:var(--success); color:white; border:none; padding:10px; border-radius:4px; font-weight:bold;">Save Changes</button>
+                <button onclick="closeCustomerEdit()" style="flex:1; background:var(--danger); color:white; border:none; padding:10px; border-radius:4px; font-weight:bold;">Cancel</button>
             </div>
         </div>
     </div>
@@ -436,7 +490,7 @@
                 <button onclick="emptyRecycleBin()" style="background:var(--danger); color:white; padding:4px 8px; border-radius:3px; border:none; font-weight:bold; cursor:pointer;">Empty All</button>
             </div>
             <div id="recycleBinList" class="custom-scroll" style="display:flex; flex-direction:column; gap:6px; max-height: 250px; overflow-y: auto; margin-bottom: 12px; padding-right: 4px;"></div>
-            <button onclick="closeRecycleBin()" style="width:100%; background:var(--dark); color:white; padding:8px;">Close</button>
+            <button onclick="closeRecycleBin()" style="width:100%; background:var(--dark); color:white; border:none; padding:10px; border-radius:4px; font-weight:bold;">Close</button>
         </div>
     </div>
 
@@ -445,8 +499,8 @@
             <h3 style="margin-top:0; color:var(--bajaj-blue);">Select Models For Quotation</h3>
             <div id="quoteModelCheckboxes" style="display:flex; flex-direction:column; gap:6px; max-height:220px; overflow-y:auto; margin-bottom:15px; padding-right:5px;" class="custom-scroll"></div>
             <div style="display:flex; gap:10px;">
-                <button onclick="promptForSelectedImageGeneration()" style="flex:2; background:var(--bajaj-blue); color:white;">Proceed</button>
-                <button onclick="document.getElementById('quoteSelectionModal').style.display='none'" style="flex:1; background:var(--danger); color:white;">Cancel</button>
+                <button onclick="promptForSelectedImageGeneration()" style="flex:2; background:var(--bajaj-blue); color:white; border:none; padding:10px; border-radius:4px; font-weight:bold;">Proceed</button>
+                <button onclick="document.getElementById('quoteSelectionModal').style.display='none'" style="flex:1; background:var(--danger); color:white; border:none; padding:10px; border-radius:4px; font-weight:bold;">Cancel</button>
             </div>
         </div>
     </div>
@@ -455,9 +509,8 @@
         <div class="modal-content" style="max-width:320px;">
             <h3 style="margin-top:0; color:var(--bajaj-blue); text-align: center;">Verify Details Before Export</h3>
             <div style="display:flex; flex-direction:column; gap:6px; margin-top: 10px;">
-                <button onclick="proceedGenerateImage()" style="width:100%; background:var(--bajaj-blue); color:white;">Generate Image Only</button>
-                <button onclick="proceedGenerateImageAndWhatsAppCopy()" style="width:100%; background:#25D366; color:white; display:flex; align-items:center; justify-content:center; gap:6px;">Copy Image And Open WhatsApp</button>
-                <button onclick="document.getElementById('custInfoPromptModal').style.display='none'" style="width:100%; background:var(--danger); color:white;">Cancel</button>
+                <button onclick="proceedGenerateImage()" style="width:100%; background:var(--bajaj-blue); color:white; border:none; padding:10px; border-radius:4px; font-weight:bold;">Generate Image Only</button>
+                <button onclick="document.getElementById('custInfoPromptModal').style.display='none'" style="width:100%; background:var(--danger); color:white; border:none; padding:10px; border-radius:4px; font-weight:bold;">Cancel</button>
             </div>
         </div>
     </div>
@@ -472,8 +525,8 @@
                 <div><label>ROI %</label><input type="number" id="editRoi" step="0.01"></div><div><label>Fixed EMI ₹</label><input type="number" id="editFixed"></div>
             </div>
             <div style="display:flex; gap:8px;">
-                <button onclick="saveSchemeEdit()" style="flex:2; background:var(--success); color:white;">Save</button>
-                <button onclick="closeEditSchemeModal()" style="flex:1; background:var(--danger); color:white;">Cancel</button>
+                <button onclick="saveSchemeEdit()" style="flex:2; background:var(--success); color:white; border:none; padding:10px; border-radius:4px; font-weight:bold;">Save</button>
+                <button onclick="closeEditSchemeModal()" style="flex:1; background:var(--danger); color:white; border:none; padding:10px; border-radius:4px; font-weight:bold;">Cancel</button>
             </div>
         </div>
     </div>
@@ -502,8 +555,8 @@
                 <div><label>Fixed EMI ₹</label><input type="number" id="manFixed" placeholder="0"></div>
             </div>
             <input type="hidden" id="targetPIdx" value="">
-            <button onclick="executeManualAction()" style="width:100%; background:var(--success); color:white; margin-top:12px; padding:10px; border-radius:4px; font-weight:bold;">Add Scheme</button>
-            <button onclick="closeManualModal()" style="width:100%; background:var(--danger); color:white; margin-top:6px; padding:10px; border-radius:4px; font-weight:bold;">Cancel</button>
+            <button onclick="executeManualAction()" style="width:100%; background:var(--success); color:white; margin-top:12px; border:none; padding:10px; border-radius:4px; font-weight:bold;">Add Scheme</button>
+            <button onclick="closeManualModal()" style="width:100%; background:var(--danger); color:white; margin-top:6px; border:none; padding:10px; border-radius:4px; font-weight:bold;">Cancel</button>
         </div>
     </div>
 
@@ -512,7 +565,7 @@
             <div class="sheet-handle"></div>
             <h3 style="margin-top:0; color:var(--bajaj-blue); text-align:center;">Select Action</h3>
             <div id="rowActionButtons" style="display:flex; flex-direction:column; gap:12px; margin-top:15px;"></div>
-            <button onclick="closeRowActionModal()" style="width:100%; margin-top:15px; background:var(--danger); color:white; padding:12px; border-radius:8px; font-weight:900; font-size:15px !important; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">Cancel</button>
+            <button onclick="closeRowActionModal()" style="width:100%; margin-top:15px; background:var(--danger); color:white; padding:12px; border-radius:8px; font-weight:900; font-size:15px !important; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border:none;">Cancel</button>
         </div>
     </div>
 
