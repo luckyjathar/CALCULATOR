@@ -277,8 +277,8 @@ async function processArrayBufferToDB(dataBuffer) {
     let uniqueDB = []; let seenDB = new Set();
 
     rawCombined.forEach(r => { 
-        // FIX: Included dbd and pf in the key to prevent variations from being discarded
-        let key = `${r.model}_${r.category}_${r.tenure}_${r.advEmi}_${r.fixedEmi}_${r.minLoan}_${r.maxLoan}_${r.dbd}_${r.pf}`; 
+        // FIX: Included ROI in key to ensure NO valid schemes are skipped due to deduplication
+        let key = `${r.model}_${r.category}_${r.tenure}_${r.advEmi}_${r.fixedEmi}_${r.minLoan}_${r.maxLoan}_${r.dbd}_${r.pf}_${r.roi}`; 
         if (!seenDB.has(key)) { seenDB.add(key); uniqueDB.push(r); } 
     });
 
@@ -1005,12 +1005,10 @@ function openEditSchemeModal(pIdx, dIdx) {
     let ef = document.getElementById('editFixed'); if(ef) ef.value = scheme.fixedEmi || 0; 
     let esm = document.getElementById('editSchemeModal'); if(esm) esm.style.display = 'flex'; 
 }
-
 function closeEditSchemeModal() { 
     let esm = document.getElementById('editSchemeModal');
     if(esm) esm.style.display = 'none'; 
 }
-
 function saveSchemeEdit() { 
     let pIdxEl = document.getElementById('editPIdx'); let pIdx = pIdxEl ? parseInt(pIdxEl.value) : -1; 
     let dIdxEl = document.getElementById('editDIdx'); let dIdx = dIdxEl ? parseInt(dIdxEl.value) : -1; 
@@ -1302,17 +1300,16 @@ async function proceedToMatrixFromComponents() {
 async function finalizeProductAddition() {
     let c = customerQueue[activeCustomerIndex];
     if(!c) return;
-    let ltvLimit = c?.ltv || 100; 
     let uniqueSchemes = [];
 
     if (tempPendingProduct.isManual && Array.isArray(tempPendingProduct.manualSchemes)) {
         uniqueSchemes = tempPendingProduct.manualSchemes;
     } else {
         let raw = tempPendingProduct.isNT ? db_records.filter(r => r.model === SPECIAL_MODEL && r.category === tempPendingProduct.category) : db_records.filter(r => r.model === tempPendingProduct.name); 
-        let matrixEligible = raw.filter(s => s.fixedEmi > 0 || (s.tenure > 0 && ((s.tenure-s.advEmi)/s.tenure)*100 <= ltvLimit)); 
+        
         let seenSchemes = new Set();
-        matrixEligible.forEach(s => { 
-            let schemeKey = `${s.tenure}_${s.advEmi}_${s.fixedEmi}_${s.minLoan}_${s.maxLoan}_${s.dbd}_${s.pf}`; 
+        raw.forEach(s => { 
+            let schemeKey = `${s.tenure}_${s.advEmi}_${s.fixedEmi}_${s.minLoan}_${s.maxLoan}_${s.dbd}_${s.pf}_${s.roi}`; 
             if (!seenSchemes.has(schemeKey)) { seenSchemes.add(schemeKey); s.inactive = false; uniqueSchemes.push({...s}); } 
         });
     }
