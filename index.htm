@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Persistent Portal">
 
-    <title>Persistent Portal V76.43 - Pro Edition</title>
+    <title>Persistent Portal V76.44 - Pro Edition</title>
 
     <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -24,6 +24,31 @@
             text-transform: capitalize;
         }
 
+        /* Add New Customer Single Line Layout */
+        .single-line-cust-grid {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 6px;
+            margin-bottom: 8px;
+            align-items: end;
+        }
+        .single-line-cust-grid label {
+            font-size: 11px !important;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: block;
+            margin-bottom: 3px;
+        }
+        .single-line-cust-grid input,
+        .single-line-cust-grid select {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 6px !important;
+            font-size: 12px !important;
+            min-height: 36px !important;
+        }
+
         .inline-work-panel {
             background: #ffffff;
             border: 2px solid var(--bajaj-blue);
@@ -35,7 +60,26 @@
             box-sizing: border-box;
         }
 
-        /* Model Header: Model Name Complete Top-Left & Icons Complete Top-Right */
+        .history-btn {
+            background: var(--bajaj-blue);
+            color: #ffffff;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px !important;
+            font-weight: 900;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            min-height: 30px !important;
+        }
+        .history-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Model Header */
         .premium-model-panel {
             position: relative !important;
             width: 100% !important;
@@ -51,7 +95,7 @@
             align-items: center !important;
             width: 100% !important;
             box-sizing: border-box !important;
-            padding: 8px 90px 8px 10px !important; /* increased right padding for 3 icons */
+            padding: 8px 90px 8px 10px !important; 
             background: #034887;
             color: #ffffff;
             border-bottom: 1px solid #e2e8f0;
@@ -560,6 +604,6 @@
         }
     };
 </script>
-<script src="app.js?v=76.43"></script>
+<script src="app.js?v=76.44"></script>
 </body>
 </html>
