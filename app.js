@@ -277,8 +277,8 @@ async function processArrayBufferToDB(dataBuffer) {
     let uniqueDB = []; let seenDB = new Set();
 
     rawCombined.forEach(r => { 
-        // FIX: Included ROI in key to ensure NO valid schemes are skipped due to deduplication
-        let key = `${r.model}_${r.category}_${r.tenure}_${r.advEmi}_${r.fixedEmi}_${r.minLoan}_${r.maxLoan}_${r.dbd}_${r.pf}_${r.roi}`; 
+        // FIX: Included all exact fields to ensure ONLY 100% exact duplicate rows are merged
+        let key = `${r.model}_${r.brand}_${r.category}_${r.tenure}_${r.advEmi}_${r.dbd}_${r.pf}_${r.roi}_${r.fixedEmi}_${r.minLoan}_${r.maxLoan}`; 
         if (!seenDB.has(key)) { seenDB.add(key); uniqueDB.push(r); } 
     });
 
@@ -1309,7 +1309,8 @@ async function finalizeProductAddition() {
         
         let seenSchemes = new Set();
         raw.forEach(s => { 
-            let schemeKey = `${s.tenure}_${s.advEmi}_${s.fixedEmi}_${s.minLoan}_${s.maxLoan}_${s.dbd}_${s.pf}_${s.roi}`; 
+            // FIX: Extended unique key to include ALL exact parameters
+            let schemeKey = `${s.tenure}_${s.advEmi}_${s.fixedEmi}_${s.dbd}_${s.pf}_${s.roi}_${s.minLoan}_${s.maxLoan}`; 
             if (!seenSchemes.has(schemeKey)) { seenSchemes.add(schemeKey); s.inactive = false; uniqueSchemes.push({...s}); } 
         });
     }
@@ -1913,139 +1914,4 @@ function promptForSelectedImageGeneration() {
 
 let requestWhatsAppDispatch = false;
 function proceedGenerateImage() { requestWhatsAppDispatch = false; let cm = document.getElementById('custInfoPromptModal'); if(cm) cm.style.display = 'none'; doGenerateCustomerImage(); }
-function proceedGenerateImageAndWhatsAppCopy() { requestWhatsAppDispatch = true; let cm = document.getElementById('custInfoPromptModal'); if(cm) cm.style.display = 'none'; doGenerateCustomerImage(); }
-
-function doGenerateCustomerImage() {
-    let quoteDiv = document.createElement('div'); 
-    quoteDiv.style.width = "680px"; 
-    quoteDiv.style.padding = "28px 32px"; 
-    quoteDiv.style.background = "#ffffff"; 
-    quoteDiv.style.position = "fixed"; 
-    quoteDiv.style.top = "0"; 
-    quoteDiv.style.left = "0";
-    quoteDiv.style.zIndex = "-9999";
-    quoteDiv.style.boxSizing = "border-box";
-    quoteDiv.style.fontFamily = "Arial, Helvetica, sans-serif";
-    quoteDiv.style.color = "#1e293b";
-
-    let c = customerQueue[activeCustomerIndex]; 
-    let ltvLimit = c?.ltv || 100;
-    let custType = (c?.type || 'NEW').toUpperCase();
-    let custLimit = c?.limit ? Number(c.limit).toLocaleString('en-IN') : '0';
-
-    let hasV = false; 
-    let productsToRender = window.tempImageGenIndices.map(idx => current_products[idx]);
-
-    let firstValidProd = productsToRender.find(p => p && p.inputs && p.inputs.inv > 0) || productsToRender[0];
-    let topInvPrice = firstValidProd && firstValidProd.inputs.inv ? Number(firstValidProd.inputs.inv).toLocaleString('en-IN') : '0';
-    let effectiveCapVal = (firstValidProd && parseFloat(firstValidProd.inputs.cap)) || parseFloat(c?.cap) || 0;
-    let capDisplay = effectiveCapVal > 0 ? `₹${Number(effectiveCapVal).toLocaleString('en-IN')}` : 'NONE';
-
-    let html = `
-        <div style="border: 2px solid #2b4c7e; padding: 18px 22px; margin-bottom: 24px; background: #ffffff;">
-            <div style="text-align: center; margin-bottom: 16px;">
-                <div style="display: inline-block; font-size: 27px; font-weight: 900; color: #1e428a; letter-spacing: 0.8px; padding-bottom: 4px; border-bottom: 4px double #2b4c7e;">
-                    BAJAJ FINSERV LOAN OFFER
-                </div>
-            </div>
-            <div style="display: flex; justify-content: space-between; font-size: 16px; font-weight: 800; color: #1e293b; margin-bottom: 10px;">
-                <span>CUSTOMER TYPE: ${custType}</span>
-                <span>APPROVED LIMIT: ₹${custLimit}</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; font-size: 16px; font-weight: 800; color: #1e293b; margin-bottom: 10px;">
-                <span>MAX LTV: ${ltvLimit}%</span>
-                <span>EMI CAPPING: ${capDisplay}</span>
-            </div>
-            <div style="font-size: 16px; font-weight: 800; color: #1e293b;">
-                INVOICE PRICE: ₹${topInvPrice}
-            </div>
-        </div>
-    `;
-
-    productsToRender.forEach((prod, idx) => {
-        if (!prod || !prod.calculatedData || prod.calculatedData.length === 0) return;
-        
-        let validS = prod.calculatedData.filter(d => {
-            if(d.inactive || d.isInv50Breach || d.isCapBreach || d.loan <= 0 || d.curLTV > ltvLimit) return false;
-            if(prod.isNonTieup && (d.loan < d.minLoan || d.loan > d.maxLoan)) return false;
-            return true;
-        });
-
-        if(validS.length === 0) return; 
-        
-        validS.sort((a,b) => {
-            if (a.dp !== b.dp) return a.dp - b.dp;
-            if (a.emi !== b.emi) return a.emi - b.emi;
-            return b.curLTV - a.curLTV;
-        });
-
-        hasV = true; 
-        let invAmt = prod.inputs.inv ? Number(prod.inputs.inv).toLocaleString('en-IN') : '0';
-
-        html += `
-            <div style="${idx > 0 ? 'margin-top: 28px;' : ''}">
-                <div style="font-size: 21px; font-weight: 900; color: #1e428a; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.3px;">
-                    ${prod.name.toUpperCase()}
-                </div>
-                <div style="font-size: 18px; font-weight: 800; color: #1e293b; margin-bottom: 14px;">
-                    PRICE : Rs ${invAmt}
-                </div>
-                <table style="width: 100%; border-collapse: collapse; border: 2px solid #2b4c7e;">
-                    <thead>
-                        <tr style="background: #ffffff; color: #1e428a; font-size: 15px; font-weight: 900;">
-                            <th style="border: 1.5px solid #2b4c7e; padding: 10px 6px; text-align: center; width: 16%;">SCHEME</th>
-                            <th style="border: 1.5px solid #2b4c7e; padding: 10px 6px; text-align: center; width: 26%;">DOWN<br>PAYMENT</th>
-                            <th style="border: 1.5px solid #2b4c7e; padding: 10px 6px; text-align: center; width: 25%;">MONTHLY<br>EMI</th>
-                            <th style="border: 1.5px solid #2b4c7e; padding: 10px 6px; text-align: center; width: 16%;">MONTHS</th>
-                            <th style="border: 1.5px solid #2b4c7e; padding: 10px 6px; text-align: center; width: 17%;">PER<br>DAY</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-        `;
-
-        validS.forEach((d) => {
-            html += `
-                <tr style="font-size: 17px; font-weight: 800; color: #1e293b; background: #ffffff;">
-                    <td style="border: 1.5px solid #2b4c7e; padding: 9px 8px; text-align: center;">${d.currentTenure}/${d.advEmi}</td>
-                    <td style="border: 1.5px solid #2b4c7e; padding: 9px 14px; text-align: center;">₹${Math.round(d.dp).toLocaleString('en-IN')}</td>
-                    <td style="border: 1.5px solid #2b4c7e; padding: 9px 14px; text-align: center;">₹${Math.round(d.emi).toLocaleString('en-IN')}</td>
-                    <td style="border: 1.5px solid #2b4c7e; padding: 9px 8px; text-align: center;">${d.inst}</td>
-                    <td style="border: 1.5px solid #2b4c7e; padding: 9px 8px; text-align: center;">₹${Math.round(d.daily).toLocaleString('en-IN')}</td>
-                </tr>
-            `;
-        });
-        html += `</tbody></table></div>`;
-    });
-
-    if(!hasV) { 
-        showToast("कोणतीही Eligible Scheme नाही (कृपया आधी Invoice Value भरा)!", "error"); 
-        return; 
-    }
-
-    quoteDiv.innerHTML = html; 
-    document.body.appendChild(quoteDiv);
-
-    html2canvas(quoteDiv, {scale: 2, useCORS: true, backgroundColor: "#ffffff"}).then(canvas => { 
-        let imgDataUrl = canvas.toDataURL("image/png"); 
-        let gim = document.getElementById('generatedImage'); if(gim) gim.src = imgDataUrl; 
-        let ivm = document.getElementById('imageViewerModal'); if(ivm) ivm.style.display = 'flex'; 
-        document.body.removeChild(quoteDiv); 
-    });
-}
-
-function openRowActionModal(pIdx, dIdx, isInactive) {
-    let container = document.getElementById('rowActionButtons');
-    if(!container) return;
-    container.innerHTML = `
-        <button onclick="copySchemeText(${pIdx}, ${dIdx}, this); closeRowActionModal();" style="background:#f8fafc; color:var(--dark); border:1px solid #cbd5e1; padding:14px; border-radius:8px; font-weight:900; font-size:14px; width:100%;">Copy Scheme</button>
-        <button onclick="openEditSchemeModal(${pIdx}, ${dIdx}); closeRowActionModal();" style="background:#fff7ed; color:#d97706; border:1px solid #fed7aa; padding:14px; border-radius:8px; font-weight:900; font-size:14px; width:100%;">Edit Scheme</button>
-        <button onclick="toggleInactive(${pIdx}, ${dIdx}); closeRowActionModal();" style="background:${isInactive ? '#ecfdf5' : '#fef2f2'}; color:${isInactive ? '#059669' : '#dc2626'}; border:1px solid ${isInactive ? '#a7f3d0' : '#fecaca'}; padding:14px; border-radius:8px; font-weight:900; font-size:14px; width:100%;">${isInactive ? 'Add To Active' : 'Disable Scheme'}</button>
-    `;
-    let ram = document.getElementById('rowActionModal');
-    if(ram) ram.style.display = 'flex';
-}
-
-function closeRowActionModal() { 
-    let ram = document.getElementById('rowActionModal');
-    if(ram) ram.style.display = 'none'; 
-}
+function proceedGenerateImageAndWhatsAppCopy() { requestWhatsAppDispatch = true; let cm = document.
