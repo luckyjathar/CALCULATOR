@@ -1,5 +1,5 @@
 /* =========================================================================
-   PERSISTENT PORTAL - FULL WORKING LOGIC
+   PERSISTENT PORTAL - PRO EDITION (COMPLETE CORE ENGINE)
    ========================================================================= */
 
 const DB_NAME = "PersistentPortalDB"; 
@@ -9,93 +9,64 @@ let dbInstance;
 
 const EXCEL_ENDPOINTS = [
     "https://raw.githubusercontent.com/luckyjathar/testcalculator/main/master_data.xlsx",
-    "https://cdn.jsdelivr.net/gh/luckyjathar/testcalculator@main/master_data.xlsx",
-    "https://luckyjathar.github.io/testcalculator/master_data.xlsx"
+    "https://raw.githubusercontent.com/luckyjathar/CALCULATOR/main/master_data.xlsx",
+    "https://cdn.jsdelivr.net/gh/luckyjathar/testcalculator@main/master_data.xlsx"
 ];
 
-let db_records = []; 
-let current_products = []; 
-let sortConfigs = []; 
-let customerQueue = []; 
-let recycleBin = []; 
-let activeCustomerIndex = -1; 
-let selectedQueueIndex = -1; 
-let tempPendingProduct = null; 
-let currentModalCategory = ""; 
-let editingProductIdx = -1;
+let db_records = []; let current_products = []; let sortConfigs = []; 
+let customerQueue = []; let recycleBin = []; 
+let activeCustomerIndex = -1; let selectedQueueIndex = -1; 
+let tempPendingProduct = null; let currentModalCategory = ""; let editingProductIdx = -1;
 const SPECIAL_MODEL = "NON TIEUP"; 
 
 let toastTimeout;
 function showToast(message, type = 'success') {
-    const toast = document.getElementById("toastNotification");
-    if (!toast) return;
-    toast.className = "toast-notification show " + type;
-    toast.innerText = message;
-    clearTimeout(toastTimeout);
-    toastTimeout = setTimeout(() => { toast.className = "toast-notification"; }, 3000);
+    const toast = document.getElementById("toastNotification"); if (!toast) return;
+    toast.className = "toast-notification show " + type; toast.innerText = message;
+    clearTimeout(toastTimeout); toastTimeout = setTimeout(() => { toast.className = "toast-notification"; }, 3000);
 }
 
 const INLINE_SUB_PANELS = ['addProductModal', 'catSelectionModal', 'componentsModal', 'multiStackModal'];
-function hideAllInlineSubPanels() { 
-    INLINE_SUB_PANELS.forEach(id => { let el = document.getElementById(id); if(el) el.style.display = 'none'; }); 
-}
-function showInlineSubPanel(id) { 
-    hideAllInlineSubPanels(); 
-    let el = document.getElementById(id); 
-    if(el) { el.style.display = 'block'; setTimeout(() => el.scrollIntoView({behavior: 'smooth'}), 100); } 
-}
+function hideAllInlineSubPanels() { INLINE_SUB_PANELS.forEach(id => { let el = document.getElementById(id); if (el) el.style.display = 'none'; }); }
+function showInlineSubPanel(id) { hideAllInlineSubPanels(); let el = document.getElementById(id); if (el) { el.style.display = 'block'; setTimeout(() => el.scrollIntoView({behavior: 'smooth', block: 'start'}), 100); } }
 
-/* === IndexedDB & Setup === */
+/* === IndexedDB Functions === */
 function initDB() { 
     return new Promise((resolve) => { 
         let req = indexedDB.open(DB_NAME, DB_VERSION); 
         req.onupgradeneeded = e => { let db = e.target.result; if (!db.objectStoreNames.contains(STORE_NAME)) db.createObjectStore(STORE_NAME); }; 
-        req.onsuccess = e => { dbInstance = e.target.result; resolve(dbInstance); }; 
-        req.onerror = () => resolve(null); 
+        req.onsuccess = e => { dbInstance = e.target.result; resolve(dbInstance); }; req.onerror = () => resolve(null); 
     }); 
 }
 function saveToDB(key, data) { return new Promise((res) => { if (!dbInstance) return res(); try { let tx = dbInstance.transaction(STORE_NAME, 'readwrite'); tx.objectStore(STORE_NAME).put(JSON.stringify(data), key).onsuccess = res; } catch(e) { res(); } }); }
 function getFromDB(key) { return new Promise((res) => { if (!dbInstance) return res(null); try { let req = dbInstance.transaction(STORE_NAME, 'readonly').objectStore(STORE_NAME).get(key); req.onsuccess = e => res(e.target.result ? JSON.parse(e.target.result) : null); req.onerror = () => res(null); } catch(e) { res(null); } }); }
 
+/* === Master Data Sync & Parsing === */
 async function fetchFromMasterStream(forceSync = false) {
     let cached = await getFromDB('cached_db_records');
-    if (cached && cached.length > 0 && !forceSync) { 
-        db_records = cached; updateMasterBadgeUI(); fetchLatestExcelBackground(false); return; 
-    }
+    if (cached && cached.length > 0 && !forceSync) { db_records = cached; updateMasterBadgeUI(); fetchLatestExcelBackground(false); return; }
     await fetchLatestExcelBackground(true);
 }
 async function fetchLatestExcelBackground(showToasts) {
     let badge = document.getElementById('masterDataStatusBadge');
-    if(showToasts && badge) { badge.innerText = "🔄 Syncing..."; badge.style.background = "#fef3c7"; badge.style.color = "#d97706"; }
+    if(showToasts && badge) badge.innerText = "🔄 Syncing...";
     let now = Date.now(); let dataBuffer = null;
-    
-    for (let url of EXCEL_ENDPOINTS) { 
-        try { let res = await fetch(url + '?t=' + now, { cache: "no-store" }); if (res.ok) { dataBuffer = await res.arrayBuffer(); break; } } catch(e) {} 
-    }
-    
-    if (dataBuffer) { 
-        await processArrayBufferToDB(dataBuffer); 
-        if(showToasts) showToast("Master Data Updated!", "success"); 
-    } else { 
-        if(showToasts) showToast("Network Error! Try Manual Upload.", "error"); 
-        updateMasterBadgeUI(); 
-    }
+    for (let url of EXCEL_ENDPOINTS) { try { let res = await fetch(url + '?t=' + now, { cache: "no-store" }); if (res.ok) { dataBuffer = await res.arrayBuffer(); break; } } catch(e) {} }
+    if (dataBuffer) { await processArrayBufferToDB(dataBuffer); if(showToasts) showToast("Master Data Updated!", "success"); } 
+    else { if(showToasts) showToast("Network Error! Try Manual Upload.", "error"); updateMasterBadgeUI(); }
 }
 function updateMasterBadgeUI() {
     let badge = document.getElementById('masterDataStatusBadge'); if (!badge) return;
-    if (db_records.length > 0) { 
-        badge.innerHTML = `✅ Master Ready (${db_records.length})`; 
-        badge.style.background = '#d1fae5'; badge.style.color = '#059669';
-    } else { 
-        badge.innerHTML = `⚠️ Master Data Missing (Tap to Sync)`; 
-        badge.style.background = '#fee2e2'; badge.style.color = '#ef4444';
-    }
+    if (db_records.length > 0) { badge.innerHTML = `✅ Master Ready (${db_records.length})`; badge.style.background = '#d1fae5'; badge.style.color = '#059669'; badge.style.border = 'none'; } 
+    else { badge.innerHTML = `⚠️ Master Data Missing (Tap to Sync)`; badge.style.background = '#fee2e2'; badge.style.color = '#ef4444'; badge.style.border = 'none'; }
 }
 async function forceRefreshMasterData() { await fetchFromMasterStream(true); }
 
-/* === Excel Parsing === */
 function parseExcelDate(val) { if (!val) return null; if (typeof val === 'number') return new Date(Math.round((val - 25569) * 86400 * 1000)); let d = new Date(val); return isNaN(d.getTime()) ? null : d; }
-function findValLocal(row, targets) { let keys = Object.keys(row); let ek = keys.find(k => targets.includes(k.toUpperCase().replace(/[^A-Z0-9%]/g, ''))); if (ek !== undefined) return row[ek]; let pk = keys.find(k => targets.some(t => k.toUpperCase().replace(/[^A-Z0-9%]/g, '').includes(t))); return pk !== undefined ? row[pk] : null; }
+function findValLocal(row, targets) { 
+    let keys = Object.keys(row); let ek = keys.find(k => targets.includes(k.toUpperCase().replace(/[^A-Z0-9%]/g, ''))); 
+    if (ek !== undefined) return row[ek]; let pk = keys.find(k => targets.some(t => k.toUpperCase().replace(/[^A-Z0-9%]/g, '').includes(t))); return pk !== undefined ? row[pk] : null; 
+}
 function standardizeCategoryName(cat) { let c = String(cat||"").toUpperCase().replace(/\s+/g, '').trim(); if (c.includes('PHONE') || c.includes('MOBILE') || c.includes('TABLET') || c.includes('SMARTWATCH')) return "PHONE(WEB-MOBILE)"; if (c.includes('AC') || c.includes('AIRCONDITIONER')) return "AC"; return c; }
 function isMobileDeviceCat(cat) { return standardizeCategoryName(cat) === "PHONE(WEB-MOBILE)"; }
 function getRfcSlabValue(v) { let a=parseFloat(v)||0; if(a<8000) return 0; if(a<=10000) return 1109; if(a<=15000) return 1631; if(a<=20000) return 2147; if(a<=25000) return 2695; if(a<=30000) return 3215; if(a<=35000) return 3648; if(a<=40000) return 4219; if(a<=50000) return 5720; if(a<=60000) return 8686; if(a<=100000) return 11438; return 0; }
@@ -104,8 +75,7 @@ function getNonTieupPfValue(cat, a) { let c=standardizeCategoryName(cat); let v=
 
 function mapData(row, type) { 
     if(!row) return null; 
-    let expDate = parseExcelDate(findValLocal(row, ['EXPIRY', 'ENDDATE', 'VALIDTILL'])); 
-    let isExp = false, expStr = ""; 
+    let expDate = parseExcelDate(findValLocal(row, ['EXPIRY', 'ENDDATE', 'VALIDTILL'])); let isExp = false, expStr = ""; 
     if(expDate && !isNaN(expDate.getTime())) { if(expDate < new Date().setHours(0,0,0,0)) isExp = true; expStr = `${String(expDate.getDate()).padStart(2,'0')}/${String(expDate.getMonth()+1).padStart(2,'0')}/${expDate.getFullYear()}`; } 
     let rawTen = findValLocal(row, ['TOTALTENURE', 'TENURE']); let rawAdv = findValLocal(row, ['ADVANCEEMI', 'ADV']);
     if (rawTen && String(rawTen).includes('/')) { let p = String(rawTen).split('/'); rawTen = p[0]; if(!rawAdv) rawAdv = p[1]; }
@@ -118,6 +88,7 @@ function mapData(row, type) {
         isExpired: isExp, expiryDateStr: expStr, inactive: false 
     }; 
 }
+
 function parseSheetSmartly(sheet) {
     if (!sheet) return [];
     let rows = XLSX.utils.sheet_to_json(sheet, { raw: false, defval: "" });
@@ -130,30 +101,46 @@ function parseSheetSmartly(sheet) {
     }
     return rows;
 }
+
+// 3rd Sheet Logic Integration
 async function processArrayBufferToDB(buf) {
     let wb = XLSX.read(new Uint8Array(buf), { type: 'array' });
     let s1 = parseSheetSmartly(wb.Sheets[wb.SheetNames[0]]).map(r=>mapData(r,"REG")).filter(x=>x&&x.model);
     let s2 = wb.SheetNames.length>1 ? parseSheetSmartly(wb.Sheets[wb.SheetNames[1]]).map(r=>mapData(r,SPECIAL_MODEL)).filter(x=>x&&x.model) : [];
+    
+    // 3rd Sheet Data Integration Rule
+    let s3 = wb.SheetNames.length>2 ? parseSheetSmartly(wb.Sheets[wb.SheetNames[2]]).map(r=>mapData(r,"REG")).filter(x=>x&&x.model) : [];
+    
     let unique = [], seen = new Set();
-    [...s1, ...s2].forEach(r => { let k=`${r.model}|${r.brand}|${r.mrp}|${r.tenure}|${r.advEmi}|${r.dbd}|${r.pf}|${r.roi}|${r.fixedEmi}`; if(!seen.has(k)) { seen.add(k); unique.push(r); } });
+    [...s1, ...s2, ...s3].forEach(r => { 
+        let k=`${r.model}|${r.brand}|${r.mrp}|${r.tenure}|${r.advEmi}|${r.dbd}|${r.pf}|${r.roi}|${r.fixedEmi}`; 
+        if(!seen.has(k)) { seen.add(k); unique.push(r); } 
+    });
+    
     if(unique.length===0) throw new Error("No valid schemes found in Excel.");
     db_records = unique; await saveToDB('cached_db_records', db_records); updateMasterBadgeUI();
     if(activeCustomerIndex!==-1) { loadCurrentProducts(); renderMatrix(); }
 }
+
 async function handleManualExcelUpload(e) { 
     let f=e.target.files[0]; if(!f)return; 
     try{ showToast("Processing Excel...", "warning"); await processArrayBufferToDB(await f.arrayBuffer()); showToast(`Success! Loaded ${db_records.length} schemes.`, "success"); } 
     catch(err) { showToast(err.message,"error"); } e.target.value=""; 
 }
 
-/* === Start & State Management === */
+/* === System Startup === */
 window.onload = async function() {
     generateStackCards(); await initDB(); await fetchFromMasterStream(false);
+    
     let sq = await getFromDB('persistent_queue') || JSON.parse(localStorage.getItem('persistent_queue_backup')||'[]');
     customerQueue = sq.map(c => ({ ...c, components: c.components||{}, products: c.products||[], sortConfigs: c.sortConfigs||[] }));
-    recycleBin = await getFromDB('persistent_recycle') || JSON.parse(localStorage.getItem('persistent_recycle_backup')||'[]');
+    
+    let rec = await getFromDB('persistent_recycle') || JSON.parse(localStorage.getItem('persistent_recycle_backup')||'[]');
+    recycleBin = rec;
+
     let aidx = await getFromDB('persistent_active_idx') ?? localStorage.getItem('persistent_active_idx_backup');
     activeCustomerIndex = (aidx !== null && parseInt(aidx) < customerQueue.length) ? parseInt(aidx) : -1;
+    
     renderCustomerQueue(); if(activeCustomerIndex!==-1) goToFinalPage();
 };
 
@@ -164,43 +151,40 @@ async function saveQueueToLocal() {
 }
 
 function goHome() { 
-    hideAllInlineSubPanels(); document.getElementById('finalEligibleArea').style.display='none'; 
-    document.getElementById('unifiedHome').style.display='block'; activeCustomerIndex=-1; 
-    renderCustomerQueue(); window.scrollTo({top:0, behavior:'smooth'}); 
+    hideAllInlineSubPanels(); let fa = document.getElementById('finalEligibleArea'); if(fa) fa.style.display='none'; 
+    let uh = document.getElementById('unifiedHome'); if(uh) uh.style.display='block'; 
+    activeCustomerIndex=-1; renderCustomerQueue(); window.scrollTo({top:0, behavior:'smooth'}); 
 }
 
-/* === Queue & Modals === */
-function openAddCustomerModal() { document.getElementById('addCustomerModal').style.display='flex'; }
-function closeAddCustomerModal() { document.getElementById('addCustomerModal').style.display='none'; }
-function openCustomerHistoryModal() { renderCustomerQueue(); document.getElementById('customerHistoryModal').style.display='flex'; }
-function closeCustomerHistoryModal() { document.getElementById('customerHistoryModal').style.display='none'; }
+/* === Customer Add / Edit / Recycle Bin === */
+function openAddCustomerModal() { let m = document.getElementById('addCustomerModal'); if(m) m.style.display='flex'; }
+function closeAddCustomerModal() { let m = document.getElementById('addCustomerModal'); if(m) m.style.display='none'; }
+function openCustomerHistoryModal() { renderCustomerQueue(); let m = document.getElementById('customerHistoryModal'); if(m) m.style.display='flex'; }
+function closeCustomerHistoryModal() { let m = document.getElementById('customerHistoryModal'); if(m) m.style.display='none'; }
 
 async function addCustomerToQueue() {
     let limitEl = document.getElementById('cqLimit'); let limit = limitEl ? parseFloat(limitEl.value) : 0;
     if(isNaN(limit) || limit<=0) return showToast("Enter a valid NBFC Limit!", "error");
     if(db_records.length===0) return showToast("Please wait for Master Data to Sync.", "warning");
     
-    let type = document.getElementById('cqType').value || "NEW";
-    let name = document.getElementById('cqName').value.trim() || `Cust ${customerQueue.length+1}`;
-    let ltv = parseFloat(document.getElementById('cqLtv').value)||100;
-    let cap = parseFloat(document.getElementById('cqCap').value)||"";
+    let typeEl = document.getElementById('cqType'); let type = typeEl ? typeEl.value : "NEW";
+    let nameEl = document.getElementById('cqName'); let name = nameEl ? nameEl.value.trim() : "";
+    let ltvEl = document.getElementById('cqLtv'); let capEl = document.getElementById('cqCap');
     
-    let c = { id: Date.now(), name: name, limit: limit, ltv: ltv, type: type, cap: cap, targetDp: "", components: {}, products: [], sortConfigs: [] };
+    let c = { id: Date.now(), name: name || `Cust ${customerQueue.length+1}`, limit: limit, ltv: ltvEl ? (parseFloat(ltvEl.value)||100) : 100, type: type, cap: capEl ? (parseFloat(capEl.value)||"") : "", targetDp: "", timestamp: new Date().toLocaleString(), components: {}, products: [], sortConfigs: [] };
     customerQueue.unshift(c); activeCustomerIndex = 0; await saveQueueToLocal();
+    if(nameEl) nameEl.value = ""; if(limitEl) limitEl.value = ""; if(capEl) capEl.value = "";
     closeAddCustomerModal(); renderCustomerQueue(); goToFinalPage();
 }
 
 function renderCustomerQueue() {
-    let q = document.getElementById('queueSearch')?.value.toLowerCase().trim() || "";
-    let list = document.getElementById('customerQueueList');
-    let hCount = document.getElementById('queueCountHome'); if(hCount) hCount.innerText = customerQueue.length;
+    let qEl = document.getElementById('queueSearch'); let q = qEl ? qEl.value.toLowerCase().trim() : "";
+    let list = document.getElementById('customerQueueList'); let hCount = document.getElementById('queueCountHome'); if(hCount) hCount.innerText = customerQueue.length;
     if(!list) return;
-    
-    let html = customerQueue.map((c, i) => ({...c, idx: i})).filter(c => c.name.toLowerCase().includes(q) || String(c.limit).includes(q) || c.type.toLowerCase().includes(q))
-        .map(c => `
+    let html = customerQueue.map((c, i) => ({...c, idx: i})).filter(c => c.name.toLowerCase().includes(q) || String(c.limit).includes(q) || c.type.toLowerCase().includes(q)).map(c => `
         <div style="background:#f8fafc; border:1px solid ${c.idx===activeCustomerIndex?'var(--primary)':'var(--border)'}; padding:12px; border-radius:12px; display:flex; justify-content:space-between; align-items:center;">
             <div onclick="setActiveCustomer(${c.idx})" style="flex:1; cursor:pointer;">
-                <div style="font-weight:700; font-size:15px; text-transform:capitalize; color:var(--text-main);">👤 ${c.name}</div>
+                <div style="font-weight:700; font-size:15px; color:var(--text-main); text-transform:capitalize;">👤 ${c.name}</div>
                 <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">Limit: <b style="color:var(--success)">₹${c.limit}</b> | LTV: ${c.ltv}% | ${c.type}</div>
             </div>
             <div style="display:flex; gap:8px;">
@@ -208,17 +192,16 @@ function renderCustomerQueue() {
                 <button onclick="selectedQueueIndex=${c.idx}; uniDelete();" style="background:var(--danger); color:white; border:none; padding:6px 10px; border-radius:6px; font-size:11px;">🗑️</button>
             </div>
         </div>`).join('');
-    list.innerHTML = html || "<div style='text-align:center; padding:20px; color:var(--text-muted); font-weight:600;'>No customers found.</div>";
+    list.innerHTML = html || "<div style='text-align:center; padding:20px; color:#999; font-weight:600;'>No customers found.</div>";
 }
 
 async function setActiveCustomer(idx) { activeCustomerIndex = idx; await saveQueueToLocal(); closeCustomerHistoryModal(); goToFinalPage(); }
 
 function uniEdit() {
-    if(selectedQueueIndex === -1) return; let c = customerQueue[selectedQueueIndex]; let modal = document.getElementById('editCustomerModal');
-    document.getElementById('ecName').value = c.name || ''; document.getElementById('ecLimit').value = c.limit; document.getElementById('ecType').value = c.type; document.getElementById('ecLtv').value = c.ltv || 100; document.getElementById('ecCap').value = c.cap || '';
-    modal.style.display = 'flex';
+    if(selectedQueueIndex === -1) return; let c = customerQueue[selectedQueueIndex]; let modal = document.getElementById('editCustomerModal'); if(!modal) return;
+    document.getElementById('ecName').value = c.name || ''; document.getElementById('ecLimit').value = c.limit; document.getElementById('ecType').value = c.type; document.getElementById('ecLtv').value = c.ltv || 100; document.getElementById('ecCap').value = c.cap || ''; modal.style.display = 'flex';
 }
-function closeCustomerEdit() { document.getElementById('editCustomerModal').style.display = 'none'; }
+function closeCustomerEdit() { let m = document.getElementById('editCustomerModal'); if(m) m.style.display = 'none'; }
 async function saveCustomerEdit() {
     if(selectedQueueIndex === -1) return; let c = customerQueue[selectedQueueIndex];
     c.name = document.getElementById('ecName').value || ''; c.limit = parseFloat(document.getElementById('ecLimit').value) || 0; c.type = document.getElementById('ecType').value; c.ltv = parseFloat(document.getElementById('ecLtv').value) || 100;
@@ -227,8 +210,7 @@ async function saveCustomerEdit() {
 }
 
 async function uniDelete() {
-    if(selectedQueueIndex === -1) return;
-    let c = customerQueue.splice(selectedQueueIndex, 1)[0]; recycleBin.push(c);
+    if(selectedQueueIndex === -1) return; let c = customerQueue.splice(selectedQueueIndex, 1)[0]; recycleBin.push(c);
     await saveToDB('persistent_recycle', recycleBin); localStorage.setItem('persistent_recycle_backup', JSON.stringify(recycleBin));
     if(activeCustomerIndex === selectedQueueIndex) activeCustomerIndex = -1; else if (activeCustomerIndex > selectedQueueIndex) activeCustomerIndex--;
     if(customerQueue.length > 0 && activeCustomerIndex === -1) activeCustomerIndex = 0;
@@ -236,38 +218,41 @@ async function uniDelete() {
 }
 
 function openRecycleBin() {
-    let m = document.getElementById('recycleBinModal'); let list = document.getElementById('recycleBinList');
-    if(recycleBin.length === 0) list.innerHTML = `<div style="text-align:center; color:var(--text-muted); font-weight:bold;">Bin Empty</div>`;
-    else list.innerHTML = recycleBin.map((c, i) => `<div style="display:flex; justify-content:space-between; align-items:center; background:#f8fafc; padding:10px; border-radius:8px; border:1px solid var(--border);"><div style="font-size:12px; font-weight:600;">👤 ${c.name} <br><span style="color:var(--danger);">Deleted Limit: ₹${c.limit}</span></div><button onclick="restoreCustomer(${i})" style="background:var(--success); color:white; border:none; padding:6px 12px; border-radius:6px; font-weight:bold;">Restore</button></div>`).join('');
-    m.style.display = 'flex';
+    let m = document.getElementById('recycleBinModal'); if(!m) return; let list = document.getElementById('recycleBinList');
+    if(recycleBin.length === 0) { list.innerHTML = `<div style="text-align:center; color:var(--text-muted); font-weight:bold;">Bin Empty</div>`; } else {
+        list.innerHTML = recycleBin.map((c, i) => `
+            <div style="display:flex; justify-content:space-between; align-items:center; background:#f8fafc; padding:10px; border-radius:8px; border:1px solid var(--border);">
+                <div style="font-size:12px; font-weight:600; color:var(--text-main);">👤 ${c.name} <br><span style="color:var(--danger);">Deleted Limit: ₹${c.limit}</span></div>
+                <button onclick="restoreCustomer(${i})" style="background:var(--success); color:white; border:none; padding:6px 12px; border-radius:6px; font-weight:bold;">Restore</button>
+            </div>
+        `).join('');
+    } m.style.display = 'flex';
 }
-function closeRecycleBin() { document.getElementById('recycleBinModal').style.display = 'none'; }
-async function restoreCustomer(idx) {
-    let c = recycleBin.splice(idx, 1)[0]; customerQueue.unshift(c); if(activeCustomerIndex !== -1) activeCustomerIndex++;
-    await saveToDB('persistent_recycle', recycleBin); localStorage.setItem('persistent_recycle_backup', JSON.stringify(recycleBin)); await saveQueueToLocal();
-    openRecycleBin(); renderCustomerQueue();
-}
-async function emptyRecycleBin() { recycleBin = []; await saveToDB('persistent_recycle', recycleBin); localStorage.setItem('persistent_recycle_backup', JSON.stringify(recycleBin)); openRecycleBin(); showToast("Bin Cleared", "success"); }
+function closeRecycleBin() { let m = document.getElementById('recycleBinModal'); if(m) m.style.display = 'none'; }
+async function restoreCustomer(idx) { let c = recycleBin.splice(idx, 1)[0]; customerQueue.unshift(c); if(activeCustomerIndex !== -1) activeCustomerIndex++; await saveToDB('persistent_recycle', recycleBin); localStorage.setItem('persistent_recycle_backup', JSON.stringify(recycleBin)); await saveQueueToLocal(); openRecycleBin(); renderCustomerQueue(); }
+async function emptyRecycleBin() { recycleBin = []; await saveToDB('persistent_recycle', recycleBin); localStorage.setItem('persistent_recycle_backup', JSON.stringify(recycleBin)); openRecycleBin(); showToast("Recycle Bin Cleared", "success"); }
 
-/* === Final Eligible Area === */
+/* === Workflow logic & Selection === */
 function goToFinalPage() {
     let c = customerQueue[activeCustomerIndex]; if(!c) return;
-    document.getElementById('unifiedHome').style.display = 'none'; document.getElementById('finalEligibleArea').style.display = 'flex';
-    document.getElementById('infoName').innerText = c.name || "Customer"; document.getElementById('infoLimit').innerText = "₹" + (c.limit||0).toLocaleString(); document.getElementById('infoType').innerText = c.type; document.getElementById('infoLtv').innerText = c.ltv + "%"; document.getElementById('infoCap').innerText = c.cap ? "₹"+c.cap : "None";
-    loadCurrentProducts(); renderMatrix();
-    setTimeout(() => { if(current_products.length === 0) openAddProductModal(); }, 100);
+    let uh = document.getElementById('unifiedHome'); if(uh) uh.style.display = 'none';
+    let fa = document.getElementById('finalEligibleArea'); if(fa) fa.style.display = 'flex';
+    let n = document.getElementById('infoName'); if(n) n.innerText = c.name || "Customer";
+    let l = document.getElementById('infoLimit'); if(l) l.innerText = "₹" + (c.limit||0).toLocaleString();
+    let t = document.getElementById('infoType'); if(t) t.innerText = c.type;
+    let ltv = document.getElementById('infoLtv'); if(ltv) ltv.innerText = c.ltv + "%";
+    let cap = document.getElementById('infoCap'); if(cap) cap.innerText = c.cap ? "₹"+c.cap : "None";
+    loadCurrentProducts(); renderMatrix(); setTimeout(() => { if(current_products.length === 0) openAddProductModal(); }, 100);
 }
 function loadCurrentProducts() { let c = customerQueue[activeCustomerIndex]; current_products = c.products||[]; sortConfigs = c.sortConfigs||[]; }
 
-/* === Product Search & Workflow === */
-function openAddProductModal() { showInlineSubPanel('addProductModal'); document.getElementById('modalMatrixSearch').value=''; document.getElementById('modalMatrixSearchDropdown').style.display='none'; }
+function openAddProductModal() { showInlineSubPanel('addProductModal'); let s = document.getElementById('modalMatrixSearch'); if(s) { s.value=''; s.focus(); } let dd = document.getElementById('modalMatrixSearchDropdown'); if(dd) dd.style.display='none'; }
 function doSearch(inpId, ddId) {
-    let q = document.getElementById(inpId).value.toUpperCase().trim(); let dd = document.getElementById(ddId);
-    if(!q) return dd.style.display='none';
+    let q = document.getElementById(inpId).value.toUpperCase().trim(); let dd = document.getElementById(ddId); if(!q) return dd.style.display='none';
     let matches = [...new Set(db_records.filter(r=>r.model!==SPECIAL_MODEL && r.model.includes(q)).map(r=>r.model))].slice(0,30);
-    if (matches.length === 0) dd.innerHTML = `<div style="padding:10px; text-align:center; color:var(--text-muted); font-weight:600;">No models found</div>`;
-    else dd.innerHTML = matches.map(m => `<div style="padding:12px 10px; border-bottom:1px solid #f1f5f9; font-weight:600; font-size:13px; cursor:pointer;" onclick="selectModel('${m.replace(/'/g,"\\'")}')">${m}</div>`).join('');
-    dd.style.display='block';
+    if (matches.length === 0) { dd.innerHTML = `<div style="padding:10px; text-align:center; color:var(--text-muted); font-weight:600;">No models found</div>`; } else {
+        dd.innerHTML = matches.map(m => `<div style="padding:12px 10px; border-bottom:1px solid #f1f5f9; font-weight:600; font-size:13px; cursor:pointer; color:var(--text-main);" onclick="selectModel('${m.replace(/'/g,"\\'")}')">${m}</div>`).join('');
+    } dd.style.display='block';
 }
 function selectModel(name) {
     editingProductIdx = -1; let raw = db_records.filter(r=>r.model===name);
@@ -276,53 +261,56 @@ function selectModel(name) {
 }
 function quickNonTieup() {
     editingProductIdx = -1; let cats = [...new Set(db_records.filter(r=>r.model===SPECIAL_MODEL).map(r=>r.category))].sort();
-    document.getElementById('categoryGrid').innerHTML = cats.map(c => `<button onclick="selectCategory('${c}')" class="btn-outline" style="border:1px solid var(--primary); color:var(--primary); font-size:12px; border-radius:8px;">${c==='PHONE(WEB-MOBILE)'?'Phone/Tablet':c}</button>`).join('');
-    showInlineSubPanel('catSelectionModal');
+    let cg = document.getElementById('categoryGrid'); if(cg) { cg.innerHTML = cats.map(c => `<button onclick="selectCategory('${c}')" class="btn-outline" style="border:1px solid var(--primary); color:var(--primary); font-size:12px; border-radius:8px;">${c==='PHONE(WEB-MOBILE)'?'Phone/Tablet':c}</button>`).join(''); } showInlineSubPanel('catSelectionModal');
 }
 function selectCategory(cat) { editingProductIdx = -1; tempPendingProduct = { name: SPECIAL_MODEL+" - "+cat, isNT: true, category: cat }; currentModalCategory = cat; showComponentsModal(""); }
 
 function generateStackCards() {
     let box = document.getElementById('stackInputsContainer'); if(!box) return; box.innerHTML = "";
     for(let i=1; i<=10; i++) {
-        box.innerHTML += `<div style="background:#f8fafc; border:1px solid var(--border); border-radius:8px; padding:10px; margin-bottom:10px;"><div style="font-weight:700; color:var(--primary); margin-bottom:6px; font-size:13px;">Scheme #${i}</div><div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;"><div><label>Tenure</label><input type="number" id="msTen_${i}"></div><div><label>Advance</label><input type="number" id="msAdv_${i}"></div><div><label>DBD %</label><input type="number" id="msDbd_${i}"></div><div><label>PF ₹</label><input type="number" id="msPf_${i}"></div><div><label>ROI %</label><input type="number" id="msRoi_${i}"></div><div><label>Fixed EMI ₹</label><input type="number" id="msFix_${i}"></div></div></div>`;
+        box.innerHTML += `
+        <div style="background:#f8fafc; border:1px solid var(--border); border-radius:8px; padding:10px; margin-bottom:10px;">
+            <div style="font-weight:700; color:var(--primary); margin-bottom:6px; font-size:13px;">Scheme #${i}</div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                <div><label>Tenure Max</label><input type="number" id="msTen_${i}"></div>
+                <div><label>Advance</label><input type="number" id="msAdv_${i}"></div>
+                <div><label>DBD %</label><input type="number" id="msDbd_${i}"></div>
+                <div><label>PF ₹</label><input type="number" id="msPf_${i}"></div>
+                <div><label>ROI %</label><input type="number" id="msRoi_${i}"></div>
+                <div><label>Fixed EMI ₹</label><input type="number" id="msFix_${i}"></div>
+            </div>
+        </div>`;
     }
 }
 function openMultiStackModal() { showInlineSubPanel('multiStackModal'); }
-function closeMultiStackModal() { document.getElementById('multiStackModal').style.display='none'; }
+function closeMultiStackModal() { let m = document.getElementById('multiStackModal'); if(m) m.style.display='none'; }
 function processMultiStack() {
-    let name = document.getElementById('multiStackModelName').value.trim().toUpperCase();
-    if (!name) return showToast("Model Name Required!", "error");
+    let name = document.getElementById('multiStackModelName').value.trim().toUpperCase(); if (!name) return showToast("Model Name Required!", "error");
     let valid = [];
     for(let i=1; i<=10; i++) {
         let t = parseInt(document.getElementById(`msTen_${i}`).value)||0; let f = parseInt(document.getElementById(`msFix_${i}`).value)||0;
-        if(t>0 || f>0) valid.push({ model: name, brand: "MANUAL", tenure: t, fixedEmi: f, advEmi: parseInt(document.getElementById(`msAdv_${i}`).value)||0, dbd: parseFloat(document.getElementById(`msDbd_${i}`).value)||0, pf: parseInt(document.getElementById(`msPf_${i}`).value)||0, roi: parseFloat(document.getElementById(`msRoi_${i}`).value)||0, minLoan: 0, maxLoan: 9999999, category: "MANUAL", inactive: false, isExpired: false });
+        if(t>0 || f>0) {
+            valid.push({ model: name, brand: "MANUAL", tenure: t, fixedEmi: f, advEmi: parseInt(document.getElementById(`msAdv_${i}`).value)||0, dbd: parseFloat(document.getElementById(`msDbd_${i}`).value)||0, pf: parseInt(document.getElementById(`msPf_${i}`).value)||0, roi: parseFloat(document.getElementById(`msRoi_${i}`).value)||0, minLoan: 0, maxLoan: 9999999, category: "MANUAL", inactive: false, isExpired: false });
+        }
     }
     if(valid.length > 0) { closeMultiStackModal(); tempPendingProduct = { name: name, isNT: false, isManual: true, manualSchemes: valid, category: "MANUAL" }; currentModalCategory = "MANUAL"; showComponentsModal(""); } else { showToast("Enter at least 1 Scheme!", "error"); }
 }
 
-/* === Components / Charges Configuration === */
 function showComponentsModal(baseMrp="") {
-    let isMob = isMobileDeviceCat(currentModalCategory);
-    let n = document.getElementById('compPendingModelName'); if(n) n.innerText = tempPendingProduct ? tempPendingProduct.name : (current_products[editingProductIdx]?.name||"");
+    let isMob = isMobileDeviceCat(currentModalCategory); let n = document.getElementById('compPendingModelName'); if(n) n.innerText = tempPendingProduct ? tempPendingProduct.name : (current_products[editingProductIdx]?.name||"");
     document.getElementById('compMrp').value = baseMrp; document.getElementById('compInv').value = ""; document.getElementById('compTarget').value = customerQueue[activeCustomerIndex]?.targetDp||""; document.getElementById('compCap').value = customerQueue[activeCustomerIndex]?.cap||""; document.getElementById('compExw').value = ""; document.getElementById('compMargin').value = ""; document.getElementById('compDealer').value = "";
     document.getElementById('compRfc').disabled = !isMob; document.getElementById('compExw').disabled = isMob;
     compPriceChanged(); showInlineSubPanel('componentsModal'); setTimeout(() => document.getElementById('compInv').focus(), 100);
 }
-
 function compPriceChanged() {
-    let mrp = parseFloat(document.getElementById('compMrp').value)||0; let inv = parseFloat(document.getElementById('compInv').value)||0;
-    let eff = inv>0 ? inv : mrp;
-    document.getElementById('compGtl').value = String(getGtlSlabValue(eff));
-    let rfcS = getRfcSlabValue(eff); document.getElementById('compRfcOpt').value = rfcS; document.getElementById('compRfcOpt').innerText = rfcS;
+    let mrp = parseFloat(document.getElementById('compMrp').value)||0; let inv = parseFloat(document.getElementById('compInv').value)||0; let eff = inv>0 ? inv : mrp;
+    document.getElementById('compGtl').value = String(getGtlSlabValue(eff)); let rfcS = getRfcSlabValue(eff); document.getElementById('compRfcOpt').value = rfcS; document.getElementById('compRfcOpt').innerText = rfcS;
     if(!isMobileDeviceCat(currentModalCategory)) document.getElementById('compRfc').value = "0";
 }
-
 function cancelComponentsModal() { hideAllInlineSubPanels(); tempPendingProduct = null; editingProductIdx = -1; }
 
 async function proceedToMatrixFromComponents() {
-    let inv = parseFloat(document.getElementById('compInv').value);
-    if(isNaN(inv) || inv<=0) return showToast("Invoice Value is Required!", "error");
-    
+    let inv = parseFloat(document.getElementById('compInv').value); if(isNaN(inv) || inv<=0) return showToast("Invoice Value is Required!", "error");
     let c = customerQueue[activeCustomerIndex]; let cap = parseFloat(document.getElementById('compCap').value)||""; let tar = parseFloat(document.getElementById('compTarget').value)||"";
     
     let inputs = {
@@ -334,46 +322,29 @@ async function proceedToMatrixFromComponents() {
     };
 
     if(cap !== "") c.cap = cap; if(tar !== "") c.targetDp = tar;
-
-    if (editingProductIdx !== -1) {
-        current_products[editingProductIdx].inputs = inputs;
-    } else {
+    if (editingProductIdx !== -1) { current_products[editingProductIdx].inputs = inputs; } else {
         let uniq = [];
         if(tempPendingProduct.isManual) { uniq = tempPendingProduct.manualSchemes; }
-        else {
-            let raw = tempPendingProduct.isNT ? db_records.filter(r=>r.model===SPECIAL_MODEL && r.category===tempPendingProduct.category) : db_records.filter(r=>r.model===tempPendingProduct.name);
-            let seen=new Set(); raw.forEach(s => { let k = `${s.mrp}|${s.tenure}|${s.advEmi}|${s.dbd}|${s.pf}|${s.roi}|${s.fixedEmi}`; if(!seen.has(k)){seen.add(k); uniq.push({...s, inactive:false});} });
-        }
+        else { let raw = tempPendingProduct.isNT ? db_records.filter(r=>r.model===SPECIAL_MODEL && r.category===tempPendingProduct.category) : db_records.filter(r=>r.model===tempPendingProduct.name); let seen=new Set(); raw.forEach(s => { let k = `${s.mrp}|${s.tenure}|${s.advEmi}|${s.dbd}|${s.pf}|${s.roi}|${s.fixedEmi}`; if(!seen.has(k)){seen.add(k); uniq.push({...s, inactive:false});} }); }
         current_products.push({ name: tempPendingProduct.name, isNonTieup: tempPendingProduct.isNT, category: tempPendingProduct.category, schemes: uniq, inputs: inputs, isManual: tempPendingProduct.isManual });
         sortConfigs.push({key: 'dp', dir: 'asc'});
     }
-    
-    c.products = current_products; c.sortConfigs = sortConfigs; await saveQueueToLocal();
-    hideAllInlineSubPanels(); renderMatrix();
+    c.products = current_products; c.sortConfigs = sortConfigs; await saveQueueToLocal(); hideAllInlineSubPanels(); renderMatrix();
 }
 
 function openEditModelComponents(pIdx) {
-    editingProductIdx = pIdx; let prod = current_products[pIdx]; currentModalCategory = prod.category;
-    showComponentsModal(prod.inputs.mrp); document.getElementById('compInv').value = prod.inputs.inv||""; document.getElementById('compCap').value = prod.inputs.cap||""; document.getElementById('compTarget').value = prod.inputs.target||""; document.getElementById('compExw').value = prod.inputs.exw||""; document.getElementById('compMargin').value = prod.inputs.margin||""; document.getElementById('compDealer').value = prod.inputs.dealer||"";
+    editingProductIdx = pIdx; let prod = current_products[pIdx]; currentModalCategory = prod.category; showComponentsModal(prod.inputs.mrp);
+    document.getElementById('compInv').value = prod.inputs.inv||""; document.getElementById('compCap').value = prod.inputs.cap||""; document.getElementById('compTarget').value = prod.inputs.target||""; document.getElementById('compExw').value = prod.inputs.exw||""; document.getElementById('compMargin').value = prod.inputs.margin||""; document.getElementById('compDealer').value = prod.inputs.dealer||"";
     compPriceChanged();
 }
 function removeModelFromMatrix(pIdx) { current_products.splice(pIdx, 1); sortConfigs.splice(pIdx, 1); customerQueue[activeCustomerIndex].products = current_products; saveQueueToLocal(); renderMatrix(); }
 
-/* === CORE ENGINE: Loan Rule Calculations === */
+/* === MAIN UNDERWRITING LOGIC === */
 function renderMatrix() {
     let box = document.getElementById('multiModelContainer'); if(!box) return; box.innerHTML = "";
-    
     current_products.forEach((prod, pIdx) => {
-        let inp = prod.inputs||{}; let isMob = isMobileDeviceCat(prod.category);
-        if(!isMob) inp.rfc = 0; if(isMob) inp.exw = "";
-
-        let chipsHtml = "";
-        if(inp.mrp>0) chipsHtml += `<span class="chip">MRP: ₹${inp.mrp}</span>`;
-        if(inp.inv>0) chipsHtml += `<span class="chip" style="background:#e0f2fe; color:#0284c7; border-color:#bae6fd;">Inv: ₹${inp.inv}</span>`;
-        if(inp.surch>0) chipsHtml += `<span class="chip">Var: ₹${inp.surch}</span>`;
-        if(inp.gtl>0) chipsHtml += `<span class="chip">GTL: ₹${inp.gtl}</span>`;
-        if(inp.rfc>0) chipsHtml += `<span class="chip">RFC: ₹${inp.rfc}</span>`;
-        if(!inp.inv) chipsHtml = `<span class="chip" style="background:#fef2f2; color:#ef4444; border-color:#fecaca; font-weight:bold;">⚠️ Invoice Value Required</span>`;
+        let inp = prod.inputs||{}; let isMob = isMobileDeviceCat(prod.category); if(!isMob) inp.rfc = 0; if(isMob) inp.exw = "";
+        let chipsHtml = ""; if(inp.mrp>0) chipsHtml += `<span class="chip">MRP: ₹${inp.mrp}</span>`; if(inp.inv>0) chipsHtml += `<span class="chip" style="background:#e0f2fe; color:#0284c7; border-color:#bae6fd;">Inv: ₹${inp.inv}</span>`; if(inp.surch>0) chipsHtml += `<span class="chip">Var: ₹${inp.surch}</span>`; if(inp.gtl>0) chipsHtml += `<span class="chip">GTL: ₹${inp.gtl}</span>`; if(inp.rfc>0) chipsHtml += `<span class="chip">RFC: ₹${inp.rfc}</span>`; if(!inp.inv) chipsHtml = `<span class="chip" style="background:#fef2f2; color:#ef4444; border-color:#fecaca; font-weight:bold;">⚠️ Invoice Value Required</span>`;
 
         let h = `
         <div class="scheme-card" style="border: 1.5px solid var(--bajaj-blue); box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom:20px; padding:0; overflow:visible;">
@@ -384,12 +355,10 @@ function renderMatrix() {
                     <button onclick="removeModelFromMatrix(${pIdx})" style="background:var(--danger); color:white; border:none; padding:4px 8px; border-radius:6px; font-weight:700; font-size:11px;">✖</button>
                 </div>
             </div>
-            
             <div style="padding:10px; border-bottom:1px solid #e2e8f0; background:#f8fafc; display:flex; justify-content:space-between; align-items:center;">
                 <div style="display:flex; flex-wrap:wrap; gap:6px;">${chipsHtml}</div>
                 <button onclick="openEditModelComponents(${pIdx})" style="background:var(--primary); color:white; border:none; padding:4px 10px; border-radius:6px; font-weight:700; font-size:11px;">⚙️ Edit Inv</button>
             </div>
-            
             <div style="padding:10px; background:#fff;" id="cards_${pIdx}"></div>
         </div>`;
         box.innerHTML += h; recalcModel(pIdx);
@@ -400,12 +369,9 @@ function recalcModel(pIdx) {
     let c = customerQueue[activeCustomerIndex]; let prod = current_products[pIdx];
     let limit = c?.limit || 0; let type = c?.type || 'NEW'; let fee = (type === 'EMI CARD') ? 270 : (type === 'W/O CARD' ? 320 : 850);
     let inp = prod.inputs || {}; let totalFees = fee + (parseFloat(inp.margin) || 0) + (parseFloat(inp.dealer) || 0); 
-    let currentLimit = limit > 0 ? limit : 9999999; 
-    let inputMrp = parseFloat(inp.mrp) || 0; let inputInv = parseFloat(inp.inv) || 0; 
+    let currentLimit = limit > 0 ? limit : 9999999; let inputMrp = parseFloat(inp.mrp) || 0; let inputInv = parseFloat(inp.inv) || 0; 
 
-    if (inputInv <= 0) {
-        document.getElementById(`cards_${pIdx}`).innerHTML = `<div style="text-align:center; color:var(--danger); padding:15px; font-weight:700;">⚠️ Tap '⚙️ Edit Inv' to calculate.</div>`; return;
-    }
+    if (inputInv <= 0) { document.getElementById(`cards_${pIdx}`).innerHTML = `<div style="text-align:center; color:var(--danger); padding:15px; font-weight:700;">⚠️ Tap '⚙️ Edit Inv' to calculate.</div>`; return; }
 
     let effectivePrice = inputInv; let loanCapPrice = (inputMrp > 0 && inputInv > 0) ? Math.min(inputMrp, inputInv) : effectivePrice;
     let activeCap = parseFloat(inp.cap) || parseFloat(c?.cap) || 0;
@@ -419,7 +385,7 @@ function recalcModel(pIdx) {
         let dbdRate = (s.dbd * 1.18 / 100); let roiRate = s.roi / 1200; let roiRateDP = roiRate * s.advEmi; 
         
         let dynamicPf = s.pf;
-        if (prod.isNonTieup) { let slabPf = getNonTieupPfValue(prod.category, effectivePrice); if (slabPf !== null) dynamicPf = slabPf; }
+        if (prod.isNonTieup) { let slabPf = getNonTieupPfValue(prod.category, effectivePrice); if (slabPf !== null) { dynamicPf = slabPf; } }
         let insTot = (parseFloat(inp.gtl) || 0) + (parseFloat(inp.rfc) || 0) + (parseFloat(inp.exw) || 0);
 
         if (isFixed) {
@@ -433,8 +399,9 @@ function recalcModel(pIdx) {
 
             // RULE 2: Target DP Calculation (Fixed EMI)
             if (parseFloat(inp.target) > 0) { 
-                let tL = (parseFloat(inp.target) - effectivePrice - (s.fixedEmi * s.advEmi) - dynamicPf - totalFees) / (dbdRate + roiRateDP - 1); 
-                let solvedTenure = Math.floor(tL / s.fixedEmi); 
+                let numerator = parseFloat(inp.target) - effectivePrice - (s.fixedEmi * s.advEmi) - dynamicPf - totalFees; 
+                let denominator = dbdRate + roiRateDP - 1; let solvedLoan = numerator / denominator; 
+                let solvedTenure = Math.floor(solvedLoan / s.fixedEmi); 
                 if (solvedTenure > maxTotalTenure) solvedTenure = maxTotalTenure; 
                 loan = Math.max(0, solvedTenure * s.fixedEmi); 
                 if (loan > loanCapPrice) loan = loanCapPrice; 
@@ -442,24 +409,22 @@ function recalcModel(pIdx) {
             } 
         } else {
             let absoluteMax = Math.min(loanCapPrice, nbfcMaxL); 
-            if (prod.isNonTieup && s.maxLoan < 9999999) absoluteMax = Math.min(absoluteMax, s.maxLoan); 
+            if (prod.isNonTieup) { if (s.maxLoan < 9999999) absoluteMax = Math.min(absoluteMax, s.maxLoan); } 
             loan = absoluteMax;
 
             // RULE 3: Target DP Calculation (Regular EMI)
             if (parseFloat(inp.target) > 0) { 
-                let advRate = s.advEmi / s.tenure; 
-                let tL = (parseFloat(inp.target) - effectivePrice - dynamicPf - totalFees) / (advRate + dbdRate + roiRateDP - 1); 
-                loan = Math.min(loan, Math.max(0, Math.floor(tL))); 
+                let advRate = s.advEmi / s.tenure; let numerator = parseFloat(inp.target) - effectivePrice - dynamicPf - totalFees; 
+                let denominator = advRate + dbdRate + roiRateDP - 1; let solvedLoan = numerator / denominator; 
+                loan = Math.min(loan, Math.max(0, Math.floor(solvedLoan))); 
             } 
         }
 
-        // RULE 4: Manual Override
-        if (inp.manualLoans && inp.manualLoans[dIdx] !== undefined) {
-            loan = inp.manualLoans[dIdx];
-            if (isFixed) currentTenure = Math.floor(loan / s.fixedEmi) || 1;
-        }
-
+        // RULE 4: Manual Override checks
+        let isManuallyOverridden = (inp.manualLoans && inp.manualLoans[dIdx] !== undefined);
+        if (isManuallyOverridden) { loan = inp.manualLoans[dIdx]; if (isFixed) currentTenure = Math.floor(loan / s.fixedEmi) || 1; }
         if (!isFixed && loan > effectivePrice) loan = effectivePrice;
+
         let isCapBreach = false;
 
         if (isFixed) {
@@ -471,11 +436,12 @@ function recalcModel(pIdx) {
         } else {
             inst = s.tenure - s.advEmi; if (inst < 1) inst = 1; 
             let baseEmi = loan / s.tenure;
+            // RULE 5: Minimum EMI 900
             if (baseEmi > 0 && baseEmi < 900) baseEmi = 900; 
 
             let roiInEmi = loan * roiRate; emi = baseEmi + (insTot / inst) + roiInEmi;
 
-            // RULE 5: EMI Capping Calculation
+            // RULE 6: EMI Capping Reverse Math
             if (activeCap > 0 && emi > activeCap) { 
                 let maxLoanForCap = Math.floor((activeCap - (insTot / inst)) / ((1 / s.tenure) + roiRate));
                 if (maxLoanForCap < 0) maxLoanForCap = 0; if (maxLoanForCap > effectivePrice) maxLoanForCap = effectivePrice;
@@ -488,16 +454,16 @@ function recalcModel(pIdx) {
             dpExact = effectivePrice - loan + ((loan / s.tenure) * s.advEmi) + (loan * dbdRate) + dynamicPf + totalFees + roiInDp;
         }
 
-        // RULE 6: DP Rounding
+        // RULE 7: DP Rounding
         if (dpExact > 0) dpRounded = Math.ceil(dpExact / 10) * 10; else dpRounded = dpExact; 
         
-        // RULE 7: Financial Breakdown calculations
         let extraVal = ((emi * inst) + dpRounded) - effectivePrice; 
         let dbdAmt = loan * dbdRate; let roiAmt = (loan * roiRateDP) + (loan * roiRate * inst); 
         let marginMoney = parseFloat(inp.margin) || 0; let roundupAdj = (dpRounded > dpExact) ? (dpRounded - dpExact) : 0; 
         let netDisb = effectivePrice - dpRounded - marginMoney - roundupAdj;
         let curLTV = currentTenure > 0 ? ((currentTenure - s.advEmi) / currentTenure) * 100 : 0; 
         
+        // Final Breaches
         let isInv50Breach = loan < minAllowedLoanByInvoice;
         let isRejected = isInv50Breach || isCapBreach || (curLTV > (c.ltv || 100)) || (prod.isNonTieup && (loan < s.minLoan || loan > s.maxLoan));
 
@@ -508,7 +474,7 @@ function recalcModel(pIdx) {
 }
 
 function renderCards(pIdx) {
-    let prod = current_products[pIdx];
+    let conf = sortConfigs[pIdx] || {key: 'dp', dir: 1}; let prod = current_products[pIdx];
     let vis = prod.calculatedData.sort((a,b) => a.isRejected - b.isRejected || (a.dp - b.dp) || (a.emi - b.emi));
     
     document.getElementById(`cards_${pIdx}`).innerHTML = vis.map(d => {
@@ -519,7 +485,7 @@ function renderCards(pIdx) {
         <div class="scheme-card ${d.isRejected?'rejected':''}" style="${d.inactive?'opacity:0.5; background:#f1f5f9;':''}">
             <div class="sc-header">
                 <span class="sc-badge">${d.currentTenure}/${d.advEmi} 
-                    ${d.isRejected?'<span style="color:var(--danger); font-size:10px;">🚫 Rej</span>':''} 
+                    ${d.isRejected?'<span style="color:var(--danger); font-size:10px;">🚫 Limit/Cap Exceeded</span>':''} 
                     ${d.inactive?'<span style="color:var(--warning); font-size:10px;">⏸ Disabled</span>':''}
                 </span>
                 <button onclick="openRowActionModal(${pIdx}, ${d.dIdx}, ${d.inactive})" style="background:var(--bg-color); color:var(--text-muted); border:1px solid var(--border); border-radius:6px; padding:4px 10px; font-size:11px; font-weight:700;">⚙️ Act</button>
@@ -558,17 +524,14 @@ function renderCards(pIdx) {
 }
 
 function updateManualLoan(pIdx, dIdx, val) {
-    let prod = current_products[pIdx]; 
-    if(!prod.inputs.manualLoans) prod.inputs.manualLoans = {};
+    let prod = current_products[pIdx]; if(!prod.inputs.manualLoans) prod.inputs.manualLoans = {};
     let loanVal = parseFloat(val) || 0; let effP = parseFloat(prod.inputs.inv) || 0;
-    
-    // Enforcement bounds
     if(loanVal < effP * 0.50) { loanVal = effP * 0.50; showToast("Loan cannot be < 50% Invoice!", "error"); }
-    if(loanVal > effP) { loanVal = effP; showToast("Loan cannot exceed Invoice!", "warning"); }
-    
+    if(loanVal > effP) { loanVal = effP; showToast("Loan cannot exceed Invoice Value!", "warning"); }
     prod.inputs.manualLoans[dIdx] = loanVal; recalcModel(pIdx); saveQueueToLocal();
 }
 
+/* === Action Modal & Image Share === */
 function openRowActionModal(pIdx, dIdx, isInactive) {
     let c = document.getElementById('rowActionButtons'); if(!c) return;
     c.innerHTML = `
@@ -586,16 +549,13 @@ function copySchemeText(pIdx, dIdx) {
     if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(txt).then(()=>showToast("Copied!")).catch(()=>showToast("Copy failed", "error")); } else { showToast("Copy Not Supported", "error"); }
 }
 
-/* === Generate Image & WhatsApp Web Share API === */
 function instantSingleQuote(pIdx) { window.tempImageGenIndices = [pIdx]; document.getElementById('custInfoPromptModal').style.display='flex'; }
-
 async function proceedGenerateImageAndWhatsAppShare() { document.getElementById('custInfoPromptModal').style.display='none'; await renderImage(true); }
 async function proceedGenerateImage() { document.getElementById('custInfoPromptModal').style.display='none'; await renderImage(false); }
 
 async function renderImage(shouldShare) {
     showToast("Generating Quote...", "success");
-    let wrap = document.createElement('div'); 
-    wrap.style.cssText = "width:600px; padding:30px; background:#fff; position:fixed; top:-9999px; font-family:'Poppins', sans-serif; color:#1e293b;";
+    let wrap = document.createElement('div'); wrap.style.cssText = "width:600px; padding:30px; background:#fff; position:fixed; top:-9999px; font-family:'Poppins', sans-serif; color:#1e293b;";
     
     let c = customerQueue[activeCustomerIndex]; let prods = window.tempImageGenIndices.map(i=>current_products[i]);
     let topInv = prods[0]?.inputs?.inv||0;
@@ -619,28 +579,25 @@ async function renderImage(shouldShare) {
             <tr style="background:#0369a1; color:#fff;"><th style="padding:10px; border:1px solid #0284c7;">Scheme</th><th style="padding:10px; border:1px solid #0284c7;">Net DP</th><th style="padding:10px; border:1px solid #0284c7;">EMI</th></tr>`;
         valid.forEach(d => {
             html += `<tr><td style="padding:10px; border:1px solid #cbd5e1; text-align:center; color:#1e293b;">${d.currentTenure}/${d.advEmi}</td><td style="padding:10px; border:1px solid #cbd5e1; text-align:center; color:#10b981;">₹${Math.round(d.dp).toLocaleString()}</td><td style="padding:10px; border:1px solid #cbd5e1; text-align:center; color:#2563eb;">₹${Math.round(d.emi).toLocaleString()} x ${d.inst}</td></tr>`;
-        });
-        html += `</table>`;
+        }); html += `</table>`;
     });
     
     if(!hasV) return showToast("No Eligible Schemes to Generate Quote!", "error");
 
     wrap.innerHTML = html; document.body.appendChild(wrap);
-    let canvas = await html2canvas(wrap, {scale:2, useCORS:true, backgroundColor:"#ffffff"}); 
-    document.body.removeChild(wrap);
+    let canvas = await html2canvas(wrap, {scale:2, useCORS:true, backgroundColor:"#ffffff"}); document.body.removeChild(wrap);
     let dataUrl = canvas.toDataURL("image/png");
     
     if (shouldShare && navigator.canShare) {
         try {
-            let blob = await (await fetch(dataUrl)).blob();
-            let file = new File([blob], "Bajaj_Quote.png", {type: "image/png"});
+            let blob = await (await fetch(dataUrl)).blob(); let file = new File([blob], "Bajaj_Quote.png", {type: "image/png"});
             await navigator.share({ files: [file], title: 'Bajaj Finserv Quote', text: `Quotation for ${c.name}` });
         } catch(e) { showToast("Share API Failed. Long press image to save.", "warning"); showImageInModal(dataUrl); }
     } else { showImageInModal(dataUrl); }
 }
 function showImageInModal(dataUrl) { document.getElementById('generatedImage').src = dataUrl; document.getElementById('imageViewerModal').style.display = 'flex'; }
 
-/* === GitHub API (Push config & execution) === */
+/* === GitHub API Config === */
 function openGithubConfig() { 
     let r = document.getElementById('ghRepoName'); if(r) r.value = localStorage.getItem('gh_repo')||"luckyjathar/testcalculator";
     let p = document.getElementById('ghPatToken'); if(p) p.value = localStorage.getItem('gh_pat')||"";
