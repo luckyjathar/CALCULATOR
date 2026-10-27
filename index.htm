@@ -5,10 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#f1f5f9">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Persistent Portal - FinTech Pro</title>
 
-    <!-- Google Fonts: Poppins (Premium Look) -->
+    <!-- Google Fonts & External Libraries -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -37,9 +36,8 @@
 
         h1, h2, h3, h4 { margin: 0; font-weight: 700; color: var(--text-main); }
         
-        /* Glassmorphism Header */
         header {
-            background: rgba(255, 255, 255, 0.9);
+            background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
             border-bottom: 1px solid var(--border);
             padding: 12px 16px;
@@ -49,16 +47,14 @@
 
         header h1 { font-size: 18px; color: var(--bajaj-blue); display: flex; align-items: center; gap: 6px; }
 
-        /* Modern Inputs */
-        label { font-size: 11px; font-weight: 600; color: var(--text-muted); margin-bottom: 4px; display: block; }
+        label { font-size: 11px; font-weight: 600; color: var(--text-muted); margin-bottom: 4px; display: block; text-transform: uppercase; }
         input[type="text"], input[type="number"], select, input[type="password"] {
-            width: 100%; padding: 12px; font-size: 14px; font-family: 'Poppins', sans-serif;
+            width: 100%; padding: 10px 12px; font-size: 14px; font-family: 'Poppins', sans-serif;
             border: 1px solid var(--border); border-radius: 8px; background: #fff; box-sizing: border-box;
-            transition: all 0.2s ease;
+            transition: all 0.2s ease; font-weight: 600;
         }
         input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); outline: none; }
 
-        /* Buttons */
         button {
             padding: 12px 16px; border: none; border-radius: 8px; font-family: 'Poppins', sans-serif;
             font-weight: 600; font-size: 14px; cursor: pointer; transition: transform 0.1s;
@@ -69,8 +65,7 @@
         .btn-danger { background: var(--danger); color: white; }
         .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-main); }
 
-        /* Chips Selector */
-        .chip-group { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+        .chip-group { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
         .chip {
             padding: 6px 12px; border: 1px solid var(--border); border-radius: 20px;
             font-size: 11px; font-weight: 600; color: var(--text-muted); cursor: pointer;
@@ -78,7 +73,6 @@
         }
         .chip.active { background: var(--bajaj-blue); color: #fff; border-color: var(--bajaj-blue); }
 
-        /* Floating Action Button (FAB) */
         .fab {
             position: fixed; bottom: 20px; right: 20px; background: var(--primary);
             color: white; width: 56px; height: 56px; border-radius: 50%;
@@ -88,7 +82,6 @@
         }
         .fab:active { transform: scale(0.9); }
 
-        /* Modals & Panels */
         .modal {
             display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%;
             background: rgba(15,23,42,0.6); backdrop-filter: blur(4px); align-items: center; justify-content: center;
@@ -104,7 +97,6 @@
             padding: 16px; margin-top: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
 
-        /* Scheme Cards (Replacing Tables) */
         .scheme-card {
             background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 12px;
             margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);
@@ -122,14 +114,12 @@
         .sc-footer { display: flex; flex-wrap: wrap; gap: 8px; font-size: 11px; font-weight: 500; color: var(--text-muted); align-items: center; }
         .sc-loan-input { width: 70px; padding: 4px; font-size: 14px; font-weight: 700; border: 1px solid var(--border); border-radius: 6px; text-align: center; color: var(--bajaj-blue); background: #f8fafc; }
 
-        /* Top Nav Box */
         .sticky-customer-bar {
             background: #1e293b; color: white; padding: 12px 16px; border-radius: 12px;
             margin: 12px 10px; display: flex; justify-content: space-between; align-items: center;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1); position: sticky; top: 65px; z-index: 90;
         }
 
-        /* Toast */
         .toast-notification {
             visibility: hidden; min-width: 250px; background-color: #1e293b; color: #fff; text-align: center;
             border-radius: 8px; padding: 14px; position: fixed; z-index: 100000; left: 50%; bottom: 30px;
@@ -138,6 +128,7 @@
         .toast-notification.show { visibility: visible; animation: fadein 0.3s, fadeout 0.3s 2.5s; }
         .toast-notification.success { background-color: var(--success); }
         .toast-notification.error { background-color: var(--danger); }
+        .toast-notification.warning { background-color: var(--warning); color:#000; }
         @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
         @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
 
@@ -147,35 +138,33 @@
 
 <div id="toastNotification" class="toast-notification"></div>
 
-<!-- FAB -->
 <div class="fab" onclick="openAddCustomerModal()" title="Add Customer">+</div>
 
 <header>
     <h1>Persistent Portal</h1>
     <div style="display: flex; gap: 8px;">
-        <button onclick="openGithubConfig()" class="btn-outline" style="padding: 8px;">⚙️</button>
-        <button onclick="openCustomerHistoryModal()" class="btn-outline" style="padding: 8px;">🕒 <span id="queueCountHome">0</span></button>
+        <button onclick="openGithubConfig()" class="btn-outline" style="padding: 8px; font-size: 12px;">⚙️ Setup</button>
+        <button onclick="openCustomerHistoryModal()" class="btn-outline" style="padding: 8px; font-size: 12px;">🕒 History (<span id="queueCountHome">0</span>)</button>
     </div>
 </header>
 
 <main style="padding: 10px;">
     
-    <!-- Home Dashboard -->
-    <div id="unifiedHome" style="text-align: center; margin-top: 40px;">
+    <div id="unifiedHome" style="text-align: center; margin-top: 40px; background:#fff; padding:30px 15px; border-radius:16px; border:1px solid var(--border); box-shadow:0 4px 12px rgba(0,0,0,0.02);">
         <h2 style="color:var(--bajaj-blue); margin-bottom: 20px;">Welcome to Pro Edition</h2>
-        <div id="masterDataStatusBadge" onclick="forceRefreshMasterData()" style="display: inline-block; padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; background: #fee2e2; color: var(--danger); cursor: pointer; margin-bottom: 20px;">
+        <div id="masterDataStatusBadge" onclick="forceRefreshMasterData()" style="display: inline-block; padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 700; background: #fee2e2; color: var(--danger); cursor: pointer; margin-bottom: 20px;">
             ⚠️ Master Data Missing (Tap to Sync)
         </div>
-        <p style="font-size: 13px; color: var(--text-muted);">Tap the + button to add a customer and start.</p>
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">Tap the + button to add a customer and start.</p>
         <input type="file" id="masterExcelFileInput" accept=".xlsx, .xls, .csv" style="display: none;" onchange="handleManualExcelUpload(event)">
+        <button onclick="document.getElementById('masterExcelFileInput').click()" class="btn-outline" style="font-size: 12px;">📂 Manual Upload Excel</button>
     </div>
 
-    <!-- Final Eligible Area -->
     <div id="finalEligibleArea" style="display: none; flex-direction: column;">
         
         <div class="sticky-customer-bar">
             <div>
-                <div id="infoName" style="font-size: 16px; font-weight: 700;">-</div>
+                <div id="infoName" style="font-size: 16px; font-weight: 700; text-transform:capitalize;">-</div>
                 <div style="font-size: 11px; color: #cbd5e1; margin-top: 2px;">
                     <span id="infoType" style="background:#f59e0b; color:#000; padding:2px 6px; border-radius:4px; font-weight:700;">NEW</span>
                     LTV: <span id="infoLtv">100%</span> | Cap: <span id="infoCap">None</span>
@@ -192,7 +181,6 @@
             <button onclick="goHome()" class="btn-outline" style="background:#fff;">Close</button>
         </div>
 
-        <!-- Add Product Panel -->
         <div id="addProductModal" class="inline-work-panel" style="display: none;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
                 <h3>Add New Product</h3>
@@ -203,12 +191,11 @@
                 <div id="modalMatrixSearchDropdown" style="position: absolute; width: 100%; background: #fff; z-index: 99; border: 1px solid var(--border); border-radius: 8px; display: none; max-height: 200px; overflow-y: auto; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-top:4px;"></div>
             </div>
             <div style="display:flex; gap:8px;">
-                <button onclick="quickNonTieup();" style="flex:1; background:#fef3c7; color:#d97706;">Non Tieup</button>
-                <button onclick="openMultiStackModal();" style="flex:1.2; background:#e0e7ff; color:#4338ca;">Manual Schemes</button>
+                <button onclick="quickNonTieup();" style="flex:1; background:#fef3c7; color:#d97706; font-size:12px;">Non Tieup</button>
+                <button onclick="openMultiStackModal();" style="flex:1.2; background:#e0e7ff; color:#4338ca; font-size:12px;">Manual Schemes</button>
             </div>
         </div>
 
-        <!-- Edit Components Panel (Progressive Disclosure) -->
         <div id="componentsModal" class="inline-work-panel" style="display: none;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
                 <h3 style="font-size:15px;"><span id="compModalHeadingText">Components</span> <span id="compPendingModelName" style="color:var(--primary); font-size:12px;"></span></h3>
@@ -217,10 +204,9 @@
             
             <div style="display:flex; gap:10px; margin-bottom:12px;">
                 <div style="flex:1;"><label>MRP ₹</label><input type="number" id="compMrp" oninput="compPriceChanged()"></div>
-                <div style="flex:1;"><label style="color:var(--danger);">Inv ₹ *</label><input type="number" id="compInv" oninput="compPriceChanged()" style="border-color:var(--danger); background:#fff5f5;"></div>
+                <div style="flex:1;"><label style="color:var(--danger);">Inv ₹ (Req)*</label><input type="number" id="compInv" oninput="compPriceChanged()" style="border-color:var(--danger); background:#fff5f5;"></div>
             </div>
 
-            <!-- Advanced Toggle -->
             <details style="margin-bottom: 16px; background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 10px;">
                 <summary style="font-size: 12px; font-weight: 700; color: var(--text-muted); cursor: pointer; outline: none;">⚙️ Advanced Charges & Cap</summary>
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top: 10px;">
@@ -230,6 +216,7 @@
                     <div><label>RFC ₹</label><select id="compRfc"><option value="0">0</option><option id="compRfcOpt" value="0">0</option></select></div>
                     <div><label>EXW ₹</label><input type="number" id="compExw"></div>
                     <div><label>Margin ₹</label><input type="number" id="compMargin"></div>
+                    <div><label>Dealer Contri ₹</label><input type="number" id="compDealer"></div>
                 </div>
             </details>
 
@@ -237,11 +224,27 @@
         </div>
 
         <div id="catSelectionModal" class="inline-work-panel" style="display: none;">
-            <h3>Select Category</h3>
-            <div id="categoryGrid" style="display:grid; grid-template-columns: repeat(2, 1fr); gap:8px; margin-top:12px;"></div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
+                <h3>Select Category</h3>
+                <span onclick="document.getElementById('catSelectionModal').style.display='none'" style="color:var(--danger); font-weight:bold; cursor:pointer;">✖</span>
+            </div>
+            <div id="categoryGrid" style="display:grid; grid-template-columns: repeat(2, 1fr); gap:8px;"></div>
         </div>
 
-        <!-- Calculated Matrix Area -->
+        <div id="multiStackModal" class="inline-work-panel" style="display: none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
+                <h3>Manual Product</h3>
+                <span onclick="closeMultiStackModal()" style="color:var(--danger); font-weight:bold; cursor:pointer;">✖</span>
+            </div>
+            <label>Model Name</label>
+            <input type="text" id="multiStackModelName" placeholder="Enter Product Name" style="margin-bottom:12px;">
+            <div id="stackInputsContainer"></div>
+            <div style="display:flex; gap:8px; margin-top:12px;">
+                <button onclick="processMultiStack()" class="btn-success" style="flex:2;">Proceed</button>
+                <button onclick="closeMultiStackModal()" class="btn-outline" style="flex:1;">Cancel</button>
+            </div>
+        </div>
+
         <div id="multiModelContainer" style="margin: 0 10px;"></div>
     </div>
 
@@ -249,7 +252,6 @@
     <div id="addCustomerModal" class="modal">
         <div class="modal-content">
             <h3 style="margin-bottom: 16px; border-bottom:1px solid #eee; padding-bottom:8px;">Add Customer</h3>
-            <input type="hidden" id="cqMobile">
             
             <label>Customer Name</label>
             <input type="text" id="cqName" placeholder="Enter Name" style="margin-bottom: 12px;">
@@ -266,7 +268,7 @@
             <input type="number" id="cqLimit" placeholder="₹ Limit" style="margin-bottom: 12px; font-weight:bold; color:var(--primary); font-size:16px;">
             
             <div style="display:flex; gap:10px; margin-bottom:20px;">
-                <div style="flex:1;"><label>LTV %</label><input type="number" id="cqLtv" value="100" max="100"></div>
+                <div style="flex:1;"><label>Max LTV %</label><input type="number" id="cqLtv" value="100" max="100"></div>
                 <div style="flex:1;"><label>EMI Cap ₹</label><input type="number" id="cqCap" placeholder="Optional"></div>
             </div>
 
@@ -281,19 +283,68 @@
         <div class="modal-content">
             <div style="display: flex; justify-content: space-between; margin-bottom: 12px; border-bottom:1px solid #eee; padding-bottom:8px;">
                 <h3>History</h3>
-                <span onclick="closeCustomerHistoryModal()" style="color:var(--danger); font-weight:bold; cursor:pointer;">✖</span>
+                <div style="display:flex; gap:10px;">
+                    <button onclick="openRecycleBin()" class="btn-outline" style="padding:4px 8px; font-size:12px;">🗑️ Bin</button>
+                    <span onclick="closeCustomerHistoryModal()" style="color:var(--danger); font-weight:bold; cursor:pointer;">✖</span>
+                </div>
             </div>
-            <input type="text" id="queueSearch" placeholder="Search..." oninput="renderCustomerQueue()" style="margin-bottom: 12px;">
+            <input type="text" id="queueSearch" placeholder="Search Customers..." oninput="renderCustomerQueue()" style="margin-bottom: 12px;">
             <div id="customerQueueList" style="display:flex; flex-direction:column; gap:8px;"></div>
         </div>
     </div>
 
-    <!-- Quote Prompt Modal -->
+    <div id="editCustomerModal" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 16px; border-bottom:1px solid #eee; padding-bottom:8px;">Edit Customer</h3>
+            <label>Customer Name</label><input type="text" id="ecName" style="margin-bottom: 12px;">
+            <label>Customer Type</label>
+            <select id="ecType" style="margin-bottom: 12px;">
+                <option value="NEW">NEW</option>
+                <option value="EMI CARD">EMI CARD</option>
+                <option value="VIRTUAL">VIRTUAL</option>
+                <option value="W/O CARD">W/O CARD</option>
+            </select>
+            <label>NBFC Limit ₹</label><input type="number" id="ecLimit" style="margin-bottom: 12px;">
+            <div style="display:flex; gap:10px; margin-bottom:20px;">
+                <div style="flex:1;"><label>Max LTV %</label><input type="number" id="ecLtv" max="100"></div>
+                <div style="flex:1;"><label>EMI Cap ₹</label><input type="number" id="ecCap"></div>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <button onclick="saveCustomerEdit()" class="btn-success" style="flex:2;">Save Changes</button>
+                <button onclick="closeCustomerEdit()" class="btn-outline" style="flex:1;">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="recycleBinModal" class="modal">
+        <div class="modal-content">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 12px; border-bottom:1px solid #eee; padding-bottom:8px;">
+                <h3 style="color:var(--danger);">Recycle Bin</h3>
+                <button onclick="emptyRecycleBin()" class="btn-danger" style="padding:4px 8px; font-size:12px;">Empty All</button>
+            </div>
+            <div id="recycleBinList" style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;"></div>
+            <button onclick="closeRecycleBin()" class="btn-outline" style="width:100%;">Close</button>
+        </div>
+    </div>
+
+    <div id="githubConfigModal" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 12px;">⚙️ GitHub Setup</h3>
+            <p style="font-size:11px; color:var(--text-muted); margin-bottom:12px;">GitHub details to push schemes directly.</p>
+            <label>GitHub Repo</label><input type="text" id="ghRepoName" placeholder="user/repo" style="margin-bottom:12px;">
+            <label>Personal Access Token (PAT)</label><input type="password" id="ghPatToken" placeholder="ghp_..." style="margin-bottom:16px;">
+            <div style="display:flex; gap:8px;">
+                <button onclick="saveGithubConfig()" class="btn-success" style="flex:2;">Save</button>
+                <button onclick="closeGithubConfig()" class="btn-outline" style="flex:1;">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <div id="custInfoPromptModal" class="modal">
         <div class="modal-content" style="text-align:center;">
             <h3 style="margin-bottom: 16px;">Quote Ready!</h3>
-            <button onclick="proceedGenerateImageAndWhatsAppShare()" class="btn-success" style="width:100%; margin-bottom:10px; font-size:15px;">📲 Share Directly to WhatsApp</button>
-            <button onclick="proceedGenerateImage()" class="btn-outline" style="width:100%; margin-bottom:10px;">View Image Only</button>
+            <button onclick="proceedGenerateImageAndWhatsAppShare()" class="btn-success" style="width:100%; margin-bottom:10px; font-size:14px;">📲 Share Directly to WhatsApp</button>
+            <button onclick="proceedGenerateImage()" class="btn-primary" style="width:100%; margin-bottom:10px; font-size:14px;">View Image Only</button>
             <button onclick="document.getElementById('custInfoPromptModal').style.display='none'" class="btn-outline" style="width:100%; border-color:var(--danger); color:var(--danger);">Cancel</button>
         </div>
     </div>
@@ -304,14 +355,21 @@
         <div style="width:100%; text-align:center;"><img id="generatedImage" src="" alt="Quotation" style="max-width:90%; max-height:75vh; border:1px solid #ccc; border-radius:12px; margin-top:10px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);"></div>
     </div>
 
+    <div id="rowActionModal" class="modal">
+        <div class="modal-content">
+            <h3 style="text-align:center; border:none; margin-bottom:16px;">Select Action</h3>
+            <div id="rowActionButtons" style="display:flex; flex-direction:column; gap:10px;"></div>
+            <button onclick="closeRowActionModal()" class="btn-outline" style="width:100%; margin-top:10px;">Cancel</button>
+        </div>
+    </div>
+
 </main>
 
 <script>
-    // Chip Logic Helper
     function setChip(inputId, value, element) {
         document.getElementById(inputId).value = value;
         let siblings = element.parentElement.children;
-        for(let i=0; i<siblings.length; i++) { siblings[i].classList.remove('active'); }
+        for(let i=0; i<siblings.length; i++) siblings[i].classList.remove('active');
         element.classList.add('active');
     }
 </script>
