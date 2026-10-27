@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#0f172a">
+    <meta name="theme-color" content="#0056b3">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Persistent Portal">
 
-    <title>Persistent Portal V76.44 - Pro Edition</title>
+    <title>Persistent Portal - Basic Edition</title>
 
     <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -16,86 +16,175 @@
 
     <style>
         /* =========================================
-           MODERN DARK THEME & COMPACT LAYOUT
+           BASIC, CLEAN & SIMPLE UI (LIGHT THEME)
            ========================================= */
         :root {
-            --bg-dark: #0f172a;
-            --panel-bg: #1e293b;
-            --border-color: #334155;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
+            /* Standard Colors */
+            --bajaj-blue: #0056b3;
+            --primary: #0d6efd;
+            --success: #198754;
+            --danger: #dc3545;
+            --warning: #ffc107;
+            --indigo: #6610f2;
             
-            --bajaj-blue: #38bdf8;
-            --primary: #2563eb;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-            --indigo: #818cf8;
+            /* Backgrounds & Text */
+            --bg-color: #f4f6f9;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --text-muted: #6c757d;
+            --border-color: #ced4da;
+
+            /* Compatibility vars for JS */
+            --panel-bg: #ffffff;
+            --bg-dark: #f8f9fa;
+            --text-main: #333333;
         }
 
-        body { 
-            overflow-x: hidden; 
-            background-color: var(--bg-dark);
-            color: var(--text-main);
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: Arial, Helvetica, sans-serif;
             margin: 0;
             padding: 0;
-            letter-spacing: 0.3px;
+            font-size: 14px;
         }
 
-        h1, h2, h3, h4, label, button, th, .disclaimer-box, input::placeholder {
+        h1, h2, h3, h4, label, button, th {
             text-transform: capitalize;
-            font-weight: 700;
         }
 
+        /* Header */
         header {
-            background: var(--panel-bg) !important;
-            border-bottom: 2px solid var(--border-color) !important;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            flex-wrap: wrap; 
-            padding: 12px 15px; 
-            gap: 12px;
+            background-color: var(--card-bg);
+            border-bottom: 2px solid var(--bajaj-blue);
+            padding: 12px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
-        
         header h1 {
-            color: var(--bajaj-blue) !important;
-            margin: 0; 
-            font-size: 20px; 
-            display: flex; 
-            align-items: center; 
-            gap: 8px;
+            margin: 0;
+            color: var(--bajaj-blue);
+            font-size: 20px;
         }
 
+        /* Basic Inputs & Labels */
         label {
-            font-size: 11px !important;
-            color: var(--text-muted);
+            font-size: 12px;
+            font-weight: bold;
+            color: #555;
             display: block;
-            margin-bottom: 4px;
-            letter-spacing: 0.5px;
+            margin-bottom: 3px;
+        }
+        input[type="text"], input[type="number"], input[type="search"], input[type="date"], select, input[type="password"] {
+            width: 100%;
+            padding: 8px 10px;
+            margin-bottom: 5px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 14px;
+            background-color: #fff;
+            color: #000;
+        }
+        input:focus, select:focus {
+            border-color: var(--primary);
+            outline: none;
         }
 
-        input[type="text"], input[type="number"], input[type="search"], input[type="date"], select {
+        /* Flat Buttons */
+        button {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 13px;
+            color: white;
+        }
+        button:active { opacity: 0.8; }
+
+        /* Container Modals & Panels */
+        .modal-content, .inline-work-panel {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 15px;
+            box-shadow: 0px 2px 8px rgba(0,0,0,0.1);
+            color: var(--text-color);
+        }
+        .inline-work-panel {
+            margin-top: 15px;
             width: 100%;
             box-sizing: border-box;
-            padding: 10px 12px !important;
-            font-size: 14px !important;
-            background: #0f172a !important;
-            color: #e2e8f0 !important;
-            border: 1px solid var(--border-color) !important;
-            border-radius: 6px !important;
-            min-height: 42px !important;
-            outline: none;
-            transition: border-color 0.2s;
         }
-        
-        input:focus, select:focus {
-            border-color: var(--bajaj-blue) !important;
-            box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+        .modal-content h3, .inline-work-panel h3 {
+            margin-top: 0;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 8px;
+            color: var(--bajaj-blue);
         }
 
+        /* Product Matrix Cards */
+        .premium-model-panel {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            margin-bottom: 15px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .pmp-header-bar {
+            background: #e9ecef;
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            font-weight: bold;
+        }
+        .pmp-model-left {
+            color: var(--bajaj-blue);
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .val-summary-bar {
+            background: #f8f9fa;
+            padding: 8px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        .val-chip {
+            background: #fff;
+            border: 1px solid #ccc;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            color: #333;
+        }
+
+        /* Basic Table */
+        .pmp-table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+        }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid var(--border-color); padding: 8px 5px; text-align: center; }
+        th { background-color: #f1f3f5; font-size: 12px; color: #495057; }
+        td { background-color: #fff; font-size: 14px; }
+        tr:nth-child(even) td { background-color: #fcfcfc; }
+
+        [id^="dp_"], [id^="emi_"] { font-weight: bold; color: var(--primary) !important; }
+
+        /* Modal Background */
         .modal {
             display: none;
             position: fixed;
@@ -104,239 +193,39 @@
             top: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0,0,0,0.8);
+            background-color: rgba(0,0,0,0.6); 
             align-items: center;
             justify-content: center;
         }
 
-        .modal-content, .inline-work-panel {
-            background: var(--panel-bg) !important;
-            border: 1px solid var(--border-color) !important;
-            border-radius: 12px !important;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.6) !important;
-            color: var(--text-main);
-            padding: 15px;
-        }
-        
-        .inline-work-panel {
-            padding: 12px !important;
-            margin-top: 10px !important;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        .modal-content h3, .inline-work-panel h3 {
-            color: var(--text-main) !important;
-            border-bottom: 1px solid var(--border-color) !important;
-            padding-bottom: 6px;
-        }
-
-        button {
-            border-radius: 6px !important;
-            font-weight: 800 !important;
-            letter-spacing: 0.5px;
-            transition: all 0.2s ease;
-            cursor: pointer;
-        }
-        button:active {
-            transform: scale(0.96);
-        }
-
-        .premium-model-panel {
-            background: var(--panel-bg) !important;
-            border: 1px solid var(--border-color) !important;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.5) !important;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        .pmp-header-bar {
-            background: #1e293b !important;
-            border-bottom: 1px solid var(--border-color) !important;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 10px;
-            min-height: 36px;
-        }
-        
-        .pmp-model-left {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 13px;
-            font-weight: 900;
-            color: var(--text-main);
-            cursor: pointer;
-        }
-
-        .pmp-actions-right {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .model-action-icon {
-            border-radius: 4px !important;
-            width: 24px !important;
-            height: 24px !important;
-            font-size: 11px !important;
-            display: inline-flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            border: none;
-        }
-        .model-edit-icon { background: var(--primary) !important; color: white !important; }
-        .model-close-icon { background: var(--danger) !important; color: white !important; }
-        .model-add-icon { background: var(--success) !important; color: white !important; }
-
-        .val-summary-bar {
-            background: #0f172a !important;
-            border-bottom: 1px solid var(--border-color) !important;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            padding: 8px 10px;
-            align-items: center;
-        }
-
-        .val-chip {
-            background: #1e293b !important;
-            border: 1px solid var(--border-color) !important;
-            color: #e2e8f0 !important;
-            border-radius: 5px;
-            padding: 3px 8px;
-            font-size: 11px;
-            font-weight: 800;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .val-chip b { color: var(--bajaj-blue) !important; }
-
-        .pmp-table-wrapper {
-            width: 100%;
-            overflow: hidden;
-        }
-        
-        .pmp-table-wrapper table {
-            width: 100%;
-            table-layout: fixed;
-            border-collapse: collapse;
-        }
-
-        .pmp-table-wrapper th {
-            background: #334155 !important;
-            color: #f8fafc !important;
-            border-bottom: 2px solid var(--bajaj-blue) !important;
-            font-size: 11px;
-            padding: 10px 4px;
-        }
-        
-        .pmp-table-wrapper tr {
-            background: var(--panel-bg) !important;
-            color: var(--text-main) !important;
-            border-bottom: 1px solid var(--border-color) !important;
-        }
-        
-        .pmp-table-wrapper tr:nth-child(even) {
-            background: #172033 !important; 
-        }
-
-        .pmp-table-wrapper td {
-            color: var(--text-main) !important;
-        }
-
-        [id^="dp_"], [id^="emi_"] {
-            color: var(--bajaj-blue) !important;
-            font-size: 16px !important;
-            font-weight: 900;
-        }
-
-        .single-line-cust-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-bottom: 12px;
-        }
-
         #unifiedHome {
-            background: var(--panel-bg) !important;
-            border: 1px solid var(--border-color) !important;
-            padding: 30px 15px; 
-            text-align: center; 
-            border-radius: 8px; 
-            margin: 15px 0;
-        }
-        #unifiedHome h2 { color: var(--text-main) !important; margin-bottom: 25px;}
-
-        .custom-scroll::-webkit-scrollbar { width: 6px; }
-        .custom-scroll::-webkit-scrollbar-track { background: var(--bg-dark); }
-        .custom-scroll::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
-
-        .toast-notification {
-            visibility: hidden;
-            min-width: 250px;
-            background-color: #333;
-            color: #fff;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 30px 15px;
             text-align: center;
             border-radius: 6px;
-            padding: 16px;
-            position: fixed;
-            z-index: 100000;
-            left: 50%;
-            bottom: 30px;
-            transform: translateX(-50%);
-            font-weight: bold;
+            margin: 15px 0;
+        }
+
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+
+        .toast-notification {
+            visibility: hidden; min-width: 250px; background-color: #333; color: #fff; text-align: center;
+            border-radius: 6px; padding: 12px; position: fixed; z-index: 100000; left: 50%; bottom: 30px;
+            transform: translateX(-50%); font-weight: bold;
         }
         .toast-notification.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
         .toast-notification.success { background-color: var(--success); }
         .toast-notification.error { background-color: var(--danger); }
         .toast-notification.warning { background-color: var(--warning); color: #000; }
-
         @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
         @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
 
-        #imageViewerModal img {
-            max-width: 90%;
-            max-height: 80vh;
-            border: 4px solid var(--border-color);
-            border-radius: 8px;
-            margin-top: 15px;
-        }
-        .close-img-btn {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: var(--danger);
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            font-size: 18px;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
         @media (max-width: 768px) {
-            header { padding: 12px !important; flex-direction: column; align-items: flex-start !important; }
-            
-            .modal-content {
-                width: 95% !important;
-                padding: 15px !important;
-                border-radius: 12px !important;
-                max-height: 90vh;
-                overflow-y: auto;
-            }
-
-            #manualModal .modal-content > div:nth-child(3),
-            #editCustomerModal .modal-content > div:nth-child(5),
-            #editSchemeModal .modal-content > div:nth-child(3),
-            .inline-work-panel > div[style*="grid-template-columns"] {
-                grid-template-columns: 1fr !important;
-                gap: 12px !important;
-            }
+            header { flex-direction: column; align-items: flex-start; }
+            .modal-content { width: 95%; padding: 15px; max-height: 90vh; overflow-y: auto; }
         }
     </style>
 </head>
@@ -346,11 +235,11 @@
 
 <div id="customConfirmModal" class="modal" style="z-index: 99998;">
     <div class="modal-content" style="max-width: 320px; text-align: center;">
-        <h3 style="margin-top:0; color:var(--bajaj-blue);" id="confirmTitle">Confirm</h3>
+        <h3 style="margin-top:0;" id="confirmTitle">Confirm</h3>
         <p id="confirmMessage" style="font-size:14px; margin-bottom:20px; font-weight:bold;"></p>
         <div style="display:flex; gap:10px;">
-            <button id="confirmYesBtn" style="flex:1; background:var(--success); color:white; padding:10px; font-size:14px !important; border:none;">Yes</button>
-            <button id="confirmNoBtn" style="flex:1; background:var(--danger); color:white; padding:10px; font-size:14px !important; border:none;">No</button>
+            <button id="confirmYesBtn" style="flex:1; background:var(--success);">Yes</button>
+            <button id="confirmNoBtn" style="flex:1; background:var(--danger);">No</button>
         </div>
     </div>
 </div>
@@ -359,15 +248,15 @@
     <div class="modal-content" style="max-width: 320px; text-align: center;">
         <h3 style="margin-top:0; color:var(--danger);" id="alertTitle">Notice</h3>
         <p id="alertMessage" style="font-size:14px; margin-bottom:10px; font-weight:bold;"></p>
-        <textarea id="alertTextarea" readonly style="width:100%; height:100px; font-size:12px; margin-bottom:10px; display:none; border:1px dashed #ccc; padding:5px; border-radius:4px; background:var(--bg-dark); color:white;"></textarea>
-        <button onclick="document.getElementById('customAlertModal').style.display='none'" style="width:100%; background:var(--primary); color:white; padding:10px; font-size:14px !important; border:none;">Ok</button>
+        <textarea id="alertTextarea" readonly style="width:100%; height:100px; display:none; border:1px solid #ccc;"></textarea>
+        <button onclick="document.getElementById('customAlertModal').style.display='none'" style="width:100%; background:var(--primary);">Ok</button>
     </div>
 </div>
 
 <div id="githubConfigModal" class="modal" style="z-index: 99999;">
     <div class="modal-content" style="max-width:320px;">
-        <h3 style="margin-top:0; color:var(--indigo);">⚙️ GitHub Setup</h3>
-        <p style="font-size:11px; color:var(--text-muted); margin-bottom:12px;">Direct Portal varun Master Excel update karnyasathi GitHub details taka.</p>
+        <h3 style="margin-top:0;">⚙️ GitHub Setup</h3>
+        <p style="font-size:11px; color:#555; margin-bottom:12px;">Direct Portal varun Master Excel update karnyasathi GitHub details taka.</p>
         <div style="margin-bottom:8px;">
             <label>GitHub Repo</label>
             <input type="text" id="ghRepoName" placeholder="e.g. luckyjathar/testcalculator">
@@ -377,8 +266,8 @@
             <input type="password" id="ghPatToken" placeholder="ghp_xxxxxxxxxxxx">
         </div>
         <div style="display:flex; gap:8px;">
-            <button onclick="saveGithubConfig()" style="flex:2; background:var(--success); color:white; border:none; padding:10px;">Save Setup</button>
-            <button onclick="closeGithubConfig()" style="flex:1; background:var(--danger); color:white; border:none; padding:10px;">Cancel</button>
+            <button onclick="saveGithubConfig()" style="flex:2; background:var(--success);">Save Setup</button>
+            <button onclick="closeGithubConfig()" style="flex:1; background:var(--danger);">Cancel</button>
         </div>
     </div>
 </div>
@@ -386,29 +275,27 @@
 <header>
     <h1>Persistent Portal</h1>
     <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-        <button onclick="openGithubConfig()" style="background: transparent; border: 1px solid var(--border-color); color:var(--text-main); border-radius: 5px; padding: 6px 10px; font-size: 14px;" title="GitHub API Setup">⚙️</button>
-        <div id="masterDataStatusBadge" onclick="forceRefreshMasterData()" title="Tap to Sync from GitHub" style="cursor: pointer; font-weight: 900; font-size: 11px; background: rgba(239, 68, 68, 0.2); color: var(--danger); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--danger); text-align: center; white-space: nowrap;">
+        <button onclick="openGithubConfig()" style="background: transparent; color: #333; border: 1px solid #ccc; font-size: 14px;">⚙️ Setup</button>
+        <div id="masterDataStatusBadge" onclick="forceRefreshMasterData()" style="cursor: pointer; font-weight: bold; font-size: 11px; background: #f8d7da; color: var(--danger); padding: 8px 12px; border-radius: 4px; border: 1px solid var(--danger);">
             ⚠️ No Master Data
         </div>
         <input type="file" id="masterExcelFileInput" accept=".xlsx, .xls, .csv" style="display: none;" onchange="handleManualExcelUpload(event)">
-        <button onclick="document.getElementById('masterExcelFileInput').click()" style="background: var(--primary); color: white; border: none; padding: 8px 14px; border-radius: 6px; display: flex; align-items: center; gap: 6px; font-size: 12px; white-space: nowrap;">
-            📂 Upload Master Excel
-        </button>
+        <button onclick="document.getElementById('masterExcelFileInput').click()" style="background: var(--primary);">📂 Upload Excel</button>
     </div>
 </header>
 
 <main style="padding: 10px;">
     <div id="unifiedHome">
-        <h2>Welcome to Persistent Portal</h2>
-        <button onclick="openAddCustomerModal()" style="background: var(--success); color: white; border: none; padding: 14px 20px; width: 100%; max-width: 280px; margin-bottom: 12px;">➕ Add New Customer</button>
+        <h2 style="color:var(--bajaj-blue);">Welcome to Persistent Portal</h2>
+        <button onclick="openAddCustomerModal()" style="background: var(--success); padding: 12px 20px; width: 100%; max-width: 280px; margin-bottom: 12px;">➕ Add New Customer</button>
         <br>
-        <button onclick="openCustomerHistoryModal()" style="background: var(--bajaj-blue); color: white; border: none; padding: 14px 20px; width: 100%; max-width: 280px;">🕒 View History (<span id="queueCountHome">0</span>)</button>
+        <button onclick="openCustomerHistoryModal()" style="background: var(--bajaj-blue); padding: 12px 20px; width: 100%; max-width: 280px;">🕒 View History (<span id="queueCountHome">0</span>)</button>
     </div>
 
     <div id="addCustomerModal" class="modal">
         <div class="modal-content" style="max-width: 320px;">
-            <h3 style="margin-top:0; color:var(--primary);">Add New Customer</h3>
-            <div style="display:none;"><input type="text" id="cqMobile" maxlength="10" oninput="checkDuplicateMobile(this.value)"><div id="mobileDupWarning" style="color: var(--danger); font-size: 11px !important; font-weight: 900; display: none;"></div></div>
+            <h3>Add New Customer</h3>
+            <div style="display:none;"><input type="text" id="cqMobile" maxlength="10" oninput="checkDuplicateMobile(this.value)"><div id="mobileDupWarning" style="color: red; font-size: 11px; display: none;"></div></div>
             <div style="margin-bottom:8px;"><label>Customer Name</label><input type="text" id="cqName" placeholder="Name"></div>
             <div style="margin-bottom:8px;"><label>Type</label>
                 <select id="cqType">
@@ -420,188 +307,178 @@
                 </select>
             </div>
             <div style="margin-bottom:8px;"><label>NBFC Limit ₹</label><input type="number" id="cqLimit" placeholder="₹ Limit"></div>
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:15px;">
-                <div><label>Max LTV %</label><input type="number" id="cqLtv" placeholder="%" max="100" oninput="if(this.value>100)this.value=100;"></div>
-                <div><label>EMI Cap</label><input type="number" id="cqCap" placeholder="₹ Max"></div>
+            <div style="display:flex; gap:8px; margin-bottom:15px;">
+                <div style="flex:1;"><label>Max LTV %</label><input type="number" id="cqLtv" placeholder="%" max="100"></div>
+                <div style="flex:1;"><label>EMI Cap</label><input type="number" id="cqCap" placeholder="₹ Max"></div>
             </div>
             <div style="display:flex; gap:8px;">
-                <button onclick="addCustomerToQueue()" style="flex:2; background:var(--success); color:white; border:none; padding:10px;">Save & Select</button>
-                <button onclick="closeAddCustomerModal()" style="flex:1; background:var(--danger); color:white; border:none; padding:10px;">Cancel</button>
+                <button onclick="addCustomerToQueue()" style="flex:2; background:var(--success);">Save & Select</button>
+                <button onclick="closeAddCustomerModal()" style="flex:1; background:var(--danger);">Cancel</button>
             </div>
         </div>
     </div>
 
     <div id="finalEligibleArea" style="display: none; flex-direction: column; margin-top: 10px;">
-        <div style="display: flex; margin-top: 4px; border-top: 2px dashed var(--border-color); padding-top: 8px; gap: 6px;">
-            <button onclick="openAddCustomerModal()" style="flex:1; background:var(--success); color:white; border:none; padding:8px; font-size:12px;">➕ Add Customer</button>
-            <select id="finalCustomerSwitcher" onchange="switchCustomerFinal(this.value)" style="flex:1.5; font-weight:bold; color:var(--bajaj-blue); padding:4px;"></select>
-            <button onclick="goHome()" style="flex:0.8; background:var(--danger); color:white; border:none; padding:8px; font-size:12px;">Close View</button>
-            <button onclick="openCustomerHistoryModal()" style="flex:0.8; background:var(--indigo); color:white; border:none; padding:8px; font-size:12px;">🕒 History (<span id="queueCount">0</span>)</button>
+        <div style="display: flex; gap: 6px; margin-bottom:10px;">
+            <button onclick="openAddCustomerModal()" style="flex:1; background:var(--success);">➕ Add Customer</button>
+            <select id="finalCustomerSwitcher" onchange="switchCustomerFinal(this.value)" style="flex:1.5; font-weight:bold; margin-bottom:0;"></select>
+            <button onclick="goHome()" style="flex:0.8; background:var(--danger);">Close</button>
+            <button onclick="openCustomerHistoryModal()" style="flex:0.8; background:var(--indigo);">🕒 History</button>
         </div>
 
-        <div style="background: #172033; border-radius: 8px; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border-color); margin: 12px 0;">
-            <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
-                <div style="width: 38px; height: 38px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 18px; flex-shrink: 0;">👤</div>
-                <div style="display: flex; flex-direction: column; gap: 4px; width: 100%;">
-                    <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-                        <span id="infoName" style="font-size: 15px; font-weight: 900; color:var(--text-main);">-</span>
-                        <div style="display: flex; align-items: center; gap: 6px;">
-                            <button onclick="openQuoteSelectionModal()" style="background: var(--primary); color: white; border: none; padding: 4px 8px; font-size: 11px;">Gen Quote</button>
-                            <div style="text-align: right; background: rgba(0,0,0,0.3); padding: 2px 10px; border-radius: 4px; border-right: 3px solid var(--success);">
-                                <div style="font-size: 8px; color: var(--text-muted);">Approved Limit</div>
-                                <div id="infoLimit" style="font-size: 15px; font-weight: 900; color: var(--success);">₹0</div>
-                            </div>
-                        </div>
+        <div style="background: #f1f3f5; border: 1px solid #dee2e6; border-radius: 6px; padding: 10px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <div style="display:flex; flex-direction:column; gap:4px; width:100%;">
+                <div style="display:flex; justify-content:space-between;">
+                    <span id="infoName" style="font-weight: bold; font-size:15px;">-</span>
+                    <button onclick="openQuoteSelectionModal()" style="background:var(--primary); font-size:11px; padding:4px 8px;">Gen Quote</button>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div style="font-size:11px;">
+                        <span id="infoType" style="background:var(--warning); padding:2px 4px; border-radius:3px; color:#000;">NEW</span>
+                        <span>LTV: <span id="infoLtv">100%</span></span> | 
+                        <span>Cap: <span id="infoCap">None</span></span>
                     </div>
-                    <div style="display: flex; gap: 8px; font-size: 10px; font-weight: 900; flex-wrap: wrap;">
-                        <span id="infoType" style="background: var(--warning); padding: 2px 6px; border-radius: 4px; color: #000;">NEW</span>
-                        <span style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px;">LTV: <span id="infoLtv">100%</span></span>
-                        <span style="border: 1px dashed rgba(255,255,255,0.3); padding: 2px 6px; border-radius: 4px;">Cap: <span id="infoCap">None</span></span>
+                    <div style="text-align:right; font-size:11px;">
+                        Limit: <strong id="infoLimit" style="color:var(--success); font-size:14px;">₹0</strong>
                     </div>
                 </div>
             </div>
         </div>
 
-        <button onclick="openAddProductModal()" style="width: 100%; background:var(--warning); color:#000; padding:10px; border:none; margin-bottom:8px;">➕ Add New Product</button>
+        <button onclick="openAddProductModal()" style="width: 100%; background:var(--warning); color:#000; padding:10px; margin-bottom:8px;">➕ Add New Product</button>
 
+        <!-- Inline Panels -->
         <div id="addProductModal" class="inline-work-panel" style="display: none;">
-            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid var(--border-color); padding-bottom: 6px; margin-bottom: 10px;">
-                <h3 style="margin:0; color:var(--bajaj-blue);">Add New Product</h3>
-                <button onclick="document.getElementById('addProductModal').style.display='none'" style="background:none; border:none; color:var(--danger);">✖ Close</button>
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid #ccc; padding-bottom: 6px; margin-bottom: 10px;">
+                <h3 style="border:none; margin:0; padding:0;">Add New Product</h3>
+                <button onclick="document.getElementById('addProductModal').style.display='none'" style="background:transparent; color:var(--danger); padding:0;">✖ Close</button>
             </div>
             <div style="position:relative; margin-bottom: 12px;">
                 <label>Search Model</label>
-                <input type="text" id="modalMatrixSearch" autocomplete="off"
-                    oninput="doSearch('modalMatrixSearch', 'modalMatrixSearchDropdown')"
-                    onfocus="doSearch('modalMatrixSearch', 'modalMatrixSearchDropdown')"
-                    placeholder="Type Model Name...">
-                <div id="modalMatrixSearchDropdown" class="custom-scroll" style="position: relative; width: 100%; background: var(--panel-bg); z-index: 9999; border: 1px solid var(--border-color); display: none; max-height: 220px; overflow-y: auto; margin-top: 6px;"></div>
+                <input type="text" id="modalMatrixSearch" autocomplete="off" oninput="doSearch('modalMatrixSearch', 'modalMatrixSearchDropdown')" placeholder="Type Model Name...">
+                <div id="modalMatrixSearchDropdown" class="custom-scroll" style="position: absolute; width: 100%; background: #fff; z-index: 99; border: 1px solid #ccc; display: none; max-height: 200px; overflow-y: auto;"></div>
             </div>
             <div style="display:flex; gap:8px;">
-                <button onclick="quickNonTieup();" style="flex:1; background:var(--warning); color:#000; padding:10px; border:none;">Non Tieup</button>
-                <button onclick="openMultiStackModal();" style="flex:1.2; background:var(--indigo); color:white; padding:10px; border:none;">Manual 10 Schemes</button>
+                <button onclick="quickNonTieup();" style="flex:1; background:var(--warning); color:#000;">Non Tieup</button>
+                <button onclick="openMultiStackModal();" style="flex:1.2; background:var(--indigo);">Manual Schemes</button>
             </div>
         </div>
 
         <div id="catSelectionModal" class="inline-work-panel" style="display: none;">
-            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid var(--border-color); padding-bottom: 6px; margin-bottom: 10px;">
-                <h3 style="margin:0; color:var(--indigo);">Select Non-Tieup Category</h3>
-                <button onclick="document.getElementById('catSelectionModal').style.display='none'" style="background:none; border:none; color:var(--danger);">✖ Close</button>
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid #ccc; padding-bottom: 6px; margin-bottom: 10px;">
+                <h3 style="border:none; margin:0; padding:0;">Select Category</h3>
+                <button onclick="document.getElementById('catSelectionModal').style.display='none'" style="background:transparent; color:var(--danger); padding:0;">✖</button>
             </div>
-            <div id="categoryGrid" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:8px;"></div>
+            <div id="categoryGrid" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap:8px;"></div>
         </div>
 
         <div id="componentsModal" class="inline-work-panel" style="display: none;">
-            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid var(--border-color); padding-bottom: 6px; margin-bottom: 10px;">
-                <h3 style="margin:0; color:var(--indigo);"><span id="compModalHeadingText">Edit Components</span> (<span id="compPendingModelName" style="color:var(--bajaj-blue);"></span>)</h3>
-                <button onclick="cancelComponentsModal()" style="background:none; border:none; color:var(--danger);">✖ Close</button>
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid #ccc; padding-bottom: 6px; margin-bottom: 10px;">
+                <h3 style="border:none; margin:0; padding:0;"><span id="compModalHeadingText">Edit Components</span> (<span id="compPendingModelName"></span>)</h3>
+                <button onclick="cancelComponentsModal()" style="background:transparent; color:var(--danger); padding:0;">✖</button>
             </div>
-            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:8px; margin-bottom:12px;">
-                <div><label>MRP ₹</label><input type="number" id="compMrp" placeholder="0" oninput="compPriceChanged()"></div>
-                <div><label style="color:var(--danger);">Inv ₹ (Required *)</label><input type="number" id="compInv" placeholder="Enter Invoice ₹" oninput="compPriceChanged()"></div>
-                <div><label>EMI Capping ₹</label><input type="number" id="compCap" placeholder="Max"></div>
-                <div><label>Target DP ₹</label><input type="number" id="compTarget" placeholder="0"></div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:12px;">
+                <div><label>MRP ₹</label><input type="number" id="compMrp" oninput="compPriceChanged()"></div>
+                <div><label style="color:var(--danger);">Inv ₹ (Required *)</label><input type="number" id="compInv" oninput="compPriceChanged()"></div>
+                <div><label>EMI Capping ₹</label><input type="number" id="compCap"></div>
+                <div><label>Target DP ₹</label><input type="number" id="compTarget"></div>
                 <div><label>GTL ₹</label><select id="compGtl"><option value="0">0</option><option value="699">699</option><option value="1099">1099</option><option value="1199">1199</option><option value="1499">1499</option><option value="1799">1799</option><option value="2398">2398</option></select></div>
                 <div><label>RFC ₹</label><select id="compRfc"><option value="0">0</option><option id="compRfcOpt" value="0">0</option></select></div>
-                <div><label>EXW ₹</label><input type="number" id="compExw" placeholder="0"></div>
-                <div><label>Margin ₹</label><input type="number" id="compMargin" placeholder="0"></div>
-                <div><label>Dealer Contri ₹</label><input type="number" id="compDealer" placeholder="0"></div>
+                <div><label>EXW ₹</label><input type="number" id="compExw"></div>
+                <div><label>Margin ₹</label><input type="number" id="compMargin"></div>
+                <div><label>Dealer Contri ₹</label><input type="number" id="compDealer"></div>
             </div>
             <div style="display:flex; gap:8px;">
-                <button onclick="proceedToMatrixFromComponents()" style="flex:2; background:var(--success); color:white; border:none; padding:10px;">Continue & Calculate</button>
-                <button onclick="cancelComponentsModal()" style="flex:1; background:var(--danger); color:white; border:none; padding:10px;">Cancel</button>
+                <button onclick="proceedToMatrixFromComponents()" style="flex:2; background:var(--success);">Calculate</button>
+                <button onclick="cancelComponentsModal()" style="flex:1; background:var(--danger);">Cancel</button>
             </div>
         </div>
 
         <div id="multiStackModal" class="inline-work-panel" style="display: none;">
-            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid var(--border-color); padding-bottom: 6px; margin-bottom: 10px;">
-                <h3 style="margin:0; color:var(--text-main);">Add Manual Product</h3>
-                <button onclick="closeMultiStackModal()" style="background:none; border:none; color:var(--danger);">✖ Close</button>
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid #ccc; padding-bottom: 6px; margin-bottom: 10px;">
+                <h3 style="border:none; margin:0; padding:0;">Manual Product</h3>
+                <button onclick="closeMultiStackModal()" style="background:transparent; color:var(--danger); padding:0;">✖</button>
             </div>
-            <div style="margin-bottom: 12px;">
-                <label>Model Name</label>
-                <input type="text" id="multiStackModelName" placeholder="Enter Product Model Name">
-            </div>
-            <div class="stack-grid" id="stackInputsContainer"></div>
+            <div style="margin-bottom: 12px;"><label>Model Name</label><input type="text" id="multiStackModelName"></div>
+            <div id="stackInputsContainer"></div>
             <div style="margin-top:12px; display:flex; gap:8px;">
-                <button onclick="processMultiStack()" style="flex:2; background:var(--success); color:white; border:none; padding:10px;">Proceed</button>
-                <button onclick="closeMultiStackModal()" style="flex:1; background:var(--danger); color:white; border:none; padding:10px;">Cancel</button>
+                <button onclick="processMultiStack()" style="flex:2; background:var(--success);">Proceed</button>
+                <button onclick="closeMultiStackModal()" style="flex:1; background:var(--danger);">Cancel</button>
             </div>
         </div>
 
         <div id="multiModelContainer" style="margin-top: 10px;"></div>
     </div>
 
+    <!-- Modals -->
     <div id="customerHistoryModal" class="modal">
         <div class="modal-content" style="max-width: 450px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; margin-bottom: 10px;">
-                <h3 style="margin:0; color:var(--bajaj-blue);">🕒 History</h3>
-                <div style="display:flex; align-items:center; gap:8px;">
-                    <span onclick="openRecycleBin()" style="cursor:pointer; font-size:16px; background:var(--bg-dark); padding: 4px; border-radius: 4px;">🗑️</span>
-                    <button onclick="closeCustomerHistoryModal()" style="background:none; border:none; color:var(--danger);">✖</button>
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ccc; padding-bottom: 8px; margin-bottom: 10px;">
+                <h3 style="border:none; margin:0; padding:0;">🕒 History</h3>
+                <div style="display:flex; gap:10px;">
+                    <button onclick="openRecycleBin()" style="background:#f8f9fa; color:#000; border:1px solid #ccc;">🗑️</button>
+                    <button onclick="closeCustomerHistoryModal()" style="background:var(--danger);">✖</button>
                 </div>
             </div>
-            <input type="text" id="queueSearch" placeholder="Search Saved Customer..." oninput="renderCustomerQueue()" style="margin-bottom: 8px;">
+            <input type="text" id="queueSearch" placeholder="Search Saved Customer..." oninput="renderCustomerQueue()">
             <div id="customerQueueList" class="custom-scroll" style="display:flex; flex-direction:column; gap:6px; overflow-y:auto; max-height: 350px;"></div>
         </div>
     </div>
 
     <div id="editCustomerModal" class="modal">
         <div class="modal-content" style="max-width:300px;">
-            <h3 style="margin-top:0; color:var(--indigo);">Edit Customer</h3>
-            <div style="margin-bottom:6px;"><label>Customer Name</label><input type="text" id="ecName"></div>
+            <h3>Edit Customer</h3>
+            <div><label>Customer Name</label><input type="text" id="ecName"></div>
             <div style="display:none;"><label>Mobile No.</label><input type="text" id="ecMobile" maxlength="10"></div>
-            <div style="margin-bottom:6px;"><label>NBFC Limit</label><input type="number" id="ecLimit"></div>
-            <div style="margin-bottom:6px;"><label>Customer Type</label>
-                <select id="ecType"><option value="NEW">NEW</option><option value="EMI CARD">EMI CARD</option><option value="VIRTUAL">VIRTUAL</option><option value="W/O CARD">W/O CARD</option></select>
-            </div>
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-bottom:12px;">
-                <div><label>Max LTV %</label><input type="number" id="ecLtv" max="100"></div>
-                <div><label>EMI Capping</label><input type="number" id="ecCap"></div>
-            </div>
+            <div><label>NBFC Limit</label><input type="number" id="ecLimit"></div>
+            <div><label>Customer Type</label><select id="ecType"><option value="NEW">NEW</option><option value="EMI CARD">EMI CARD</option><option value="VIRTUAL">VIRTUAL</option><option value="W/O CARD">W/O CARD</option></select></div>
             <div style="display:flex; gap:8px;">
-                <button onclick="saveCustomerEdit()" style="flex:2; background:var(--success); color:white; border:none; padding:10px;">Save</button>
-                <button onclick="closeCustomerEdit()" style="flex:1; background:var(--danger); color:white; border:none; padding:10px;">Cancel</button>
+                <div style="flex:1;"><label>Max LTV %</label><input type="number" id="ecLtv"></div>
+                <div style="flex:1;"><label>EMI Capping</label><input type="number" id="ecCap"></div>
+            </div>
+            <div style="display:flex; gap:8px; margin-top:10px;">
+                <button onclick="saveCustomerEdit()" style="flex:2; background:var(--success);">Save</button>
+                <button onclick="closeCustomerEdit()" style="flex:1; background:var(--danger);">Cancel</button>
             </div>
         </div>
     </div>
 
     <div id="recycleBinModal" class="modal">
         <div class="modal-content" style="max-width:350px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 6px; margin-bottom: 8px;">
-                <h3 style="margin:0; color:var(--danger);">Recycle Bin</h3>
-                <button onclick="emptyRecycleBin()" style="background:var(--danger); color:white; padding:6px; border:none;">Empty All</button>
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ccc; padding-bottom: 6px; margin-bottom: 8px;">
+                <h3 style="border:none; margin:0; padding:0; color:var(--danger);">Recycle Bin</h3>
+                <button onclick="emptyRecycleBin()" style="background:var(--danger);">Empty All</button>
             </div>
             <div id="recycleBinList" class="custom-scroll" style="display:flex; flex-direction:column; gap:6px; max-height: 250px; overflow-y: auto; margin-bottom: 12px;"></div>
-            <button onclick="closeRecycleBin()" style="width:100%; background:var(--border-color); color:white; border:none; padding:10px;">Close</button>
+            <button onclick="closeRecycleBin()" style="width:100%; background:#6c757d;">Close</button>
         </div>
     </div>
 
     <div id="quoteSelectionModal" class="modal">
         <div class="modal-content" style="max-width:350px;">
-            <h3 style="margin-top:0; color:var(--bajaj-blue);">Select Models For Quotation</h3>
-            <div id="quoteModelCheckboxes" style="display:flex; flex-direction:column; gap:6px; max-height:220px; overflow-y:auto; margin-bottom:15px;" class="custom-scroll"></div>
+            <h3>Select Models For Quotation</h3>
+            <div id="quoteModelCheckboxes" class="custom-scroll" style="display:flex; flex-direction:column; gap:6px; max-height:220px; overflow-y:auto; margin-bottom:15px;"></div>
             <div style="display:flex; gap:10px;">
-                <button onclick="promptForSelectedImageGeneration()" style="flex:2; background:var(--bajaj-blue); color:white; border:none; padding:10px;">Proceed</button>
-                <button onclick="document.getElementById('quoteSelectionModal').style.display='none'" style="flex:1; background:var(--danger); color:white; border:none; padding:10px;">Cancel</button>
+                <button onclick="promptForSelectedImageGeneration()" style="flex:2; background:var(--primary);">Proceed</button>
+                <button onclick="document.getElementById('quoteSelectionModal').style.display='none'" style="flex:1; background:var(--danger);">Cancel</button>
             </div>
         </div>
     </div>
 
     <div id="custInfoPromptModal" class="modal">
         <div class="modal-content" style="max-width:320px;">
-            <h3 style="margin-top:0; color:var(--bajaj-blue); text-align: center;">Verify Details Before Export</h3>
-            <div style="display:flex; flex-direction:column; gap:6px; margin-top: 10px;">
-                <button onclick="proceedGenerateImage()" style="width:100%; background:var(--bajaj-blue); color:white; border:none; padding:10px;">Generate Image Only</button>
-                <button onclick="proceedGenerateImageAndWhatsAppCopy()" style="width:100%; background:var(--success); color:white; border:none; padding:10px;">Copy Image And WhatsApp</button>
-                <button onclick="document.getElementById('custInfoPromptModal').style.display='none'" style="width:100%; background:var(--danger); color:white; border:none; padding:10px;">Cancel</button>
+            <h3 style="text-align: center;">Verify Export</h3>
+            <div style="display:flex; flex-direction:column; gap:8px; margin-top: 10px;">
+                <button onclick="proceedGenerateImage()" style="background:var(--primary);">Generate Image Only</button>
+                <button onclick="proceedGenerateImageAndWhatsAppCopy()" style="background:var(--success);">Copy Image And WhatsApp</button>
+                <button onclick="document.getElementById('custInfoPromptModal').style.display='none'" style="background:var(--danger);">Cancel</button>
             </div>
         </div>
     </div>
 
     <div id="editSchemeModal" class="modal">
         <div class="modal-content" style="max-width: 280px;">
-            <h3 style="margin-top:0; color:var(--indigo);">Modify Scheme Components</h3>
+            <h3>Modify Scheme</h3>
             <input type="hidden" id="editPIdx"><input type="hidden" id="editDIdx">
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:12px;">
                 <div><label>Tenure Max</label><input type="number" id="editTen"></div><div><label>Advance</label><input type="number" id="editAdv"></div>
@@ -609,25 +486,22 @@
                 <div><label>ROI %</label><input type="number" id="editRoi" step="0.01"></div><div><label>Fixed EMI ₹</label><input type="number" id="editFixed"></div>
             </div>
             <div style="display:flex; gap:8px;">
-                <button onclick="saveSchemeEdit()" style="flex:2; background:var(--success); color:white; border:none; padding:10px;">Save</button>
-                <button onclick="closeEditSchemeModal()" style="flex:1; background:var(--danger); color:white; border:none; padding:10px;">Cancel</button>
+                <button onclick="saveSchemeEdit()" style="flex:2; background:var(--success);">Save</button>
+                <button onclick="closeEditSchemeModal()" style="flex:1; background:var(--danger);">Cancel</button>
             </div>
         </div>
     </div>
 
-    <div id="imageViewerModal" class="modal" style="background: rgba(0,0,0,0.95);">
-        <button class="close-img-btn" onclick="closeImageViewer()">✖</button>
-        <div style="color:var(--success); font-size:14px; text-align:center; width:100%; margin-top:10px;">Long Press Or Right-Click Image To Save</div>
-        <div style="width:100%; text-align:center;"><img id="generatedImage" src="" alt="Quotation"></div>
+    <div id="imageViewerModal" class="modal" style="background: rgba(255,255,255,0.95);">
+        <button onclick="closeImageViewer()" style="position:absolute; top:20px; right:20px; background:var(--danger); font-size:16px;">✖</button>
+        <div style="color:var(--success); font-weight:bold; margin-top:50px; text-align:center;">Long Press Or Right-Click Image To Save</div>
+        <div style="width:100%; text-align:center;"><img id="generatedImage" src="" alt="Quotation" style="max-width:90%; max-height:75vh; border:1px solid #ccc; margin-top:10px;"></div>
     </div>
 
     <div id="manualModal" class="modal">
         <div class="modal-content" style="max-width:300px;">
-            <h3 id="modalTitle" style="margin-top:0; color:var(--indigo);">Add Scheme</h3>
-            <div id="modelNameInputArea" style="display:none;">
-                <label>Model Name</label>
-                <input type="text" id="manName" placeholder="Enter Model Name">
-            </div>
+            <h3 id="modalTitle">Add Scheme</h3>
+            <div id="modelNameInputArea" style="display:none;"><label>Model Name</label><input type="text" id="manName"></div>
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-top:8px;">
                 <div><label>Tenure Max</label><input type="number" id="manTen"></div>
                 <div><label>Advance</label><input type="number" id="manAdv"></div>
@@ -637,24 +511,22 @@
                 <div><label>Fixed EMI ₹</label><input type="number" id="manFixed"></div>
             </div>
             <input type="hidden" id="targetPIdx" value="">
-            <button onclick="executeManualAction()" style="width:100%; background:var(--success); color:white; margin-top:12px; border:none; padding:10px;">Add Scheme</button>
-            <button onclick="closeManualModal()" style="width:100%; background:var(--danger); color:white; margin-top:6px; border:none; padding:10px;">Cancel</button>
+            <button onclick="executeManualAction()" style="width:100%; background:var(--success); margin-top:12px;">Add Scheme</button>
+            <button onclick="closeManualModal()" style="width:100%; background:var(--danger); margin-top:6px;">Cancel</button>
         </div>
     </div>
 
     <div id="rowActionModal" class="modal">
         <div class="modal-content" style="max-width:300px;">
-            <h3 style="margin-top:0; color:var(--bajaj-blue); text-align:center;">Select Action</h3>
-            <div id="rowActionButtons" style="display:flex; flex-direction:column; gap:12px; margin-top:15px;"></div>
-            <button onclick="closeRowActionModal()" style="width:100%; margin-top:15px; background:var(--danger); color:white; padding:12px; border:none;">Cancel</button>
+            <h3 style="text-align:center; border:none; padding:0;">Select Action</h3>
+            <div id="rowActionButtons" style="display:flex; flex-direction:column; gap:10px; margin-top:10px;"></div>
+            <button onclick="closeRowActionModal()" style="width:100%; margin-top:10px; background:#6c757d;">Cancel</button>
         </div>
     </div>
 </main>
 
-<footer>
-    <div style="text-align:center; padding:20px; font-size:12px; color:var(--text-muted);">
-        <p>Crafted By <b>The_Lakshya</b></p>
-    </div>
+<footer style="text-align:center; padding:15px; font-size:12px; color:#777;">
+    Crafted By <b>The_Lakshya</b>
 </footer>
 
 <script src="app.js"></script>
