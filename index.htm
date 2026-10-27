@@ -7,23 +7,15 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <title>Persistent Portal - FinTech Pro</title>
 
-    <!-- Google Fonts & Libraries -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <style>
         :root {
-            --bg-color: #f8fafc;
-            --card-bg: #ffffff;
-            --primary: #2563eb;
-            --bajaj-blue: #0369a1;
-            --success: #10b981;
-            --danger: #ef4444;
-            --warning: #f59e0b;
-            --text-main: #1e293b;
-            --text-muted: #64748b;
-            --border: #e2e8f0;
+            --bg-color: #f8fafc; --card-bg: #ffffff; --primary: #2563eb; --bajaj-blue: #0369a1;
+            --success: #10b981; --danger: #ef4444; --warning: #f59e0b;
+            --text-main: #1e293b; --text-muted: #64748b; --border: #e2e8f0;
         }
 
         body {
@@ -88,15 +80,11 @@
             display: flex; flex-direction: column; gap: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); position: relative; overflow: hidden;
         }
         .scheme-card.rejected { opacity: 0.6; background: #fff5f5; border-color: #fecaca; }
-        .sc-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border); padding-bottom: 8px; }
         .sc-badge { background: #e0f2fe; color: #0284c7; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 14px; }
-        .sc-main-data { display: flex; justify-content: space-between; align-items: center; margin: 4px 0; }
-        .sc-data-block { display: flex; flex-direction: column; }
         .sc-label { font-size: 10px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
         .sc-val { font-size: 18px; font-weight: 800; color: var(--text-main); }
         .sc-val.dp { color: var(--success); }
         .sc-val.emi { color: var(--primary); }
-        .sc-footer { display: flex; flex-wrap: wrap; gap: 8px; font-size: 11px; font-weight: 500; color: var(--text-muted); align-items: center; }
         .sc-loan-input { width: 70px; padding: 4px; font-size: 14px; font-weight: 700; border: 1px solid var(--border); border-radius: 6px; text-align: center; color: var(--bajaj-blue); background: #f8fafc; }
 
         .sticky-customer-bar {
@@ -242,13 +230,10 @@
             </div>
             <label style="margin-top:8px;">NBFC Limit ₹</label>
             <input type="number" id="cqLimit" placeholder="₹ Limit" style="margin-bottom: 12px; font-weight:bold; color:var(--primary); font-size:16px;">
-            
             <div style="display:flex; gap:10px; margin-bottom:20px;">
-                <!-- Max LTV 100% Rule Added Here -->
                 <div style="flex:1;"><label>Max LTV %</label><input type="number" id="cqLtv" value="100" max="100" oninput="if(this.value>100)this.value=100;"></div>
                 <div style="flex:1;"><label>EMI Cap ₹</label><input type="number" id="cqCap" placeholder="Optional"></div>
             </div>
-
             <div style="display:flex; gap:10px;">
                 <button onclick="addCustomerToQueue()" class="btn-success" style="flex:2;">Save & Start</button>
                 <button onclick="closeAddCustomerModal()" class="btn-outline" style="flex:1;">Cancel</button>
@@ -283,7 +268,6 @@
             </select>
             <label>NBFC Limit ₹</label><input type="number" id="ecLimit" style="margin-bottom: 12px;">
             <div style="display:flex; gap:10px; margin-bottom:20px;">
-                <!-- Max LTV 100% Rule Added Here -->
                 <div style="flex:1;"><label>Max LTV %</label><input type="number" id="ecLtv" max="100" oninput="if(this.value>100)this.value=100;"></div>
                 <div style="flex:1;"><label>EMI Cap ₹</label><input type="number" id="ecCap"></div>
             </div>
@@ -331,6 +315,47 @@
         <button onclick="document.getElementById('imageViewerModal').style.display='none'" style="position:absolute; top:20px; right:20px; background:var(--danger); border:none; color:white; padding:8px 12px; border-radius:8px; font-weight:bold;">✖ Close</button>
         <div style="color:var(--success); font-weight:bold; margin-top:60px; text-align:center;">Long Press Image To Save/Share</div>
         <div style="width:100%; text-align:center;"><img id="generatedImage" src="" alt="Quotation" style="max-width:90%; max-height:75vh; border:1px solid #ccc; border-radius:12px; margin-top:10px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);"></div>
+    </div>
+
+    <!-- Edit Scheme Modal -->
+    <div id="editSchemeModal" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-bottom:12px;">Edit Scheme</h3>
+            <input type="hidden" id="editPIdx"><input type="hidden" id="editDIdx">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:16px;">
+                <div><label>Tenure Max</label><input type="number" id="editTen"></div>
+                <div><label>Advance</label><input type="number" id="editAdv"></div>
+                <div><label>DBD %</label><input type="number" id="editDbd" step="0.01"></div>
+                <div><label>PF ₹</label><input type="number" id="editPf"></div>
+                <div><label>ROI %</label><input type="number" id="editRoi" step="0.01"></div>
+                <div><label>Fixed EMI ₹</label><input type="number" id="editFixed"></div>
+            </div>
+            <div style="display:flex; gap:8px;">
+                <button onclick="saveSchemeEdit()" class="btn-success" style="flex:2;">Save</button>
+                <button onclick="closeEditSchemeModal()" class="btn-outline" style="flex:1;">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Custom Scheme Modal -->
+    <div id="manualModal" class="modal">
+        <div class="modal-content">
+            <h3 id="modalTitle" style="margin-bottom:12px;">Add Scheme</h3>
+            <div id="modelNameInputArea" style="display:none; margin-bottom:10px;"><label>Model Name</label><input type="text" id="manName"></div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:16px;">
+                <div><label>Tenure Max</label><input type="number" id="manTen"></div>
+                <div><label>Advance</label><input type="number" id="manAdv"></div>
+                <div><label>DBD %</label><input type="number" id="manDbd" step="0.01"></div>
+                <div><label>PF ₹</label><input type="number" id="manPf"></div>
+                <div><label>ROI %</label><input type="number" id="manRoi" step="0.01"></div>
+                <div><label>Fixed EMI ₹</label><input type="number" id="manFixed"></div>
+            </div>
+            <input type="hidden" id="targetPIdx" value="">
+            <div style="display:flex; gap:8px;">
+                <button onclick="executeManualAction()" class="btn-success" style="flex:2;">Add Scheme</button>
+                <button onclick="closeManualModal()" class="btn-outline" style="flex:1;">Cancel</button>
+            </div>
+        </div>
     </div>
 
     <div id="rowActionModal" class="modal">
