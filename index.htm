@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <title>Persistent Portal - FinTech Pro</title>
 
-    <!-- Google Fonts & External Libraries -->
+    <!-- Google Fonts & Libraries -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -27,22 +27,15 @@
         }
 
         body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            font-family: 'Poppins', sans-serif;
-            margin: 0; padding: 0; padding-bottom: 80px;
-            -webkit-tap-highlight-color: transparent;
+            background-color: var(--bg-color); color: var(--text-main); font-family: 'Poppins', sans-serif;
+            margin: 0; padding: 0; padding-bottom: 80px; -webkit-tap-highlight-color: transparent;
         }
 
         h1, h2, h3, h4 { margin: 0; font-weight: 700; color: var(--text-main); }
         
         header {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid var(--border);
-            padding: 12px 16px;
-            display: flex; justify-content: space-between; align-items: center;
-            position: sticky; top: 0; z-index: 100;
+            background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border);
+            padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100;
         }
 
         header h1 { font-size: 18px; color: var(--bajaj-blue); display: flex; align-items: center; gap: 6px; }
@@ -50,8 +43,7 @@
         label { font-size: 11px; font-weight: 600; color: var(--text-muted); margin-bottom: 4px; display: block; text-transform: uppercase; }
         input[type="text"], input[type="number"], select, input[type="password"] {
             width: 100%; padding: 10px 12px; font-size: 14px; font-family: 'Poppins', sans-serif;
-            border: 1px solid var(--border); border-radius: 8px; background: #fff; box-sizing: border-box;
-            transition: all 0.2s ease; font-weight: 600;
+            border: 1px solid var(--border); border-radius: 8px; background: #fff; box-sizing: border-box; transition: all 0.2s ease; font-weight: 600;
         }
         input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); outline: none; }
 
@@ -67,18 +59,15 @@
 
         .chip-group { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
         .chip {
-            padding: 6px 12px; border: 1px solid var(--border); border-radius: 20px;
-            font-size: 11px; font-weight: 600; color: var(--text-muted); cursor: pointer;
-            background: #f1f5f9; transition: all 0.2s;
+            padding: 6px 12px; border: 1px solid var(--border); border-radius: 20px; font-size: 11px; font-weight: 600; 
+            color: var(--text-muted); cursor: pointer; background: #f1f5f9; transition: all 0.2s;
         }
         .chip.active { background: var(--bajaj-blue); color: #fff; border-color: var(--bajaj-blue); }
 
         .fab {
-            position: fixed; bottom: 20px; right: 20px; background: var(--primary);
-            color: white; width: 56px; height: 56px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 24px; box-shadow: 0 4px 12px rgba(37,99,235,0.3);
-            z-index: 99; cursor: pointer; transition: transform 0.2s;
+            position: fixed; bottom: 20px; right: 20px; background: var(--primary); color: white; width: 56px; height: 56px; 
+            border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; 
+            box-shadow: 0 4px 12px rgba(37,99,235,0.3); z-index: 99; cursor: pointer; transition: transform 0.2s;
         }
         .fab:active { transform: scale(0.9); }
 
@@ -92,15 +81,11 @@
         }
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-        .inline-work-panel {
-            background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px;
-            padding: 16px; margin-top: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
+        .inline-work-panel { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-top: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
 
         .scheme-card {
-            background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 12px;
-            margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-            position: relative; overflow: hidden;
+            background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 10px; 
+            display: flex; flex-direction: column; gap: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); position: relative; overflow: hidden;
         }
         .scheme-card.rejected { opacity: 0.6; background: #fff5f5; border-color: #fecaca; }
         .sc-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border); padding-bottom: 8px; }
@@ -115,15 +100,13 @@
         .sc-loan-input { width: 70px; padding: 4px; font-size: 14px; font-weight: 700; border: 1px solid var(--border); border-radius: 6px; text-align: center; color: var(--bajaj-blue); background: #f8fafc; }
 
         .sticky-customer-bar {
-            background: #1e293b; color: white; padding: 12px 16px; border-radius: 12px;
-            margin: 12px 10px; display: flex; justify-content: space-between; align-items: center;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1); position: sticky; top: 65px; z-index: 90;
+            background: #1e293b; color: white; padding: 12px 16px; border-radius: 12px; margin: 12px 10px; 
+            display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); position: sticky; top: 65px; z-index: 90;
         }
 
         .toast-notification {
-            visibility: hidden; min-width: 250px; background-color: #1e293b; color: #fff; text-align: center;
-            border-radius: 8px; padding: 14px; position: fixed; z-index: 100000; left: 50%; bottom: 30px;
-            transform: translateX(-50%); font-weight: 600; font-size: 13px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            visibility: hidden; min-width: 250px; background-color: #1e293b; color: #fff; text-align: center; border-radius: 8px; 
+            padding: 14px; position: fixed; z-index: 100000; left: 50%; bottom: 30px; transform: translateX(-50%); font-weight: 600; font-size: 13px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
         .toast-notification.show { visibility: visible; animation: fadein 0.3s, fadeout 0.3s 2.5s; }
         .toast-notification.success { background-color: var(--success); }
@@ -131,7 +114,6 @@
         .toast-notification.warning { background-color: var(--warning); color:#000; }
         @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
         @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
-
     </style>
 </head>
 <body>
@@ -178,7 +160,7 @@
 
         <div style="display:flex; gap:8px; margin: 0 10px 12px 10px;">
             <button onclick="openAddProductModal()" class="btn-primary" style="flex: 1;">➕ Add Product</button>
-            <button onclick="goHome()" class="btn-outline" style="background:#fff;">Close</button>
+            <button onclick="goHome()" class="btn-outline" style="background:#fff;">Close View</button>
         </div>
 
         <div id="addProductModal" class="inline-work-panel" style="display: none;">
@@ -201,12 +183,10 @@
                 <h3 style="font-size:15px;"><span id="compModalHeadingText">Components</span> <span id="compPendingModelName" style="color:var(--primary); font-size:12px;"></span></h3>
                 <span onclick="cancelComponentsModal()" style="color:var(--danger); font-weight:bold; cursor:pointer;">✖</span>
             </div>
-            
             <div style="display:flex; gap:10px; margin-bottom:12px;">
                 <div style="flex:1;"><label>MRP ₹</label><input type="number" id="compMrp" oninput="compPriceChanged()"></div>
                 <div style="flex:1;"><label style="color:var(--danger);">Inv ₹ (Req)*</label><input type="number" id="compInv" oninput="compPriceChanged()" style="border-color:var(--danger); background:#fff5f5;"></div>
             </div>
-
             <details style="margin-bottom: 16px; background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 10px;">
                 <summary style="font-size: 12px; font-weight: 700; color: var(--text-muted); cursor: pointer; outline: none;">⚙️ Advanced Charges & Cap</summary>
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top: 10px;">
@@ -219,7 +199,6 @@
                     <div><label>Dealer Contri ₹</label><input type="number" id="compDealer"></div>
                 </div>
             </details>
-
             <button onclick="proceedToMatrixFromComponents()" class="btn-success" style="width:100%;">Calculate Schemes</button>
         </div>
 
@@ -252,10 +231,8 @@
     <div id="addCustomerModal" class="modal">
         <div class="modal-content">
             <h3 style="margin-bottom: 16px; border-bottom:1px solid #eee; padding-bottom:8px;">Add Customer</h3>
-            
             <label>Customer Name</label>
             <input type="text" id="cqName" placeholder="Enter Name" style="margin-bottom: 12px;">
-            
             <label>Customer Type</label>
             <input type="hidden" id="cqType" value="NEW">
             <div class="chip-group" id="chipTypeGroup">
@@ -263,12 +240,12 @@
                 <div class="chip" onclick="setChip('cqType', 'EMI CARD', this)">EMI CARD</div>
                 <div class="chip" onclick="setChip('cqType', 'W/O CARD', this)">W/O CARD</div>
             </div>
-
             <label style="margin-top:8px;">NBFC Limit ₹</label>
             <input type="number" id="cqLimit" placeholder="₹ Limit" style="margin-bottom: 12px; font-weight:bold; color:var(--primary); font-size:16px;">
             
             <div style="display:flex; gap:10px; margin-bottom:20px;">
-                <div style="flex:1;"><label>Max LTV %</label><input type="number" id="cqLtv" value="100" max="100"></div>
+                <!-- Max LTV 100% Rule Added Here -->
+                <div style="flex:1;"><label>Max LTV %</label><input type="number" id="cqLtv" value="100" max="100" oninput="if(this.value>100)this.value=100;"></div>
                 <div style="flex:1;"><label>EMI Cap ₹</label><input type="number" id="cqCap" placeholder="Optional"></div>
             </div>
 
@@ -306,7 +283,8 @@
             </select>
             <label>NBFC Limit ₹</label><input type="number" id="ecLimit" style="margin-bottom: 12px;">
             <div style="display:flex; gap:10px; margin-bottom:20px;">
-                <div style="flex:1;"><label>Max LTV %</label><input type="number" id="ecLtv" max="100"></div>
+                <!-- Max LTV 100% Rule Added Here -->
+                <div style="flex:1;"><label>Max LTV %</label><input type="number" id="ecLtv" max="100" oninput="if(this.value>100)this.value=100;"></div>
                 <div style="flex:1;"><label>EMI Cap ₹</label><input type="number" id="ecCap"></div>
             </div>
             <div style="display:flex; gap:10px;">
