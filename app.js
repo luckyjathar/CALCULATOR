@@ -41,7 +41,7 @@ function initDB() {
 function saveToDB(key, data) { return new Promise((res) => { if (!dbInstance) return res(); try { let tx = dbInstance.transaction(STORE_NAME, 'readwrite'); tx.objectStore(STORE_NAME).put(JSON.stringify(data), key).onsuccess = res; } catch(e) { res(); } }); }
 function getFromDB(key) { return new Promise((res) => { if (!dbInstance) return res(null); try { let req = dbInstance.transaction(STORE_NAME, 'readonly').objectStore(STORE_NAME).get(key); req.onsuccess = e => res(e.target.result ? JSON.parse(e.target.result) : null); req.onerror = () => res(null); } catch(e) { res(null); } }); }
 
-/* === Master Data Sync & Parsing (With 3rd Sheet Logic) === */
+/* === Master Data Sync & Parsing === */
 async function fetchFromMasterStream(forceSync = false) {
     let cached = await getFromDB('cached_db_records');
     if (cached && cached.length > 0 && !forceSync) { db_records = cached; updateMasterBadgeUI(); fetchLatestExcelBackground(false); return; }
@@ -88,7 +88,6 @@ function mapData(row, type) {
         isExpired: isExp, expiryDateStr: expStr, inactive: false 
     }; 
 }
-
 function parseSheetSmartly(sheet) {
     if (!sheet) return [];
     let rows = XLSX.utils.sheet_to_json(sheet, { raw: false, defval: "" });
@@ -101,8 +100,6 @@ function parseSheetSmartly(sheet) {
     }
     return rows;
 }
-
-// 3rd Sheet Added Logic
 async function processArrayBufferToDB(buf) {
     let wb = XLSX.read(new Uint8Array(buf), { type: 'array' });
     let s1 = parseSheetSmartly(wb.Sheets[wb.SheetNames[0]]).map(r=>mapData(r,"REG")).filter(x=>x&&x.model);
@@ -129,7 +126,6 @@ async function handleManualExcelUpload(e) {
 /* === System Startup === */
 window.onload = async function() {
     generateStackCards(); await initDB(); await fetchFromMasterStream(false);
-    
     let sq = await getFromDB('persistent_queue') || JSON.parse(localStorage.getItem('persistent_queue_backup')||'[]');
     customerQueue = sq.map(c => ({ ...c, components: c.components||{}, products: c.products||[], sortConfigs: c.sortConfigs||[] }));
     recycleBin = await getFromDB('persistent_recycle') || JSON.parse(localStorage.getItem('persistent_recycle_backup')||'[]');
@@ -138,7 +134,6 @@ window.onload = async function() {
     
     renderCustomerQueue(); if(activeCustomerIndex!==-1) goToFinalPage();
 };
-
 async function saveQueueToLocal() {
     let cq = customerQueue.map(c => ({...c, products: c.products.map(({calculatedData, ...p})=>p)}));
     localStorage.setItem('persistent_queue_backup', JSON.stringify(cq)); localStorage.setItem('persistent_active_idx_backup', activeCustomerIndex);
@@ -152,10 +147,10 @@ function goHome() {
 }
 
 /* === Customer Add / Edit / Recycle Bin === */
-function openAddCustomerModal() { let m = document.getElementById('addCustomerModal'); if(m) m.style.display='flex'; }
-function closeAddCustomerModal() { let m = document.getElementById('addCustomerModal'); if(m) m.style.display='none'; }
-function openCustomerHistoryModal() { renderCustomerQueue(); let m = document.getElementById('customerHistoryModal'); if(m) m.style.display='flex'; }
-function closeCustomerHistoryModal() { let m = document.getElementById('customerHistoryModal'); if(m) m.style.display='none'; }
+function openAddCustomerModal() { document.getElementById('addCustomerModal').style.display='flex'; }
+function closeAddCustomerModal() { document.getElementById('addCustomerModal').style.display='none'; }
+function openCustomerHistoryModal() { renderCustomerQueue(); document.getElementById('customerHistoryModal').style.display='flex'; }
+function closeCustomerHistoryModal() { document.getElementById('customerHistoryModal').style.display='none'; }
 
 async function addCustomerToQueue() {
     let limitEl = document.getElementById('cqLimit'); let limit = limitEl ? parseFloat(limitEl.value) : 0;
@@ -165,7 +160,7 @@ async function addCustomerToQueue() {
     let type = document.getElementById('cqType').value || "NEW";
     let name = document.getElementById('cqName').value.trim() || `Cust ${customerQueue.length+1}`;
     let rawLtv = parseFloat(document.getElementById('cqLtv').value)||100;
-    let ltv = Math.min(100, rawLtv); // Force max 100
+    let ltv = Math.min(100, rawLtv);
     let cap = parseFloat(document.getElementById('cqCap').value)||"";
     
     let c = { id: Date.now(), name: name, limit: limit, ltv: ltv, type: type, cap: cap, targetDp: "", timestamp: new Date().toLocaleString(), components: {}, products: [], sortConfigs: [] };
@@ -191,7 +186,6 @@ function renderCustomerQueue() {
         </div>`).join('');
     list.innerHTML = html || "<div style='text-align:center; padding:20px; color:#999; font-weight:600;'>No customers found.</div>";
 }
-
 async function setActiveCustomer(idx) { activeCustomerIndex = idx; await saveQueueToLocal(); closeCustomerHistoryModal(); goToFinalPage(); }
 
 function uniEdit() {
@@ -202,7 +196,7 @@ function closeCustomerEdit() { let m = document.getElementById('editCustomerModa
 async function saveCustomerEdit() {
     if(selectedQueueIndex === -1) return; let c = customerQueue[selectedQueueIndex];
     c.name = document.getElementById('ecName').value || ''; c.limit = parseFloat(document.getElementById('ecLimit').value) || 0; c.type = document.getElementById('ecType').value; 
-    let rawLtv = parseFloat(document.getElementById('ecLtv').value) || 100; c.ltv = Math.min(100, rawLtv); // Force max 100
+    let rawLtv = parseFloat(document.getElementById('ecLtv').value) || 100; c.ltv = Math.min(100, rawLtv);
     let cap = parseFloat(document.getElementById('ecCap').value); c.cap = cap > 0 ? cap : '';
     await saveQueueToLocal(); renderCustomerQueue(); if(activeCustomerIndex === selectedQueueIndex) goToFinalPage(); closeCustomerEdit();
 }
@@ -326,7 +320,51 @@ function openEditModelComponents(pIdx) {
 }
 function removeModelFromMatrix(pIdx) { current_products.splice(pIdx, 1); sortConfigs.splice(pIdx, 1); customerQueue[activeCustomerIndex].products = current_products; saveQueueToLocal(); renderMatrix(); }
 
-/* === MAIN UNDERWRITING LOGIC (With Sorting Bar) === */
+/* === EDIT/ADD SCHEME MODALS === */
+function openSchemeOnlyModal(pIdx) {
+    document.getElementById('modalTitle').innerText = `Add Scheme to ${current_products[pIdx].name}`;
+    document.getElementById('manTen').value = ''; document.getElementById('manAdv').value = '0';
+    document.getElementById('manDbd').value = '0'; document.getElementById('manPf').value = '0';
+    document.getElementById('manRoi').value = '0'; document.getElementById('manFixed').value = '';
+    document.getElementById('targetPIdx').value = pIdx;
+    document.getElementById('manualModal').style.display = 'flex';
+}
+function closeManualModal() { document.getElementById('manualModal').style.display = 'none'; }
+async function executeManualAction() {
+    let pIdx = parseInt(document.getElementById('targetPIdx').value);
+    let scheme = {
+        tenure: parseInt(document.getElementById('manTen').value)||0, advEmi: parseInt(document.getElementById('manAdv').value)||0,
+        dbd: parseFloat(document.getElementById('manDbd').value)||0, pf: parseInt(document.getElementById('manPf').value)||0,
+        roi: parseFloat(document.getElementById('manRoi').value)||0, fixedEmi: parseInt(document.getElementById('manFixed').value)||0,
+        minLoan: 0, maxLoan: 9999999, category: "MANUAL", inactive: false, isExpired: false
+    };
+    if(current_products[pIdx]) {
+        current_products[pIdx].schemes.push(scheme);
+        customerQueue[activeCustomerIndex].products = current_products;
+        await saveQueueToLocal(); recalcModel(pIdx);
+    }
+    closeManualModal();
+}
+
+function openEditSchemeModal(pIdx, dIdx) {
+    let scheme = current_products[pIdx].schemes[dIdx];
+    document.getElementById('editPIdx').value = pIdx; document.getElementById('editDIdx').value = dIdx;
+    document.getElementById('editTen').value = scheme.tenure||0; document.getElementById('editAdv').value = scheme.advEmi||0;
+    document.getElementById('editDbd').value = scheme.dbd||0; document.getElementById('editPf').value = scheme.pf||0;
+    document.getElementById('editRoi').value = scheme.roi||0; document.getElementById('editFixed').value = scheme.fixedEmi||0;
+    document.getElementById('editSchemeModal').style.display = 'flex';
+}
+function closeEditSchemeModal() { document.getElementById('editSchemeModal').style.display = 'none'; }
+async function saveSchemeEdit() {
+    let pIdx = parseInt(document.getElementById('editPIdx').value); let dIdx = parseInt(document.getElementById('editDIdx').value);
+    let scheme = current_products[pIdx].schemes[dIdx];
+    scheme.tenure = parseInt(document.getElementById('editTen').value)||0; scheme.advEmi = parseInt(document.getElementById('editAdv').value)||0;
+    scheme.dbd = parseFloat(document.getElementById('editDbd').value)||0; scheme.pf = parseInt(document.getElementById('editPf').value)||0;
+    scheme.roi = parseFloat(document.getElementById('editRoi').value)||0; scheme.fixedEmi = parseFloat(document.getElementById('editFixed').value)||0;
+    closeEditSchemeModal(); recalcModel(pIdx); await saveQueueToLocal();
+}
+
+/* === MAIN UNDERWRITING LOGIC === */
 function renderMatrix() {
     let box = document.getElementById('multiModelContainer'); if(!box) return; box.innerHTML = "";
     current_products.forEach((prod, pIdx) => {
@@ -338,6 +376,7 @@ function renderMatrix() {
             <div style="background:var(--bajaj-blue); color:white; padding:12px; border-radius:10px 10px 0 0; display:flex; justify-content:space-between; align-items:center;">
                 <div style="font-weight:700; font-size:15px; letter-spacing:0.5px;">📱 ${prod.name}</div>
                 <div style="display:flex; gap:6px;">
+                    <button onclick="openSchemeOnlyModal(${pIdx})" style="background:var(--success); color:white; border:none; padding:4px 10px; border-radius:6px; font-weight:700; font-size:11px;">➕ Add</button>
                     <button onclick="instantSingleQuote(${pIdx})" style="background:#fff; color:var(--bajaj-blue); border:none; padding:4px 10px; border-radius:6px; font-weight:700; font-size:11px;">📋 Quote</button>
                     <button onclick="removeModelFromMatrix(${pIdx})" style="background:var(--danger); color:white; border:none; padding:4px 8px; border-radius:6px; font-weight:700; font-size:11px;">✖</button>
                 </div>
@@ -380,7 +419,6 @@ function recalcModel(pIdx) {
     let effectivePrice = inputInv; let loanCapPrice = (inputMrp > 0 && inputInv > 0) ? Math.min(inputMrp, inputInv) : effectivePrice;
     let activeCap = parseFloat(inp.cap) || parseFloat(c?.cap) || 0;
     
-    // RULE 1: Minimum Loan = 50% of Invoice
     let minAllowedLoanByInvoice = effectivePrice * 0.50;
 
     prod.calculatedData = prod.schemes.map((s, dIdx) => {
@@ -401,7 +439,6 @@ function recalcModel(pIdx) {
             loan = currentTenure * s.fixedEmi; 
             if (loan > loanCapPrice) loan = loanCapPrice;
 
-            // RULE 2: Target DP Calculation (Fixed EMI)
             if (parseFloat(inp.target) > 0) { 
                 let numerator = parseFloat(inp.target) - effectivePrice - (s.fixedEmi * s.advEmi) - dynamicPf - totalFees; 
                 let denominator = dbdRate + roiRateDP - 1; let solvedLoan = numerator / denominator; 
@@ -416,7 +453,6 @@ function recalcModel(pIdx) {
             if (prod.isNonTieup) { if (s.maxLoan < 9999999) absoluteMax = Math.min(absoluteMax, s.maxLoan); } 
             loan = absoluteMax;
 
-            // RULE 3: Target DP Calculation (Regular EMI)
             if (parseFloat(inp.target) > 0) { 
                 let advRate = s.advEmi / s.tenure; let numerator = parseFloat(inp.target) - effectivePrice - dynamicPf - totalFees; 
                 let denominator = advRate + dbdRate + roiRateDP - 1; let solvedLoan = numerator / denominator; 
@@ -424,9 +460,7 @@ function recalcModel(pIdx) {
             } 
         }
 
-        // RULE 4: Manual Override checks
-        let isManuallyOverridden = (inp.manualLoans && inp.manualLoans[dIdx] !== undefined);
-        if (isManuallyOverridden) { loan = inp.manualLoans[dIdx]; if (isFixed) currentTenure = Math.floor(loan / s.fixedEmi) || 1; }
+        if (inp.manualLoans && inp.manualLoans[dIdx] !== undefined) { loan = inp.manualLoans[dIdx]; if (isFixed) currentTenure = Math.floor(loan / s.fixedEmi) || 1; }
         if (!isFixed && loan > effectivePrice) loan = effectivePrice;
 
         let isCapBreach = false;
@@ -440,12 +474,9 @@ function recalcModel(pIdx) {
         } else {
             inst = s.tenure - s.advEmi; if (inst < 1) inst = 1; 
             let baseEmi = loan / s.tenure;
-            // RULE 5: Minimum EMI 900
             if (baseEmi > 0 && baseEmi < 900) baseEmi = 900; 
-
             let roiInEmi = loan * roiRate; emi = baseEmi + (insTot / inst) + roiInEmi;
 
-            // RULE 6: EMI Capping Reverse Math
             if (activeCap > 0 && emi > activeCap) { 
                 let maxLoanForCap = Math.floor((activeCap - (insTot / inst)) / ((1 / s.tenure) + roiRate));
                 if (maxLoanForCap < 0) maxLoanForCap = 0; if (maxLoanForCap > effectivePrice) maxLoanForCap = effectivePrice;
@@ -458,7 +489,6 @@ function recalcModel(pIdx) {
             dpExact = effectivePrice - loan + ((loan / s.tenure) * s.advEmi) + (loan * dbdRate) + dynamicPf + totalFees + roiInDp;
         }
 
-        // RULE 7: DP Rounding
         if (dpExact > 0) dpRounded = Math.ceil(dpExact / 10) * 10; else dpRounded = dpExact; 
         
         let extraVal = ((emi * inst) + dpRounded) - effectivePrice; 
@@ -467,7 +497,6 @@ function recalcModel(pIdx) {
         let netDisb = effectivePrice - dpRounded - marginMoney - roundupAdj;
         let curLTV = currentTenure > 0 ? ((currentTenure - s.advEmi) / currentTenure) * 100 : 0; 
         
-        // Final Breaches
         let isInv50Breach = loan < minAllowedLoanByInvoice;
         let isRejected = isInv50Breach || isCapBreach || (curLTV > (c.ltv || 100)) || (prod.isNonTieup && (loan < s.minLoan || loan > s.maxLoan));
 
@@ -497,47 +526,46 @@ function renderCards(pIdx) {
 
         return `
         <div class="scheme-card ${d.isRejected?'rejected':''}" style="${d.inactive?'opacity:0.5; background:#f1f5f9;':''}">
-            <div class="sc-header">
-                <span class="sc-badge">${d.currentTenure}/${d.advEmi} 
-                    ${d.isRejected?'<span style="color:var(--danger); font-size:10px;">🚫 Limit/Cap Exceeded</span>':''} 
-                    ${d.inactive?'<span style="color:var(--warning); font-size:10px;">⏸ Disabled</span>':''}
-                </span>
-                <button onclick="openRowActionModal(${pIdx}, ${d.dIdx}, ${d.inactive})" style="background:var(--bg-color); color:var(--text-muted); border:1px solid var(--border); border-radius:6px; padding:4px 10px; font-size:11px; font-weight:700;">⚙️ Act</button>
-            </div>
-            
-            <div class="sc-main-data">
-                <div class="sc-data-block">
-                    <span class="sc-label">Net DP</span>
-                    <span class="sc-val dp">₹${Math.round(d.dp).toLocaleString()}</span>
+            <div style="display:flex; gap:12px; align-items:stretch;">
+                
+                <div style="flex:1.1; background:#f8fafc; border:1px solid var(--border); border-radius:8px; padding:10px; display:flex; flex-direction:column; justify-content:space-between; font-size:10px; font-weight:600; color:var(--text-muted);">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span>DBD:</span> <span style="color:var(--text-main);">${dbdStr}</span></div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span>ROI:</span> <span style="color:var(--text-main);">${roiStr}</span></div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span>PF:</span> <span style="color:var(--text-main);">₹${d.pf}</span></div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span>LTV:</span> <span style="color:var(--text-main);">${Math.round(d.curLTV)}%</span></div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:6px;"><span>Extra:</span> <span style="color:var(--danger);">₹${Math.round(d.extra).toLocaleString()}</span></div>
+                    <div style="display:flex; justify-content:space-between; padding-top:6px; border-top:1px dashed #cbd5e1;"><span>Net Disb:</span> <span style="color:var(--success);">₹${Math.round(d.netDisb).toLocaleString()}</span></div>
                 </div>
-                <div class="sc-data-block" style="text-align:right;">
-                    <span class="sc-label">Monthly EMI (${d.inst}M)</span>
-                    <span class="sc-val emi">₹${Math.round(d.emi).toLocaleString()}</span>
-                </div>
-            </div>
 
-            <!-- Left Aligned Internal Charges -->
-            <div style="display:flex; gap:25px; font-size:10px; color:var(--text-muted); font-weight:600; background:#f8fafc; padding:10px 12px; border-radius:6px; margin-bottom:8px; justify-content: flex-start;">
-                <div style="display:flex; flex-direction:column; gap:6px;">
-                    <div>DBD: <span style="color:var(--text-main);">${dbdStr}</span></div>
-                    <div>Extra: <span style="color:var(--danger);">₹${Math.round(d.extra).toLocaleString()}</span></div>
-                </div>
-                <div style="display:flex; flex-direction:column; gap:6px;">
-                    <div>ROI: <span style="color:var(--text-main);">${roiStr}</span></div>
-                    <div>Net Disb: <span style="color:var(--success);">₹${Math.round(d.netDisb).toLocaleString()}</span></div>
-                </div>
-            </div>
+                <div style="flex:1.9; display:flex; flex-direction:column; justify-content:space-between; padding:2px 0;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+                        <span class="sc-badge" style="font-size:13px; padding:4px 8px;">
+                            ${d.currentTenure}/${d.advEmi} 
+                            ${d.isRejected?'<span style="color:var(--danger); font-size:10px; margin-left:4px;">🚫</span>':''}
+                            ${d.inactive?'<span style="color:var(--warning); font-size:10px; margin-left:4px;">⏸</span>':''}
+                        </span>
+                        <button onclick="openRowActionModal(${pIdx}, ${d.dIdx}, ${d.inactive})" style="background:var(--bg-color); color:var(--text-muted); border:1px solid var(--border); border-radius:6px; padding:4px 8px; font-size:11px; font-weight:700;">⚙️ Act</button>
+                    </div>
+                    
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <span class="sc-label">Loan:</span>
+                        <input type="number" class="sc-loan-input" value="${Math.floor(d.loan)}" onblur="updateManualLoan(${pIdx}, ${d.dIdx}, this.value)" style="width:75px; padding:4px 6px; font-size:14px;">
+                    </div>
 
-            <div class="sc-footer" style="border-top:1px dashed #e2e8f0; padding-top:8px; justify-content:space-between;">
-                <div style="display:flex; align-items:center; gap:6px;">
-                    <span class="sc-label">Loan:</span>
-                    <input type="number" class="sc-loan-input" value="${Math.floor(d.loan)}" onblur="updateManualLoan(${pIdx}, ${d.dIdx}, this.value)">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-end;">
+                        <div style="display:flex; flex-direction:column;">
+                            <span class="sc-label">Net DP</span>
+                            <span class="sc-val dp" style="font-size:17px;">₹${Math.round(d.dp).toLocaleString()}</span>
+                        </div>
+                        <div style="display:flex; flex-direction:column; text-align:right;">
+                            <span class="sc-label">EMI (${d.inst}M)</span>
+                            <span class="sc-val emi" style="font-size:17px;">₹${Math.round(d.emi).toLocaleString()}</span>
+                        </div>
+                    </div>
                 </div>
-                <div style="display:flex; gap:10px;">
-                    <span class="sc-label">LTV: <span style="color:var(--text-main); font-size:12px;">${Math.round(d.curLTV)}%</span></span>
-                    <span class="sc-label">PF: <span style="color:var(--text-main); font-size:12px;">₹${d.pf}</span></span>
-                </div>
+
             </div>
+            ${d.isRejected ? `<div style="font-size:10px; color:var(--danger); font-weight:700; text-align:center; margin-top:8px;">⚠️ Limit or Cap Exceeded</div>` : ''}
         </div>`;
     }).join('');
 }
@@ -557,6 +585,7 @@ function openRowActionModal(pIdx, dIdx, isInactive) {
     let c = document.getElementById('rowActionButtons'); if(!c) return;
     c.innerHTML = `
         <button onclick="copySchemeText(${pIdx}, ${dIdx}); closeRowActionModal();" class="btn-primary" style="width:100%; margin-bottom:8px;">📋 Copy Text</button>
+        <button onclick="openEditSchemeModal(${pIdx}, ${dIdx}); closeRowActionModal();" class="btn-outline" style="width:100%; margin-bottom:8px; border-color:var(--warning); color:var(--warning);">✏️ Edit Scheme</button>
         <button onclick="toggleInactive(${pIdx}, ${dIdx}); closeRowActionModal();" class="btn-outline" style="width:100%; margin-bottom:8px; border-color:${isInactive?'var(--success)':'var(--danger)'}; color:${isInactive?'var(--success)':'var(--danger)'};">${isInactive ? '✅ Enable Scheme' : '⏸ Disable Scheme'}</button>
     `;
     let m = document.getElementById('rowActionModal'); if(m) m.style.display = 'flex';
@@ -570,9 +599,7 @@ function copySchemeText(pIdx, dIdx) {
     if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(txt).then(()=>showToast("Copied!")).catch(()=>showToast("Copy failed", "error")); } else { showToast("Copy Not Supported", "error"); }
 }
 
-/* === Generate Image & WhatsApp Web Share API === */
 function instantSingleQuote(pIdx) { window.tempImageGenIndices = [pIdx]; document.getElementById('custInfoPromptModal').style.display='flex'; }
-
 async function proceedGenerateImageAndWhatsAppShare() { document.getElementById('custInfoPromptModal').style.display='none'; await renderImage(true); }
 async function proceedGenerateImage() { document.getElementById('custInfoPromptModal').style.display='none'; await renderImage(false); }
 
