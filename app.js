@@ -9,8 +9,8 @@ let dbInstance;
 
 const EXCEL_ENDPOINTS = [
     "https://raw.githubusercontent.com/luckyjathar/testcalculator/main/master_data.xlsx",
-    "https://raw.githubusercontent.com/luckyjathar/CALCULATOR/main/master_data.xlsx",
-    "https://cdn.jsdelivr.net/gh/luckyjathar/testcalculator@main/master_data.xlsx"
+    "https://cdn.jsdelivr.net/gh/luckyjathar/testcalculator@main/master_data.xlsx",
+    "https://luckyjathar.github.io/testcalculator/master_data.xlsx"
 ];
 
 let db_records = []; let current_products = []; let sortConfigs = []; 
@@ -41,7 +41,7 @@ function initDB() {
 function saveToDB(key, data) { return new Promise((res) => { if (!dbInstance) return res(); try { let tx = dbInstance.transaction(STORE_NAME, 'readwrite'); tx.objectStore(STORE_NAME).put(JSON.stringify(data), key).onsuccess = res; } catch(e) { res(); } }); }
 function getFromDB(key) { return new Promise((res) => { if (!dbInstance) return res(null); try { let req = dbInstance.transaction(STORE_NAME, 'readonly').objectStore(STORE_NAME).get(key); req.onsuccess = e => res(e.target.result ? JSON.parse(e.target.result) : null); req.onerror = () => res(null); } catch(e) { res(null); } }); }
 
-/* === Master Data Sync & Parsing === */
+/* === Master Data Sync & Parsing (With 3rd Sheet Logic) === */
 async function fetchFromMasterStream(forceSync = false) {
     let cached = await getFromDB('cached_db_records');
     if (cached && cached.length > 0 && !forceSync) { db_records = cached; updateMasterBadgeUI(); fetchLatestExcelBackground(false); return; }
@@ -49,7 +49,7 @@ async function fetchFromMasterStream(forceSync = false) {
 }
 async function fetchLatestExcelBackground(showToasts) {
     let badge = document.getElementById('masterDataStatusBadge');
-    if(showToasts && badge) badge.innerText = "🔄 Syncing...";
+    if(showToasts && badge) { badge.innerText = "🔄 Syncing..."; badge.style.background = "#fef3c7"; badge.style.color = "#d97706"; }
     let now = Date.now(); let dataBuffer = null;
     for (let url of EXCEL_ENDPOINTS) { try { let res = await fetch(url + '?t=' + now, { cache: "no-store" }); if (res.ok) { dataBuffer = await res.arrayBuffer(); break; } } catch(e) {} }
     if (dataBuffer) { await processArrayBufferToDB(dataBuffer); if(showToasts) showToast("Master Data Updated!", "success"); } 
@@ -102,13 +102,11 @@ function parseSheetSmartly(sheet) {
     return rows;
 }
 
-// 3rd Sheet Logic Integration
+// 3rd Sheet Added Logic
 async function processArrayBufferToDB(buf) {
     let wb = XLSX.read(new Uint8Array(buf), { type: 'array' });
     let s1 = parseSheetSmartly(wb.Sheets[wb.SheetNames[0]]).map(r=>mapData(r,"REG")).filter(x=>x&&x.model);
     let s2 = wb.SheetNames.length>1 ? parseSheetSmartly(wb.Sheets[wb.SheetNames[1]]).map(r=>mapData(r,SPECIAL_MODEL)).filter(x=>x&&x.model) : [];
-    
-    // 3rd Sheet Data Integration Rule
     let s3 = wb.SheetNames.length>2 ? parseSheetSmartly(wb.Sheets[wb.SheetNames[2]]).map(r=>mapData(r,"REG")).filter(x=>x&&x.model) : [];
     
     let unique = [], seen = new Set();
@@ -134,10 +132,7 @@ window.onload = async function() {
     
     let sq = await getFromDB('persistent_queue') || JSON.parse(localStorage.getItem('persistent_queue_backup')||'[]');
     customerQueue = sq.map(c => ({ ...c, components: c.components||{}, products: c.products||[], sortConfigs: c.sortConfigs||[] }));
-    
-    let rec = await getFromDB('persistent_recycle') || JSON.parse(localStorage.getItem('persistent_recycle_backup')||'[]');
-    recycleBin = rec;
-
+    recycleBin = await getFromDB('persistent_recycle') || JSON.parse(localStorage.getItem('persistent_recycle_backup')||'[]');
     let aidx = await getFromDB('persistent_active_idx') ?? localStorage.getItem('persistent_active_idx_backup');
     activeCustomerIndex = (aidx !== null && parseInt(aidx) < customerQueue.length) ? parseInt(aidx) : -1;
     
@@ -167,13 +162,15 @@ async function addCustomerToQueue() {
     if(isNaN(limit) || limit<=0) return showToast("Enter a valid NBFC Limit!", "error");
     if(db_records.length===0) return showToast("Please wait for Master Data to Sync.", "warning");
     
-    let typeEl = document.getElementById('cqType'); let type = typeEl ? typeEl.value : "NEW";
-    let nameEl = document.getElementById('cqName'); let name = nameEl ? nameEl.value.trim() : "";
-    let ltvEl = document.getElementById('cqLtv'); let capEl = document.getElementById('cqCap');
+    let type = document.getElementById('cqType').value || "NEW";
+    let name = document.getElementById('cqName').value.trim() || `Cust ${customerQueue.length+1}`;
+    let rawLtv = parseFloat(document.getElementById('cqLtv').value)||100;
+    let ltv = Math.min(100, rawLtv); // Force max 100
+    let cap = parseFloat(document.getElementById('cqCap').value)||"";
     
-    let c = { id: Date.now(), name: name || `Cust ${customerQueue.length+1}`, limit: limit, ltv: ltvEl ? (parseFloat(ltvEl.value)||100) : 100, type: type, cap: capEl ? (parseFloat(capEl.value)||"") : "", targetDp: "", timestamp: new Date().toLocaleString(), components: {}, products: [], sortConfigs: [] };
+    let c = { id: Date.now(), name: name, limit: limit, ltv: ltv, type: type, cap: cap, targetDp: "", timestamp: new Date().toLocaleString(), components: {}, products: [], sortConfigs: [] };
     customerQueue.unshift(c); activeCustomerIndex = 0; await saveQueueToLocal();
-    if(nameEl) nameEl.value = ""; if(limitEl) limitEl.value = ""; if(capEl) capEl.value = "";
+    document.getElementById('cqName').value = ""; document.getElementById('cqLimit').value = ""; document.getElementById('cqCap').value = "";
     closeAddCustomerModal(); renderCustomerQueue(); goToFinalPage();
 }
 
@@ -204,7 +201,8 @@ function uniEdit() {
 function closeCustomerEdit() { let m = document.getElementById('editCustomerModal'); if(m) m.style.display = 'none'; }
 async function saveCustomerEdit() {
     if(selectedQueueIndex === -1) return; let c = customerQueue[selectedQueueIndex];
-    c.name = document.getElementById('ecName').value || ''; c.limit = parseFloat(document.getElementById('ecLimit').value) || 0; c.type = document.getElementById('ecType').value; c.ltv = parseFloat(document.getElementById('ecLtv').value) || 100;
+    c.name = document.getElementById('ecName').value || ''; c.limit = parseFloat(document.getElementById('ecLimit').value) || 0; c.type = document.getElementById('ecType').value; 
+    let rawLtv = parseFloat(document.getElementById('ecLtv').value) || 100; c.ltv = Math.min(100, rawLtv); // Force max 100
     let cap = parseFloat(document.getElementById('ecCap').value); c.cap = cap > 0 ? cap : '';
     await saveQueueToLocal(); renderCustomerQueue(); if(activeCustomerIndex === selectedQueueIndex) goToFinalPage(); closeCustomerEdit();
 }
@@ -237,11 +235,11 @@ function goToFinalPage() {
     let c = customerQueue[activeCustomerIndex]; if(!c) return;
     let uh = document.getElementById('unifiedHome'); if(uh) uh.style.display = 'none';
     let fa = document.getElementById('finalEligibleArea'); if(fa) fa.style.display = 'flex';
-    let n = document.getElementById('infoName'); if(n) n.innerText = c.name || "Customer";
-    let l = document.getElementById('infoLimit'); if(l) l.innerText = "₹" + (c.limit||0).toLocaleString();
-    let t = document.getElementById('infoType'); if(t) t.innerText = c.type;
-    let ltv = document.getElementById('infoLtv'); if(ltv) ltv.innerText = c.ltv + "%";
-    let cap = document.getElementById('infoCap'); if(cap) cap.innerText = c.cap ? "₹"+c.cap : "None";
+    document.getElementById('infoName').innerText = c.name || "Customer";
+    document.getElementById('infoLimit').innerText = "₹" + (c.limit||0).toLocaleString();
+    document.getElementById('infoType').innerText = c.type;
+    document.getElementById('infoLtv').innerText = c.ltv + "%";
+    document.getElementById('infoCap').innerText = c.cap ? "₹"+c.cap : "None";
     loadCurrentProducts(); renderMatrix(); setTimeout(() => { if(current_products.length === 0) openAddProductModal(); }, 100);
 }
 function loadCurrentProducts() { let c = customerQueue[activeCustomerIndex]; current_products = c.products||[]; sortConfigs = c.sortConfigs||[]; }
@@ -268,18 +266,7 @@ function selectCategory(cat) { editingProductIdx = -1; tempPendingProduct = { na
 function generateStackCards() {
     let box = document.getElementById('stackInputsContainer'); if(!box) return; box.innerHTML = "";
     for(let i=1; i<=10; i++) {
-        box.innerHTML += `
-        <div style="background:#f8fafc; border:1px solid var(--border); border-radius:8px; padding:10px; margin-bottom:10px;">
-            <div style="font-weight:700; color:var(--primary); margin-bottom:6px; font-size:13px;">Scheme #${i}</div>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-                <div><label>Tenure Max</label><input type="number" id="msTen_${i}"></div>
-                <div><label>Advance</label><input type="number" id="msAdv_${i}"></div>
-                <div><label>DBD %</label><input type="number" id="msDbd_${i}"></div>
-                <div><label>PF ₹</label><input type="number" id="msPf_${i}"></div>
-                <div><label>ROI %</label><input type="number" id="msRoi_${i}"></div>
-                <div><label>Fixed EMI ₹</label><input type="number" id="msFix_${i}"></div>
-            </div>
-        </div>`;
+        box.innerHTML += `<div style="background:#f8fafc; border:1px solid var(--border); border-radius:8px; padding:10px; margin-bottom:10px;"><div style="font-weight:700; color:var(--primary); margin-bottom:6px; font-size:13px;">Scheme #${i}</div><div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;"><div><label>Tenure Max</label><input type="number" id="msTen_${i}"></div><div><label>Advance</label><input type="number" id="msAdv_${i}"></div><div><label>DBD %</label><input type="number" id="msDbd_${i}"></div><div><label>PF ₹</label><input type="number" id="msPf_${i}"></div><div><label>ROI %</label><input type="number" id="msRoi_${i}"></div><div><label>Fixed EMI ₹</label><input type="number" id="msFix_${i}"></div></div></div>`;
     }
 }
 function openMultiStackModal() { showInlineSubPanel('multiStackModal'); }
@@ -339,7 +326,7 @@ function openEditModelComponents(pIdx) {
 }
 function removeModelFromMatrix(pIdx) { current_products.splice(pIdx, 1); sortConfigs.splice(pIdx, 1); customerQueue[activeCustomerIndex].products = current_products; saveQueueToLocal(); renderMatrix(); }
 
-/* === MAIN UNDERWRITING LOGIC === */
+/* === MAIN UNDERWRITING LOGIC (With Sorting Bar) === */
 function renderMatrix() {
     let box = document.getElementById('multiModelContainer'); if(!box) return; box.innerHTML = "";
     current_products.forEach((prod, pIdx) => {
@@ -359,10 +346,27 @@ function renderMatrix() {
                 <div style="display:flex; flex-wrap:wrap; gap:6px;">${chipsHtml}</div>
                 <button onclick="openEditModelComponents(${pIdx})" style="background:var(--primary); color:white; border:none; padding:4px 10px; border-radius:6px; font-weight:700; font-size:11px;">⚙️ Edit Inv</button>
             </div>
+            
+            <div style="padding:8px 10px; background:#fff; border-bottom:1px solid #e2e8f0; display:flex; gap:8px; align-items:center; overflow-x:auto;">
+                <span style="font-size:10px; font-weight:800; color:var(--text-muted);">SORT:</span>
+                <span onclick="sortMatrixTable(${pIdx}, 'dp')" style="font-size:10px; font-weight:700; background:#f1f5f9; color:var(--primary); border:1px solid #e2e8f0; padding:4px 10px; border-radius:12px; cursor:pointer;">DP ↕</span>
+                <span onclick="sortMatrixTable(${pIdx}, 'emi')" style="font-size:10px; font-weight:700; background:#f1f5f9; color:var(--primary); border:1px solid #e2e8f0; padding:4px 10px; border-radius:12px; cursor:pointer;">EMI ↕</span>
+                <span onclick="sortMatrixTable(${pIdx}, 'months')" style="font-size:10px; font-weight:700; background:#f1f5f9; color:var(--primary); border:1px solid #e2e8f0; padding:4px 10px; border-radius:12px; cursor:pointer;">Months ↕</span>
+                <span onclick="sortMatrixTable(${pIdx}, 'extra')" style="font-size:10px; font-weight:700; background:#f1f5f9; color:var(--primary); border:1px solid #e2e8f0; padding:4px 10px; border-radius:12px; cursor:pointer;">Extra ↕</span>
+            </div>
+
             <div style="padding:10px; background:#fff;" id="cards_${pIdx}"></div>
         </div>`;
         box.innerHTML += h; recalcModel(pIdx);
     });
+}
+
+function sortMatrixTable(pIdx, key) {
+    if(!sortConfigs[pIdx]) sortConfigs[pIdx] = {key: 'dp', dir: 'asc'};
+    let conf = sortConfigs[pIdx];
+    if (conf.key === key) { conf.dir = conf.dir === 'asc' ? 'desc' : 'asc'; } 
+    else { conf.key = key; conf.dir = 'asc'; }
+    renderCards(pIdx);
 }
 
 function recalcModel(pIdx) {
@@ -474,8 +478,18 @@ function recalcModel(pIdx) {
 }
 
 function renderCards(pIdx) {
-    let conf = sortConfigs[pIdx] || {key: 'dp', dir: 1}; let prod = current_products[pIdx];
-    let vis = prod.calculatedData.sort((a,b) => a.isRejected - b.isRejected || (a.dp - b.dp) || (a.emi - b.emi));
+    let conf = sortConfigs[pIdx] || {key: 'dp', dir: 'asc'}; 
+    let prod = current_products[pIdx];
+    
+    let vis = prod.calculatedData.sort((a,b) => {
+        if (a.isRejected !== b.isRejected) return a.isRejected - b.isRejected;
+        let dir = conf.dir === 'asc' ? 1 : -1;
+        if (conf.key === 'dp') { if (a.dp !== b.dp) return (a.dp - b.dp) * dir; return (a.emi - b.emi) * dir; } 
+        else if (conf.key === 'emi') { return (a.emi - b.emi) * dir; } 
+        else if (conf.key === 'months') { return (a.inst - b.inst) * dir; } 
+        else if (conf.key === 'extra') { return (a.extra - b.extra) * dir; }
+        return 0;
+    });
     
     document.getElementById(`cards_${pIdx}`).innerHTML = vis.map(d => {
         let dbdStr = `${+parseFloat(d.dbd).toFixed(3)}% (₹${Math.round(d.dbdAmt||0)})`;
@@ -502,11 +516,16 @@ function renderCards(pIdx) {
                 </div>
             </div>
 
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; font-size:10px; color:var(--text-muted); font-weight:600; background:#f8fafc; padding:8px; border-radius:6px; margin-bottom:8px;">
-                <div>DBD: <span style="color:var(--text-main);">${dbdStr}</span></div>
-                <div>ROI: <span style="color:var(--text-main);">${roiStr}</span></div>
-                <div>Extra: <span style="color:var(--danger);">₹${Math.round(d.extra).toLocaleString()}</span></div>
-                <div>Net Disb: <span style="color:var(--success);">₹${Math.round(d.netDisb).toLocaleString()}</span></div>
+            <!-- Left Aligned Internal Charges -->
+            <div style="display:flex; gap:25px; font-size:10px; color:var(--text-muted); font-weight:600; background:#f8fafc; padding:10px 12px; border-radius:6px; margin-bottom:8px; justify-content: flex-start;">
+                <div style="display:flex; flex-direction:column; gap:6px;">
+                    <div>DBD: <span style="color:var(--text-main);">${dbdStr}</span></div>
+                    <div>Extra: <span style="color:var(--danger);">₹${Math.round(d.extra).toLocaleString()}</span></div>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:6px;">
+                    <div>ROI: <span style="color:var(--text-main);">${roiStr}</span></div>
+                    <div>Net Disb: <span style="color:var(--success);">₹${Math.round(d.netDisb).toLocaleString()}</span></div>
+                </div>
             </div>
 
             <div class="sc-footer" style="border-top:1px dashed #e2e8f0; padding-top:8px; justify-content:space-between;">
@@ -524,14 +543,16 @@ function renderCards(pIdx) {
 }
 
 function updateManualLoan(pIdx, dIdx, val) {
-    let prod = current_products[pIdx]; if(!prod.inputs.manualLoans) prod.inputs.manualLoans = {};
+    let prod = current_products[pIdx]; 
+    if(!prod.inputs.manualLoans) prod.inputs.manualLoans = {};
     let loanVal = parseFloat(val) || 0; let effP = parseFloat(prod.inputs.inv) || 0;
+    
     if(loanVal < effP * 0.50) { loanVal = effP * 0.50; showToast("Loan cannot be < 50% Invoice!", "error"); }
     if(loanVal > effP) { loanVal = effP; showToast("Loan cannot exceed Invoice Value!", "warning"); }
+    
     prod.inputs.manualLoans[dIdx] = loanVal; recalcModel(pIdx); saveQueueToLocal();
 }
 
-/* === Action Modal & Image Share === */
 function openRowActionModal(pIdx, dIdx, isInactive) {
     let c = document.getElementById('rowActionButtons'); if(!c) return;
     c.innerHTML = `
@@ -549,7 +570,9 @@ function copySchemeText(pIdx, dIdx) {
     if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(txt).then(()=>showToast("Copied!")).catch(()=>showToast("Copy failed", "error")); } else { showToast("Copy Not Supported", "error"); }
 }
 
+/* === Generate Image & WhatsApp Web Share API === */
 function instantSingleQuote(pIdx) { window.tempImageGenIndices = [pIdx]; document.getElementById('custInfoPromptModal').style.display='flex'; }
+
 async function proceedGenerateImageAndWhatsAppShare() { document.getElementById('custInfoPromptModal').style.display='none'; await renderImage(true); }
 async function proceedGenerateImage() { document.getElementById('custInfoPromptModal').style.display='none'; await renderImage(false); }
 
@@ -596,16 +619,3 @@ async function renderImage(shouldShare) {
     } else { showImageInModal(dataUrl); }
 }
 function showImageInModal(dataUrl) { document.getElementById('generatedImage').src = dataUrl; document.getElementById('imageViewerModal').style.display = 'flex'; }
-
-/* === GitHub API Config === */
-function openGithubConfig() { 
-    let r = document.getElementById('ghRepoName'); if(r) r.value = localStorage.getItem('gh_repo')||"luckyjathar/testcalculator";
-    let p = document.getElementById('ghPatToken'); if(p) p.value = localStorage.getItem('gh_pat')||"";
-    document.getElementById('githubConfigModal').style.display = 'flex'; 
-}
-function closeGithubConfig() { document.getElementById('githubConfigModal').style.display = 'none'; }
-function saveGithubConfig() { 
-    localStorage.setItem('gh_repo', document.getElementById('ghRepoName').value.trim()); 
-    localStorage.setItem('gh_pat', document.getElementById('ghPatToken').value.trim()); 
-    showToast("GitHub Setup Saved!"); closeGithubConfig(); 
-}
