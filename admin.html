@@ -3,12 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin - Scheme Master Manager</title>
-  <!-- Tailwind CSS -->
+  <title>Admin - Master Data Manager (IndexedDB)</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- SheetJS for Excel Reading/Writing -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans min-h-screen pb-12">
@@ -18,19 +15,16 @@
     <div class="max-w-7xl mx-auto px-4 py-4 flex flex-wrap justify-between items-center gap-4">
       <div>
         <h1 class="text-xl font-bold tracking-tight flex items-center gap-2">
-          <i class="fa-solid fa-sliders text-indigo-400"></i> Calculator Master Admin
+          <i class="fa-solid fa-database text-indigo-400"></i> Master Data Admin (Large Dataset Support)
         </h1>
-        <p class="text-xs text-slate-400">स्कीम मॅट्रिक्स आणि मास्टर डेटा मॅनेजमेंट</p>
+        <p class="text-xs text-slate-400">७५,०००+ मॉडेल्स आणि स्कीम्स हाय-स्पीड मॅनेजर</p>
       </div>
       <div class="flex items-center gap-2">
-        <a href="index.html" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-700 transition">
+        <a href="index.html" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-700">
           <i class="fa-solid fa-calculator"></i> Calculator वर जा
         </a>
-        <button onclick="exportToJSON()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 shadow transition">
-          <i class="fa-solid fa-download"></i> JSON डाउनलोड
-        </button>
-        <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 shadow transition">
-          <i class="fa-solid fa-file-excel"></i> Excel डाउनलोड
+        <button onclick="exportToJSON()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium shadow">
+          <i class="fa-solid fa-download"></i> Export JSON
         </button>
       </div>
     </div>
@@ -38,68 +32,58 @@
 
   <main class="max-w-7xl mx-auto px-4 mt-6 space-y-6">
 
-    <!-- Top Action Cards -->
+    <!-- Action Cards -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
       
       <!-- Excel Upload -->
-      <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-between">
-        <div>
-          <h2 class="text-sm font-bold text-slate-700 flex items-center gap-2 mb-1.5">
-            <i class="fa-solid fa-file-arrow-up text-indigo-600"></i> मास्टर Excel अपलोड
-          </h2>
-          <p class="text-xs text-slate-500 mb-4">
-            नवीन स्कीम लिस्ट असलेली .xlsx किंवा .xls फाइल सिलेक्ट करा. डेटा लगेच खालील टेबलमध्ये लोड होईल.
-          </p>
-        </div>
-        <div>
-          <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleExcelUpload(event)">
-          <label for="excelFileInput" class="w-full cursor-pointer bg-indigo-50 hover:bg-indigo-100 border border-dashed border-indigo-300 text-indigo-700 py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 text-xs font-semibold transition">
-            <i class="fa-solid fa-cloud-arrow-up"></i> Excel फाइल निवडा
-          </label>
-        </div>
+      <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+        <h2 class="text-sm font-bold text-slate-700 flex items-center gap-2 mb-1.5">
+          <i class="fa-solid fa-file-arrow-up text-indigo-600"></i> master_data.xlsx अपलोड करा
+        </h2>
+        <p class="text-xs text-slate-500 mb-4">
+          Sheet1 मधील सर्व कॅटेगरी, मॉडेल्स आणि स्कीम्स IndexedDB मध्ये जलद सेव्ह होतात.
+        </p>
+        <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleExcelUpload(event)">
+        <label for="excelFileInput" id="uploadLabel" class="w-full cursor-pointer bg-indigo-50 hover:bg-indigo-100 border border-dashed border-indigo-400 text-indigo-700 py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 text-xs font-semibold">
+          <i class="fa-solid fa-cloud-arrow-up"></i> Excel फाइल निवडा
+        </label>
       </div>
 
-      <!-- Add Single Scheme -->
+      <!-- Quick Search / Stats -->
       <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-between">
         <div>
           <h2 class="text-sm font-bold text-slate-700 flex items-center gap-2 mb-1.5">
-            <i class="fa-solid fa-circle-plus text-emerald-600"></i> मॅन्युअल स्कीम ॲड
+            <i class="fa-solid fa-layer-group text-blue-600"></i> एकूण रेकॉर्ड्स संख्या
           </h2>
-          <p class="text-xs text-slate-500 mb-4">
-            नवीन एखादी स्कीम तातडीने फॉर्म भरून डेटाबेसमध्ये समाविष्ट करण्यासाठी खालील बटण वापरा.
-          </p>
-        </div>
-        <button onclick="openSchemeModal()" class="w-full bg-slate-800 hover:bg-slate-900 text-white py-2.5 px-4 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition">
-          <i class="fa-solid fa-plus"></i> नवीन स्कीम टाका
-        </button>
-      </div>
-
-      <!-- Live Stats -->
-      <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-between">
-        <div>
-          <h2 class="text-sm font-bold text-slate-700 flex items-center gap-2 mb-1.5">
-            <i class="fa-solid fa-database text-blue-600"></i> ॲक्टिव्ह स्कीम्स
-          </h2>
-          <p class="text-xs text-slate-500 mb-2">कॅल्क्युलेटरसाठी सध्या उपलब्ध असलेल्या स्कीम्सची संख्या.</p>
+          <p class="text-xs text-slate-500">स्थानिक ब्राउझर मेमरीमध्ये उपलब्ध डेटा.</p>
         </div>
         <div class="flex items-baseline justify-between pt-2 border-t border-slate-100">
           <span class="text-3xl font-extrabold text-slate-900" id="totalCount">0</span>
-          <button onclick="clearAllData()" class="text-xs text-rose-500 hover:text-rose-700 font-medium">
-            सर्व डेटा क्लिअर करा
-          </button>
+          <button onclick="clearAllData()" class="text-xs text-rose-500 hover:text-rose-700 font-medium">Clear Data</button>
         </div>
+      </div>
+
+      <!-- Status Indicator -->
+      <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-between">
+        <h2 class="text-sm font-bold text-slate-700 mb-1.5">प्रक्रिया स्थिती (Status)</h2>
+        <div id="statusBox" class="text-xs text-slate-600 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+          डेटा लोड झालेला आहे.
+        </div>
+        <div class="text-[11px] text-slate-400 mt-2">IndexedDB V1 Active</div>
       </div>
 
     </div>
 
-    <!-- Search & Filters -->
+    <!-- Filter & Search Bar -->
     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
-      <div class="relative w-full sm:w-80">
+      <div class="relative w-full sm:w-96">
         <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-xs"></i>
-        <input type="text" id="searchInput" oninput="renderTable()" placeholder="स्कीम नाव किंवा कोड शोधा..." class="w-full pl-9 pr-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <input type="text" id="searchInput" oninput="debounceSearch()" placeholder="Brand, Model, Category शोधा..." class="w-full pl-9 pr-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
       </div>
-      <div class="text-xs text-slate-500 font-medium" id="showingCountText">
-        0 स्कीम्स दिसत आहेत
+      <div class="flex items-center gap-3">
+        <span class="text-xs text-slate-500 font-medium" id="pageIndicator">Page 1</span>
+        <button onclick="changePage(-1)" class="px-2.5 py-1 text-xs border rounded bg-slate-50 hover:bg-slate-100">&lt; Prev</button>
+        <button onclick="changePage(1)" class="px-2.5 py-1 text-xs border rounded bg-slate-50 hover:bg-slate-100">Next &gt;</button>
       </div>
     </div>
 
@@ -109,17 +93,17 @@
         <table class="w-full text-left text-xs text-slate-600">
           <thead class="bg-slate-50 text-slate-700 uppercase font-bold text-[11px] border-b border-slate-200">
             <tr>
-              <th class="py-3 px-4">Scheme Code</th>
-              <th class="py-3 px-4">Scheme Name</th>
-              <th class="py-3 px-4">Tenure</th>
-              <th class="py-3 px-4">Adv. EMI</th>
-              <th class="py-3 px-4">DBD %</th>
-              <th class="py-3 px-4">PF (₹)</th>
-              <th class="py-3 px-4 text-center">Action</th>
+              <th class="py-3 px-3">Category</th>
+              <th class="py-3 px-3">Brand</th>
+              <th class="py-3 px-4">Model</th>
+              <th class="py-3 px-3">MRP (₹)</th>
+              <th class="py-3 px-3">Scheme</th>
+              <th class="py-3 px-3">DBD %</th>
+              <th class="py-3 px-3">PF (₹)</th>
             </tr>
           </thead>
-          <tbody id="schemeTableBody" class="divide-y divide-slate-100">
-            <!-- Rows dynamically render here -->
+          <tbody id="dataTableBody" class="divide-y divide-slate-100">
+            <!-- Dynamic Data -->
           </tbody>
         </table>
       </div>
@@ -127,253 +111,208 @@
 
   </main>
 
-  <!-- Add/Edit Modal -->
-  <div id="schemeModal" class="fixed inset-0 bg-slate-950/60 hidden items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200">
-      <div class="bg-slate-50 px-5 py-3.5 border-b border-slate-200 flex justify-between items-center">
-        <h3 class="font-bold text-sm text-slate-800" id="modalTitle">नवीन स्कीम भरा</h3>
-        <button onclick="closeSchemeModal()" class="text-slate-400 hover:text-slate-700 text-base">&times;</button>
-      </div>
-
-      <form id="schemeForm" onsubmit="handleFormSubmit(event)" class="p-5 space-y-3.5 text-xs">
-        <input type="hidden" id="editIndex" value="-1">
-
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block font-semibold text-slate-700 mb-1">Scheme Code</label>
-            <input type="text" id="schemeCode" required placeholder="उदा. 10/2, 16/4" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
-          </div>
-          <div>
-            <label class="block font-semibold text-slate-700 mb-1">Scheme Name</label>
-            <input type="text" id="schemeName" required placeholder="उदा. Festive Special" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
-          </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block font-semibold text-slate-700 mb-1">Tenure (महिने)</label>
-            <input type="number" id="tenure" required placeholder="उदा. 10, 16" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
-          </div>
-          <div>
-            <label class="block font-semibold text-slate-700 mb-1">Advance EMI</label>
-            <input type="number" id="advEmi" required placeholder="उदा. 2, 4" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
-          </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block font-semibold text-slate-700 mb-1">DBD (%)</label>
-            <input type="number" step="0.01" id="dbd" value="0" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
-          </div>
-          <div>
-            <label class="block font-semibold text-slate-700 mb-1">Processing Fee (₹)</label>
-            <input type="number" id="pf" value="0" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
-          </div>
-        </div>
-
-        <div class="flex justify-end gap-2.5 pt-3 border-t border-slate-100">
-          <button type="button" onclick="closeSchemeModal()" class="px-4 py-2 font-medium text-slate-600 hover:bg-slate-100 rounded-lg">रद्द करा</button>
-          <button type="submit" class="px-5 py-2 font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow">सेव्ह करा</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
   <script>
-    // कॅल्क्युलेटर आणि ॲडमिन दोन्हीमध्ये हाच स्टोरेज की वापरा
-    const STORAGE_KEY = 'calculator_master_schemes';
-    let schemes = [];
+    // IndexedDB Setup
+    const DB_NAME = 'CalculatorMasterDB';
+    const STORE_NAME = 'schemes';
+    let db;
+    let allData = [];
+    let filteredData = [];
+    let currentPage = 1;
+    const pageSize = 50;
+    let searchTimer;
 
-    window.addEventListener('DOMContentLoaded', () => {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        try {
-          schemes = JSON.parse(stored);
-        } catch (e) {
-          schemes = [];
-        }
-      }
-      renderTable();
-    });
-
-    function saveToStorage() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(schemes));
-      renderTable();
+    function initDB() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open(DB_NAME, 1);
+        req.onupgradeneeded = (e) => {
+          const dbInstance = e.target.result;
+          if (!dbInstance.objectStoreNames.contains(STORE_NAME)) {
+            dbInstance.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
+          }
+        };
+        req.onsuccess = (e) => {
+          db = e.target.result;
+          loadDataFromDB();
+          resolve(db);
+        };
+        req.onerror = (e) => reject(e);
+      });
     }
 
-    // Excel Upload वाचणे
+    async function loadDataFromDB() {
+      const tx = db.transaction(STORE_NAME, 'readonly');
+      const store = tx.objectStore(STORE_NAME);
+      const req = store.getAll();
+
+      req.onsuccess = () => {
+        allData = req.result || [];
+        filteredData = allData;
+        document.getElementById('totalCount').innerText = allData.length.toLocaleString('en-IN');
+        renderTable();
+      };
+    }
+
+    // Excel Upload Handler
     function handleExcelUpload(event) {
       const file = event.target.files[0];
       if (!file) return;
 
+      const statusBox = document.getElementById('statusBox');
+      const uploadLabel = document.getElementById('uploadLabel');
+      uploadLabel.innerText = "Processing Excel... कृपया थांबा...";
+      statusBox.innerText = "Excel फाइल वाचली जात आहे...";
+
       const reader = new FileReader();
       reader.onload = function(e) {
-        try {
-          const data = new Uint8Array(e.target.result);
-          const workbook = XLSX.read(data, { type: 'array' });
-          const firstSheetName = workbook.SheetNames[0];
-          const worksheet = workbook.Sheets[firstSheetName];
-          const rawJson = XLSX.utils.sheet_to_json(worksheet);
+        setTimeout(() => {
+          try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            
+            // Sheet1 किंवा पहिली उपलब्ध शीट निवडणे
+            const targetSheetName = workbook.SheetNames.includes('Sheet1') ? 'Sheet1' : workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[targetSheetName];
+            const rows = XLSX.utils.sheet_to_json(worksheet);
 
-          if (!rawJson || rawJson.length === 0) {
-            alert('Excel फाइलमध्ये कोणताही डेटा आढळला नाही!');
-            return;
+            if (!rows || rows.length === 0) {
+              alert('शीटमध्ये डेटा सापडला नाही!');
+              uploadLabel.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Excel फाइल निवडा';
+              return;
+            }
+
+            statusBox.innerText = `${rows.length} ओळी IndexedDB मध्ये सेव्ह होत आहेत...`;
+
+            // Mapping exact columns
+            const records = rows.map((r, i) => ({
+              id: i + 1,
+              category: String(r['CATEGORY'] || '').trim(),
+              brand: String(r['BRAND'] || '').trim(),
+              model: String(r['MODEL'] || '').trim(),
+              mrp: Number(r['MRP'] || 0),
+              tenure: Number(r['TOTAL TENURE'] || 0),
+              advEmi: Number(r['ADVANCE EMI'] || 0),
+              scheme: `${Number(r['TOTAL TENURE'] || 0)}/${Number(r['ADVANCE EMI'] || 0)}`,
+              dbd: Number(r['DBD'] || 0),
+              pf: Number(r['PF'] || 0),
+              roi: Number(r['ROI'] || 0)
+            }));
+
+            // Bulk store to IndexedDB
+            const tx = db.transaction(STORE_NAME, 'readwrite');
+            const store = tx.objectStore(STORE_NAME);
+            store.clear(); // जुना डेटा क्लिअर करा
+
+            records.forEach(item => store.put(item));
+
+            tx.oncomplete = () => {
+              allData = records;
+              filteredData = allData;
+              currentPage = 1;
+              document.getElementById('totalCount').innerText = allData.length.toLocaleString('en-IN');
+              statusBox.innerText = `यशस्वी! ${records.length.toLocaleString('en-IN')} रेकॉर्ड्स सेव्ह झाले.`;
+              uploadLabel.innerHTML = '<i class="fa-solid fa-check text-emerald-600"></i> अपलोड पूर्ण!';
+              renderTable();
+            };
+
+          } catch (err) {
+            console.error(err);
+            alert('फाइल प्रोसेस करताना त्रुटी आली: ' + err.message);
+            statusBox.innerText = 'त्रुटी: फाइल फॉरमॅट तपासा.';
           }
-
-          // Headers मॅपिंग (विविध फॉरमॅटला सपोर्ट)
-          const parsed = rawJson.map(row => ({
-            code: String(row['Scheme Code'] || row['Code'] || row['scheme_code'] || 'NA').trim(),
-            name: String(row['Scheme Name'] || row['Name'] || row['scheme_name'] || 'Scheme').trim(),
-            tenure: Number(row['Tenure'] || row['tenure'] || 0),
-            advEmi: Number(row['Advance EMI'] || row['Adv EMI'] || row['adv_emi'] || 0),
-            dbd: Number(row['DBD'] || row['dbd'] || 0),
-            pf: Number(row['Processing Fee'] || row['PF'] || row['pf'] || 0)
-          }));
-
-          schemes = parsed;
-          saveToStorage();
-          alert(`एकूण ${schemes.length} स्कीम्स यशस्वीरीत्या अपलोड झाल्या!`);
-        } catch (err) {
-          alert('फाइल वाचताना त्रुटी आली. कृपया योग्य .xlsx फॉरमॅट तपासा.');
-        }
-        event.target.value = '';
+          event.target.value = '';
+        }, 50);
       };
       reader.readAsArrayBuffer(file);
     }
 
-    // Table Render करणे
+    // Debounced Search for fast UI
+    function debounceSearch() {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => {
+        applyFilter();
+      }, 300);
+    }
+
+    function applyFilter() {
+      const q = document.getElementById('searchInput').value.toLowerCase().trim();
+      if (!q) {
+        filteredData = allData;
+      } else {
+        filteredData = allData.filter(d => 
+          d.model.toLowerCase().includes(q) ||
+          d.brand.toLowerCase().includes(q) ||
+          d.category.toLowerCase().includes(q) ||
+          d.scheme.includes(q)
+        );
+      }
+      currentPage = 1;
+      renderTable();
+    }
+
     function renderTable() {
-      const tbody = document.getElementById('schemeTableBody');
-      const searchVal = document.getElementById('searchInput').value.toLowerCase().trim();
+      const tbody = document.getElementById('dataTableBody');
       tbody.innerHTML = '';
 
-      const filtered = schemes.filter(s => 
-        (s.code && s.code.toLowerCase().includes(searchVal)) ||
-        (s.name && s.name.toLowerCase().includes(searchVal))
-      );
+      const totalPages = Math.ceil(filteredData.length / pageSize) || 1;
+      document.getElementById('pageIndicator').innerText = `Page ${currentPage} of ${totalPages} (${filteredData.length} records)`;
 
-      document.getElementById('totalCount').innerText = schemes.length;
-      document.getElementById('showingCountText').innerText = `${filtered.length} पैकी ${schemes.length} स्कीम्स दिसत आहेत`;
+      const start = (currentPage - 1) * pageSize;
+      const paginatedItems = filteredData.slice(start, start + pageSize);
 
-      if (filtered.length === 0) {
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="7" class="py-8 text-center text-slate-400">
-              कोणतीही स्कीम उपलब्ध नाही. Excel अपलोड करा किंवा 'नवीन स्कीम टाका' वर क्लिक करा.
-            </td>
-          </tr>
-        `;
+      if (paginatedItems.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-slate-400">माहिती उपलब्ध नाही.</td></tr>`;
         return;
       }
 
-      filtered.forEach((item, index) => {
+      paginatedItems.forEach(item => {
         const tr = document.createElement('tr');
         tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
         tr.innerHTML = `
-          <td class="py-2.5 px-4 font-mono font-bold text-indigo-700">${item.code}</td>
-          <td class="py-2.5 px-4 font-medium text-slate-700">${item.name}</td>
-          <td class="py-2.5 px-4">${item.tenure} महिने</td>
-          <td class="py-2.5 px-4">${item.advEmi}</td>
-          <td class="py-2.5 px-4">${item.dbd}%</td>
-          <td class="py-2.5 px-4">₹${item.pf}</td>
-          <td class="py-2.5 px-4 text-center">
-            <div class="inline-flex gap-2">
-              <button onclick="editScheme(${index})" class="text-indigo-600 hover:text-indigo-900 p-1" title="एडिट करा">
-                <i class="fa-solid fa-pen-to-square"></i>
-              </button>
-              <button onclick="deleteScheme(${index})" class="text-rose-500 hover:text-rose-700 p-1" title="डिलीट करा">
-                <i class="fa-solid fa-trash-can"></i>
-              </button>
-            </div>
-          </td>
+          <td class="py-2.5 px-3 font-semibold text-slate-600">${item.category}</td>
+          <td class="py-2.5 px-3 font-bold text-slate-800">${item.brand}</td>
+          <td class="py-2.5 px-4 font-mono text-slate-700">${item.model}</td>
+          <td class="py-2.5 px-3 font-medium">₹${item.mrp.toLocaleString('en-IN')}</td>
+          <td class="py-2.5 px-3 font-bold text-indigo-700">${item.scheme}</td>
+          <td class="py-2.5 px-3">${item.dbd}%</td>
+          <td class="py-2.5 px-3">₹${item.pf}</td>
         `;
         tbody.appendChild(tr);
       });
     }
 
-    // Modal & CRUD Operations
-    function openSchemeModal(isEdit = false) {
-      document.getElementById('schemeModal').classList.remove('hidden');
-      document.getElementById('schemeModal').classList.add('flex');
-      if (!isEdit) {
-        document.getElementById('modalTitle').innerText = 'नवीन स्कीम भरा';
-        document.getElementById('schemeForm').reset();
-        document.getElementById('editIndex').value = '-1';
-      }
-    }
-
-    function closeSchemeModal() {
-      document.getElementById('schemeModal').classList.add('hidden');
-      document.getElementById('schemeModal').classList.remove('flex');
-    }
-
-    function handleFormSubmit(e) {
-      e.preventDefault();
-      const editIdx = parseInt(document.getElementById('editIndex').value);
-      const data = {
-        code: document.getElementById('schemeCode').value.trim(),
-        name: document.getElementById('schemeName').value.trim(),
-        tenure: Number(document.getElementById('tenure').value),
-        advEmi: Number(document.getElementById('advEmi').value),
-        dbd: Number(document.getElementById('dbd').value || 0),
-        pf: Number(document.getElementById('pf').value || 0)
-      };
-
-      if (editIdx >= 0) {
-        schemes[editIdx] = data;
-      } else {
-        schemes.push(data);
-      }
-
-      saveToStorage();
-      closeSchemeModal();
-    }
-
-    function editScheme(index) {
-      const s = schemes[index];
-      document.getElementById('editIndex').value = index;
-      document.getElementById('schemeCode').value = s.code;
-      document.getElementById('schemeName').value = s.name;
-      document.getElementById('tenure').value = s.tenure;
-      document.getElementById('advEmi').value = s.advEmi;
-      document.getElementById('dbd').value = s.dbd;
-      document.getElementById('pf').value = s.pf;
-
-      document.getElementById('modalTitle').innerText = 'स्कीम माहिती बदला';
-      openSchemeModal(true);
-    }
-
-    function deleteScheme(index) {
-      if (confirm(`'${schemes[index].name}' ही स्कीम खरोखर काढून टाकायची आहे का?`)) {
-        schemes.splice(index, 1);
-        saveToStorage();
+    function changePage(direction) {
+      const maxPage = Math.ceil(filteredData.length / pageSize);
+      if (currentPage + direction >= 1 && currentPage + direction <= maxPage) {
+        currentPage += direction;
+        renderTable();
       }
     }
 
     function clearAllData() {
-      if (confirm('सर्व स्कीम्स डिलीट करायच्या आहेत का? हा बदल परत आणता येणार नाही.')) {
-        schemes = [];
-        saveToStorage();
+      if (confirm('सर्व डेटा काढून टाकायचा आहे का?')) {
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        tx.objectStore(STORE_NAME).clear();
+        tx.oncomplete = () => {
+          allData = [];
+          filteredData = [];
+          document.getElementById('totalCount').innerText = '0';
+          renderTable();
+        };
       }
     }
 
-    // Exports
     function exportToJSON() {
-      const blob = new Blob([JSON.stringify(schemes, null, 2)], { type: 'application/json' });
+      const blob = new Blob([JSON.stringify(allData)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'schemes.json';
+      a.download = 'master_data.json';
       a.click();
       URL.revokeObjectURL(url);
     }
 
-    function exportToExcel() {
-      const ws = XLSX.utils.json_to_sheet(schemes);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Schemes");
-      XLSX.writeFile(wb, "schemes.xlsx");
-    }
+    window.addEventListener('DOMContentLoaded', initDB);
   </script>
 </body>
-  </html>
+</html>
