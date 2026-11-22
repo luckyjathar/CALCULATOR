@@ -5,21 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>EMI Calculator</title>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
     :root {
       --bg: #f1f5f9;
       --card: #ffffff;
       --primary: #1d4ed8;
+      --primary-dark: #1e3a8a;
       --primary-light: #eff6ff;
       --text: #0f172a;
       --muted: #64748b;
       --border: #e2e8f0;
-      --success: #15803d;
-      --success-bg: #dcfce7;
-      --warn: #b45309;
-      --warn-bg: #fef3c7;
-      --danger: #b91c1c;
-      --danger-bg: #fee2e2;
+      --success: #059669;
+      --success-bg: #ecfdf5;
+      --warn: #d97706;
+      --warn-bg: #fffbeb;
+      --danger: #dc2626;
+      --danger-bg: #fef2f2;
+      --purple: #7c3aed;
+      --purple-bg: #f5f3ff;
+      --orange: #ea580c;
       --radius: 14px;
     }
 
@@ -35,21 +40,22 @@
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
-      padding-bottom: 32px;
+      padding-bottom: 84px;
+      overflow-x: hidden;
     }
 
-    /* Mobile App Top Bar */
+    /* Top App Bar */
     .app-header {
       position: sticky;
       top: 0;
-      z-index: 50;
+      z-index: 60;
       background: var(--primary);
       color: #ffffff;
-      padding: 14px 16px;
+      padding: 13px 16px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      box-shadow: 0 2px 10px rgba(15, 23, 42, 0.12);
+      box-shadow: 0 2px 10px rgba(15, 23, 42, 0.14);
     }
 
     .app-title {
@@ -60,37 +66,29 @@
 
     .status-pill {
       font-size: 12px;
-      font-weight: 600;
+      font-weight: 700;
       padding: 4px 10px;
       border-radius: 999px;
       background: rgba(255, 255, 255, 0.2);
       color: #ffffff;
     }
 
-    .status-pill.ready {
-      background: var(--success-bg);
-      color: var(--success);
-    }
-
-    .status-pill.updating {
-      background: var(--warn-bg);
-      color: var(--warn);
-    }
-
-    .status-pill.error {
-      background: var(--danger-bg);
-      color: var(--danger);
-    }
+    .status-pill.ready { background: var(--success-bg); color: var(--success); }
+    .status-pill.updating { background: var(--warn-bg); color: var(--warn); }
+    .status-pill.error { background: var(--danger-bg); color: var(--danger); }
 
     /* Main Container */
     .container {
-      max-width: 520px;
+      max-width: 540px;
       margin: 0 auto;
-      padding: 14px;
+      padding: 12px;
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 12px;
     }
+
+    .view-section { display: none; flex-direction: column; gap: 12px; }
+    .view-section.active { display: flex; }
 
     .card {
       background: var(--card);
@@ -100,44 +98,70 @@
       border: 1px solid var(--border);
     }
 
-    .section-label {
-      font-size: 13px;
-      font-weight: 700;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 0.4px;
+    .card-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
       margin-bottom: 10px;
     }
 
-    /* Inputs Grid */
-    .input-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
+    .section-label {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
-    .field {
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
+    /* Active Customer Banner */
+    .active-banner {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--primary-light);
+      border: 1px solid #bfdbfe;
+      color: var(--primary-dark);
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+    .active-banner.show { display: flex; }
+    .active-banner button {
+      border: none;
+      background: #dbeafe;
+      color: var(--primary-dark);
+      font-weight: 700;
+      font-size: 12px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      cursor: pointer;
     }
 
-    .field.full {
-      grid-column: 1 / -1;
-    }
+    /* Form Grids */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+
+    .field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    .field.full { grid-column: 1 / -1; }
 
     .field label {
-      font-size: 13px;
-      font-weight: 600;
+      font-size: 12px;
+      font-weight: 700;
       color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .field input,
     .field select {
       width: 100%;
-      height: 46px;
-      padding: 0 12px;
-      font-size: 16px;
+      height: 44px;
+      padding: 0 10px;
+      font-size: 15px;
       font-weight: 600;
       color: var(--text);
       background: #f8fafc;
@@ -150,11 +174,11 @@
     .field select {
       appearance: none;
       -webkit-appearance: none;
-      padding-right: 38px;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      padding-right: 30px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
       background-repeat: no-repeat;
-      background-position: right 12px center;
-      background-size: 18px;
+      background-position: right 9px center;
+      background-size: 16px;
       cursor: pointer;
     }
 
@@ -164,36 +188,39 @@
       background-color: #ffffff;
     }
 
-    /* Search Box */
-    .search-wrap {
-      position: relative;
+    .field input[readonly],
+    .field input:disabled,
+    .field select:disabled {
+      background-color: #e2e8f0;
+      color: #64748b;
+      cursor: not-allowed;
     }
 
+    .field input.var-alert {
+      color: var(--danger);
+      font-weight: 800;
+    }
+
+    /* Search Box */
+    .search-wrap { position: relative; }
     .search-input {
       width: 100%;
-      height: 48px;
-      padding: 0 42px 0 14px;
-      font-size: 16px;
+      height: 46px;
+      padding: 0 40px 0 14px;
+      font-size: 15px;
+      font-weight: 500;
       color: var(--text);
       background: #f8fafc;
       border: 1.5px solid var(--border);
       border-radius: 12px;
       outline: none;
     }
-
-    .search-input:focus {
-      border-color: var(--primary);
-      background: #ffffff;
-    }
-
-    .search-input:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
+    .search-input:focus { border-color: var(--primary); background: #ffffff; }
+    .search-input:disabled { opacity: 0.6; cursor: not-allowed; }
 
     .clear-btn {
       position: absolute;
-      right: 10px;
+      right: 9px;
       top: 50%;
       transform: translateY(-50%);
       width: 28px;
@@ -203,115 +230,471 @@
       background: #e2e8f0;
       color: var(--text);
       font-size: 18px;
-      line-height: 1;
       display: none;
       align-items: center;
       justify-content: center;
       cursor: pointer;
     }
+    .clear-btn.show { display: flex; }
 
-    .clear-btn.show {
-      display: flex;
-    }
-
-    /* Search Results List */
     .results-list {
       margin-top: 8px;
-      max-height: 280px;
+      max-height: 260px;
       overflow-y: auto;
       border: 1px solid var(--border);
       border-radius: 10px;
       background: #ffffff;
       display: none;
     }
-
-    .results-list.show {
-      display: block;
-    }
+    .results-list.show { display: block; }
 
     .result-item {
       padding: 11px 12px;
       border-bottom: 1px solid var(--border);
       cursor: pointer;
     }
-
-    .result-item:last-child {
-      border-bottom: none;
-    }
-
-    .result-item:active {
-      background: var(--primary-light);
-    }
+    .result-item:last-child { border-bottom: none; }
+    .result-item:active { background: var(--primary-light); }
 
     .result-model {
-      font-size: 15px;
-      font-weight: 600;
+      font-size: 14px;
+      font-weight: 700;
       color: var(--text);
       margin-bottom: 3px;
       word-break: break-word;
     }
-
     .result-meta {
-      font-size: 13px;
+      font-size: 12px;
       color: var(--muted);
       display: flex;
       justify-content: space-between;
       gap: 8px;
     }
 
-    .empty-msg {
-      padding: 14px;
-      text-align: center;
-      font-size: 14px;
-      color: var(--muted);
-    }
-
-    /* Selected Model Display */
-    .selected-card {
-      display: none;
-    }
-
-    .selected-card.show {
-      display: block;
-    }
-
-    .model-title {
-      font-size: 16px;
+    /* Non-Tieup Category Picker */
+    .nt-btn {
+      width: 100%;
+      margin-top: 10px;
+      height: 40px;
+      border: 1.5px dashed var(--primary);
+      border-radius: 10px;
+      background: var(--primary-light);
+      color: var(--primary);
+      font-size: 13px;
       font-weight: 700;
+      cursor: pointer;
+    }
+
+    .nt-panel {
+      display: none;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+    }
+    .nt-panel.show { display: block; }
+
+    .nt-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .nt-cat-btn {
+      padding: 10px 8px;
+      border: 1px solid #cbd5e1;
+      border-radius: 9px;
+      background: #f8fafc;
       color: var(--text);
-      margin-bottom: 4px;
+      font-size: 12px;
+      font-weight: 700;
+      text-align: center;
+      cursor: pointer;
+    }
+    .nt-cat-btn:active { background: var(--primary); color: #ffffff; }
+
+    /* Selected Model Pricing Card */
+    .hidden { display: none !important; }
+    .model-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--primary-dark);
       word-break: break-word;
     }
-
     .model-sub {
-      font-size: 13px;
+      font-size: 12px;
+      font-weight: 600;
       color: var(--muted);
+      margin-top: 2px;
       margin-bottom: 12px;
     }
 
-    .scheme-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 14px;
+    /* Action Pills */
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 12px;
+      align-items: center;
     }
-
-    .scheme-table th,
-    .scheme-table td {
-      padding: 9px 6px;
-      text-align: center;
-      border-bottom: 1px solid var(--border);
+    .tool-select {
+      height: 36px;
+      padding: 0 26px 0 10px;
+      font-size: 13px;
+      font-weight: 700;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background-color: #f8fafc;
+      color: var(--text);
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 7px center;
     }
-
-    .scheme-table th {
+    .btn-sm {
+      height: 36px;
+      padding: 0 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
       background: #f8fafc;
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn-sm.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #ffffff;
+    }
+    .btn-primary {
+      background: var(--primary);
+      border: none;
+      color: #ffffff;
+      height: 44px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 700;
+      padding: 0 14px;
+      cursor: pointer;
+    }
+    .btn-success {
+      background: var(--success);
+      border: none;
+      color: #ffffff;
+      height: 44px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 700;
+      padding: 0 14px;
+      cursor: pointer;
+    }
+    .btn-danger {
+      background: var(--danger);
+      border: none;
+      color: #ffffff;
+      height: 36px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 0 10px;
+      cursor: pointer;
+    }
+
+    /* Scheme Cards */
+    .schemes-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .scheme-item {
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      background: #ffffff;
+      position: relative;
+    }
+    .scheme-item.badge-dp { border-left: 5px solid var(--success); background: #f8fffb; }
+    .scheme-item.badge-emi { border-left: 5px solid var(--primary); background: #f8fbff; }
+    .scheme-item.badge-pop { border-left: 5px solid var(--warn); background: #fffdf5; }
+    .scheme-item.badge-bal { border-left: 5px solid var(--purple); background: #faf8ff; }
+    .scheme-item.breached {
+      border-color: #fecaca;
+      border-left: 5px solid var(--danger);
+      background: #fff8f8;
+      opacity: 0.88;
+    }
+
+    .scheme-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .scheme-ta {
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .tag {
+      font-size: 10px;
+      font-weight: 800;
+      padding: 3px 7px;
+      border-radius: 5px;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+    }
+    .tag-dp { background: var(--success); color: #fff; }
+    .tag-emi { background: var(--primary); color: #fff; }
+    .tag-pop { background: var(--warn); color: #fff; }
+    .tag-bal { background: var(--purple); color: #fff; }
+    .tag-fixed { background: #e0e7ff; color: #3730a3; }
+    .tag-breach { background: var(--danger); color: #fff; }
+    .tag-exp { background: #e2e8f0; color: #475569; }
+
+    .copy-btn {
+      border: none;
+      background: var(--primary-light);
+      color: var(--primary);
+      font-size: 12px;
+      font-weight: 800;
+      padding: 6px 10px;
+      border-radius: 7px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .metrics-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px 4px;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    .m-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+    .m-val { font-size: 15px; font-weight: 800; color: var(--text); }
+    .m-val.dp { color: var(--success); }
+    .m-val.emi { color: var(--primary); }
+    .m-val.daily { color: var(--orange); }
+
+    /* Loan Stepper */
+    .loan-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .loan-label {
       font-size: 12px;
       font-weight: 700;
       color: var(--muted);
     }
-
-    .scheme-table td {
-      font-weight: 600;
+    .stepper {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .step-btn {
+      width: 34px;
+      height: 34px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      background: #f8fafc;
       color: var(--text);
+      font-size: 18px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .step-inp {
+      width: 96px;
+      height: 34px;
+      text-align: center;
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--text);
+      border: 1.5px solid #cbd5e1;
+      border-radius: 8px;
+      background: #ffffff;
+    }
+
+    /* Breakdown Details */
+    .details-box {
+      display: none;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px dashed #cbd5e1;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px 12px;
+      font-size: 12px;
+    }
+    .schemes-list.show-details .details-box { display: grid; }
+    .det-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 6px;
+    }
+    .det-k { color: var(--muted); font-weight: 600; }
+    .det-v { color: var(--text); font-weight: 800; text-align: right; }
+    .det-v.danger { color: var(--danger); }
+    .det-v.primary { color: var(--primary); }
+
+    /* Queue & Dealer Cards */
+    .warn-box {
+      display: none;
+      padding: 9px 11px;
+      border-radius: 9px;
+      font-size: 13px;
+      font-weight: 700;
+      margin-top: 8px;
+      background: var(--danger-bg);
+      color: var(--danger);
+      border: 1px solid #fecaca;
+    }
+    .warn-box.show { display: block; }
+
+    .q-item, .dealer-item {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .q-item.active-q {
+      border-color: var(--primary);
+      background: var(--primary-light);
+    }
+    .dealer-item.fav {
+      border-color: #f59e0b;
+      background: #fffdf0;
+    }
+    .q-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    .q-name { font-size: 15px; font-weight: 800; color: var(--text); }
+    .q-meta { font-size: 12px; font-weight: 600; color: var(--muted); }
+    .q-actions { display: flex; gap: 6px; }
+    .q-actions button { flex: 1; height: 34px; font-size: 12px; font-weight: 700; border-radius: 8px; border: none; cursor: pointer; }
+
+    /* Date Result Box */
+    .date-result {
+      margin-top: 12px;
+      background: var(--primary-light);
+      border: 1px solid #bfdbfe;
+      border-radius: 10px;
+      padding: 12px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .date-box-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; }
+    .date-box-val { font-size: 15px; font-weight: 800; color: var(--primary-dark); margin-top: 3px; }
+    .rule-note { font-size: 12px; color: var(--muted); margin-top: 8px; line-height: 1.45; }
+
+    /* Bottom Navigation Bar */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 70;
+      background: #ffffff;
+      border-top: 1px solid var(--border);
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      height: 62px;
+      box-shadow: 0 -2px 10px rgba(15, 23, 42, 0.06);
+    }
+    .nav-btn {
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      cursor: pointer;
+    }
+    .nav-btn .nav-icon { font-size: 18px; line-height: 1; }
+    .nav-btn.active { color: var(--primary); }
+
+    /* Modals */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: rgba(15, 23, 42, 0.6);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 14px;
+    }
+    .modal-backdrop.show { display: flex; }
+    .modal-box {
+      width: 100%;
+      max-width: 480px;
+      max-height: 88vh;
+      overflow-y: auto;
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .modal-title { font-size: 16px; font-weight: 800; color: var(--text); }
+    .modal-img { width: 100%; border-radius: 10px; border: 1px solid var(--border); }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 76px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      z-index: 120;
+      background: #0f172a;
+      color: #ffffff;
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s, transform 0.2s;
+      max-width: 92vw;
+      text-align: center;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast.error { background: var(--danger); }
+    .toast.success { background: var(--success); }
+
+    .empty-msg {
+      padding: 16px;
+      text-align: center;
+      font-size: 14px;
+      color: var(--muted);
+      font-weight: 600;
     }
   </style>
 </head>
@@ -323,81 +706,303 @@
   </header>
 
   <main class="container">
-    <!-- 1. Eligibility Inputs -->
-    <section class="card">
-      <div class="section-label">Customer Eligibility</div>
+    <!-- ==================== VIEW 1: CALCULATOR ==================== -->
+    <div id="viewCalc" class="view-section active">
 
-      <div class="input-grid">
-        <div class="field full">
-          <label for="customerType">Customer Type</label>
-          <select id="customerType">
-            <option value="NEW">NEW</option>
-            <option value="EMI CARD">EMI CARD</option>
-            <option value="VIRTUAL">VIRTUAL</option>
-            <option value="W/O CARD">W/O CARD</option>
+      <!-- 1. Customer Eligibility -->
+      <section class="card">
+        <div class="card-header-row">
+          <div class="section-label">Customer Eligibility</div>
+        </div>
+
+        <div id="activeCustBanner" class="active-banner">
+          <span id="activeCustName">Active Customer</span>
+          <button type="button" id="clearActiveCustBtn">Clear</button>
+        </div>
+
+        <div class="grid-2">
+          <div class="field full">
+            <label for="customerType">Customer Type</label>
+            <select id="customerType">
+              <option value="NEW">NEW</option>
+              <option value="EMI CARD">EMI CARD</option>
+              <option value="VIRTUAL">VIRTUAL</option>
+              <option value="W/O CARD">W/O CARD</option>
+            </select>
+          </div>
+
+          <div class="field full">
+            <label for="approvedLimit">Approved Limit (₹)</label>
+            <input type="number" id="approvedLimit" inputmode="numeric" placeholder="e.g. 50000" />
+          </div>
+
+          <div class="field">
+            <label for="ltvPercent">LTV (%)</label>
+            <input type="number" id="ltvPercent" inputmode="decimal" placeholder="e.g. 75" />
+          </div>
+
+          <div class="field">
+            <label for="emiCapping">EMI Capping (₹)</label>
+            <input type="number" id="emiCapping" inputmode="numeric" placeholder="e.g. 4000" />
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. Model Search & Non-Tieup -->
+      <section class="card">
+        <div class="card-header-row">
+          <div class="section-label">Model Search</div>
+        </div>
+
+        <div class="search-wrap">
+          <input
+            type="text"
+            id="modelSearch"
+            class="search-input"
+            placeholder="Search model, brand, or category..."
+            autocomplete="off"
+            disabled
+          />
+          <button type="button" id="clearSearch" class="clear-btn" aria-label="Clear">×</button>
+        </div>
+
+        <div id="resultsList" class="results-list"></div>
+
+        <button type="button" id="nonTieupToggleBtn" class="nt-btn" disabled>
+          Non-Tieup Schemes (By Category)
+        </button>
+
+        <div id="nonTieupPanel" class="nt-panel">
+          <div id="nonTieupGrid" class="nt-grid"></div>
+        </div>
+      </section>
+
+      <!-- 3. Product Pricing, Insurance & Charges -->
+      <section id="pricingCard" class="card hidden">
+        <div class="card-header-row">
+          <div class="section-label">Pricing &amp; Charges</div>
+          <button type="button" id="clearModelBtn" class="btn-sm">Reset</button>
+        </div>
+
+        <div id="selectedTitle" class="model-title"></div>
+        <div id="selectedSub" class="model-sub"></div>
+
+        <div class="grid-3" style="margin-bottom: 10px;">
+          <div class="field">
+            <label for="inpMrp">MRP (₹)</label>
+            <input type="number" id="inpMrp" inputmode="numeric" placeholder="0" />
+          </div>
+          <div class="field">
+            <label for="inpInv">Invoice (₹)</label>
+            <input type="number" id="inpInv" inputmode="numeric" placeholder="0" />
+          </div>
+          <div class="field">
+            <label for="inpVar">VAR (₹)</label>
+            <input type="number" id="inpVar" readonly value="0" />
+          </div>
+        </div>
+
+        <div class="grid-3" style="margin-bottom: 10px;">
+          <div class="field">
+            <label for="inpGtl">GTL (₹)</label>
+            <select id="inpGtl">
+              <option value="0">0</option>
+              <option value="699">699</option>
+              <option value="1099">1099</option>
+              <option value="1199">1199</option>
+              <option value="1499">1499</option>
+              <option value="1799">1799</option>
+              <option value="2398">2398</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="inpRfc">RFC (₹)</label>
+            <select id="inpRfc">
+              <option value="0">0</option>
+              <option id="inpRfcOpt" value="0">0</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="inpExw">EXW (₹)</label>
+            <input type="number" id="inpExw" inputmode="numeric" placeholder="0" />
+          </div>
+        </div>
+
+        <div class="grid-3">
+          <div class="field">
+            <label for="inpTargetDp">Target DP (₹)</label>
+            <input type="number" id="inpTargetDp" inputmode="numeric" placeholder="0" />
+          </div>
+          <div class="field">
+            <label for="inpMargin">Margin (₹)</label>
+            <input type="number" id="inpMargin" inputmode="numeric" placeholder="0" />
+          </div>
+          <div class="field">
+            <label for="inpDealer">Dealer (₹)</label>
+            <input type="number" id="inpDealer" inputmode="numeric" placeholder="0" />
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. Schemes Output -->
+      <section id="schemesCard" class="card hidden">
+        <div class="card-header-row">
+          <div class="section-label">Calculated Schemes</div>
+          <span id="eligibleSummary" style="font-size:12px; font-weight:700; color:var(--primary);"></span>
+        </div>
+
+        <div class="toolbar">
+          <select id="sortSelect" class="tool-select">
+            <option value="dp">Sort: Lowest DP</option>
+            <option value="emi">Sort: Lowest EMI</option>
+            <option value="tenure">Sort: Tenure</option>
+            <option value="daily">Sort: Daily EMI</option>
           </select>
+          <button type="button" id="toggleDetailsBtn" class="btn-sm">Details</button>
+          <button type="button" id="toggleAllBtn" class="btn-sm">Show All</button>
+          <button type="button" id="quoteImgBtn" class="btn-sm active">Quote Image</button>
         </div>
 
-        <div class="field full">
-          <label for="approvedLimit">Approved Limit (₹)</label>
-          <input type="number" id="approvedLimit" inputmode="numeric" placeholder="e.g. 50000" />
+        <div id="schemesContainer" class="schemes-list"></div>
+      </section>
+    </div>
+
+    <!-- ==================== VIEW 2: CUSTOMER QUEUE ==================== -->
+    <div id="viewQueue" class="view-section">
+      <section class="card">
+        <div class="card-header-row">
+          <div class="section-label">Add Customer to Queue</div>
+          <button type="button" id="openBinBtn" class="btn-sm">Recycle Bin (<span id="binCount">0</span>)</button>
         </div>
 
-        <div class="field">
-          <label for="ltvPercent">LTV (%)</label>
-          <input type="number" id="ltvPercent" inputmode="decimal" placeholder="e.g. 75" />
+        <div class="grid-2">
+          <div class="field">
+            <label for="qName">Customer Name</label>
+            <input type="text" id="qName" placeholder="Full name" />
+          </div>
+          <div class="field">
+            <label for="qMobile">Mobile (10 digits)</label>
+            <input type="tel" id="qMobile" inputmode="numeric" maxlength="10" placeholder="10-digit number" />
+          </div>
         </div>
 
-        <div class="field">
-          <label for="emiCapping">EMI Capping (₹)</label>
-          <input type="number" id="emiCapping" inputmode="numeric" placeholder="e.g. 4000" />
+        <div id="qDupWarn" class="warn-box"></div>
+
+        <button type="button" id="addQueueBtn" class="btn-success" style="width:100%; margin-top:10px;">
+          Save with Current Eligibility
+        </button>
+      </section>
+
+      <section class="card">
+        <div class="card-header-row">
+          <div class="section-label">Saved Queue (<span id="qCount">0</span>)</div>
         </div>
-      </div>
-    </section>
+        <div class="search-wrap" style="margin-bottom:10px;">
+          <input type="text" id="qSearch" class="search-input" placeholder="Search name, mobile, or limit..." />
+        </div>
+        <div id="qList" class="schemes-list"></div>
+      </section>
+    </div>
 
-    <!-- 2. Model Search -->
-    <section class="card">
-      <div class="section-label">Model Search</div>
-      <div class="search-wrap">
-        <input
-          type="text"
-          id="modelSearch"
-          class="search-input"
-          placeholder="Search model or brand..."
-          autocomplete="off"
-          disabled
-        />
-        <button type="button" id="clearSearch" class="clear-btn" aria-label="Clear">×</button>
-      </div>
-      <div id="resultsList" class="results-list"></div>
-    </section>
+    <!-- ==================== VIEW 3: TOOLS (EMI DATES & DEALERS) ==================== -->
+    <div id="viewTools" class="view-section">
+      <!-- First EMI Date Calculator -->
+      <section class="card">
+        <div class="card-header-row">
+          <div class="section-label">First &amp; Last EMI Date</div>
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label for="emiLoanDate">Loan Date</label>
+            <input type="date" id="emiLoanDate" />
+          </div>
+          <div class="field">
+            <label for="emiNetTenure">Net Tenure (Months)</label>
+            <input type="number" id="emiNetTenure" inputmode="numeric" placeholder="e.g. 8" value="8" />
+          </div>
+        </div>
+        <div class="date-result">
+          <div>
+            <div class="date-box-label">First EMI Date</div>
+            <div id="emiStartDateOut" class="date-box-val">-</div>
+          </div>
+          <div>
+            <div class="date-box-label">Last EMI Date</div>
+            <div id="emiEndDateOut" class="date-box-val">-</div>
+          </div>
+        </div>
+        <p class="rule-note">
+          EMI is debited on the 2nd of every month. Loans up to the 23rd start next month; loans on or after the 24th start after two months.
+        </p>
+      </section>
 
-    <!-- Selected Model Schemes -->
-    <section id="selectedCard" class="card selected-card">
-      <div class="section-label">Selected Model</div>
-      <div id="selectedTitle" class="model-title"></div>
-      <div id="selectedSub" class="model-sub"></div>
-      <table class="scheme-table">
-        <thead>
-          <tr>
-            <th>Tenure</th>
-            <th>Adv</th>
-            <th>DBD</th>
-            <th>PF/CPF</th>
-            <th>ROI</th>
-            <th>Fix EMI</th>
-          </tr>
-        </thead>
-        <tbody id="schemeBody"></tbody>
-      </table>
-    </section>
+      <!-- Dealer Search -->
+      <section class="card">
+        <div class="card-header-row">
+          <div class="section-label">Dealer Search</div>
+          <button type="button" id="dealerFavBtn" class="btn-sm">Favorites</button>
+        </div>
+        <div class="search-wrap" style="margin-bottom:10px;">
+          <input type="text" id="dealerSearch" class="search-input" placeholder="Search dealer name, ID, or city..." />
+        </div>
+        <div id="dealerResults" class="schemes-list">
+          <div class="empty-msg">Type dealer name, ID, or city to search.</div>
+        </div>
+      </section>
+    </div>
   </main>
+
+  <!-- Bottom Mobile Navigation -->
+  <nav class="bottom-nav">
+    <button type="button" id="tabCalc" class="nav-btn active">
+      <span class="nav-icon">&#9783;</span>
+      <span>Calculator</span>
+    </button>
+    <button type="button" id="tabQueue" class="nav-btn">
+      <span class="nav-icon">&#9786;</span>
+      <span>Queue</span>
+    </button>
+    <button type="button" id="tabTools" class="nav-btn">
+      <span class="nav-icon">&#9881;</span>
+      <span>Tools</span>
+    </button>
+  </nav>
+
+  <!-- Recycle Bin Modal -->
+  <div id="binModal" class="modal-backdrop">
+    <div class="modal-box">
+      <div class="card-header-row" style="margin-bottom:0;">
+        <div class="modal-title">Recycle Bin</div>
+        <button type="button" id="closeBinBtn" class="btn-sm">Close</button>
+      </div>
+      <div id="binList" class="schemes-list"></div>
+      <button type="button" id="emptyBinBtn" class="btn-danger" style="width:100%; height:40px;">Empty Recycle Bin</button>
+    </div>
+  </div>
+
+  <!-- Quotation Image Modal -->
+  <div id="quoteModal" class="modal-backdrop">
+    <div class="modal-box">
+      <div class="card-header-row" style="margin-bottom:0;">
+        <div class="modal-title">Customer Quotation</div>
+        <button type="button" id="closeQuoteModalBtn" class="btn-sm">Close</button>
+      </div>
+      <img id="quoteImgPreview" class="modal-img" alt="Customer Quotation" />
+      <div class="grid-2">
+        <button type="button" id="copyQuoteImgBtn" class="btn-primary">Copy Image</button>
+        <button type="button" id="downloadQuoteImgBtn" class="btn-success">Download PNG</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toastEl" class="toast"></div>
 
   <script>
     const DATA_URL = './master_data.xlsx';
     const DB_NAME = 'EMICalculatorCacheDB';
-    const DB_VERSION = 1;
+    const DB_VERSION = 2;
     const STORE_NAME = 'appCache';
+    const CACHE_SCHEMA = 2;
 
     const CUSTOMER_TYPE_CHARGES = {
       'NEW': 850,
@@ -406,42 +1011,254 @@
       'W/O CARD': 320
     };
 
-    let selectedCustomerType = 'NEW';
-    let customerTypeCharge = CUSTOMER_TYPE_CHARGES[selectedCustomerType];
-
     let appData = {
-      sheet1: [],
-      sheet2: [],
-      dealers: [],
-      sheet3: [],
-      extra: {}
+      models: [],
+      nonTieup: [],
+      dealers: []
     };
 
-    let modelIndex = [];
-    let selectedModel = null;
+    let selectedItem = null; // { brand, model, category, mrp, isNonTieup, schemes: [] }
+    let manualLoans = {};
+    let showDetails = false;
+    let showAllSchemes = false;
+    let currentCalculated = [];
+    let lastQuoteCanvas = null;
 
+    // Customer Queue State
+    let customerQueue = JSON.parse(localStorage.getItem('calc_queue_v1') || '[]');
+    let recycleBin = JSON.parse(localStorage.getItem('calc_bin_v1') || '[]');
+    let activeQueueId = null;
+    let selectedQueueId = null;
+    let showingFavDealers = false;
+
+    // DOM References
     const statusPill = document.getElementById('statusPill');
-    const customerTypeSelect = document.getElementById('customerType');
+    const customerTypeEl = document.getElementById('customerType');
+    const approvedLimitEl = document.getElementById('approvedLimit');
+    const ltvPercentEl = document.getElementById('ltvPercent');
+    const emiCappingEl = document.getElementById('emiCapping');
+    const activeCustBanner = document.getElementById('activeCustBanner');
+    const activeCustName = document.getElementById('activeCustName');
+    const clearActiveCustBtn = document.getElementById('clearActiveCustBtn');
+
     const modelSearch = document.getElementById('modelSearch');
     const clearSearch = document.getElementById('clearSearch');
     const resultsList = document.getElementById('resultsList');
-    const selectedCard = document.getElementById('selectedCard');
+    const nonTieupToggleBtn = document.getElementById('nonTieupToggleBtn');
+    const nonTieupPanel = document.getElementById('nonTieupPanel');
+    const nonTieupGrid = document.getElementById('nonTieupGrid');
+
+    const pricingCard = document.getElementById('pricingCard');
     const selectedTitle = document.getElementById('selectedTitle');
     const selectedSub = document.getElementById('selectedSub');
-    const schemeBody = document.getElementById('schemeBody');
+    const clearModelBtn = document.getElementById('clearModelBtn');
+    const inpMrp = document.getElementById('inpMrp');
+    const inpInv = document.getElementById('inpInv');
+    const inpVar = document.getElementById('inpVar');
+    const inpGtl = document.getElementById('inpGtl');
+    const inpRfc = document.getElementById('inpRfc');
+    const inpRfcOpt = document.getElementById('inpRfcOpt');
+    const inpExw = document.getElementById('inpExw');
+    const inpTargetDp = document.getElementById('inpTargetDp');
+    const inpMargin = document.getElementById('inpMargin');
+    const inpDealer = document.getElementById('inpDealer');
 
-    // Customer Type dropdown change
-    customerTypeSelect.addEventListener('change', () => {
-      selectedCustomerType = customerTypeSelect.value;
-      customerTypeCharge = CUSTOMER_TYPE_CHARGES[selectedCustomerType] || 0;
-    });
+    const schemesCard = document.getElementById('schemesCard');
+    const eligibleSummary = document.getElementById('eligibleSummary');
+    const sortSelect = document.getElementById('sortSelect');
+    const toggleDetailsBtn = document.getElementById('toggleDetailsBtn');
+    const toggleAllBtn = document.getElementById('toggleAllBtn');
+    const quoteImgBtn = document.getElementById('quoteImgBtn');
+    const schemesContainer = document.getElementById('schemesContainer');
+
+    const toastEl = document.getElementById('toastEl');
+    let toastTimer = null;
+
+    function showToast(msg, type = '') {
+      toastEl.textContent = msg;
+      toastEl.className = 'toast show' + (type ? ` ${type}` : '');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { toastEl.className = 'toast'; }, 2600);
+    }
 
     function setStatus(text, type = '') {
       statusPill.textContent = text;
       statusPill.className = 'status-pill' + (type ? ` ${type}` : '');
     }
 
-    // IndexedDB helpers
+    function escapeHtml(str) {
+      return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    /* ==================== CATEGORY & SLAB RULES ==================== */
+    function isMobileDeviceCat(cat) {
+      if (!cat) return false;
+      const c = String(cat).toUpperCase().replace(/\s+/g, '').trim();
+      return (
+        c === 'PHONE(WEB-MOBILE)' ||
+        c === 'PHONE,TABLET,SMARTWATCH' ||
+        c.includes('TABLET,SMART') ||
+        c.includes('PHONE,TABLET') ||
+        c.includes('PHONE(WEB-MOBILE)') ||
+        c.includes('SMARTWATCH') ||
+        c === 'SMARTPHONES' ||
+        c === 'MOBILE'
+      );
+    }
+
+    function standardizeCategoryName(cat) {
+      if (!cat) return 'OTHER';
+      const c = String(cat).toUpperCase().trim();
+      const cNoSpace = c.replace(/\s+/g, '');
+      if (isMobileDeviceCat(c)) return 'PHONE(WEB-MOBILE)';
+      if (cNoSpace === 'AIRCONDITIONERS' || cNoSpace === 'AIRCONDITIONER' || cNoSpace === 'AC') return 'AC';
+      if (cNoSpace === 'BATTERIES' || cNoSpace === 'BATTERY') return 'BATTERY';
+      if (cNoSpace === 'AIRCOOLERS' || cNoSpace === 'AIRCOOLER' || cNoSpace === 'COOLER') return 'AIR COOLER';
+      if (cNoSpace === 'TELEVISIONS' || cNoSpace === 'TELEVISION' || cNoSpace === 'TV' || cNoSpace === 'LED' || cNoSpace === 'LEDTV') return 'LED TV';
+      if (cNoSpace === 'WASHINGMACHINES' || cNoSpace === 'WASHINGMACHINE' || cNoSpace === 'WM' || cNoSpace === 'WASHER') return 'WASHING MACHINE';
+      if (cNoSpace === 'REFRIGERATORS' || cNoSpace === 'REFRIGERATOR' || cNoSpace === 'FRIDGE' || cNoSpace === 'REF') return 'REFRIGERATOR';
+      if (cNoSpace === 'WATERPURIFIERS' || cNoSpace === 'WATERPURIFIER' || cNoSpace === 'RO') return 'WATER PURIFIER';
+      return c;
+    }
+
+    function getGtlSlabValue(val) {
+      const amt = parseFloat(val) || 0;
+      if (amt > 100000) return 2398;
+      if (amt > 50000) return 1799;
+      if (amt > 30000) return 1499;
+      if (amt > 10000) return 1199;
+      if (amt > 0) return 699;
+      return 0;
+    }
+
+    function getRfcSlabValue(val) {
+      const amt = parseFloat(val) || 0;
+      if (amt < 8000) return 0;
+      if (amt <= 10000) return 1109;
+      if (amt <= 15000) return 1631;
+      if (amt <= 20000) return 2147;
+      if (amt <= 25000) return 2695;
+      if (amt <= 30000) return 3215;
+      if (amt <= 35000) return 3648;
+      if (amt <= 40000) return 4219;
+      if (amt <= 50000) return 5720;
+      if (amt <= 60000) return 8686;
+      if (amt <= 100000) return 11438;
+      if (amt <= 200000) return 16677;
+      return 0;
+    }
+
+    function getNonTieupPfValue(category, amount) {
+      const cat = String(category || '').toUpperCase().replace(/\s+/g, '').trim();
+      const val = parseFloat(amount) || 0;
+      if (cat.includes('DESKTOP') || cat.includes('LAPTOP')) return 699;
+      if (
+        cat === 'PHONE(WEB-MOBILE)' ||
+        cat.includes('PHONE') ||
+        cat.includes('TABLET') ||
+        cat.includes('WATCH') ||
+        cat.includes('PRINTER') ||
+        cat.includes('HEADPHONE') ||
+        cat === 'SMARTPHONES' ||
+        cat === 'MOBILE'
+      ) {
+        if (val <= 30000) return 499;
+        if (val <= 50000) return 599;
+        return 699;
+      }
+      return null;
+    }
+
+    /* ==================== DATE PARSING & EXPIRY ==================== */
+    function parseRawDate(val) {
+      if (val === '' || val === null || val === undefined) return null;
+      if (typeof val === 'number') {
+        return new Date(Math.round((val - 25569) * 86400 * 1000));
+      }
+      if (typeof val === 'string') {
+        const s = val.trim();
+        if (!s) return null;
+        const d = new Date(s);
+        if (!isNaN(d.getTime())) return d;
+        const parts = s.split(/[\/\-\.]/);
+        if (parts.length === 3) {
+          const y = parts[2].length === 2 ? '20' + parts[2] : parts[2];
+          const dt = new Date(parseInt(y, 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10));
+          if (!isNaN(dt.getTime())) return dt;
+        }
+      }
+      return null;
+    }
+
+    function isExpiryStrExpired(expiryDateStr) {
+      if (!expiryDateStr) return false;
+      const p = expiryDateStr.trim().split('/');
+      if (p.length !== 3) return false;
+      const expD = new Date(parseInt(p[2], 10), parseInt(p[1], 10) - 1, parseInt(p[0], 10));
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return expD < today;
+    }
+
+    function findCol(row, targets) {
+      const keys = Object.keys(row);
+      for (let i = 0; i < keys.length; i++) {
+        const clean = keys[i].toUpperCase().replace(/\s+/g, '');
+        if (targets.includes(clean)) return row[keys[i]];
+      }
+      return '';
+    }
+
+    function cleanPureShopName(raw) {
+      if (!raw) return '';
+      return String(raw).split('#')[0].split('|')[0].split('(')[0].trim().toUpperCase();
+    }
+
+    function parseDealerRow(d) {
+      const keys = Object.keys(d);
+      let rawName = '', code = '', city = '', bitly = '';
+      for (const k of keys) {
+        const val = String(d[k] || '').trim();
+        if (val.startsWith('http://') || val.startsWith('https://') || val.includes('bit.ly') || val.includes('bfin.in')) {
+          bitly = val;
+          break;
+        }
+      }
+      const nameKey = keys.find(k => ['DEALER NAME', 'SHOP NAME', 'NAME', 'SHOP', 'DEALER'].includes(k.toUpperCase().trim()));
+      rawName = nameKey ? String(d[nameKey] || '').trim() : '';
+      const codeKey = keys.find(k => ['DEALERID', 'DEALER CODE', 'CODE', 'ID', 'BPES RCD', 'DEALER_ID'].includes(k.toUpperCase().trim()));
+      code = codeKey ? String(d[codeKey] || '').trim() : '';
+      const cityKey = keys.find(k => ['CITY', 'LOCATION', 'TOWN', 'DISTRICT'].includes(k.toUpperCase().trim()));
+      city = cityKey ? String(d[cityKey] || '').trim() : '';
+
+      if (rawName.includes('|') && !city) {
+        const pipeParts = rawName.split('|');
+        city = pipeParts[pipeParts.length - 1].trim();
+      }
+      if (rawName.includes('#')) {
+        const parts = rawName.split('#');
+        if (!city && parts.length > 1) city = parts[1].split('|')[0].replace(/\(.*?\)/g, '').trim();
+        if (!code && parts.length > 2) {
+          for (const p of parts) {
+            if (/\d{5,}/.test(p)) { code = p.match(/\d{5,}/)[0]; break; }
+          }
+        }
+        rawName = parts[0].trim();
+      }
+      if (bitly && !bitly.startsWith('http')) bitly = 'https://' + bitly;
+      return {
+        code: code || '-',
+        name: cleanPureShopName(rawName) || 'SHOP',
+        city: city || '',
+        bitly
+      };
+    }
+
+    /* ==================== INDEXEDDB SMART CACHE ==================== */
     function openDB() {
       return new Promise((resolve, reject) => {
         const req = indexedDB.open(DB_NAME, DB_VERSION);
@@ -483,46 +1300,171 @@
       return headers.get('content-length') || '';
     }
 
-    async function fetchAndParseFreshData() {
-      const response = await fetch(DATA_URL, { cache: 'no-cache' });
-      if (!response.ok) {
-        throw new Error('Failed to load data');
+    function parseSchemeRow(r) {
+      const expVal = findCol(r, ['EXPIRY', 'EXPIRYDATE', 'VALIDTILL', 'SCHEMEEXPIRY', 'ENDDATE']);
+      const expDate = parseRawDate(expVal);
+      let expiryDateStr = '';
+      if (expDate) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (expDate < today) return null; // Skip expired
+        const dd = String(expDate.getDate()).padStart(2, '0');
+        const mm = String(expDate.getMonth() + 1).padStart(2, '0');
+        expiryDateStr = `${dd}/${mm}/${expDate.getFullYear()}`;
       }
 
+      const tenure = parseInt(findCol(r, ['TOTALTENURE', 'TENURE', 'TA']), 10) || 0;
+      const fixedEmi = parseFloat(findCol(r, ['FIXEDEMI', 'FIXED'])) || 0;
+      if (tenure <= 0 && fixedEmi <= 0) return null;
+
+      return {
+        category: standardizeCategoryName(findCol(r, ['CATEGORY', 'CAT'])),
+        brand: String(findCol(r, ['BRAND', 'MAKE', 'MANUFACTURER']) || '').trim().toUpperCase(),
+        model: String(findCol(r, ['MODEL', 'BRANDMODEL']) || '').trim().toUpperCase(),
+        mrp: parseFloat(findCol(r, ['MRP', 'PRICE', 'M.R.P'])) || 0,
+        tenure,
+        advEmi: parseInt(findCol(r, ['ADVANCEEMI', 'ADV']), 10) || 0,
+        dbd: parseFloat(findCol(r, ['DBD', 'DBD%'])) || 0,
+        pf: parseInt(findCol(r, ['PF', 'CPF', 'PROCESSINGFEE']), 10) || 0,
+        roi: parseFloat(findCol(r, ['ROI', 'ROI%'])) || 0,
+        fixedEmi,
+        minLoan: parseFloat(findCol(r, ['MINLOAN', 'MINL'])) || 0,
+        maxLoan: parseFloat(findCol(r, ['MAXLOAN', 'MAXL'])) || 9999999,
+        expiryDateStr
+      };
+    }
+
+    function buildStructuredData(workbook) {
+      const modelMap = new Map();
+      const nonTieupMap = new Map();
+      const dealers = [];
+
+      const sheetNames = workbook.SheetNames;
+
+      const addModelRows = (rows) => {
+        for (let i = 0; i < rows.length; i++) {
+          const parsed = parseSchemeRow(rows[i]);
+          if (!parsed || !parsed.model) continue;
+
+          const key = `${parsed.brand}||${parsed.model}`;
+          if (!modelMap.has(key)) {
+            modelMap.set(key, {
+              category: parsed.category,
+              brand: parsed.brand,
+              model: parsed.model,
+              mrp: parsed.mrp,
+              isNonTieup: false,
+              searchKey: `${parsed.brand} ${parsed.model} ${parsed.category}`.toLowerCase(),
+              schemes: [],
+              _seen: new Set()
+            });
+          }
+
+          const entry = modelMap.get(key);
+          if (!entry.mrp && parsed.mrp > 0) entry.mrp = parsed.mrp;
+
+          const sKey = `${parsed.tenure}_${parsed.advEmi}_${parsed.dbd}_${parsed.pf}_${parsed.roi}_${parsed.fixedEmi}_${parsed.minLoan}_${parsed.maxLoan}`;
+          if (!entry._seen.has(sKey)) {
+            entry._seen.add(sKey);
+            entry.schemes.push({
+              tenure: parsed.tenure,
+              advEmi: parsed.advEmi,
+              dbd: parsed.dbd,
+              pf: parsed.pf,
+              roi: parsed.roi,
+              fixedEmi: parsed.fixedEmi,
+              minLoan: parsed.minLoan,
+              maxLoan: parsed.maxLoan,
+              expiryDateStr: parsed.expiryDateStr
+            });
+          }
+        }
+      };
+
+      const addNonTieupRows = (rows) => {
+        for (let i = 0; i < rows.length; i++) {
+          const parsed = parseSchemeRow(rows[i]);
+          if (!parsed) continue;
+          const cat = parsed.category || 'OTHER';
+          if (!nonTieupMap.has(cat)) {
+            nonTieupMap.set(cat, {
+              category: cat,
+              brand: 'NON TIEUP',
+              model: cat === 'PHONE(WEB-MOBILE)' ? 'PHONE / TABLET / SMART WATCH' : cat,
+              mrp: 0,
+              isNonTieup: true,
+              schemes: [],
+              _seen: new Set()
+            });
+          }
+          const entry = nonTieupMap.get(cat);
+          const sKey = `${parsed.tenure}_${parsed.advEmi}_${parsed.dbd}_${parsed.pf}_${parsed.roi}_${parsed.fixedEmi}_${parsed.minLoan}_${parsed.maxLoan}`;
+          if (!entry._seen.has(sKey)) {
+            entry._seen.add(sKey);
+            entry.schemes.push({
+              tenure: parsed.tenure,
+              advEmi: parsed.advEmi,
+              dbd: parsed.dbd,
+              pf: parsed.pf,
+              roi: parsed.roi,
+              fixedEmi: parsed.fixedEmi,
+              minLoan: parsed.minLoan,
+              maxLoan: parsed.maxLoan,
+              expiryDateStr: parsed.expiryDateStr
+            });
+          }
+        }
+      };
+
+      sheetNames.forEach((name, idx) => {
+        const clean = name.trim().toLowerCase();
+        const rows = XLSX.utils.sheet_to_json(workbook.Sheets[name], { defval: '' });
+
+        if (clean === 'dealers' || idx === 2) {
+          for (let i = 0; i < rows.length; i++) {
+            const p = parseDealerRow(rows[i]);
+            if (p.name && p.name !== 'SHOP') dealers.push(p);
+          }
+        } else if (clean === 'sheet2' || idx === 1) {
+          addNonTieupRows(rows);
+        } else {
+          addModelRows(rows);
+        }
+      });
+
+      const models = Array.from(modelMap.values()).map(({ _seen, ...rest }) => rest);
+      const nonTieup = Array.from(nonTieupMap.values())
+        .map(({ _seen, ...rest }) => rest)
+        .sort((a, b) => a.model.localeCompare(b.model));
+
+      return { models, nonTieup, dealers };
+    }
+
+    async function fetchAndParseFreshData() {
+      const response = await fetch(DATA_URL, { cache: 'no-cache' });
+      if (!response.ok) throw new Error('Data load failed');
       const remoteVersion = getVersionKey(response.headers);
       const buffer = await response.arrayBuffer();
       await new Promise(resolve => setTimeout(resolve, 30));
 
       const workbook = XLSX.read(buffer, { type: 'array' });
-      const parsed = {
-        sheet1: [],
-        sheet2: [],
-        dealers: [],
-        sheet3: [],
-        extra: {}
-      };
-
-      workbook.SheetNames.forEach(name => {
-        const rows = XLSX.utils.sheet_to_json(workbook.Sheets[name], { defval: '' });
-        const clean = name.trim().toLowerCase();
-        if (clean === 'sheet1') parsed.sheet1 = rows;
-        else if (clean === 'sheet2') parsed.sheet2 = rows;
-        else if (clean === 'dealers') parsed.dealers = rows;
-        else if (clean === 'sheet3') parsed.sheet3 = rows;
-        else parsed.extra[name.trim()] = rows;
-      });
-
-      const index = buildModelIndex(parsed);
-
-      appData = parsed;
-      modelIndex = index;
+      const structured = buildStructuredData(workbook);
+      appData = structured;
 
       try {
-        await dbSet('payload', { appData: parsed, modelIndex: index });
-        await dbSet('meta', { version: remoteVersion });
-      } catch (cacheErr) {
-        console.warn('Cache save skipped:', cacheErr);
+        await dbSet('structured', structured);
+        await dbSet('meta', { version: remoteVersion, schema: CACHE_SCHEMA });
+      } catch (e) {
+        console.warn('Cache save skipped');
       }
+      onDataReady();
+    }
+
+    function onDataReady() {
+      modelSearch.disabled = false;
+      nonTieupToggleBtn.disabled = false;
+      renderNonTieupCategories();
+      if (selectedItem) recalcSchemes();
     }
 
     async function initData() {
@@ -530,18 +1472,16 @@
       let cachedVersion = '';
 
       try {
-        const [meta, payload] = await Promise.all([dbGet('meta'), dbGet('payload')]);
-        if (payload && payload.appData && Array.isArray(payload.modelIndex)) {
-          appData = payload.appData;
-          modelIndex = payload.modelIndex;
-          cachedVersion = (meta && meta.version) ? meta.version : '';
+        const [meta, structured] = await Promise.all([dbGet('meta'), dbGet('structured')]);
+        if (meta && meta.schema === CACHE_SCHEMA && structured && Array.isArray(structured.models)) {
+          appData = structured;
+          cachedVersion = meta.version || '';
           hasCache = true;
-
-          modelSearch.disabled = false;
           setStatus('Ready', 'ready');
+          onDataReady();
         }
-      } catch (err) {
-        console.warn('Cache read failed:', err);
+      } catch (e) {
+        console.warn('Cache read failed');
       }
 
       if (hasCache) {
@@ -553,10 +1493,11 @@
               setStatus('Updating...', 'updating');
               await fetchAndParseFreshData();
               setStatus('Ready', 'ready');
+              showToast('Rates updated', 'success');
             }
           }
-        } catch (netErr) {
-          // Offline or network issue: continue using cached data
+        } catch (e) {
+          // Offline mode uses cache seamlessly
         }
         return;
       }
@@ -564,58 +1505,39 @@
       try {
         setStatus('Loading...');
         await fetchAndParseFreshData();
-        modelSearch.disabled = false;
         setStatus('Ready', 'ready');
-      } catch (err) {
-        console.error(err);
+      } catch (e) {
+        console.error(e);
         setStatus('Error', 'error');
       }
     }
 
-    function buildModelIndex(data) {
-      const map = new Map();
-
-      const addRows = (rows) => {
-        for (let i = 0; i < rows.length; i++) {
-          const r = rows[i];
-          const model = String(r['MODEL'] || '').trim();
-          if (!model) continue;
-
-          const brand = String(r['BRAND'] || '').trim();
-          const category = String(r['CATEGORY'] || '').trim();
-          const mrp = r['MRP'] !== '' && r['MRP'] !== undefined ? Number(r['MRP']) : '';
-
-          const key = `${brand}||${model}||${mrp}`;
-          if (!map.has(key)) {
-            map.set(key, {
-              category,
-              brand,
-              model,
-              mrp,
-              searchKey: `${brand} ${model} ${category}`.toLowerCase(),
-              schemes: []
-            });
-          }
-
-          map.get(key).schemes.push({
-            tenure: r['TOTAL TENURE'] ?? '',
-            adv: r['ADVANCE EMI'] ?? '',
-            dbd: r['DBD'] ?? '',
-            pf: r['PF'] !== undefined && r['PF'] !== '' ? r['PF'] : (r['CPF'] ?? ''),
-            roi: r['ROI'] ?? '',
-            fixedEmi: r['FIXED EMI'] ?? '',
-            minL: r['MIN L'] ?? '',
-            maxL: r['MAX L'] ?? '',
-            validity: r['VALIDITY'] ?? ''
-          });
-        }
-      };
-
-      addRows(data.sheet1);
-      addRows(data.sheet3);
-
-      return Array.from(map.values());
+    /* ==================== MODEL SEARCH & NON-TIEUP ==================== */
+    function renderNonTieupCategories() {
+      if (!appData.nonTieup.length) {
+        nonTieupGrid.innerHTML = '<div class="empty-msg" style="grid-column:1/-1;">No categories available</div>';
+        return;
+      }
+      nonTieupGrid.innerHTML = appData.nonTieup.map((item, idx) => `
+        <button type="button" class="nt-cat-btn" data-nt-idx="${idx}">
+          ${escapeHtml(item.model)}
+        </button>
+      `).join('');
     }
+
+    nonTieupToggleBtn.addEventListener('click', () => {
+      nonTieupPanel.classList.toggle('show');
+    });
+
+    nonTieupGrid.addEventListener('click', (e) => {
+      const btn = e.target.closest('.nt-cat-btn');
+      if (!btn) return;
+      const item = appData.nonTieup[parseInt(btn.dataset.ntIdx, 10)];
+      if (item) {
+        nonTieupPanel.classList.remove('show');
+        selectItem(item);
+      }
+    });
 
     function renderSearchResults(query) {
       const q = query.trim().toLowerCase();
@@ -627,81 +1549,1064 @@
 
       const tokens = q.split(/\s+/).filter(Boolean);
       const matches = [];
-
-      for (let i = 0; i < modelIndex.length; i++) {
-        const item = modelIndex[i];
-        let matched = true;
+      for (let i = 0; i < appData.models.length; i++) {
+        const item = appData.models[i];
+        let ok = true;
         for (let t = 0; t < tokens.length; t++) {
-          if (!item.searchKey.includes(tokens[t])) {
-            matched = false;
-            break;
-          }
+          if (!item.searchKey.includes(tokens[t])) { ok = false; break; }
         }
-        if (matched) {
+        if (ok) {
           matches.push(item);
           if (matches.length >= 30) break;
         }
       }
 
       resultsList.innerHTML = '';
-      if (matches.length === 0) {
-        resultsList.innerHTML = '<div class="empty-msg">No model found</div>';
+      if (!matches.length) {
+        resultsList.innerHTML = '<div class="empty-msg">No matching models found</div>';
       } else {
-        const fragment = document.createDocumentFragment();
+        const frag = document.createDocumentFragment();
         matches.forEach(item => {
           const div = document.createElement('div');
           div.className = 'result-item';
-          const mrpText = item.mrp ? `₹${Number(item.mrp).toLocaleString('en-IN')}` : '-';
+          const mrpTxt = item.mrp > 0 ? `₹${Math.round(item.mrp).toLocaleString('en-IN')}` : '-';
           div.innerHTML = `
             <div class="result-model">${escapeHtml(item.brand)} ${escapeHtml(item.model)}</div>
             <div class="result-meta">
               <span>${escapeHtml(item.category)}</span>
-              <span>MRP: ${mrpText}</span>
+              <span>MRP: ${mrpTxt}</span>
             </div>
           `;
-          div.addEventListener('click', () => selectModel(item));
-          fragment.appendChild(div);
+          div.addEventListener('click', () => selectItem(item));
+          frag.appendChild(div);
         });
-        resultsList.appendChild(fragment);
+        resultsList.appendChild(frag);
       }
-
       resultsList.classList.add('show');
     }
 
-    function selectModel(item) {
-      selectedModel = item;
-      modelSearch.value = `${item.brand} ${item.model}`;
+    function applyCategoryInsuranceLocks(category) {
+      const isPhone = isMobileDeviceCat(category);
+      if (isPhone) {
+        inpRfc.disabled = false;
+        inpExw.disabled = true;
+        inpExw.value = '';
+      } else {
+        inpRfc.disabled = true;
+        inpRfc.value = '0';
+        inpExw.disabled = false;
+      }
+    }
+
+    function syncInsuranceSlabs(mrpVal, baseVal, mode) {
+      if (!selectedItem) return;
+      const isPhone = isMobileDeviceCat(selectedItem.category);
+      const gtl = getGtlSlabValue(baseVal);
+      const rfcSlab = getRfcSlabValue(mrpVal);
+
+      inpRfcOpt.value = String(rfcSlab);
+      inpRfcOpt.textContent = String(rfcSlab);
+
+      if (mode === 'MRP' || mode === 'INV' || mode === 'SELECT') {
+        inpGtl.value = String(gtl);
+        if (mode === 'MRP' || mode === 'SELECT') {
+          inpRfc.value = isPhone ? String(rfcSlab) : '0';
+        }
+      } else if (mode === 'LOAN') {
+        inpGtl.value = String(gtl);
+      }
+
+      if (!isPhone) inpRfc.value = '0';
+    }
+
+    function updateVarField() {
+      const m = parseFloat(inpMrp.value) || 0;
+      const i = parseFloat(inpInv.value) || 0;
+      const v = (i > m && m > 0) ? (i - m) : 0;
+      inpVar.value = v;
+      inpVar.classList.toggle('var-alert', v > 0);
+    }
+
+    function selectItem(item) {
+      selectedItem = item;
+      manualLoans = {};
+
+      modelSearch.value = item.isNonTieup ? `NON TIEUP - ${item.model}` : `${item.brand} ${item.model}`;
       clearSearch.classList.add('show');
       resultsList.classList.remove('show');
 
-      selectedTitle.textContent = `${item.brand} - ${item.model}`;
-      const mrpText = item.mrp ? `₹${Number(item.mrp).toLocaleString('en-IN')}` : '-';
-      selectedSub.textContent = `${item.category} • MRP: ${mrpText}`;
+      selectedTitle.textContent = item.isNonTieup ? `NON TIEUP - ${item.model}` : `${item.brand} - ${item.model}`;
+      selectedSub.textContent = item.category;
 
-      schemeBody.innerHTML = '';
-      item.schemes.forEach(s => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${s.tenure !== '' ? s.tenure : '-'}</td>
-          <td>${s.adv !== '' ? s.adv : '-'}</td>
-          <td>${s.dbd !== '' ? s.dbd : '-'}</td>
-          <td>${s.pf !== '' ? s.pf : '-'}</td>
-          <td>${s.roi !== '' ? s.roi : '-'}</td>
-          <td>${s.fixedEmi !== '' ? s.fixedEmi : '-'}</td>
-        `;
-        schemeBody.appendChild(tr);
+      const baseMrp = item.mrp > 0 ? item.mrp : '';
+      inpMrp.value = baseMrp;
+      inpInv.value = baseMrp;
+      inpTargetDp.value = '';
+      inpMargin.value = '';
+      inpDealer.value = '';
+      inpExw.value = '';
+
+      updateVarField();
+      applyCategoryInsuranceLocks(item.category);
+      syncInsuranceSlabs(parseFloat(baseMrp) || 0, parseFloat(baseMrp) || 0, 'SELECT');
+
+      pricingCard.classList.remove('hidden');
+      schemesCard.classList.remove('hidden');
+      recalcSchemes();
+
+      setTimeout(() => {
+        pricingCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 80);
+    }
+
+    function resetSelectedModel() {
+      selectedItem = null;
+      manualLoans = {};
+      currentCalculated = [];
+      modelSearch.value = '';
+      clearSearch.classList.remove('show');
+      resultsList.classList.remove('show');
+      pricingCard.classList.add('hidden');
+      schemesCard.classList.add('hidden');
+    }
+
+    /* ==================== CORE CALCULATION ENGINE ==================== */
+    function recalcSchemes() {
+      if (!selectedItem) return;
+
+      const custType = customerTypeEl.value;
+      const fee = CUSTOMER_TYPE_CHARGES[custType] || 850;
+      const limitInput = parseFloat(approvedLimitEl.value) || 0;
+      const currentLimit = limitInput > 0 ? limitInput : 9999999;
+      const ltvLimit = parseFloat(ltvPercentEl.value) || 100;
+      const emiCap = parseFloat(emiCappingEl.value) || 0;
+
+      const inputMrp = parseFloat(inpMrp.value) || 0;
+      const inputInv = parseFloat(inpInv.value) || 0;
+      const effectivePrice = inputInv > 0 ? inputInv : (inputMrp > 0 ? inputMrp : 0);
+      const loanCapPrice = (inputMrp > 0 && inputInv > 0) ? Math.min(inputMrp, inputInv) : effectivePrice;
+      const minAllowedLoanByInvoice = effectivePrice > 0 ? effectivePrice * 0.50 : 0;
+
+      const isPhone = isMobileDeviceCat(selectedItem.category);
+      const gtl = parseFloat(inpGtl.value) || 0;
+      const rfc = isPhone ? (parseFloat(inpRfc.value) || 0) : 0;
+      const exw = isPhone ? 0 : (parseFloat(inpExw.value) || 0);
+      const insTotal = gtl + rfc + exw;
+
+      const targetDp = parseFloat(inpTargetDp.value) || 0;
+      const margin = parseFloat(inpMargin.value) || 0;
+      const dealer = parseFloat(inpDealer.value) || 0;
+      const totalFees = fee + margin + dealer;
+
+      const results = [];
+
+      selectedItem.schemes.forEach((s, dIdx) => {
+        if (isExpiryStrExpired(s.expiryDateStr)) return;
+
+        const isFixed = s.fixedEmi > 0;
+        const dbdRate = (s.dbd * 1.18) / 100;
+        const roiRate = s.roi / 1200;
+        const roiRateDP = roiRate * s.advEmi;
+
+        let dynamicPf = s.pf;
+        if (selectedItem.isNonTieup) {
+          const checkAmt = effectivePrice > 0 ? effectivePrice : (currentLimit < 9999999 ? currentLimit : 0);
+          const slabPf = getNonTieupPfValue(selectedItem.category, checkAmt);
+          if (slabPf !== null) dynamicPf = slabPf;
+        }
+
+        let loan = 0;
+        let nbfcMaxL = 0;
+        let currentTenure = s.tenure;
+        let inst = 1;
+        let emi = 0;
+        let dpExact = 0;
+        let minEmiApplied = false;
+
+        if (isFixed) {
+          const maxRemainingEmis = Math.floor(currentLimit / s.fixedEmi);
+          const maxTotalTenure = maxRemainingEmis + s.advEmi;
+          nbfcMaxL = maxTotalTenure * s.fixedEmi;
+
+          if (effectivePrice > 0) {
+            currentTenure = Math.floor(effectivePrice / s.fixedEmi);
+            if (currentTenure > maxTotalTenure) currentTenure = maxTotalTenure;
+            if (currentTenure < 1) currentTenure = 1;
+            loan = currentTenure * s.fixedEmi;
+            if (loan > loanCapPrice) loan = loanCapPrice;
+
+            if (targetDp > 0) {
+              const numerator = targetDp - effectivePrice - (s.fixedEmi * s.advEmi) - dynamicPf - totalFees;
+              const denominator = dbdRate + roiRateDP - 1;
+              const solvedLoan = numerator / denominator;
+              let solvedTenure = Math.floor(solvedLoan / s.fixedEmi);
+              if (solvedTenure > maxTotalTenure) solvedTenure = maxTotalTenure;
+              loan = Math.max(0, solvedTenure * s.fixedEmi);
+              if (loan > loanCapPrice) loan = loanCapPrice;
+              currentTenure = Math.floor(loan / s.fixedEmi) || 1;
+            }
+          } else {
+            currentTenure = s.tenure || 1;
+            if (currentTenure > maxTotalTenure) currentTenure = maxTotalTenure;
+            loan = currentTenure * s.fixedEmi;
+          }
+        } else {
+          nbfcMaxL = (currentLimit * s.tenure) / (s.tenure - s.advEmi || 1);
+          const checkPrice = effectivePrice > 0 ? loanCapPrice : 50000;
+          let absoluteMax = Math.min(checkPrice, nbfcMaxL);
+          if (selectedItem.isNonTieup && s.maxLoan < 9999999) {
+            absoluteMax = Math.min(absoluteMax, s.maxLoan);
+          }
+          loan = absoluteMax;
+
+          if (targetDp > 0 && effectivePrice > 0) {
+            const advRate = s.advEmi / s.tenure;
+            const numerator = targetDp - effectivePrice - dynamicPf - totalFees;
+            const denominator = advRate + dbdRate + roiRateDP - 1;
+            const solvedLoan = numerator / denominator;
+            loan = Math.min(loan, Math.max(0, Math.floor(solvedLoan)));
+          }
+        }
+
+        const isManuallyOverridden = manualLoans[dIdx] !== undefined;
+        if (isManuallyOverridden) {
+          loan = manualLoans[dIdx];
+          if (isFixed) {
+            let calcTenure = Math.floor(loan / s.fixedEmi) || 1;
+            if (effectivePrice > 0 && (calcTenure * s.fixedEmi) < minAllowedLoanByInvoice) {
+              calcTenure = Math.ceil(minAllowedLoanByInvoice / s.fixedEmi);
+            }
+            loan = calcTenure * s.fixedEmi;
+            const maxB = Math.min(nbfcMaxL, selectedItem.isNonTieup ? s.maxLoan : 9999999, loanCapPrice > 0 ? loanCapPrice : 9999999);
+            if (loan > maxB) {
+              loan = Math.floor(maxB / s.fixedEmi) * s.fixedEmi;
+              calcTenure = Math.floor(loan / s.fixedEmi) || 1;
+            }
+            currentTenure = calcTenure;
+          } else {
+            const maxB = Math.min(loanCapPrice > 0 ? loanCapPrice : 9999999, nbfcMaxL, selectedItem.isNonTieup ? s.maxLoan : 9999999);
+            if (loan > maxB) loan = maxB;
+            if (effectivePrice > 0 && loan < minAllowedLoanByInvoice) loan = minAllowedLoanByInvoice;
+          }
+        }
+
+        if (!isFixed && effectivePrice > 0 && loan > effectivePrice) {
+          loan = effectivePrice;
+        }
+
+        if (isFixed) {
+          inst = Math.max(1, currentTenure - s.advEmi);
+          const roiInEmi = loan * roiRate;
+          emi = s.fixedEmi + (insTotal / inst) + roiInEmi;
+          const roiInDp = loan * roiRateDP;
+          dpExact = effectivePrice - loan + (s.fixedEmi * s.advEmi) + (loan * dbdRate) + dynamicPf + totalFees + roiInDp;
+        } else {
+          inst = Math.max(1, s.tenure - s.advEmi);
+          let baseEmi = loan / s.tenure;
+          if (baseEmi > 0 && baseEmi < 900) { baseEmi = 900; minEmiApplied = true; }
+
+          let roiInEmi = loan * roiRate;
+          emi = baseEmi + (insTotal / inst) + roiInEmi;
+
+          if (!isManuallyOverridden && emiCap > 0 && emi > emiCap) {
+            loan = (emiCap - (insTotal / inst)) / ((1 / s.tenure) + roiRate);
+            if (loan < 0) loan = 0;
+            if (effectivePrice > 0 && loan > effectivePrice) loan = effectivePrice;
+
+            baseEmi = loan / s.tenure;
+            minEmiApplied = false;
+            if (baseEmi > 0 && baseEmi < 900) { baseEmi = 900; minEmiApplied = true; }
+
+            roiInEmi = loan * roiRate;
+            emi = baseEmi + (insTotal / inst) + roiInEmi;
+          }
+
+          const roiInDp = loan * roiRateDP;
+          dpExact = effectivePrice - loan + (baseEmi * s.advEmi) + (loan * dbdRate) + dynamicPf + totalFees + roiInDp;
+        }
+
+        const dpRounded = dpExact > 0 ? Math.ceil(dpExact / 10) * 10 : dpExact;
+        const daily = emi / 30;
+        const extra = effectivePrice > 0 ? (((emi * inst) + dpRounded) - effectivePrice) : 0;
+        const dbdAmt = loan * dbdRate;
+        const roiAmt = (loan * roiRateDP) + (loan * roiRate * inst);
+        const curLTV = currentTenure > 0 ? ((currentTenure - s.advEmi) / currentTenure) * 100 : 0;
+        const roundupAdj = (dpRounded > dpExact) ? (dpRounded - dpExact) : 0;
+        const netDisb = effectivePrice > 0 ? (effectivePrice - dpRounded - margin - roundupAdj) : 0;
+
+        const isLtvBreach = (!isFixed && curLTV > ltvLimit);
+        const isInv50Breach = (effectivePrice > 0 && loan < minAllowedLoanByInvoice);
+        const isBoundBreach = (selectedItem.isNonTieup && effectivePrice > 0 && (loan < s.minLoan || loan > s.maxLoan));
+
+        results.push({
+          ...s,
+          dIdx,
+          pf: dynamicPf,
+          isFixed,
+          currentTenure,
+          nbfcMaxL,
+          loan,
+          dp: dpRounded,
+          dpExact,
+          emi,
+          inst,
+          daily,
+          extra,
+          dbdAmt,
+          roiAmt,
+          curLTV,
+          netDisb,
+          minEmiApplied,
+          isLtvBreach,
+          isInv50Breach,
+          isBoundBreach,
+          isBreached: isLtvBreach || isInv50Breach || isBoundBreach,
+          badges: []
+        });
       });
 
-      selectedCard.classList.add('show');
+      // Assign Top 4 Badges on eligible schemes
+      const validS = results.filter(d => !d.isBreached && d.loan > 0);
+      if (validS.length > 0) {
+        const winDp = [...validS].sort((a, b) => a.dp - b.dp)[0];
+        const winEmi = [...validS].sort((a, b) => a.emi - b.emi)[0];
+        const winPop = [...validS].filter(s => s.roi === 0 || s.isFixed).sort((a, b) => a.dp - b.dp)[0] || validS[0];
+        const winBal = [...validS].sort((a, b) => (a.dp + a.emi * 2) - (b.dp + b.emi * 2))[0] || validS[0];
+
+        if (winDp) winDp.badges.push('DP');
+        if (winEmi && !winEmi.badges.includes('EMI')) winEmi.badges.push('EMI');
+        if (winPop && !winPop.badges.includes('POP')) winPop.badges.push('POP');
+        if (winBal && !winBal.badges.includes('BAL')) winBal.badges.push('BAL');
+      }
+
+      currentCalculated = results;
+      renderSchemes();
     }
 
-    function escapeHtml(str) {
-      return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
+    function renderSchemes() {
+      const sortKey = sortSelect.value;
+      const validCount = currentCalculated.filter(d => !d.isBreached && d.loan > 0).length;
+      eligibleSummary.textContent = `${validCount} / ${currentCalculated.length} Eligible`;
+
+      let list = showAllSchemes
+        ? [...currentCalculated]
+        : currentCalculated.filter(d => !d.isBreached && d.loan > 0);
+
+      list.sort((a, b) => {
+        if (a.isBreached !== b.isBreached) return a.isBreached ? 1 : -1;
+        if (sortKey === 'emi') return a.emi - b.emi;
+        if (sortKey === 'tenure') return b.currentTenure - a.currentTenure;
+        if (sortKey === 'daily') return a.daily - b.daily;
+        return a.dp - b.dp;
+      });
+
+      if (list.length === 0) {
+        schemesContainer.innerHTML = `<div class="empty-msg">No eligible schemes for current limits. Tap "Show All" to inspect breaches.</div>`;
+        return;
+      }
+
+      const badgeMap = {
+        DP: { text: 'Lowest DP', cls: 'tag-dp', cardCls: 'badge-dp' },
+        EMI: { text: 'Lowest EMI', cls: 'tag-emi', cardCls: 'badge-emi' },
+        POP: { text: 'Top Choice', cls: 'tag-pop', cardCls: 'badge-pop' },
+        BAL: { text: 'Best Value', cls: 'tag-bal', cardCls: 'badge-bal' }
+      };
+
+      schemesContainer.classList.toggle('show-details', showDetails);
+
+      schemesContainer.innerHTML = list.map(d => {
+        let cardCls = '';
+        if (d.isBreached) cardCls = 'breached';
+        else if (d.badges.length > 0) cardCls = badgeMap[d.badges[0]].cardCls;
+
+        const badgesHtml = d.badges.map(b => `<span class="tag ${badgeMap[b].cls}">${badgeMap[b].text}</span>`).join('');
+        const fixedTag = d.isFixed ? `<span class="tag tag-fixed">Fixed ₹${d.fixedEmi}</span>` : '';
+        const expTag = d.expiryDateStr ? `<span class="tag tag-exp">Exp: ${d.expiryDateStr}</span>` : '';
+        const breachTags = [
+          d.isLtvBreach ? `<span class="tag tag-breach">LTV ${Math.round(d.curLTV)}%</span>` : '',
+          d.isInv50Breach ? `<span class="tag tag-breach">&lt;50% Loan</span>` : '',
+          d.isBoundBreach ? `<span class="tag tag-breach">Min/Max Breach</span>` : ''
+        ].join('');
+
+        const stepSize = d.isFixed ? d.fixedEmi : 1000;
+
+        return `
+          <div class="scheme-item ${cardCls}">
+            <div class="scheme-top">
+              <div class="scheme-ta">
+                <span>${d.currentTenure}/${d.advEmi}</span>
+                ${badgesHtml}
+                ${fixedTag}
+                ${breachTags}
+                ${expTag}
+              </div>
+              <button type="button" class="copy-btn" data-copy-idx="${d.dIdx}">Copy</button>
+            </div>
+
+            <div class="metrics-row">
+              <div>
+                <div class="m-label">Net DP</div>
+                <div class="m-val dp">₹${Math.round(d.dp).toLocaleString('en-IN')}</div>
+              </div>
+              <div>
+                <div class="m-label">EMI</div>
+                <div class="m-val emi">₹${Math.round(d.emi).toLocaleString('en-IN')}</div>
+              </div>
+              <div>
+                <div class="m-label">Months</div>
+                <div class="m-val">${d.inst}</div>
+              </div>
+              <div>
+                <div class="m-label">Daily</div>
+                <div class="m-val daily">₹${Math.round(d.daily).toLocaleString('en-IN')}</div>
+              </div>
+            </div>
+
+            <div class="loan-bar">
+              <div class="loan-label">Loan Amount</div>
+              <div class="stepper">
+                <button type="button" class="step-btn" data-step="${-stepSize}" data-didx="${d.dIdx}">−</button>
+                <input type="number" class="step-inp" data-loan-inp="${d.dIdx}" value="${Math.floor(d.loan)}" inputmode="numeric" />
+                <button type="button" class="step-btn" data-step="${stepSize}" data-didx="${d.dIdx}">+</button>
+              </div>
+            </div>
+
+            <div class="details-box">
+              <div class="det-row"><span class="det-k">Scheme LTV</span><span class="det-v">${Math.round(d.curLTV)}%</span></div>
+              <div class="det-row"><span class="det-k">PF</span><span class="det-v">₹${d.pf}</span></div>
+              <div class="det-row"><span class="det-k">DBD (${+parseFloat(d.dbd).toFixed(2)}% + GST)</span><span class="det-v danger">₹${Math.round(d.dbdAmt).toLocaleString('en-IN')}</span></div>
+              <div class="det-row"><span class="det-k">ROI (${+parseFloat(d.roi).toFixed(2)}%)</span><span class="det-v danger">₹${Math.round(d.roiAmt).toLocaleString('en-IN')}</span></div>
+              <div class="det-row"><span class="det-k">Net Disbursal</span><span class="det-v primary">₹${Math.round(d.netDisb).toLocaleString('en-IN')}</span></div>
+              <div class="det-row"><span class="det-k">Extra Cost</span><span class="det-v danger">₹${Math.round(d.extra).toLocaleString('en-IN')}</span></div>
+              ${selectedItem.isNonTieup
+                ? `<div class="det-row"><span class="det-k">Min Loan</span><span class="det-v">₹${Math.round(d.minLoan).toLocaleString('en-IN')}</span></div>
+                   <div class="det-row"><span class="det-k">Max Loan</span><span class="det-v">${d.maxLoan < 9999999 ? '₹' + Math.round(d.maxLoan).toLocaleString('en-IN') : 'No Limit'}</span></div>`
+                : `<div class="det-row"><span class="det-k">NBFC Max Loan</span><span class="det-v">₹${Math.floor(d.nbfcMaxL).toLocaleString('en-IN')}</span></div>
+                   <div class="det-row"><span class="det-k">Min ₹900 Base EMI</span><span class="det-v">${d.minEmiApplied ? 'Applied' : 'No'}</span></div>`
+              }
+            </div>
+          </div>
+        `;
+      }).join('');
     }
+
+    /* ==================== MANUAL LOAN STEPPER & COPY ==================== */
+    function handleManualLoanChange(dIdx, rawVal) {
+      const inputMrp = parseFloat(inpMrp.value) || 0;
+      const inputInv = parseFloat(inpInv.value) || 0;
+      const effectivePrice = inputInv > 0 ? inputInv : (inputMrp > 0 ? inputMrp : 0);
+      const minLoan50 = effectivePrice > 0 ? effectivePrice * 0.50 : 0;
+
+      let loan = parseFloat(rawVal) || 0;
+      if (effectivePrice > 0 && loan < minLoan50) {
+        loan = minLoan50;
+        showToast('Loan cannot be less than 50% of invoice', 'error');
+      }
+      if (effectivePrice > 0 && loan > effectivePrice) {
+        loan = effectivePrice;
+        showToast('Loan cannot exceed invoice amount', 'error');
+      }
+
+      manualLoans[dIdx] = loan;
+      syncInsuranceSlabs(inputMrp, loan, 'LOAN');
+      recalcSchemes();
+    }
+
+    schemesContainer.addEventListener('click', (e) => {
+      const stepBtn = e.target.closest('.step-btn');
+      if (stepBtn) {
+        const dIdx = parseInt(stepBtn.dataset.didx, 10);
+        const delta = parseFloat(stepBtn.dataset.step) || 0;
+        const inp = schemesContainer.querySelector(`input[data-loan-inp="${dIdx}"]`);
+        const cur = parseFloat(inp ? inp.value : 0) || 0;
+        handleManualLoanChange(dIdx, Math.max(0, cur + delta));
+        return;
+      }
+
+      const copyBtn = e.target.closest('.copy-btn');
+      if (copyBtn) {
+        const dIdx = parseInt(copyBtn.dataset.copyIdx, 10);
+        const d = currentCalculated.find(x => x.dIdx === dIdx);
+        if (!d) return;
+        const invAmt = (parseFloat(inpInv.value) || 0) || (parseFloat(inpMrp.value) || 0);
+        let text = `*${selectedTitle.textContent}*\n`;
+        if (invAmt > 0) text += `Invoice Amount: ₹${Math.round(invAmt).toLocaleString('en-IN')}\n`;
+        text += `Scheme: ${d.currentTenure}/${d.advEmi}\n`;
+        text += `Loan: ₹${Math.floor(d.loan).toLocaleString('en-IN')}\n`;
+        text += `Net DP: ₹${Math.round(d.dp).toLocaleString('en-IN')}\n`;
+        text += `EMI: ₹${Math.round(d.emi).toLocaleString('en-IN')} x ${d.inst} Months\n`;
+        text += `Daily EMI: ₹${Math.round(d.daily).toLocaleString('en-IN')}`;
+
+        copyText(text, () => {
+          copyBtn.textContent = 'Copied';
+          setTimeout(() => { copyBtn.textContent = 'Copy'; }, 1500);
+          showToast('Scheme copied', 'success');
+        });
+      }
+    });
+
+    schemesContainer.addEventListener('change', (e) => {
+      const inp = e.target.closest('.step-inp');
+      if (!inp) return;
+      const dIdx = parseInt(inp.dataset.loanInp, 10);
+      handleManualLoanChange(dIdx, inp.value);
+    });
+
+    function copyText(text, onSuccess) {
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(onSuccess).catch(() => fallbackCopy(text, onSuccess));
+      } else {
+        fallbackCopy(text, onSuccess);
+      }
+    }
+
+    function fallbackCopy(text, onSuccess) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand('copy');
+        if (onSuccess) onSuccess();
+      } catch (e) {
+        showToast('Copy failed', 'error');
+      }
+      document.body.removeChild(ta);
+    }
+
+    /* ==================== QUOTATION IMAGE GENERATOR ==================== */
+    function generateQuoteImage() {
+      const validS = currentCalculated.filter(d => !d.isBreached && d.loan > 0);
+      if (validS.length === 0) {
+        showToast('No eligible schemes to export', 'error');
+        return;
+      }
+
+      const activeCust = customerQueue.find(c => c.id === activeQueueId);
+      const headerName = activeCust ? activeCust.name.toUpperCase() : 'CUSTOMER QUOTATION';
+      const limitVal = parseFloat(approvedLimitEl.value) || 0;
+      const ltvVal = parseFloat(ltvPercentEl.value) || 100;
+      const capVal = parseFloat(emiCappingEl.value) || 0;
+      const custType = customerTypeEl.value;
+      const invAmt = (parseFloat(inpInv.value) || 0) || (parseFloat(inpMrp.value) || 0);
+
+      const badgeMeta = {
+        DP: { text: 'LOWEST DP', bg: '#059669', rowBg: '#ecfdf5', accent: '#059669' },
+        EMI: { text: 'LOWEST EMI', bg: '#2563eb', rowBg: '#eff6ff', accent: '#2563eb' },
+        POP: { text: 'TOP CHOICE', bg: '#d97706', rowBg: '#fffbeb', accent: '#d97706' },
+        BAL: { text: 'BEST VALUE', bg: '#7c3aed', rowBg: '#f5f3ff', accent: '#7c3aed' }
+      };
+
+      const badged = validS.filter(d => d.badges.length > 0).sort((a, b) => a.dp - b.dp);
+      const topIds = new Set(badged.map(d => d.dIdx));
+      const others = validS.filter(d => !topIds.has(d.dIdx)).sort((a, b) => a.dp - b.dp);
+
+      const topRows = badged.map(d => {
+        const primary = badgeMeta[d.badges[0]];
+        const bHtml = d.badges.map(b =>
+          `<div style="background:${badgeMeta[b].bg}; color:#fff; font-size:10px; font-weight:800; padding:2px 6px; border-radius:4px; display:inline-block; margin-top:4px;">${badgeMeta[b].text}</div>`
+        ).join(' ');
+        return `
+          <tr style="background:${primary.rowBg}; border-bottom:2px solid #cbd5e1; border-left:6px solid ${primary.accent};">
+            <td style="padding:12px 6px; font-weight:800; color:#0f172a;">
+              <div style="font-size:17px;">${d.currentTenure}/${d.advEmi}</div>
+              ${bHtml}
+            </td>
+            <td style="padding:12px 6px; color:#059669; font-size:17px; font-weight:900;">₹${Math.round(d.dp).toLocaleString('en-IN')}</td>
+            <td style="padding:12px 6px; color:#2563eb; font-size:17px; font-weight:900;">₹${Math.round(d.emi).toLocaleString('en-IN')}</td>
+            <td style="padding:12px 6px; font-size:16px; font-weight:800; color:#0f172a;">${d.inst}</td>
+            <td style="padding:12px 6px; color:#ea580c; font-size:16px; font-weight:900;">₹${Math.round(d.daily).toLocaleString('en-IN')}</td>
+          </tr>
+        `;
+      }).join('');
+
+      const otherRows = others.length ? `
+        <tr style="background:#f1f5f9;">
+          <td colspan="5" style="padding:8px; font-size:12px; font-weight:800; color:#475569;">OTHER ELIGIBLE SCHEMES</td>
+        </tr>
+        ${others.map((d, i) => `
+          <tr style="background:${i % 2 === 0 ? '#ffffff' : '#f8fafc'}; border-bottom:1px solid #e2e8f0;">
+            <td style="padding:9px 6px; font-size:15px; font-weight:800; color:#334155;">${d.currentTenure}/${d.advEmi}</td>
+            <td style="padding:9px 6px; color:#059669; font-size:15px; font-weight:800;">₹${Math.round(d.dp).toLocaleString('en-IN')}</td>
+            <td style="padding:9px 6px; color:#2563eb; font-size:15px; font-weight:800;">₹${Math.round(d.emi).toLocaleString('en-IN')}</td>
+            <td style="padding:9px 6px; font-size:15px; font-weight:700; color:#475569;">${d.inst}</td>
+            <td style="padding:9px 6px; color:#ea580c; font-size:15px; font-weight:800;">₹${Math.round(d.daily).toLocaleString('en-IN')}</td>
+          </tr>
+        `).join('')}
+      ` : '';
+
+      const box = document.createElement('div');
+      box.style.cssText = 'width:540px; padding:22px; background:#ffffff; position:fixed; top:-9999px; left:-9999px; font-family:-apple-system,Segoe UI,Roboto,sans-serif;';
+      box.innerHTML = `
+        <div style="background:linear-gradient(135deg,#1d4ed8,#1e3a8a); color:#fff; border-radius:12px; padding:20px; text-align:center; margin-bottom:16px;">
+          <div style="font-size:22px; font-weight:900; letter-spacing:0.5px;">${escapeHtml(headerName)}</div>
+          <div style="margin-top:10px; display:flex; justify-content:center; flex-wrap:wrap; gap:14px; font-size:14px; font-weight:800; background:rgba(255,255,255,0.12); padding:10px; border-radius:8px;">
+            ${limitVal > 0 ? `<span style="color:#6ee7b7;">LIMIT: ₹${Math.round(limitVal).toLocaleString('en-IN')}</span>` : ''}
+            <span style="color:#fde68a;">LTV: ${ltvVal}%</span>
+            <span>TYPE: ${escapeHtml(custType)}</span>
+            ${capVal > 0 ? `<span style="color:#fca5a5;">CAP: ₹${Math.round(capVal).toLocaleString('en-IN')}</span>` : ''}
+          </div>
+        </div>
+
+        <div style="border:1px solid #cbd5e1; border-radius:12px; overflow:hidden;">
+          <div style="padding:12px 14px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; background:#f8fafc;">
+            <div style="font-size:16px; font-weight:900; color:#1e3a8a;">${escapeHtml(selectedTitle.textContent)}</div>
+            ${invAmt > 0 ? `<div style="background:#1d4ed8; color:#fff; padding:5px 10px; border-radius:6px; font-size:14px; font-weight:800;">INV: ₹${Math.round(invAmt).toLocaleString('en-IN')}</div>` : ''}
+          </div>
+          <table style="width:100%; border-collapse:collapse; text-align:center;">
+            <thead>
+              <tr style="background:#ffffff; color:#475569; font-size:12px; font-weight:800; border-bottom:2px solid #e2e8f0;">
+                <th style="padding:10px 6px;">SCHEME</th>
+                <th style="padding:10px 6px;">NET DP</th>
+                <th style="padding:10px 6px;">EMI</th>
+                <th style="padding:10px 6px;">M</th>
+                <th style="padding:10px 6px;">DAILY</th>
+              </tr>
+            </thead>
+            <tbody>${topRows}${otherRows}</tbody>
+          </table>
+        </div>
+      `;
+
+      document.body.appendChild(box);
+      html2canvas(box, { scale: 2, backgroundColor: '#ffffff' }).then(canvas => {
+        document.body.removeChild(box);
+        lastQuoteCanvas = canvas;
+        document.getElementById('quoteImgPreview').src = canvas.toDataURL('image/png');
+        document.getElementById('quoteModal').classList.add('show');
+      }).catch(() => {
+        document.body.removeChild(box);
+        showToast('Could not generate image', 'error');
+      });
+    }
+
+    document.getElementById('copyQuoteImgBtn').addEventListener('click', () => {
+      if (!lastQuoteCanvas) return;
+      lastQuoteCanvas.toBlob(blob => {
+        if (navigator.clipboard && window.ClipboardItem) {
+          navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
+            .then(() => showToast('Image copied to clipboard', 'success'))
+            .catch(() => showToast('Use Download PNG on this browser', 'error'));
+        } else {
+          showToast('Use Download PNG on this browser', 'error');
+        }
+      }, 'image/png');
+    });
+
+    document.getElementById('downloadQuoteImgBtn').addEventListener('click', () => {
+      if (!lastQuoteCanvas) return;
+      const a = document.createElement('a');
+      a.href = lastQuoteCanvas.toDataURL('image/png');
+      a.download = 'Quotation.png';
+      a.click();
+      showToast('Quotation downloaded', 'success');
+    });
+
+    document.getElementById('closeQuoteModalBtn').addEventListener('click', () => {
+      document.getElementById('quoteModal').classList.remove('show');
+    });
+
+    /* ==================== CUSTOMER QUEUE & MASKING ==================== */
+    const qName = document.getElementById('qName');
+    const qMobile = document.getElementById('qMobile');
+    const qDupWarn = document.getElementById('qDupWarn');
+    const addQueueBtn = document.getElementById('addQueueBtn');
+    const qSearch = document.getElementById('qSearch');
+    const qCount = document.getElementById('qCount');
+    const qList = document.getElementById('qList');
+    const binCount = document.getElementById('binCount');
+    const binModal = document.getElementById('binModal');
+    const binList = document.getElementById('binList');
+
+    function maskName(str) {
+      if (!str || str === '-') return str;
+      return str.split(' ').map(w => w.length <= 2 ? w : w[0] + '*'.repeat(w.length - 2) + w[w.length - 1]).join(' ');
+    }
+
+    function saveQueueStorage() {
+      localStorage.setItem('calc_queue_v1', JSON.stringify(customerQueue));
+      localStorage.setItem('calc_bin_v1', JSON.stringify(recycleBin));
+    }
+
+    function checkDuplicateMobile() {
+      const clean = qMobile.value.replace(/\D/g, '').slice(0, 10);
+      qMobile.value = clean;
+      if (clean.length === 10) {
+        const inActive = customerQueue.find(c => c.mobile === clean);
+        if (inActive) {
+          qDupWarn.textContent = `Duplicate: This number already exists in Queue (${inActive.name}).`;
+          qDupWarn.classList.add('show');
+          addQueueBtn.disabled = true;
+          addQueueBtn.style.opacity = '0.5';
+          return true;
+        }
+        const inBin = recycleBin.find(c => c.mobile === clean);
+        if (inBin) {
+          qDupWarn.textContent = `Duplicate: This number is in Recycle Bin (${inBin.name}). Restore it from Recycle Bin.`;
+          qDupWarn.classList.add('show');
+          addQueueBtn.disabled = true;
+          addQueueBtn.style.opacity = '0.5';
+          return true;
+        }
+      }
+      qDupWarn.classList.remove('show');
+      addQueueBtn.disabled = false;
+      addQueueBtn.style.opacity = '1';
+      return false;
+    }
+
+    qMobile.addEventListener('input', checkDuplicateMobile);
+
+    addQueueBtn.addEventListener('click', () => {
+      if (checkDuplicateMobile()) return;
+      const limit = parseFloat(approvedLimitEl.value) || 0;
+      if (limit <= 0) {
+        showToast('Enter Approved Limit in Calculator first', 'error');
+        return;
+      }
+      const name = qName.value.trim() || `Customer ${customerQueue.length + 1}`;
+      const mobile = qMobile.value.trim();
+      const now = new Date();
+      const ts = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) + ' ' +
+        now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+      customerQueue.unshift({
+        id: Date.now(),
+        name,
+        mobile,
+        type: customerTypeEl.value,
+        limit,
+        ltv: parseFloat(ltvPercentEl.value) || 100,
+        cap: parseFloat(emiCappingEl.value) || '',
+        timestamp: ts
+      });
+
+      saveQueueStorage();
+      qName.value = '';
+      qMobile.value = '';
+      checkDuplicateMobile();
+      renderQueue();
+      showToast('Customer added to queue', 'success');
+    });
+
+    function renderQueue() {
+      qCount.textContent = customerQueue.length;
+      binCount.textContent = recycleBin.length;
+      const q = qSearch.value.toLowerCase().trim();
+      const isSearching = q.length > 0;
+
+      const filtered = customerQueue.filter(c => {
+        if (!isSearching) return true;
+        return (
+          c.name.toLowerCase().includes(q) ||
+          (c.mobile && c.mobile.includes(q)) ||
+          String(c.limit).includes(q) ||
+          c.type.toLowerCase().includes(q)
+        );
+      });
+
+      if (!filtered.length) {
+        qList.innerHTML = '<div class="empty-msg">No customers in queue.</div>';
+        return;
+      }
+
+      qList.innerHTML = filtered.map(c => {
+        const isActive = c.id === activeQueueId;
+        const isSel = c.id === selectedQueueId;
+        const displayName = (isSearching || isSel || isActive) ? c.name : maskName(c.name);
+        return `
+          <div class="q-item ${isActive ? 'active-q' : ''}" data-qid="${c.id}">
+            <div class="q-top">
+              <div class="q-name">${escapeHtml(displayName)}</div>
+              <div class="q-meta">${escapeHtml(c.timestamp)}</div>
+            </div>
+            <div class="q-meta">
+              ${c.mobile ? `Mobile: ${escapeHtml(c.mobile)} • ` : ''}
+              Limit: ₹${Math.round(c.limit).toLocaleString('en-IN')} • LTV: ${c.ltv}% • ${escapeHtml(c.type)}
+              ${c.cap ? ` • Cap: ₹${c.cap}` : ''}
+            </div>
+            <div class="q-actions">
+              <button type="button" style="background:var(--primary); color:#fff;" data-qact="load" data-qid="${c.id}">Load</button>
+              <button type="button" style="background:#e2e8f0; color:var(--text);" data-qact="copy" data-qid="${c.id}">Copy</button>
+              <button type="button" style="background:var(--danger-bg); color:var(--danger);" data-qact="del" data-qid="${c.id}">Delete</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    qList.addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-qact]');
+      if (btn) {
+        const id = Number(btn.dataset.qid);
+        const idx = customerQueue.findIndex(c => c.id === id);
+        if (idx === -1) return;
+        const c = customerQueue[idx];
+        const act = btn.dataset.qact;
+
+        if (act === 'load') {
+          activeQueueId = c.id;
+          customerTypeEl.value = c.type || 'NEW';
+          approvedLimitEl.value = c.limit || '';
+          ltvPercentEl.value = c.ltv || 100;
+          emiCappingEl.value = c.cap || '';
+          activeCustName.textContent = `Customer: ${c.name}`;
+          activeCustBanner.classList.add('show');
+          manualLoans = {};
+          recalcSchemes();
+          switchTab('calc');
+          showToast('Customer eligibility loaded', 'success');
+        } else if (act === 'copy') {
+          const capLine = c.cap ? `\nEMI CAPPING- ${c.cap}` : '';
+          const txt = `CUSTOMER NAME- ${c.name}\nNUMBER- ${c.mobile || ''}\nLIMIT- ${c.limit}\nLTV- ${c.ltv}${capLine}`;
+          copyText(txt, () => showToast('Customer details copied', 'success'));
+        } else if (act === 'del') {
+          recycleBin.unshift(customerQueue.splice(idx, 1)[0]);
+          if (activeQueueId === id) {
+            activeQueueId = null;
+            activeCustBanner.classList.remove('show');
+          }
+          saveQueueStorage();
+          renderQueue();
+          showToast('Moved to Recycle Bin');
+        }
+        return;
+      }
+
+      const item = e.target.closest('.q-item');
+      if (item) {
+        selectedQueueId = Number(item.dataset.qid);
+        renderQueue();
+      }
+    });
+
+    clearActiveCustBtn.addEventListener('click', () => {
+      activeQueueId = null;
+      activeCustBanner.classList.remove('show');
+      renderQueue();
+    });
+
+    qSearch.addEventListener('input', renderQueue);
+
+    function renderBin() {
+      if (!recycleBin.length) {
+        binList.innerHTML = '<div class="empty-msg">Recycle Bin is empty.</div>';
+        return;
+      }
+      binList.innerHTML = recycleBin.map((c, i) => `
+        <div class="q-item">
+          <div class="q-top">
+            <div class="q-name">${escapeHtml(c.name)}</div>
+            <button type="button" class="btn-sm active" data-restore="${i}">Restore</button>
+          </div>
+          <div class="q-meta">${c.mobile || 'No Mobile'} • Limit: ₹${Math.round(c.limit).toLocaleString('en-IN')}</div>
+        </div>
+      `).join('');
+    }
+
+    document.getElementById('openBinBtn').addEventListener('click', () => {
+      renderBin();
+      binModal.classList.add('show');
+    });
+    document.getElementById('closeBinBtn').addEventListener('click', () => binModal.classList.remove('show'));
+
+    binList.addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-restore]');
+      if (!btn) return;
+      const idx = parseInt(btn.dataset.restore, 10);
+      const item = recycleBin.splice(idx, 1)[0];
+      if (item) customerQueue.unshift(item);
+      saveQueueStorage();
+      renderBin();
+      renderQueue();
+      showToast('Customer restored', 'success');
+    });
+
+    document.getElementById('emptyBinBtn').addEventListener('click', () => {
+      if (!recycleBin.length) return;
+      recycleBin = [];
+      saveQueueStorage();
+      renderBin();
+      renderQueue();
+      showToast('Recycle Bin emptied');
+    });
+
+    /* ==================== TOOLS: EMI DATES & DEALERS ==================== */
+    const emiLoanDate = document.getElementById('emiLoanDate');
+    const emiNetTenure = document.getElementById('emiNetTenure');
+    const emiStartDateOut = document.getElementById('emiStartDateOut');
+    const emiEndDateOut = document.getElementById('emiEndDateOut');
+
+    function calcEmiDates() {
+      const val = emiLoanDate.value;
+      const tenure = parseInt(emiNetTenure.value, 10) || 0;
+      if (!val || tenure <= 0) {
+        emiStartDateOut.textContent = '-';
+        emiEndDateOut.textContent = '-';
+        return;
+      }
+      const [y, m, d] = val.split('-').map(Number);
+      const monthIdx = m - 1;
+      const startMonth = d >= 24 ? monthIdx + 2 : monthIdx + 1;
+      const startObj = new Date(y, startMonth, 2);
+      const endObj = new Date(y, startMonth + tenure - 1, 2);
+      const fmt = (dt) => dt.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+      emiStartDateOut.textContent = fmt(startObj);
+      emiEndDateOut.textContent = fmt(endObj);
+    }
+
+    const todayIso = new Date().toISOString().split('T')[0];
+    emiLoanDate.value = todayIso;
+    calcEmiDates();
+    emiLoanDate.addEventListener('change', calcEmiDates);
+    emiNetTenure.addEventListener('input', calcEmiDates);
+
+    // Dealer Search
+    const dealerSearch = document.getElementById('dealerSearch');
+    const dealerFavBtn = document.getElementById('dealerFavBtn');
+    const dealerResults = document.getElementById('dealerResults');
+
+    function getFavDealers() {
+      return JSON.parse(localStorage.getItem('calc_fav_dealers_v1') || '[]');
+    }
+
+    function renderDealers() {
+      const q = dealerSearch.value.toLowerCase().trim();
+      const favs = getFavDealers();
+
+      if (!q && !showingFavDealers) {
+        dealerResults.innerHTML = '<div class="empty-msg">Type dealer name, ID, or city to search.</div>';
+        return;
+      }
+
+      let matches = appData.dealers.filter(d => {
+        if (showingFavDealers && !favs.includes(d.code)) return false;
+        if (!q) return true;
+        return (
+          d.name.toLowerCase().includes(q) ||
+          d.code.toLowerCase().includes(q) ||
+          d.city.toLowerCase().includes(q)
+        );
+      });
+
+      matches.sort((a, b) => {
+        const fa = favs.includes(a.code);
+        const fb = favs.includes(b.code);
+        if (fa && !fb) return -1;
+        if (!fa && fb) return 1;
+        return 0;
+      });
+
+      matches = matches.slice(0, 40);
+      if (!matches.length) {
+        dealerResults.innerHTML = '<div class="empty-msg">No dealers found.</div>';
+        return;
+      }
+
+      dealerResults.innerHTML = matches.map(d => {
+        const isFav = favs.includes(d.code);
+        const fullName = d.name + (d.city ? ` - ${d.city}` : '');
+        return `
+          <div class="dealer-item ${isFav ? 'fav' : ''}">
+            <div class="q-top">
+              <div class="q-name">${escapeHtml(fullName)}</div>
+              <button type="button" class="btn-sm ${isFav ? 'active' : ''}" data-fav="${escapeHtml(d.code)}">${isFav ? '★ Saved' : '☆ Fav'}</button>
+            </div>
+            <div class="q-meta">Dealer ID: ${escapeHtml(d.code)}</div>
+            <div class="q-actions">
+              <button type="button" style="background:var(--success); color:#fff;" data-open-link="${escapeHtml(d.bitly)}">Open Link</button>
+              <button type="button" style="background:var(--primary); color:#fff;" data-copy-dealer="${escapeHtml(`${d.code} - ${fullName} - ${d.bitly}`)}">Copy Data</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    dealerFavBtn.addEventListener('click', () => {
+      showingFavDealers = !showingFavDealers;
+      dealerFavBtn.classList.toggle('active', showingFavDealers);
+      dealerFavBtn.textContent = showingFavDealers ? 'Show All' : 'Favorites';
+      renderDealers();
+    });
+
+    let dealerTimer = null;
+    dealerSearch.addEventListener('input', () => {
+      clearTimeout(dealerTimer);
+      dealerTimer = setTimeout(renderDealers, 140);
+    });
+
+    dealerResults.addEventListener('click', (e) => {
+      const favBtn = e.target.closest('button[data-fav]');
+      if (favBtn) {
+        const code = favBtn.dataset.fav;
+        let favs = getFavDealers();
+        if (favs.includes(code)) favs = favs.filter(x => x !== code);
+        else favs.push(code);
+        localStorage.setItem('calc_fav_dealers_v1', JSON.stringify(favs));
+        renderDealers();
+        return;
+      }
+      const linkBtn = e.target.closest('button[data-open-link]');
+      if (linkBtn) {
+        const url = linkBtn.dataset.openLink;
+        if (url) window.open(url, '_blank');
+        else showToast('Link not available', 'error');
+        return;
+      }
+      const copyBtn = e.target.closest('button[data-copy-dealer]');
+      if (copyBtn) {
+        copyText(copyBtn.dataset.copyDealer, () => showToast('Dealer info copied', 'success'));
+      }
+    });
+
+    /* ==================== EVENT LISTENERS ==================== */
+    function onEligibilityOrPriceChange(trigger) {
+      if (trigger === 'MRP' || trigger === 'INV') {
+        updateVarField();
+        const m = parseFloat(inpMrp.value) || 0;
+        const i = parseFloat(inpInv.value) || 0;
+        if (trigger === 'MRP' && i === 0) syncInsuranceSlabs(m, m, 'MRP');
+        if (trigger === 'INV') syncInsuranceSlabs(m, i > 0 ? i : m, 'INV');
+        manualLoans = {};
+      }
+      if (trigger === 'RESET_MANUAL') {
+        manualLoans = {};
+      }
+      recalcSchemes();
+    }
+
+    customerTypeEl.addEventListener('change', () => onEligibilityOrPriceChange('NONE'));
+    approvedLimitEl.addEventListener('input', () => onEligibilityOrPriceChange('RESET_MANUAL'));
+    ltvPercentEl.addEventListener('input', () => onEligibilityOrPriceChange('NONE'));
+    emiCappingEl.addEventListener('input', () => onEligibilityOrPriceChange('RESET_MANUAL'));
+
+    inpMrp.addEventListener('input', () => onEligibilityOrPriceChange('MRP'));
+    inpInv.addEventListener('input', () => onEligibilityOrPriceChange('INV'));
+    inpTargetDp.addEventListener('input', () => onEligibilityOrPriceChange('RESET_MANUAL'));
+    inpGtl.addEventListener('change', () => onEligibilityOrPriceChange('NONE'));
+    inpRfc.addEventListener('change', () => onEligibilityOrPriceChange('NONE'));
+    inpExw.addEventListener('input', () => onEligibilityOrPriceChange('NONE'));
+    inpMargin.addEventListener('input', () => onEligibilityOrPriceChange('NONE'));
+    inpDealer.addEventListener('input', () => onEligibilityOrPriceChange('NONE'));
+
+    sortSelect.addEventListener('change', renderSchemes);
+
+    toggleDetailsBtn.addEventListener('click', () => {
+      showDetails = !showDetails;
+      toggleDetailsBtn.classList.toggle('active', showDetails);
+      schemesContainer.classList.toggle('show-details', showDetails);
+    });
+
+    toggleAllBtn.addEventListener('click', () => {
+      showAllSchemes = !showAllSchemes;
+      toggleAllBtn.classList.toggle('active', showAllSchemes);
+      renderSchemes();
+    });
+
+    quoteImgBtn.addEventListener('click', generateQuoteImage);
+    clearModelBtn.addEventListener('click', resetSelectedModel);
 
     let searchTimer = null;
     modelSearch.addEventListener('input', () => {
@@ -712,14 +2617,27 @@
     });
 
     clearSearch.addEventListener('click', () => {
-      modelSearch.value = '';
-      clearSearch.classList.remove('show');
-      resultsList.classList.remove('show');
-      selectedCard.classList.remove('show');
-      selectedModel = null;
+      resetSelectedModel();
       modelSearch.focus();
     });
 
+    // Bottom Tab Navigation
+    function switchTab(tab) {
+      document.getElementById('viewCalc').classList.toggle('active', tab === 'calc');
+      document.getElementById('viewQueue').classList.toggle('active', tab === 'queue');
+      document.getElementById('viewTools').classList.toggle('active', tab === 'tools');
+      document.getElementById('tabCalc').classList.toggle('active', tab === 'calc');
+      document.getElementById('tabQueue').classList.toggle('active', tab === 'queue');
+      document.getElementById('tabTools').classList.toggle('active', tab === 'tools');
+      if (tab === 'queue') renderQueue();
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
+
+    document.getElementById('tabCalc').addEventListener('click', () => switchTab('calc'));
+    document.getElementById('tabQueue').addEventListener('click', () => switchTab('queue'));
+    document.getElementById('tabTools').addEventListener('click', () => switchTab('tools'));
+
+    renderQueue();
     initData();
   </script>
 </body>
