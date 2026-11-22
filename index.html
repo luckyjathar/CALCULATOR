@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>EMI Calculator</title>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --primary: #1d4ed8;
+      --primary-light: #eff6ff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --success: #15803d;
+      --success-bg: #dcfce7;
+      --danger: #b91c1c;
+      --danger-bg: #fee2e2;
+      --radius: 14px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding-bottom: 32px;
+    }
+
+    /* Mobile App Top Bar */
+    .app-header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: var(--primary);
+      color: #ffffff;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 10px rgba(15, 23, 42, 0.12);
+    }
+
+    .app-title {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+    }
+
+    .status-pill {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.2);
+      color: #ffffff;
+    }
+
+    .status-pill.ready {
+      background: var(--success-bg);
+      color: var(--success);
+    }
+
+    .status-pill.error {
+      background: var(--danger-bg);
+      color: var(--danger);
+    }
+
+    /* Main Container */
+    .container {
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 14px;
+      box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06);
+      border: 1px solid var(--border);
+    }
+
+    .section-label {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin-bottom: 10px;
+    }
+
+    /* Inputs Grid */
+    .input-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .field.full {
+      grid-column: 1 / -1;
+    }
+
+    .field label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .field input {
+      width: 100%;
+      height: 46px;
+      padding: 0 12px;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+      background: #f8fafc;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      outline: none;
+      transition: border-color 0.15s, background 0.15s;
+    }
+
+    .field input:focus {
+      border-color: var(--primary);
+      background: #ffffff;
+    }
+
+    /* Search Box */
+    .search-wrap {
+      position: relative;
+    }
+
+    .search-input {
+      width: 100%;
+      height: 48px;
+      padding: 0 42px 0 14px;
+      font-size: 16px;
+      color: var(--text);
+      background: #f8fafc;
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      outline: none;
+    }
+
+    .search-input:focus {
+      border-color: var(--primary);
+      background: #ffffff;
+    }
+
+    .search-input:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .clear-btn {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 28px;
+      height: 28px;
+      border: none;
+      border-radius: 50%;
+      background: #e2e8f0;
+      color: var(--text);
+      font-size: 18px;
+      line-height: 1;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .clear-btn.show {
+      display: flex;
+    }
+
+    /* Search Results List */
+    .results-list {
+      margin-top: 8px;
+      max-height: 280px;
+      overflow-y: auto;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #ffffff;
+      display: none;
+    }
+
+    .results-list.show {
+      display: block;
+    }
+
+    .result-item {
+      padding: 11px 12px;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+    }
+
+    .result-item:last-child {
+      border-bottom: none;
+    }
+
+    .result-item:active {
+      background: var(--primary-light);
+    }
+
+    .result-model {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 3px;
+      word-break: break-word;
+    }
+
+    .result-meta {
+      font-size: 13px;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .empty-msg {
+      padding: 14px;
+      text-align: center;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    /* Selected Model Display */
+    .selected-card {
+      display: none;
+    }
+
+    .selected-card.show {
+      display: block;
+    }
+
+    .model-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 4px;
+      word-break: break-word;
+    }
+
+    .model-sub {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    .scheme-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    .scheme-table th,
+    .scheme-table td {
+      padding: 9px 6px;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .scheme-table th {
+      background: #f8fafc;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .scheme-table td {
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .sheet-info {
+      font-size: 12px;
+      color: var(--muted);
+      text-align: center;
+      padding: 4px 0;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="app-header">
+    <div class="app-title">EMI Calculator</div>
+    <div id="statusPill" class="status-pill">लोड होत आहे...</div>
+  </header>
+
+  <main class="container">
+    <!-- 1. Eligibility Inputs -->
+    <section class="card">
+      <div class="section-label">Customer Eligibility</div>
+      <div class="input-grid">
+        <div class="field full">
+          <label for="approvedLimit">Approved Limit (₹)</label>
+          <input type="number" id="approvedLimit" inputmode="numeric" placeholder="उदा. 50000" />
+        </div>
+
+        <div class="field">
+          <label for="ltvPercent">LTV (%)</label>
+          <input type="number" id="ltvPercent" inputmode="decimal" placeholder="उदा. 75" />
+        </div>
+
+        <div class="field">
+          <label for="emiCapping">EMI Capping (₹)</label>
+          <input type="number" id="emiCapping" inputmode="numeric" placeholder="उदा. 4000" />
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. Model Search -->
+    <section class="card">
+      <div class="section-label">Model Search</div>
+      <div class="search-wrap">
+        <input
+          type="text"
+          id="modelSearch"
+          class="search-input"
+          placeholder="मॉडेल किंवा ब्रँड शोधा..."
+          autocomplete="off"
+          disabled
+        />
+        <button type="button" id="clearSearch" class="clear-btn" aria-label="Clear">×</button>
+      </div>
+      <div id="resultsList" class="results-list"></div>
+    </section>
+
+    <!-- Selected Model Raw Schemes Preview -->
+    <section id="selectedCard" class="card selected-card">
+      <div class="section-label">निवडलेले मॉडेल</div>
+      <div id="selectedTitle" class="model-title"></div>
+      <div id="selectedSub" class="model-sub"></div>
+      <table class="scheme-table">
+        <thead>
+          <tr>
+            <th>Tenure</th>
+            <th>Adv</th>
+            <th>DBD</th>
+            <th>PF/CPF</th>
+            <th>ROI</th>
+            <th>Fix EMI</th>
+          </tr>
+        </thead>
+        <tbody id="schemeBody"></tbody>
+      </table>
+    </section>
+
+    <div id="sheetInfo" class="sheet-info"></div>
+  </main>
+
+  <script>
+    // सर्व ४ शीट्सचा डेटा येथे सेव्ह राहील
+    const appData = {
+      sheet1: [],
+      sheet2: [],
+      dealers: [],
+      sheet3: []
+    };
+
+    // जलद सर्चसाठी युनिक मॉडेल्सची यादी
+    let modelIndex = [];
+    let selectedModel = null;
+
+    const statusPill = document.getElementById('statusPill');
+    const modelSearch = document.getElementById('modelSearch');
+    const clearSearch = document.getElementById('clearSearch');
+    const resultsList = document.getElementById('resultsList');
+    const selectedCard = document.getElementById('selectedCard');
+    const selectedTitle = document.getElementById('selectedTitle');
+    const selectedSub = document.getElementById('selectedSub');
+    const schemeBody = document.getElementById('schemeBody');
+    const sheetInfo = document.getElementById('sheetInfo');
+
+    async function loadExcelData() {
+      try {
+        statusPill.textContent = 'फाईल लोड होत आहे...';
+        const response = await fetch('./master_data.xlsx');
+        if (!response.ok) {
+          throw new Error('master_data.xlsx सापडली नाही');
+        }
+
+        const buffer = await response.arrayBuffer();
+        statusPill.textContent = 'डेटा वाचत आहे...';
+
+        // UI स्मूद राहण्यासाठी छोटा ब्रेक
+        await new Promise(resolve => setTimeout(resolve, 30));
+
+        const workbook = XLSX.read(buffer, { type: 'array' });
+
+        // सर्व ४ शीट्स वाचणे
+        if (workbook.Sheets['Sheet1']) {
+          appData.sheet1 = XLSX.utils.sheet_to_json(workbook.Sheets['Sheet1'], { defval: '' });
+        }
+        if (workbook.Sheets['Sheet2']) {
+          appData.sheet2 = XLSX.utils.sheet_to_json(workbook.Sheets['Sheet2'], { defval: '' });
+        }
+        if (workbook.Sheets['Dealers']) {
+          appData.dealers = XLSX.utils.sheet_to_json(workbook.Sheets['Dealers'], { defval: '' });
+        }
+        if (workbook.Sheets['Sheet3']) {
+          appData.sheet3 = XLSX.utils.sheet_to_json(workbook.Sheets['Sheet3'], { defval: '' });
+        }
+
+        buildModelIndex();
+
+        statusPill.textContent = 'तयार';
+        statusPill.classList.add('ready');
+        modelSearch.disabled = false;
+        sheetInfo.textContent =
+          `Sheet1: ${appData.sheet1.length} | Sheet2: ${appData.sheet2.length} | Dealers: ${appData.dealers.length} | Sheet3: ${appData.sheet3.length}`;
+      } catch (err) {
+        console.error(err);
+        statusPill.textContent = 'लोड एरर';
+        statusPill.classList.add('error');
+        sheetInfo.textContent = 'master_data.xlsx फाईल त्याच फोल्डरमध्ये अपलोड करा.';
+      }
+    }
+
+    function buildModelIndex() {
+      const map = new Map();
+
+      const addRows = (rows, sourceSheet) => {
+        for (let i = 0; i < rows.length; i++) {
+          const r = rows[i];
+          const model = String(r['MODEL'] || '').trim();
+          if (!model) continue;
+
+          const brand = String(r['BRAND'] || '').trim();
+          const category = String(r['CATEGORY'] || '').trim();
+          const mrp = r['MRP'] !== '' && r['MRP'] !== undefined ? Number(r['MRP']) : '';
+
+          const key = `${sourceSheet}||${brand}||${model}`;
+          if (!map.has(key)) {
+            map.set(key, {
+              sourceSheet,
+              category,
+              brand,
+              model,
+              mrp,
+              searchKey: `${brand} ${model} ${category}`.toLowerCase(),
+              schemes: []
+            });
+          }
+
+          map.get(key).schemes.push({
+            tenure: r['TOTAL TENURE'] ?? '',
+            adv: r['ADVANCE EMI'] ?? '',
+            dbd: r['DBD'] ?? '',
+            pf: r['PF'] !== undefined && r['PF'] !== '' ? r['PF'] : (r['CPF'] ?? ''),
+            roi: r['ROI'] ?? '',
+            fixedEmi: r['FIXED EMI'] ?? '',
+            minL: r['MIN L'] ?? '',
+            maxL: r['MAX L'] ?? '',
+            validity: r['VALIDITY'] ?? ''
+          });
+        }
+      };
+
+      addRows(appData.sheet1, 'Sheet1');
+      addRows(appData.sheet3, 'Sheet3');
+
+      modelIndex = Array.from(map.values());
+    }
+
+    function renderSearchResults(query) {
+      const q = query.trim().toLowerCase();
+      if (!q) {
+        resultsList.classList.remove('show');
+        resultsList.innerHTML = '';
+        return;
+      }
+
+      const tokens = q.split(/\s+/).filter(Boolean);
+      const matches = [];
+
+      for (let i = 0; i < modelIndex.length; i++) {
+        const item = modelIndex[i];
+        let matched = true;
+        for (let t = 0; t < tokens.length; t++) {
+          if (!item.searchKey.includes(tokens[t])) {
+            matched = false;
+            break;
+          }
+        }
+        if (matched) {
+          matches.push(item);
+          if (matches.length >= 30) break;
+        }
+      }
+
+      resultsList.innerHTML = '';
+      if (matches.length === 0) {
+        resultsList.innerHTML = '<div class="empty-msg">कोणतेही मॉडेल सापडले नाही</div>';
+      } else {
+        const fragment = document.createDocumentFragment();
+        matches.forEach(item => {
+          const div = document.createElement('div');
+          div.className = 'result-item';
+          const mrpText = item.mrp ? `₹${Number(item.mrp).toLocaleString('en-IN')}` : '-';
+          div.innerHTML = `
+            <div class="result-model">${escapeHtml(item.brand)} ${escapeHtml(item.model)}</div>
+            <div class="result-meta">
+              <span>${escapeHtml(item.category)} (${item.sourceSheet})</span>
+              <span>MRP: ${mrpText}</span>
+            </div>
+          `;
+          div.addEventListener('click', () => selectModel(item));
+          fragment.appendChild(div);
+        });
+        resultsList.appendChild(fragment);
+      }
+
+      resultsList.classList.add('show');
+    }
+
+    function selectModel(item) {
+      selectedModel = item;
+      modelSearch.value = `${item.brand} ${item.model}`;
+      clearSearch.classList.add('show');
+      resultsList.classList.remove('show');
+
+      selectedTitle.textContent = `${item.brand} - ${item.model}`;
+      const mrpText = item.mrp ? `₹${Number(item.mrp).toLocaleString('en-IN')}` : '-';
+      selectedSub.textContent = `${item.category} • MRP: ${mrpText} • ${item.sourceSheet}`;
+
+      schemeBody.innerHTML = '';
+      item.schemes.forEach(s => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${s.tenure !== '' ? s.tenure : '-'}</td>
+          <td>${s.adv !== '' ? s.adv : '-'}</td>
+          <td>${s.dbd !== '' ? s.dbd : '-'}</td>
+          <td>${s.pf !== '' ? s.pf : '-'}</td>
+          <td>${s.roi !== '' ? s.roi : '-'}</td>
+          <td>${s.fixedEmi !== '' ? s.fixedEmi : '-'}</td>
+        `;
+        schemeBody.appendChild(tr);
+      });
+
+      selectedCard.classList.add('show');
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    // Search Input Listeners
+    let searchTimer = null;
+    modelSearch.addEventListener('input', () => {
+      const val = modelSearch.value;
+      clearSearch.classList.toggle('show', val.length > 0);
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => renderSearchResults(val), 120);
+    });
+
+    clearSearch.addEventListener('click', () => {
+      modelSearch.value = '';
+      clearSearch.classList.remove('show');
+      resultsList.classList.remove('show');
+      selectedCard.classList.remove('show');
+      selectedModel = null;
+      modelSearch.focus();
+    });
+
+    // सुरुवातीला Excel लोड करणे
+    loadExcelData();
+  </script>
+</body>
+</html>
