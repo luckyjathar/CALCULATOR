@@ -79,7 +79,7 @@
 
     /* Main Container */
     .container {
-      max-width: 540px;
+      max-width: 600px;
       margin: 0 auto;
       padding: 12px;
       display: flex;
@@ -327,12 +327,12 @@
       margin-bottom: 12px;
     }
 
-    /* Action Pills */
+    /* Toolbar & Buttons */
     .toolbar {
       display: flex;
       flex-wrap: wrap;
       gap: 6px;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
       align-items: center;
     }
     .tool-select {
@@ -399,54 +399,120 @@
       cursor: pointer;
     }
 
-    /* Scheme Cards */
-    .schemes-list {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .scheme-item {
-      border: 1.5px solid var(--border);
-      border-radius: 12px;
-      padding: 12px;
+    /* ==================== CALCULATED SCHEMES TABLE ==================== */
+    .table-wrap {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      border: 1px solid var(--border);
+      border-radius: 10px;
       background: #ffffff;
-      position: relative;
-    }
-    .scheme-item.badge-dp { border-left: 5px solid var(--success); background: #f8fffb; }
-    .scheme-item.badge-emi { border-left: 5px solid var(--primary); background: #f8fbff; }
-    .scheme-item.badge-pop { border-left: 5px solid var(--warn); background: #fffdf5; }
-    .scheme-item.badge-bal { border-left: 5px solid var(--purple); background: #faf8ff; }
-    .scheme-item.breached {
-      border-color: #fecaca;
-      border-left: 5px solid var(--danger);
-      background: #fff8f8;
-      opacity: 0.88;
     }
 
-    .scheme-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 8px;
-      margin-bottom: 10px;
+    .schemes-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: 13px;
+      white-space: nowrap;
     }
-    .scheme-ta {
-      font-size: 17px;
+
+    .schemes-table th,
+    .schemes-table td {
+      padding: 9px 7px;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+
+    .schemes-table thead th {
+      background: #f1f5f9;
+      color: #475569;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      cursor: pointer;
+      user-select: none;
+      border-bottom: 1.5px solid #cbd5e1;
+    }
+
+    .schemes-table thead th:hover {
+      background: #e2e8f0;
+    }
+
+    /* Sticky first column (T/A) */
+    .schemes-table th:first-child,
+    .schemes-table td:first-child {
+      position: sticky;
+      left: 0;
+      z-index: 2;
+      text-align: left;
+      padding-left: 9px;
+      border-right: 1px solid var(--border);
+      background: #ffffff;
+    }
+
+    .schemes-table thead th:first-child {
+      z-index: 3;
+      background: #f1f5f9;
+    }
+
+    /* Hidden detail columns toggled via Details button */
+    .schemes-table .detail-col {
+      display: none;
+    }
+    .schemes-table.show-details .detail-col {
+      display: table-cell;
+    }
+
+    /* Row Highlights */
+    .schemes-table tbody tr { background: #ffffff; }
+    .schemes-table tbody tr:last-child td { border-bottom: none; }
+
+    .schemes-table tbody tr.row-dp,
+    .schemes-table tbody tr.row-dp td:first-child { background: #f0fdf4; }
+    .schemes-table tbody tr.row-dp td:first-child { box-shadow: inset 4px 0 0 var(--success); }
+
+    .schemes-table tbody tr.row-emi,
+    .schemes-table tbody tr.row-emi td:first-child { background: #eff6ff; }
+    .schemes-table tbody tr.row-emi td:first-child { box-shadow: inset 4px 0 0 var(--primary); }
+
+    .schemes-table tbody tr.row-pop,
+    .schemes-table tbody tr.row-pop td:first-child { background: #fffbeb; }
+    .schemes-table tbody tr.row-pop td:first-child { box-shadow: inset 4px 0 0 var(--warn); }
+
+    .schemes-table tbody tr.row-bal,
+    .schemes-table tbody tr.row-bal td:first-child { background: #f5f3ff; }
+    .schemes-table tbody tr.row-bal td:first-child { box-shadow: inset 4px 0 0 var(--purple); }
+
+    .schemes-table tbody tr.row-breach,
+    .schemes-table tbody tr.row-breach td:first-child { background: #fef2f2; }
+    .schemes-table tbody tr.row-breach td:first-child { box-shadow: inset 4px 0 0 var(--danger); }
+
+    .ta-main {
+      font-size: 14px;
       font-weight: 800;
       color: var(--text);
-      display: flex;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 6px;
+      line-height: 1.2;
     }
+
+    .tag-stack {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 2px;
+      margin-top: 3px;
+    }
+
     .tag {
-      font-size: 10px;
+      font-size: 9px;
       font-weight: 800;
-      padding: 3px 7px;
-      border-radius: 5px;
-      letter-spacing: 0.3px;
+      padding: 2px 5px;
+      border-radius: 4px;
+      letter-spacing: 0.2px;
       text-transform: uppercase;
+      line-height: 1.1;
     }
     .tag-dp { background: var(--success); color: #fff; }
     .tag-emi { background: var(--primary); color: #fff; }
@@ -456,103 +522,64 @@
     .tag-breach { background: var(--danger); color: #fff; }
     .tag-exp { background: #e2e8f0; color: #475569; }
 
-    .copy-btn {
-      border: none;
-      background: var(--primary-light);
-      color: var(--primary);
-      font-size: 12px;
-      font-weight: 800;
-      padding: 6px 10px;
-      border-radius: 7px;
-      cursor: pointer;
-      flex-shrink: 0;
-    }
+    .cell-dp { color: var(--success); font-weight: 900; font-size: 14px; }
+    .cell-emi { color: var(--primary); font-weight: 900; font-size: 14px; }
+    .cell-m { color: var(--text); font-weight: 800; }
+    .cell-daily { color: var(--orange); font-weight: 800; }
+    .cell-danger { color: var(--danger); font-weight: 800; }
+    .cell-primary { color: var(--primary-dark); font-weight: 800; }
+    .cell-sub { display: block; font-size: 11px; color: var(--danger); font-weight: 800; }
 
-    .metrics-row {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 6px;
-      background: #f8fafc;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 8px 4px;
-      text-align: center;
-      margin-bottom: 10px;
-    }
-    .m-label {
-      font-size: 10px;
-      font-weight: 700;
-      color: var(--muted);
-      text-transform: uppercase;
-      margin-bottom: 2px;
-    }
-    .m-val { font-size: 15px; font-weight: 800; color: var(--text); }
-    .m-val.dp { color: var(--success); }
-    .m-val.emi { color: var(--primary); }
-    .m-val.daily { color: var(--orange); }
-
-    /* Loan Stepper */
-    .loan-bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-    }
-    .loan-label {
-      font-size: 12px;
-      font-weight: 700;
-      color: var(--muted);
-    }
+    /* Compact Table Stepper */
     .stepper {
-      display: flex;
+      display: inline-flex;
       align-items: center;
-      gap: 4px;
+      gap: 3px;
     }
     .step-btn {
-      width: 34px;
-      height: 34px;
+      width: 26px;
+      height: 28px;
       border: 1px solid #cbd5e1;
-      border-radius: 8px;
+      border-radius: 6px;
       background: #f8fafc;
       color: var(--text);
-      font-size: 18px;
-      font-weight: 700;
+      font-size: 15px;
+      font-weight: 800;
       cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
     .step-inp {
-      width: 96px;
-      height: 34px;
+      width: 72px;
+      height: 28px;
       text-align: center;
-      font-size: 14px;
+      font-size: 12px;
       font-weight: 800;
       color: var(--text);
-      border: 1.5px solid #cbd5e1;
-      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
       background: #ffffff;
     }
 
-    /* Breakdown Details */
-    .details-box {
-      display: none;
-      margin-top: 10px;
-      padding-top: 10px;
-      border-top: 1px dashed #cbd5e1;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px 12px;
-      font-size: 12px;
+    .copy-btn {
+      border: none;
+      background: var(--primary);
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 6px 8px;
+      border-radius: 6px;
+      cursor: pointer;
     }
-    .schemes-list.show-details .details-box { display: grid; }
-    .det-row {
-      display: flex;
-      justify-content: space-between;
-      gap: 6px;
-    }
-    .det-k { color: var(--muted); font-weight: 600; }
-    .det-v { color: var(--text); font-weight: 800; text-align: right; }
-    .det-v.danger { color: var(--danger); }
-    .det-v.primary { color: var(--primary); }
 
     /* Queue & Dealer Cards */
+    .list-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
     .warn-box {
       display: none;
       padding: 9px 11px;
@@ -692,9 +719,10 @@
     .empty-msg {
       padding: 16px;
       text-align: center;
-      font-size: 14px;
+      font-size: 13px;
       color: var(--muted);
       font-weight: 600;
+      white-space: normal;
     }
   </style>
 </head>
@@ -844,7 +872,7 @@
         </div>
       </section>
 
-      <!-- 4. Schemes Output -->
+      <!-- 4. Calculated Schemes Table -->
       <section id="schemesCard" class="card hidden">
         <div class="card-header-row">
           <div class="section-label">Calculated Schemes</div>
@@ -855,7 +883,7 @@
           <select id="sortSelect" class="tool-select">
             <option value="dp">Sort: Lowest DP</option>
             <option value="emi">Sort: Lowest EMI</option>
-            <option value="tenure">Sort: Tenure</option>
+            <option value="currentTenure">Sort: Tenure</option>
             <option value="daily">Sort: Daily EMI</option>
           </select>
           <button type="button" id="toggleDetailsBtn" class="btn-sm">Details</button>
@@ -863,7 +891,12 @@
           <button type="button" id="quoteImgBtn" class="btn-sm active">Quote Image</button>
         </div>
 
-        <div id="schemesContainer" class="schemes-list"></div>
+        <div class="table-wrap">
+          <table id="schemesTable" class="schemes-table">
+            <thead id="schemesTableHead"></thead>
+            <tbody id="schemesTableBody"></tbody>
+          </table>
+        </div>
       </section>
     </div>
 
@@ -900,7 +933,7 @@
         <div class="search-wrap" style="margin-bottom:10px;">
           <input type="text" id="qSearch" class="search-input" placeholder="Search name, mobile, or limit..." />
         </div>
-        <div id="qList" class="schemes-list"></div>
+        <div id="qList" class="list-stack"></div>
       </section>
     </div>
 
@@ -945,7 +978,7 @@
         <div class="search-wrap" style="margin-bottom:10px;">
           <input type="text" id="dealerSearch" class="search-input" placeholder="Search dealer name, ID, or city..." />
         </div>
-        <div id="dealerResults" class="schemes-list">
+        <div id="dealerResults" class="list-stack">
           <div class="empty-msg">Type dealer name, ID, or city to search.</div>
         </div>
       </section>
@@ -975,7 +1008,7 @@
         <div class="modal-title">Recycle Bin</div>
         <button type="button" id="closeBinBtn" class="btn-sm">Close</button>
       </div>
-      <div id="binList" class="schemes-list"></div>
+      <div id="binList" class="list-stack"></div>
       <button type="button" id="emptyBinBtn" class="btn-danger" style="width:100%; height:40px;">Empty Recycle Bin</button>
     </div>
   </div>
@@ -1017,10 +1050,11 @@
       dealers: []
     };
 
-    let selectedItem = null; // { brand, model, category, mrp, isNonTieup, schemes: [] }
+    let selectedItem = null;
     let manualLoans = {};
     let showDetails = false;
     let showAllSchemes = false;
+    let sortState = { key: 'dp', dir: 'asc' };
     let currentCalculated = [];
     let lastQuoteCanvas = null;
 
@@ -1069,7 +1103,9 @@
     const toggleDetailsBtn = document.getElementById('toggleDetailsBtn');
     const toggleAllBtn = document.getElementById('toggleAllBtn');
     const quoteImgBtn = document.getElementById('quoteImgBtn');
-    const schemesContainer = document.getElementById('schemesContainer');
+    const schemesTable = document.getElementById('schemesTable');
+    const schemesTableHead = document.getElementById('schemesTableHead');
+    const schemesTableBody = document.getElementById('schemesTableBody');
 
     const toastEl = document.getElementById('toastEl');
     let toastTimer = null;
@@ -1307,7 +1343,7 @@
       if (expDate) {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        if (expDate < today) return null; // Skip expired
+        if (expDate < today) return null;
         const dd = String(expDate.getDate()).padStart(2, '0');
         const mm = String(expDate.getMonth() + 1).padStart(2, '0');
         expiryDateStr = `${dd}/${mm}/${expDate.getFullYear()}`;
@@ -1865,7 +1901,7 @@
         });
       });
 
-      // Assign Top 4 Badges on eligible schemes
+      // Top 4 Badges on eligible schemes
       const validS = results.filter(d => !d.isBreached && d.loan > 0);
       if (validS.length > 0) {
         const winDp = [...validS].sort((a, b) => a.dp - b.dp)[0];
@@ -1880,13 +1916,39 @@
       }
 
       currentCalculated = results;
-      renderSchemes();
+      renderSchemesTable();
     }
 
-    function renderSchemes() {
-      const sortKey = sortSelect.value;
+    function renderSchemesTable() {
+      const isNT = selectedItem && selectedItem.isNonTieup;
       const validCount = currentCalculated.filter(d => !d.isBreached && d.loan > 0).length;
       eligibleSummary.textContent = `${validCount} / ${currentCalculated.length} Eligible`;
+
+      const arrow = (k) => sortState.key === k ? (sortState.dir === 'asc' ? ' ▲' : ' ▼') : '';
+
+      schemesTableHead.innerHTML = `
+        <tr>
+          <th data-sort="currentTenure">T/A${arrow('currentTenure')}</th>
+          <th data-sort="dp">Net DP${arrow('dp')}</th>
+          <th data-sort="emi">EMI${arrow('emi')}</th>
+          <th data-sort="inst">M${arrow('inst')}</th>
+          <th data-sort="daily">Daily${arrow('daily')}</th>
+          <th data-sort="loan">Loan${arrow('loan')}</th>
+          <th class="detail-col" data-sort="curLTV">LTV%${arrow('curLTV')}</th>
+          <th class="detail-col" data-sort="dbd">DBD%${arrow('dbd')}</th>
+          <th class="detail-col" data-sort="pf">PF${arrow('pf')}</th>
+          <th class="detail-col" data-sort="roi">ROI%${arrow('roi')}</th>
+          <th class="detail-col" data-sort="fixedEmi">Fixed${arrow('fixedEmi')}</th>
+          <th class="detail-col" data-sort="netDisb">Net Disb${arrow('netDisb')}</th>
+          <th class="detail-col" data-sort="extra">Extra${arrow('extra')}</th>
+          ${isNT
+            ? `<th class="detail-col" data-sort="minLoan">Min${arrow('minLoan')}</th>
+               <th class="detail-col" data-sort="maxLoan">Max${arrow('maxLoan')}</th>`
+            : `<th class="detail-col" data-sort="nbfcMaxL">NBFC Lmt${arrow('nbfcMaxL')}</th>`
+          }
+          <th>Act</th>
+        </tr>
+      `;
 
       let list = showAllSchemes
         ? [...currentCalculated]
@@ -1894,103 +1956,108 @@
 
       list.sort((a, b) => {
         if (a.isBreached !== b.isBreached) return a.isBreached ? 1 : -1;
-        if (sortKey === 'emi') return a.emi - b.emi;
-        if (sortKey === 'tenure') return b.currentTenure - a.currentTenure;
-        if (sortKey === 'daily') return a.daily - b.daily;
-        return a.dp - b.dp;
+        const va = a[sortState.key] ?? 0;
+        const vb = b[sortState.key] ?? 0;
+        return sortState.dir === 'asc' ? (va - vb) : (vb - va);
       });
 
+      schemesTable.classList.toggle('show-details', showDetails);
+
+      const totalCols = isNT ? 16 : 15;
       if (list.length === 0) {
-        schemesContainer.innerHTML = `<div class="empty-msg">No eligible schemes for current limits. Tap "Show All" to inspect breaches.</div>`;
+        schemesTableBody.innerHTML = `
+          <tr>
+            <td colspan="${totalCols}" class="empty-msg">
+              No eligible schemes for current limits. Tap "Show All" to inspect breaches.
+            </td>
+          </tr>
+        `;
         return;
       }
 
-      const badgeMap = {
-        DP: { text: 'Lowest DP', cls: 'tag-dp', cardCls: 'badge-dp' },
-        EMI: { text: 'Lowest EMI', cls: 'tag-emi', cardCls: 'badge-emi' },
-        POP: { text: 'Top Choice', cls: 'tag-pop', cardCls: 'badge-pop' },
-        BAL: { text: 'Best Value', cls: 'tag-bal', cardCls: 'badge-bal' }
+      const badgeMeta = {
+        DP: { text: 'Lowest DP', cls: 'tag-dp', rowCls: 'row-dp' },
+        EMI: { text: 'Lowest EMI', cls: 'tag-emi', rowCls: 'row-emi' },
+        POP: { text: 'Top Choice', cls: 'tag-pop', rowCls: 'row-pop' },
+        BAL: { text: 'Best Value', cls: 'tag-bal', rowCls: 'row-bal' }
       };
 
-      schemesContainer.classList.toggle('show-details', showDetails);
+      schemesTableBody.innerHTML = list.map(d => {
+        let rowCls = '';
+        if (d.isBreached) rowCls = 'row-breach';
+        else if (d.badges.length > 0) rowCls = badgeMeta[d.badges[0]].rowCls;
 
-      schemesContainer.innerHTML = list.map(d => {
-        let cardCls = '';
-        if (d.isBreached) cardCls = 'breached';
-        else if (d.badges.length > 0) cardCls = badgeMap[d.badges[0]].cardCls;
-
-        const badgesHtml = d.badges.map(b => `<span class="tag ${badgeMap[b].cls}">${badgeMap[b].text}</span>`).join('');
-        const fixedTag = d.isFixed ? `<span class="tag tag-fixed">Fixed ₹${d.fixedEmi}</span>` : '';
-        const expTag = d.expiryDateStr ? `<span class="tag tag-exp">Exp: ${d.expiryDateStr}</span>` : '';
-        const breachTags = [
+        const tags = [
+          ...d.badges.map(b => `<span class="tag ${badgeMeta[b].cls}">${badgeMeta[b].text}</span>`),
+          d.isFixed ? `<span class="tag tag-fixed">Fix ₹${d.fixedEmi}</span>` : '',
           d.isLtvBreach ? `<span class="tag tag-breach">LTV ${Math.round(d.curLTV)}%</span>` : '',
           d.isInv50Breach ? `<span class="tag tag-breach">&lt;50% Loan</span>` : '',
-          d.isBoundBreach ? `<span class="tag tag-breach">Min/Max Breach</span>` : ''
-        ].join('');
+          d.isBoundBreach ? `<span class="tag tag-breach">Min/Max</span>` : '',
+          d.expiryDateStr ? `<span class="tag tag-exp">Exp ${d.expiryDateStr}</span>` : ''
+        ].filter(Boolean).join('');
 
         const stepSize = d.isFixed ? d.fixedEmi : 1000;
 
         return `
-          <div class="scheme-item ${cardCls}">
-            <div class="scheme-top">
-              <div class="scheme-ta">
-                <span>${d.currentTenure}/${d.advEmi}</span>
-                ${badgesHtml}
-                ${fixedTag}
-                ${breachTags}
-                ${expTag}
-              </div>
-              <button type="button" class="copy-btn" data-copy-idx="${d.dIdx}">Copy</button>
-            </div>
-
-            <div class="metrics-row">
-              <div>
-                <div class="m-label">Net DP</div>
-                <div class="m-val dp">₹${Math.round(d.dp).toLocaleString('en-IN')}</div>
-              </div>
-              <div>
-                <div class="m-label">EMI</div>
-                <div class="m-val emi">₹${Math.round(d.emi).toLocaleString('en-IN')}</div>
-              </div>
-              <div>
-                <div class="m-label">Months</div>
-                <div class="m-val">${d.inst}</div>
-              </div>
-              <div>
-                <div class="m-label">Daily</div>
-                <div class="m-val daily">₹${Math.round(d.daily).toLocaleString('en-IN')}</div>
-              </div>
-            </div>
-
-            <div class="loan-bar">
-              <div class="loan-label">Loan Amount</div>
+          <tr class="${rowCls}">
+            <td>
+              <div class="ta-main">${d.currentTenure}/${d.advEmi}</div>
+              ${tags ? `<div class="tag-stack">${tags}</div>` : ''}
+            </td>
+            <td class="cell-dp">₹${Math.round(d.dp).toLocaleString('en-IN')}</td>
+            <td class="cell-emi">₹${Math.round(d.emi).toLocaleString('en-IN')}</td>
+            <td class="cell-m">${d.inst}</td>
+            <td class="cell-daily">₹${Math.round(d.daily).toLocaleString('en-IN')}</td>
+            <td>
               <div class="stepper">
                 <button type="button" class="step-btn" data-step="${-stepSize}" data-didx="${d.dIdx}">−</button>
                 <input type="number" class="step-inp" data-loan-inp="${d.dIdx}" value="${Math.floor(d.loan)}" inputmode="numeric" />
                 <button type="button" class="step-btn" data-step="${stepSize}" data-didx="${d.dIdx}">+</button>
               </div>
-            </div>
-
-            <div class="details-box">
-              <div class="det-row"><span class="det-k">Scheme LTV</span><span class="det-v">${Math.round(d.curLTV)}%</span></div>
-              <div class="det-row"><span class="det-k">PF</span><span class="det-v">₹${d.pf}</span></div>
-              <div class="det-row"><span class="det-k">DBD (${+parseFloat(d.dbd).toFixed(2)}% + GST)</span><span class="det-v danger">₹${Math.round(d.dbdAmt).toLocaleString('en-IN')}</span></div>
-              <div class="det-row"><span class="det-k">ROI (${+parseFloat(d.roi).toFixed(2)}%)</span><span class="det-v danger">₹${Math.round(d.roiAmt).toLocaleString('en-IN')}</span></div>
-              <div class="det-row"><span class="det-k">Net Disbursal</span><span class="det-v primary">₹${Math.round(d.netDisb).toLocaleString('en-IN')}</span></div>
-              <div class="det-row"><span class="det-k">Extra Cost</span><span class="det-v danger">₹${Math.round(d.extra).toLocaleString('en-IN')}</span></div>
-              ${selectedItem.isNonTieup
-                ? `<div class="det-row"><span class="det-k">Min Loan</span><span class="det-v">₹${Math.round(d.minLoan).toLocaleString('en-IN')}</span></div>
-                   <div class="det-row"><span class="det-k">Max Loan</span><span class="det-v">${d.maxLoan < 9999999 ? '₹' + Math.round(d.maxLoan).toLocaleString('en-IN') : 'No Limit'}</span></div>`
-                : `<div class="det-row"><span class="det-k">NBFC Max Loan</span><span class="det-v">₹${Math.floor(d.nbfcMaxL).toLocaleString('en-IN')}</span></div>
-                   <div class="det-row"><span class="det-k">Min ₹900 Base EMI</span><span class="det-v">${d.minEmiApplied ? 'Applied' : 'No'}</span></div>`
-              }
-            </div>
-          </div>
+            </td>
+            <td class="detail-col">${Math.round(d.curLTV)}%</td>
+            <td class="detail-col">
+              ${+parseFloat(d.dbd).toFixed(2)}%
+              <span class="cell-sub">₹${Math.round(d.dbdAmt).toLocaleString('en-IN')}</span>
+            </td>
+            <td class="detail-col">₹${d.pf}</td>
+            <td class="detail-col">
+              ${+parseFloat(d.roi).toFixed(2)}%
+              <span class="cell-sub">₹${Math.round(d.roiAmt).toLocaleString('en-IN')}</span>
+            </td>
+            <td class="detail-col">${d.fixedEmi > 0 ? '₹' + d.fixedEmi : 'N/A'}</td>
+            <td class="detail-col cell-primary">₹${Math.round(d.netDisb).toLocaleString('en-IN')}</td>
+            <td class="detail-col cell-danger">₹${Math.round(d.extra).toLocaleString('en-IN')}</td>
+            ${isNT
+              ? `<td class="detail-col">₹${Math.round(d.minLoan).toLocaleString('en-IN')}</td>
+                 <td class="detail-col">${d.maxLoan < 9999999 ? '₹' + Math.round(d.maxLoan).toLocaleString('en-IN') : 'NO'}</td>`
+              : `<td class="detail-col">₹${Math.floor(d.nbfcMaxL).toLocaleString('en-IN')}</td>`
+            }
+            <td>
+              <button type="button" class="copy-btn" data-copy-idx="${d.dIdx}">Copy</button>
+            </td>
+          </tr>
         `;
       }).join('');
     }
 
-    /* ==================== MANUAL LOAN STEPPER & COPY ==================== */
+    /* ==================== TABLE SORT, STEPPER & COPY ==================== */
+    schemesTableHead.addEventListener('click', (e) => {
+      const th = e.target.closest('th[data-sort]');
+      if (!th) return;
+      const key = th.dataset.sort;
+      if (sortState.key === key) {
+        sortState.dir = sortState.dir === 'asc' ? 'desc' : 'asc';
+      } else {
+        sortState.key = key;
+        sortState.dir = key === 'currentTenure' ? 'desc' : 'asc';
+      }
+      if (['dp', 'emi', 'currentTenure', 'daily'].includes(key)) {
+        sortSelect.value = key;
+      }
+      renderSchemesTable();
+    });
+
     function handleManualLoanChange(dIdx, rawVal) {
       const inputMrp = parseFloat(inpMrp.value) || 0;
       const inputInv = parseFloat(inpInv.value) || 0;
@@ -2012,12 +2079,12 @@
       recalcSchemes();
     }
 
-    schemesContainer.addEventListener('click', (e) => {
+    schemesTableBody.addEventListener('click', (e) => {
       const stepBtn = e.target.closest('.step-btn');
       if (stepBtn) {
         const dIdx = parseInt(stepBtn.dataset.didx, 10);
         const delta = parseFloat(stepBtn.dataset.step) || 0;
-        const inp = schemesContainer.querySelector(`input[data-loan-inp="${dIdx}"]`);
+        const inp = schemesTableBody.querySelector(`input[data-loan-inp="${dIdx}"]`);
         const cur = parseFloat(inp ? inp.value : 0) || 0;
         handleManualLoanChange(dIdx, Math.max(0, cur + delta));
         return;
@@ -2038,14 +2105,14 @@
         text += `Daily EMI: ₹${Math.round(d.daily).toLocaleString('en-IN')}`;
 
         copyText(text, () => {
-          copyBtn.textContent = 'Copied';
+          copyBtn.textContent = 'Done';
           setTimeout(() => { copyBtn.textContent = 'Copy'; }, 1500);
           showToast('Scheme copied', 'success');
         });
       }
     });
 
-    schemesContainer.addEventListener('change', (e) => {
+    schemesTableBody.addEventListener('change', (e) => {
       const inp = e.target.closest('.step-inp');
       if (!inp) return;
       const dIdx = parseInt(inp.dataset.loanInp, 10);
@@ -2591,18 +2658,22 @@
     inpMargin.addEventListener('input', () => onEligibilityOrPriceChange('NONE'));
     inpDealer.addEventListener('input', () => onEligibilityOrPriceChange('NONE'));
 
-    sortSelect.addEventListener('change', renderSchemes);
+    sortSelect.addEventListener('change', () => {
+      sortState.key = sortSelect.value;
+      sortState.dir = sortSelect.value === 'currentTenure' ? 'desc' : 'asc';
+      renderSchemesTable();
+    });
 
     toggleDetailsBtn.addEventListener('click', () => {
       showDetails = !showDetails;
       toggleDetailsBtn.classList.toggle('active', showDetails);
-      schemesContainer.classList.toggle('show-details', showDetails);
+      schemesTable.classList.toggle('show-details', showDetails);
     });
 
     toggleAllBtn.addEventListener('click', () => {
       showAllSchemes = !showAllSchemes;
       toggleAllBtn.classList.toggle('active', showAllSchemes);
-      renderSchemes();
+      renderSchemesTable();
     });
 
     quoteImgBtn.addEventListener('click', generateQuoteImage);
