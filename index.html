@@ -109,57 +109,6 @@
       margin-bottom: 10px;
     }
 
-    /* Customer Type Selector */
-    .type-section {
-      margin-bottom: 12px;
-    }
-
-    .type-label {
-      display: block;
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text);
-      margin-bottom: 6px;
-    }
-
-    .type-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-    }
-
-    .type-btn {
-      height: 44px;
-      padding: 0 10px;
-      border: 1.5px solid var(--border);
-      border-radius: 10px;
-      background: #f8fafc;
-      color: var(--text);
-      font-size: 14px;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      cursor: pointer;
-      transition: all 0.15s ease;
-    }
-
-    .type-btn .type-charge {
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--muted);
-    }
-
-    .type-btn.active {
-      background: var(--primary-light);
-      border-color: var(--primary);
-      color: var(--primary);
-    }
-
-    .type-btn.active .type-charge {
-      color: var(--primary);
-    }
-
     /* Inputs Grid */
     .input-grid {
       display: grid;
@@ -183,7 +132,8 @@
       color: var(--text);
     }
 
-    .field input {
+    .field input,
+    .field select {
       width: 100%;
       height: 46px;
       padding: 0 12px;
@@ -197,9 +147,21 @@
       transition: border-color 0.15s, background 0.15s;
     }
 
-    .field input:focus {
+    .field select {
+      appearance: none;
+      -webkit-appearance: none;
+      padding-right: 38px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      background-size: 18px;
+      cursor: pointer;
+    }
+
+    .field input:focus,
+    .field select:focus {
       border-color: var(--primary);
-      background: #ffffff;
+      background-color: #ffffff;
     }
 
     /* Search Box */
@@ -365,29 +327,17 @@
     <section class="card">
       <div class="section-label">Customer Eligibility</div>
 
-      <div class="type-section">
-        <span class="type-label">Customer Type</span>
-        <div class="type-grid" id="customerTypeGrid">
-          <button type="button" class="type-btn active" data-type="NEW" data-charge="850">
-            <span>NEW</span>
-            <span class="type-charge">₹850</span>
-          </button>
-          <button type="button" class="type-btn" data-type="EMI CARD" data-charge="270">
-            <span>EMI CARD</span>
-            <span class="type-charge">₹270</span>
-          </button>
-          <button type="button" class="type-btn" data-type="VIRTUAL" data-charge="850">
-            <span>VIRTUAL</span>
-            <span class="type-charge">₹850</span>
-          </button>
-          <button type="button" class="type-btn" data-type="W/O CARD" data-charge="320">
-            <span>W/O CARD</span>
-            <span class="type-charge">₹320</span>
-          </button>
-        </div>
-      </div>
-
       <div class="input-grid">
+        <div class="field full">
+          <label for="customerType">Customer Type</label>
+          <select id="customerType">
+            <option value="NEW">NEW</option>
+            <option value="EMI CARD">EMI CARD</option>
+            <option value="VIRTUAL">VIRTUAL</option>
+            <option value="W/O CARD">W/O CARD</option>
+          </select>
+        </div>
+
         <div class="field full">
           <label for="approvedLimit">Approved Limit (₹)</label>
           <input type="number" id="approvedLimit" inputmode="numeric" placeholder="e.g. 50000" />
@@ -471,7 +421,7 @@
     let selectedModel = null;
 
     const statusPill = document.getElementById('statusPill');
-    const customerTypeGrid = document.getElementById('customerTypeGrid');
+    const customerTypeSelect = document.getElementById('customerType');
     const modelSearch = document.getElementById('modelSearch');
     const clearSearch = document.getElementById('clearSearch');
     const resultsList = document.getElementById('resultsList');
@@ -480,16 +430,10 @@
     const selectedSub = document.getElementById('selectedSub');
     const schemeBody = document.getElementById('schemeBody');
 
-    // Customer Type selection
-    customerTypeGrid.addEventListener('click', (e) => {
-      const btn = e.target.closest('.type-btn');
-      if (!btn) return;
-
-      customerTypeGrid.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-
-      selectedCustomerType = btn.dataset.type;
-      customerTypeCharge = Number(btn.dataset.charge) || 0;
+    // Customer Type dropdown change
+    customerTypeSelect.addEventListener('change', () => {
+      selectedCustomerType = customerTypeSelect.value;
+      customerTypeCharge = CUSTOMER_TYPE_CHARGES[selectedCustomerType] || 0;
     });
 
     function setStatus(text, type = '') {
