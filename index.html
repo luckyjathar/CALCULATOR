@@ -271,18 +271,29 @@
       gap: 8px;
     }
 
-    /* Non-Tieup Category Picker */
+    /* Quick Action Buttons under Search */
+    .quick-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
     .nt-btn {
       width: 100%;
-      margin-top: 10px;
       height: 40px;
       border: 1.5px dashed var(--primary);
       border-radius: 10px;
       background: var(--primary-light);
       color: var(--primary);
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 700;
       cursor: pointer;
+    }
+    .nt-btn.manual-btn {
+      border-color: var(--success);
+      background: var(--success-bg);
+      color: var(--success);
     }
 
     .nt-panel {
@@ -338,7 +349,7 @@
     .tool-select {
       height: 36px;
       padding: 0 26px 0 10px;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 700;
       border: 1px solid var(--border);
       border-radius: 8px;
@@ -365,6 +376,21 @@
       border-color: var(--primary);
       color: #ffffff;
     }
+    .btn-sm.success {
+      background: var(--success);
+      border-color: var(--success);
+      color: #ffffff;
+    }
+    .btn-sm.warn {
+      background: var(--warn-bg);
+      border-color: #fcd34d;
+      color: #92400e;
+    }
+    .btn-sm.warn.active {
+      background: var(--warn);
+      border-color: var(--warn);
+      color: #ffffff;
+    }
     .btn-primary {
       background: var(--primary);
       border: none;
@@ -380,6 +406,17 @@
       background: var(--success);
       border: none;
       color: #ffffff;
+      height: 44px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 700;
+      padding: 0 14px;
+      cursor: pointer;
+    }
+    .btn-secondary {
+      background: #e2e8f0;
+      border: none;
+      color: var(--text);
       height: 44px;
       border-radius: 10px;
       font-size: 14px;
@@ -458,7 +495,6 @@
       background: #f1f5f9;
     }
 
-    /* Hidden detail columns toggled via Details button */
     .schemes-table .detail-col {
       display: none;
     }
@@ -490,6 +526,22 @@
     .schemes-table tbody tr.row-breach td:first-child { background: #fef2f2; }
     .schemes-table tbody tr.row-breach td:first-child { box-shadow: inset 4px 0 0 var(--danger); }
 
+    .schemes-table tbody tr.row-hidden,
+    .schemes-table tbody tr.row-hidden td:first-child {
+      background: #f1f5f9;
+      color: #94a3b8;
+    }
+    .schemes-table tbody tr.row-hidden td:first-child {
+      box-shadow: inset 4px 0 0 #94a3b8;
+    }
+    .schemes-table tbody tr.row-hidden .cell-dp,
+    .schemes-table tbody tr.row-hidden .cell-emi,
+    .schemes-table tbody tr.row-hidden .cell-daily,
+    .schemes-table tbody tr.row-hidden .ta-main {
+      color: #94a3b8;
+      text-decoration: line-through;
+    }
+
     .ta-main {
       font-size: 14px;
       font-weight: 800;
@@ -519,6 +571,8 @@
     .tag-pop { background: var(--warn); color: #fff; }
     .tag-bal { background: var(--purple); color: #fff; }
     .tag-fixed { background: #e0e7ff; color: #3730a3; }
+    .tag-manual { background: #0f766e; color: #fff; }
+    .tag-hidden { background: #64748b; color: #fff; }
     .tag-breach { background: var(--danger); color: #fff; }
     .tag-exp { background: #e2e8f0; color: #475569; }
 
@@ -562,9 +616,37 @@
       background: #ffffff;
     }
 
+    .act-group {
+      display: inline-flex;
+      gap: 4px;
+      align-items: center;
+    }
+
     .copy-btn {
       border: none;
       background: var(--primary);
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 6px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .hide-btn {
+      border: none;
+      background: var(--danger-bg);
+      color: var(--danger);
+      font-size: 11px;
+      font-weight: 800;
+      padding: 6px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .show-btn {
+      border: none;
+      background: var(--success);
       color: #ffffff;
       font-size: 11px;
       font-weight: 800;
@@ -776,7 +858,7 @@
         </div>
       </section>
 
-      <!-- 2. Model Search & Non-Tieup -->
+      <!-- 2. Model Search & Non-Tieup / Manual Model -->
       <section class="card">
         <div class="card-header-row">
           <div class="section-label">Model Search</div>
@@ -796,9 +878,14 @@
 
         <div id="resultsList" class="results-list"></div>
 
-        <button type="button" id="nonTieupToggleBtn" class="nt-btn" disabled>
-          Non-Tieup Schemes (By Category)
-        </button>
+        <div class="quick-row">
+          <button type="button" id="nonTieupToggleBtn" class="nt-btn" disabled>
+            Non-Tieup Schemes
+          </button>
+          <button type="button" id="newManualModelBtn" class="nt-btn manual-btn">
+            + Manual Model
+          </button>
+        </div>
 
         <div id="nonTieupPanel" class="nt-panel">
           <div id="nonTieupGrid" class="nt-grid"></div>
@@ -846,8 +933,8 @@
           <div class="field">
             <label for="inpRfc">RFC (₹)</label>
             <select id="inpRfc">
-              <option value="0">0</option>
-              <option id="inpRfcOpt" value="0">0</option>
+              <option value="0" selected>0</option>
+              <option id="inpRfcOpt" value="0" hidden>0</option>
             </select>
           </div>
           <div class="field">
@@ -886,8 +973,10 @@
             <option value="currentTenure">Sort: Tenure</option>
             <option value="daily">Sort: Daily EMI</option>
           </select>
+          <button type="button" id="addManualSchemeBtn" class="btn-sm success">+ Manual</button>
           <button type="button" id="toggleDetailsBtn" class="btn-sm">Details</button>
           <button type="button" id="toggleAllBtn" class="btn-sm">Show All</button>
+          <button type="button" id="toggleHiddenBtn" class="btn-sm warn hidden">Hidden (0)</button>
           <button type="button" id="quoteImgBtn" class="btn-sm active">Quote Image</button>
         </div>
 
@@ -939,7 +1028,6 @@
 
     <!-- ==================== VIEW 3: TOOLS (EMI DATES & DEALERS) ==================== -->
     <div id="viewTools" class="view-section">
-      <!-- First EMI Date Calculator -->
       <section class="card">
         <div class="card-header-row">
           <div class="section-label">First &amp; Last EMI Date</div>
@@ -969,7 +1057,6 @@
         </p>
       </section>
 
-      <!-- Dealer Search -->
       <section class="card">
         <div class="card-header-row">
           <div class="section-label">Dealer Search</div>
@@ -1000,6 +1087,62 @@
       <span>Tools</span>
     </button>
   </nav>
+
+  <!-- Manual Scheme Modal -->
+  <div id="manualModal" class="modal-backdrop">
+    <div class="modal-box">
+      <div class="card-header-row" style="margin-bottom:0;">
+        <div id="manualModalTitle" class="modal-title">Add Manual Scheme</div>
+        <button type="button" id="closeManualModalBtn" class="btn-sm">Close</button>
+      </div>
+
+      <div id="manualModelFields" class="grid-2 hidden">
+        <div class="field full">
+          <label for="manModelName">Model Name</label>
+          <input type="text" id="manModelName" placeholder="e.g. CUSTOM MODEL" />
+        </div>
+        <div class="field full">
+          <label for="manCategory">Category</label>
+          <select id="manCategory">
+            <option value="PHONE(WEB-MOBILE)">PHONE / TABLET / SMART WATCH</option>
+            <option value="OTHER">OTHER APPLIANCE</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label for="manTenure">Total Tenure</label>
+          <input type="number" id="manTenure" inputmode="numeric" placeholder="e.g. 12" />
+        </div>
+        <div class="field">
+          <label for="manAdv">Advance EMI</label>
+          <input type="number" id="manAdv" inputmode="numeric" placeholder="e.g. 4" />
+        </div>
+        <div class="field">
+          <label for="manDbd">DBD (%)</label>
+          <input type="number" id="manDbd" inputmode="decimal" placeholder="e.g. 1.5" />
+        </div>
+        <div class="field">
+          <label for="manPf">PF (₹)</label>
+          <input type="number" id="manPf" inputmode="numeric" placeholder="e.g. 499" />
+        </div>
+        <div class="field">
+          <label for="manRoi">ROI (%)</label>
+          <input type="number" id="manRoi" inputmode="decimal" placeholder="0" />
+        </div>
+        <div class="field">
+          <label for="manFixed">Fixed EMI (₹)</label>
+          <input type="number" id="manFixed" inputmode="numeric" placeholder="0" />
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <button type="button" id="cancelManualBtn" class="btn-secondary">Cancel</button>
+        <button type="button" id="saveManualSchemeBtn" class="btn-success">Add Scheme</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Recycle Bin Modal -->
   <div id="binModal" class="modal-backdrop">
@@ -1054,6 +1197,8 @@
     let manualLoans = {};
     let showDetails = false;
     let showAllSchemes = false;
+    let showHiddenSchemes = false;
+    let manualModalMode = 'SCHEME';
     let sortState = { key: 'dp', dir: 'asc' };
     let currentCalculated = [];
     let lastQuoteCanvas = null;
@@ -1079,6 +1224,7 @@
     const clearSearch = document.getElementById('clearSearch');
     const resultsList = document.getElementById('resultsList');
     const nonTieupToggleBtn = document.getElementById('nonTieupToggleBtn');
+    const newManualModelBtn = document.getElementById('newManualModelBtn');
     const nonTieupPanel = document.getElementById('nonTieupPanel');
     const nonTieupGrid = document.getElementById('nonTieupGrid');
 
@@ -1100,12 +1246,27 @@
     const schemesCard = document.getElementById('schemesCard');
     const eligibleSummary = document.getElementById('eligibleSummary');
     const sortSelect = document.getElementById('sortSelect');
+    const addManualSchemeBtn = document.getElementById('addManualSchemeBtn');
     const toggleDetailsBtn = document.getElementById('toggleDetailsBtn');
     const toggleAllBtn = document.getElementById('toggleAllBtn');
+    const toggleHiddenBtn = document.getElementById('toggleHiddenBtn');
     const quoteImgBtn = document.getElementById('quoteImgBtn');
     const schemesTable = document.getElementById('schemesTable');
     const schemesTableHead = document.getElementById('schemesTableHead');
     const schemesTableBody = document.getElementById('schemesTableBody');
+
+    // Manual Modal DOM
+    const manualModal = document.getElementById('manualModal');
+    const manualModalTitle = document.getElementById('manualModalTitle');
+    const manualModelFields = document.getElementById('manualModelFields');
+    const manModelName = document.getElementById('manModelName');
+    const manCategory = document.getElementById('manCategory');
+    const manTenure = document.getElementById('manTenure');
+    const manAdv = document.getElementById('manAdv');
+    const manDbd = document.getElementById('manDbd');
+    const manPf = document.getElementById('manPf');
+    const manRoi = document.getElementById('manRoi');
+    const manFixed = document.getElementById('manFixed');
 
     const toastEl = document.getElementById('toastEl');
     let toastTimer = null;
@@ -1548,7 +1709,7 @@
       }
     }
 
-    /* ==================== MODEL SEARCH & NON-TIEUP ==================== */
+    /* ==================== MODEL SEARCH, NON-TIEUP & MANUAL ==================== */
     function renderNonTieupCategories() {
       if (!appData.nonTieup.length) {
         nonTieupGrid.innerHTML = '<div class="empty-msg" style="grid-column:1/-1;">No categories available</div>';
@@ -1572,6 +1733,90 @@
       if (item) {
         nonTieupPanel.classList.remove('show');
         selectItem(item);
+      }
+    });
+
+    function openManualModal(mode) {
+      manualModalMode = mode;
+      manModelName.value = '';
+      manTenure.value = '';
+      manAdv.value = '';
+      manDbd.value = '';
+      manPf.value = '';
+      manRoi.value = '';
+      manFixed.value = '';
+
+      if (mode === 'NEW_MODEL') {
+        manualModalTitle.textContent = 'New Manual Model & Scheme';
+        manualModelFields.classList.remove('hidden');
+      } else {
+        manualModalTitle.textContent = 'Add Manual Scheme';
+        manualModelFields.classList.add('hidden');
+      }
+
+      manualModal.classList.add('show');
+      setTimeout(() => {
+        (mode === 'NEW_MODEL' ? manModelName : manTenure).focus();
+      }, 60);
+    }
+
+    function closeManualModal() {
+      manualModal.classList.remove('show');
+    }
+
+    newManualModelBtn.addEventListener('click', () => openManualModal('NEW_MODEL'));
+    addManualSchemeBtn.addEventListener('click', () => {
+      if (!selectedItem) return;
+      openManualModal('SCHEME');
+    });
+    document.getElementById('closeManualModalBtn').addEventListener('click', closeManualModal);
+    document.getElementById('cancelManualBtn').addEventListener('click', closeManualModal);
+
+    document.getElementById('saveManualSchemeBtn').addEventListener('click', () => {
+      const tenure = parseInt(manTenure.value, 10) || 0;
+      const advEmi = parseInt(manAdv.value, 10) || 0;
+      const dbd = parseFloat(manDbd.value) || 0;
+      const pf = parseInt(manPf.value, 10) || 0;
+      const roi = parseFloat(manRoi.value) || 0;
+      const fixedEmi = parseFloat(manFixed.value) || 0;
+
+      if (tenure <= 0 && fixedEmi <= 0) {
+        showToast('Enter Total Tenure or Fixed EMI', 'error');
+        return;
+      }
+
+      const newScheme = {
+        tenure,
+        advEmi,
+        dbd,
+        pf,
+        roi,
+        fixedEmi,
+        minLoan: 0,
+        maxLoan: 9999999,
+        expiryDateStr: '',
+        isManual: true,
+        hidden: false
+      };
+
+      if (manualModalMode === 'NEW_MODEL') {
+        const name = (manModelName.value.trim() || 'MANUAL MODEL').toUpperCase();
+        const cat = manCategory.value || 'OTHER';
+        selectItem({
+          brand: 'MANUAL',
+          model: name,
+          category: cat,
+          mrp: 0,
+          isNonTieup: false,
+          schemes: [newScheme]
+        });
+        closeManualModal();
+        showToast('Manual model & scheme added', 'success');
+      } else {
+        selectedItem.schemes.push(newScheme);
+        recalcSchemes();
+        closeManualModal();
+        showToast('Manual scheme added', 'success');
       }
     });
 
@@ -1639,20 +1884,21 @@
       const isPhone = isMobileDeviceCat(selectedItem.category);
       const gtl = getGtlSlabValue(baseVal);
       const rfcSlab = getRfcSlabValue(mrpVal);
+      const wasRfcSelected = (mode !== 'SELECT') && isPhone && (inpRfc.selectedIndex === 1) && (parseFloat(inpRfc.value) > 0);
 
       inpRfcOpt.value = String(rfcSlab);
       inpRfcOpt.textContent = String(rfcSlab);
+      inpRfcOpt.hidden = (rfcSlab === 0);
 
-      if (mode === 'MRP' || mode === 'INV' || mode === 'SELECT') {
-        inpGtl.value = String(gtl);
-        if (mode === 'MRP' || mode === 'SELECT') {
-          inpRfc.value = isPhone ? String(rfcSlab) : '0';
-        }
-      } else if (mode === 'LOAN') {
+      if (mode === 'MRP' || mode === 'INV' || mode === 'SELECT' || mode === 'LOAN') {
         inpGtl.value = String(gtl);
       }
 
-      if (!isPhone) inpRfc.value = '0';
+      if (mode === 'SELECT' || !isPhone) {
+        inpRfc.value = '0';
+      } else {
+        inpRfc.value = (wasRfcSelected && rfcSlab > 0) ? String(rfcSlab) : '0';
+      }
     }
 
     function updateVarField() {
@@ -1664,14 +1910,27 @@
     }
 
     function selectItem(item) {
-      selectedItem = item;
+      selectedItem = {
+        ...item,
+        schemes: (item.schemes || []).map(s => ({
+          ...s,
+          hidden: Boolean(s.hidden),
+          isManual: Boolean(s.isManual)
+        }))
+      };
       manualLoans = {};
+      showHiddenSchemes = false;
+      toggleHiddenBtn.classList.remove('active');
 
-      modelSearch.value = item.isNonTieup ? `NON TIEUP - ${item.model}` : `${item.brand} ${item.model}`;
+      modelSearch.value = item.isNonTieup
+        ? `NON TIEUP - ${item.model}`
+        : (item.brand === 'MANUAL' ? item.model : `${item.brand} ${item.model}`);
       clearSearch.classList.add('show');
       resultsList.classList.remove('show');
 
-      selectedTitle.textContent = item.isNonTieup ? `NON TIEUP - ${item.model}` : `${item.brand} - ${item.model}`;
+      selectedTitle.textContent = item.isNonTieup
+        ? `NON TIEUP - ${item.model}`
+        : (item.brand === 'MANUAL' ? item.model : `${item.brand} - ${item.model}`);
       selectedSub.textContent = item.category;
 
       const baseMrp = item.mrp > 0 ? item.mrp : '';
@@ -1699,6 +1958,7 @@
       selectedItem = null;
       manualLoans = {};
       currentCalculated = [];
+      showHiddenSchemes = false;
       modelSearch.value = '';
       clearSearch.classList.remove('show');
       resultsList.classList.remove('show');
@@ -1745,7 +2005,7 @@
         const roiRateDP = roiRate * s.advEmi;
 
         let dynamicPf = s.pf;
-        if (selectedItem.isNonTieup) {
+        if (selectedItem.isNonTieup && !s.isManual) {
           const checkAmt = effectivePrice > 0 ? effectivePrice : (currentLimit < 9999999 ? currentLimit : 0);
           const slabPf = getNonTieupPfValue(selectedItem.category, checkAmt);
           if (slabPf !== null) dynamicPf = slabPf;
@@ -1872,7 +2132,7 @@
 
         const isLtvBreach = (!isFixed && curLTV > ltvLimit);
         const isInv50Breach = (effectivePrice > 0 && loan < minAllowedLoanByInvoice);
-        const isBoundBreach = (selectedItem.isNonTieup && effectivePrice > 0 && (loan < s.minLoan || loan > s.maxLoan));
+        const isBoundBreach = (selectedItem.isNonTieup && !s.isManual && effectivePrice > 0 && (loan < s.minLoan || loan > s.maxLoan));
 
         results.push({
           ...s,
@@ -1901,8 +2161,8 @@
         });
       });
 
-      // Top 4 Badges on eligible schemes
-      const validS = results.filter(d => !d.isBreached && d.loan > 0);
+      // Top 4 Badges on visible eligible schemes only
+      const validS = results.filter(d => !d.isBreached && !d.hidden && d.loan > 0);
       if (validS.length > 0) {
         const winDp = [...validS].sort((a, b) => a.dp - b.dp)[0];
         const winEmi = [...validS].sort((a, b) => a.emi - b.emi)[0];
@@ -1921,8 +2181,18 @@
 
     function renderSchemesTable() {
       const isNT = selectedItem && selectedItem.isNonTieup;
-      const validCount = currentCalculated.filter(d => !d.isBreached && d.loan > 0).length;
+      const validCount = currentCalculated.filter(d => !d.isBreached && !d.hidden && d.loan > 0).length;
+      const hiddenCount = currentCalculated.filter(d => d.hidden).length;
       eligibleSummary.textContent = `${validCount} / ${currentCalculated.length} Eligible`;
+
+      if (hiddenCount > 0) {
+        toggleHiddenBtn.classList.remove('hidden');
+        toggleHiddenBtn.textContent = `Hidden (${hiddenCount})`;
+      } else {
+        showHiddenSchemes = false;
+        toggleHiddenBtn.classList.remove('active');
+        toggleHiddenBtn.classList.add('hidden');
+      }
 
       const arrow = (k) => sortState.key === k ? (sortState.dir === 'asc' ? ' ▲' : ' ▼') : '';
 
@@ -1950,11 +2220,14 @@
         </tr>
       `;
 
-      let list = showAllSchemes
-        ? [...currentCalculated]
-        : currentCalculated.filter(d => !d.isBreached && d.loan > 0);
+      let list = currentCalculated.filter(d => {
+        if (d.hidden) return showHiddenSchemes;
+        if (showAllSchemes) return true;
+        return !d.isBreached && d.loan > 0;
+      });
 
       list.sort((a, b) => {
+        if (a.hidden !== b.hidden) return a.hidden ? 1 : -1;
         if (a.isBreached !== b.isBreached) return a.isBreached ? 1 : -1;
         const va = a[sortState.key] ?? 0;
         const vb = b[sortState.key] ?? 0;
@@ -1968,7 +2241,7 @@
         schemesTableBody.innerHTML = `
           <tr>
             <td colspan="${totalCols}" class="empty-msg">
-              No eligible schemes for current limits. Tap "Show All" to inspect breaches.
+              No visible eligible schemes. Tap "+ Manual", "Show All", or "Hidden" to view more.
             </td>
           </tr>
         `;
@@ -1984,11 +2257,14 @@
 
       schemesTableBody.innerHTML = list.map(d => {
         let rowCls = '';
-        if (d.isBreached) rowCls = 'row-breach';
+        if (d.hidden) rowCls = 'row-hidden';
+        else if (d.isBreached) rowCls = 'row-breach';
         else if (d.badges.length > 0) rowCls = badgeMeta[d.badges[0]].rowCls;
 
         const tags = [
+          d.hidden ? `<span class="tag tag-hidden">Hidden</span>` : '',
           ...d.badges.map(b => `<span class="tag ${badgeMeta[b].cls}">${badgeMeta[b].text}</span>`),
+          d.isManual ? `<span class="tag tag-manual">Manual</span>` : '',
           d.isFixed ? `<span class="tag tag-fixed">Fix ₹${d.fixedEmi}</span>` : '',
           d.isLtvBreach ? `<span class="tag tag-breach">LTV ${Math.round(d.curLTV)}%</span>` : '',
           d.isInv50Breach ? `<span class="tag tag-breach">&lt;50% Loan</span>` : '',
@@ -1997,6 +2273,9 @@
         ].filter(Boolean).join('');
 
         const stepSize = d.isFixed ? d.fixedEmi : 1000;
+        const visibilityBtn = d.hidden
+          ? `<button type="button" class="show-btn" data-toggle-hide="${d.dIdx}">Show</button>`
+          : `<button type="button" class="hide-btn" data-toggle-hide="${d.dIdx}">Hide</button>`;
 
         return `
           <tr class="${rowCls}">
@@ -2034,14 +2313,17 @@
               : `<td class="detail-col">₹${Math.floor(d.nbfcMaxL).toLocaleString('en-IN')}</td>`
             }
             <td>
-              <button type="button" class="copy-btn" data-copy-idx="${d.dIdx}">Copy</button>
+              <div class="act-group">
+                <button type="button" class="copy-btn" data-copy-idx="${d.dIdx}">Copy</button>
+                ${visibilityBtn}
+              </div>
             </td>
           </tr>
         `;
       }).join('');
     }
 
-    /* ==================== TABLE SORT, STEPPER & COPY ==================== */
+    /* ==================== TABLE SORT, STEPPER, HIDE & COPY ==================== */
     schemesTableHead.addEventListener('click', (e) => {
       const th = e.target.closest('th[data-sort]');
       if (!th) return;
@@ -2087,6 +2369,18 @@
         const inp = schemesTableBody.querySelector(`input[data-loan-inp="${dIdx}"]`);
         const cur = parseFloat(inp ? inp.value : 0) || 0;
         handleManualLoanChange(dIdx, Math.max(0, cur + delta));
+        return;
+      }
+
+      const hideBtn = e.target.closest('button[data-toggle-hide]');
+      if (hideBtn) {
+        const dIdx = parseInt(hideBtn.dataset.toggleHide, 10);
+        if (selectedItem && selectedItem.schemes[dIdx]) {
+          selectedItem.schemes[dIdx].hidden = !selectedItem.schemes[dIdx].hidden;
+          const isNowHidden = selectedItem.schemes[dIdx].hidden;
+          recalcSchemes();
+          showToast(isNowHidden ? 'Scheme hidden' : 'Scheme restored', isNowHidden ? '' : 'success');
+        }
         return;
       }
 
@@ -2145,9 +2439,9 @@
 
     /* ==================== QUOTATION IMAGE GENERATOR ==================== */
     function generateQuoteImage() {
-      const validS = currentCalculated.filter(d => !d.isBreached && d.loan > 0);
+      const validS = currentCalculated.filter(d => !d.isBreached && !d.hidden && d.loan > 0);
       if (validS.length === 0) {
-        showToast('No eligible schemes to export', 'error');
+        showToast('No visible eligible schemes to export', 'error');
         return;
       }
 
@@ -2634,8 +2928,12 @@
         updateVarField();
         const m = parseFloat(inpMrp.value) || 0;
         const i = parseFloat(inpInv.value) || 0;
-        if (trigger === 'MRP' && i === 0) syncInsuranceSlabs(m, m, 'MRP');
-        if (trigger === 'INV') syncInsuranceSlabs(m, i > 0 ? i : m, 'INV');
+        if (trigger === 'MRP') {
+          syncInsuranceSlabs(m, i > 0 ? i : m, i === 0 ? 'MRP' : 'MRP_OPT_ONLY');
+        }
+        if (trigger === 'INV') {
+          syncInsuranceSlabs(m, i > 0 ? i : m, 'INV');
+        }
         manualLoans = {};
       }
       if (trigger === 'RESET_MANUAL') {
@@ -2673,6 +2971,12 @@
     toggleAllBtn.addEventListener('click', () => {
       showAllSchemes = !showAllSchemes;
       toggleAllBtn.classList.toggle('active', showAllSchemes);
+      renderSchemesTable();
+    });
+
+    toggleHiddenBtn.addEventListener('click', () => {
+      showHiddenSchemes = !showHiddenSchemes;
+      toggleHiddenBtn.classList.toggle('active', showHiddenSchemes);
       renderSchemesTable();
     });
 
