@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="mr">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
@@ -306,7 +306,7 @@
 
   <header class="app-header">
     <div class="app-title">EMI Calculator</div>
-    <div id="statusPill" class="status-pill">लोड होत आहे...</div>
+    <div id="statusPill" class="status-pill">Loading...</div>
   </header>
 
   <main class="container">
@@ -316,17 +316,17 @@
       <div class="input-grid">
         <div class="field full">
           <label for="approvedLimit">Approved Limit (₹)</label>
-          <input type="number" id="approvedLimit" inputmode="numeric" placeholder="उदा. 50000" />
+          <input type="number" id="approvedLimit" inputmode="numeric" placeholder="e.g. 50000" />
         </div>
 
         <div class="field">
           <label for="ltvPercent">LTV (%)</label>
-          <input type="number" id="ltvPercent" inputmode="decimal" placeholder="उदा. 75" />
+          <input type="number" id="ltvPercent" inputmode="decimal" placeholder="e.g. 75" />
         </div>
 
         <div class="field">
           <label for="emiCapping">EMI Capping (₹)</label>
-          <input type="number" id="emiCapping" inputmode="numeric" placeholder="उदा. 4000" />
+          <input type="number" id="emiCapping" inputmode="numeric" placeholder="e.g. 4000" />
         </div>
       </div>
     </section>
@@ -339,7 +339,7 @@
           type="text"
           id="modelSearch"
           class="search-input"
-          placeholder="मॉडेल किंवा ब्रँड शोधा..."
+          placeholder="Search model or brand..."
           autocomplete="off"
           disabled
         />
@@ -348,9 +348,9 @@
       <div id="resultsList" class="results-list"></div>
     </section>
 
-    <!-- Selected Model Raw Schemes Preview -->
+    <!-- Selected Model Schemes -->
     <section id="selectedCard" class="card selected-card">
-      <div class="section-label">निवडलेले मॉडेल</div>
+      <div class="section-label">Selected Model</div>
       <div id="selectedTitle" class="model-title"></div>
       <div id="selectedSub" class="model-sub"></div>
       <table class="scheme-table">
@@ -372,7 +372,7 @@
   </main>
 
   <script>
-    // सर्व ४ शीट्सचा डेटा येथे सेव्ह राहील
+    // Stores all 4 sheets from master_data.xlsx
     const appData = {
       sheet1: [],
       sheet2: [],
@@ -380,7 +380,7 @@
       sheet3: []
     };
 
-    // जलद सर्चसाठी युनिक मॉडेल्सची यादी
+    // Unique model index for fast search
     let modelIndex = [];
     let selectedModel = null;
 
@@ -396,21 +396,21 @@
 
     async function loadExcelData() {
       try {
-        statusPill.textContent = 'फाईल लोड होत आहे...';
+        statusPill.textContent = 'Loading file...';
         const response = await fetch('./master_data.xlsx');
         if (!response.ok) {
-          throw new Error('master_data.xlsx सापडली नाही');
+          throw new Error('master_data.xlsx not found');
         }
 
         const buffer = await response.arrayBuffer();
-        statusPill.textContent = 'डेटा वाचत आहे...';
+        statusPill.textContent = 'Reading data...';
 
-        // UI स्मूद राहण्यासाठी छोटा ब्रेक
+        // Small pause to keep UI responsive
         await new Promise(resolve => setTimeout(resolve, 30));
 
         const workbook = XLSX.read(buffer, { type: 'array' });
 
-        // सर्व ४ शीट्स वाचणे
+        // Read all 4 sheets
         if (workbook.Sheets['Sheet1']) {
           appData.sheet1 = XLSX.utils.sheet_to_json(workbook.Sheets['Sheet1'], { defval: '' });
         }
@@ -426,16 +426,16 @@
 
         buildModelIndex();
 
-        statusPill.textContent = 'तयार';
+        statusPill.textContent = 'Ready';
         statusPill.classList.add('ready');
         modelSearch.disabled = false;
         sheetInfo.textContent =
           `Sheet1: ${appData.sheet1.length} | Sheet2: ${appData.sheet2.length} | Dealers: ${appData.dealers.length} | Sheet3: ${appData.sheet3.length}`;
       } catch (err) {
         console.error(err);
-        statusPill.textContent = 'लोड एरर';
+        statusPill.textContent = 'Load Error';
         statusPill.classList.add('error');
-        sheetInfo.textContent = 'master_data.xlsx फाईल त्याच फोल्डरमध्ये अपलोड करा.';
+        sheetInfo.textContent = 'Please upload master_data.xlsx in the same folder.';
       }
     }
 
@@ -513,7 +513,7 @@
 
       resultsList.innerHTML = '';
       if (matches.length === 0) {
-        resultsList.innerHTML = '<div class="empty-msg">कोणतेही मॉडेल सापडले नाही</div>';
+        resultsList.innerHTML = '<div class="empty-msg">No model found</div>';
       } else {
         const fragment = document.createDocumentFragment();
         matches.forEach(item => {
@@ -589,7 +589,7 @@
       modelSearch.focus();
     });
 
-    // सुरुवातीला Excel लोड करणे
+    // Load Excel on startup
     loadExcelData();
   </script>
 </body>
