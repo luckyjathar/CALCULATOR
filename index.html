@@ -109,6 +109,57 @@
       margin-bottom: 10px;
     }
 
+    /* Customer Type Selector */
+    .type-section {
+      margin-bottom: 12px;
+    }
+
+    .type-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    .type-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .type-btn {
+      height: 44px;
+      padding: 0 10px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      background: #f8fafc;
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .type-btn .type-charge {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    .type-btn.active {
+      background: var(--primary-light);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .type-btn.active .type-charge {
+      color: var(--primary);
+    }
+
     /* Inputs Grid */
     .input-grid {
       display: grid;
@@ -313,6 +364,29 @@
     <!-- 1. Eligibility Inputs -->
     <section class="card">
       <div class="section-label">Customer Eligibility</div>
+
+      <div class="type-section">
+        <span class="type-label">Customer Type</span>
+        <div class="type-grid" id="customerTypeGrid">
+          <button type="button" class="type-btn active" data-type="NEW" data-charge="850">
+            <span>NEW</span>
+            <span class="type-charge">₹850</span>
+          </button>
+          <button type="button" class="type-btn" data-type="EMI CARD" data-charge="270">
+            <span>EMI CARD</span>
+            <span class="type-charge">₹270</span>
+          </button>
+          <button type="button" class="type-btn" data-type="VIRTUAL" data-charge="850">
+            <span>VIRTUAL</span>
+            <span class="type-charge">₹850</span>
+          </button>
+          <button type="button" class="type-btn" data-type="W/O CARD" data-charge="320">
+            <span>W/O CARD</span>
+            <span class="type-charge">₹320</span>
+          </button>
+        </div>
+      </div>
+
       <div class="input-grid">
         <div class="field full">
           <label for="approvedLimit">Approved Limit (₹)</label>
@@ -375,6 +449,16 @@
     const DB_VERSION = 1;
     const STORE_NAME = 'appCache';
 
+    const CUSTOMER_TYPE_CHARGES = {
+      'NEW': 850,
+      'EMI CARD': 270,
+      'VIRTUAL': 850,
+      'W/O CARD': 320
+    };
+
+    let selectedCustomerType = 'NEW';
+    let customerTypeCharge = CUSTOMER_TYPE_CHARGES[selectedCustomerType];
+
     let appData = {
       sheet1: [],
       sheet2: [],
@@ -387,6 +471,7 @@
     let selectedModel = null;
 
     const statusPill = document.getElementById('statusPill');
+    const customerTypeGrid = document.getElementById('customerTypeGrid');
     const modelSearch = document.getElementById('modelSearch');
     const clearSearch = document.getElementById('clearSearch');
     const resultsList = document.getElementById('resultsList');
@@ -394,6 +479,18 @@
     const selectedTitle = document.getElementById('selectedTitle');
     const selectedSub = document.getElementById('selectedSub');
     const schemeBody = document.getElementById('schemeBody');
+
+    // Customer Type selection
+    customerTypeGrid.addEventListener('click', (e) => {
+      const btn = e.target.closest('.type-btn');
+      if (!btn) return;
+
+      customerTypeGrid.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      selectedCustomerType = btn.dataset.type;
+      customerTypeCharge = Number(btn.dataset.charge) || 0;
+    });
 
     function setStatus(text, type = '') {
       statusPill.textContent = text;
@@ -488,7 +585,6 @@
       let hasCache = false;
       let cachedVersion = '';
 
-      // 1. Load instantly from IndexedDB cache if available
       try {
         const [meta, payload] = await Promise.all([dbGet('meta'), dbGet('payload')]);
         if (payload && payload.appData && Array.isArray(payload.modelIndex)) {
@@ -504,7 +600,6 @@
         console.warn('Cache read failed:', err);
       }
 
-      // 2. If cache exists, check lightweight HEAD request to detect if file changed
       if (hasCache) {
         try {
           const headRes = await fetch(DATA_URL, { method: 'HEAD', cache: 'no-cache' });
@@ -517,12 +612,11 @@
             }
           }
         } catch (netErr) {
-          // Offline or network issue: continue using cached data smoothly
+          // Offline or network issue: continue using cached data
         }
         return;
       }
 
-      // 3. First time load (no cache yet)
       try {
         setStatus('Loading...');
         await fetchAndParseFreshData();
