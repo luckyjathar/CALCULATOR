@@ -934,7 +934,6 @@
             <label for="inpRfc">RFC (₹)</label>
             <select id="inpRfc">
               <option value="0" selected>0</option>
-              <option id="inpRfcOpt" value="0" hidden>0</option>
             </select>
           </div>
           <div class="field">
@@ -1237,7 +1236,6 @@
     const inpVar = document.getElementById('inpVar');
     const inpGtl = document.getElementById('inpGtl');
     const inpRfc = document.getElementById('inpRfc');
-    const inpRfcOpt = document.getElementById('inpRfcOpt');
     const inpExw = document.getElementById('inpExw');
     const inpTargetDp = document.getElementById('inpTargetDp');
     const inpMargin = document.getElementById('inpMargin');
@@ -1884,14 +1882,19 @@
       const isPhone = isMobileDeviceCat(selectedItem.category);
       const gtl = getGtlSlabValue(baseVal);
       const rfcSlab = getRfcSlabValue(mrpVal);
-      const wasRfcSelected = (mode !== 'SELECT') && isPhone && (inpRfc.selectedIndex === 1) && (parseFloat(inpRfc.value) > 0);
-
-      inpRfcOpt.value = String(rfcSlab);
-      inpRfcOpt.textContent = String(rfcSlab);
-      inpRfcOpt.hidden = (rfcSlab === 0);
+      const wasRfcSelected = (mode !== 'SELECT') && isPhone && (parseFloat(inpRfc.value) > 0);
 
       if (mode === 'MRP' || mode === 'INV' || mode === 'SELECT' || mode === 'LOAN') {
         inpGtl.value = String(gtl);
+      }
+
+      // Rebuild RFC options cleanly (compatible with all mobile browsers)
+      inpRfc.innerHTML = '<option value="0">0</option>';
+      if (isPhone && rfcSlab > 0) {
+        const opt = document.createElement('option');
+        opt.value = String(rfcSlab);
+        opt.textContent = String(rfcSlab);
+        inpRfc.appendChild(opt);
       }
 
       if (mode === 'SELECT' || !isPhone) {
