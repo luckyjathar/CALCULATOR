@@ -293,13 +293,6 @@
       font-weight: 600;
       color: var(--text);
     }
-
-    .sheet-info {
-      font-size: 12px;
-      color: var(--muted);
-      text-align: center;
-      padding: 4px 0;
-    }
   </style>
 </head>
 <body>
@@ -367,20 +360,17 @@
         <tbody id="schemeBody"></tbody>
       </table>
     </section>
-
-    <div id="sheetInfo" class="sheet-info"></div>
   </main>
 
   <script>
-    // Stores all 4 sheets from master_data.xlsx
     const appData = {
       sheet1: [],
       sheet2: [],
       dealers: [],
-      sheet3: []
+      sheet3: [],
+      allSheets: {}
     };
 
-    // Unique model index for fast search
     let modelIndex = [];
     let selectedModel = null;
 
@@ -392,57 +382,47 @@
     const selectedTitle = document.getElementById('selectedTitle');
     const selectedSub = document.getElementById('selectedSub');
     const schemeBody = document.getElementById('schemeBody');
-    const sheetInfo = document.getElementById('sheetInfo');
 
-    async function loadExcelData() {
+    async function loadData() {
       try {
-        statusPill.textContent = 'Loading file...';
+        statusPill.textContent = 'Loading...';
         const response = await fetch('./master_data.xlsx');
         if (!response.ok) {
-          throw new Error('master_data.xlsx not found');
+          throw new Error('Failed to load data');
         }
 
         const buffer = await response.arrayBuffer();
-        statusPill.textContent = 'Reading data...';
-
-        // Small pause to keep UI responsive
         await new Promise(resolve => setTimeout(resolve, 30));
 
         const workbook = XLSX.read(buffer, { type: 'array' });
 
-        // Read all 4 sheets
-        if (workbook.Sheets['Sheet1']) {
-          appData.sheet1 = XLSX.utils.sheet_to_json(workbook.Sheets['Sheet1'], { defval: '' });
-        }
-        if (workbook.Sheets['Sheet2']) {
-          appData.sheet2 = XLSX.utils.sheet_to_json(workbook.Sheets['Sheet2'], { defval: '' });
-        }
-        if (workbook.Sheets['Dealers']) {
-          appData.dealers = XLSX.utils.sheet_to_json(workbook.Sheets['Dealers'], { defval: '' });
-        }
-        if (workbook.Sheets['Sheet3']) {
-          appData.sheet3 = XLSX.utils.sheet_to_json(workbook.Sheets['Sheet3'], { defval: '' });
-        }
+        workbook.SheetNames.forEach(name => {
+          const rows = XLSX.utils.sheet_to_json(workbook.Sheets[name], { defval: '' });
+          const cleanName = name.trim().toLowerCase();
+          appData.allSheets[cleanName] = rows;
+
+          if (cleanName === 'sheet1') appData.sheet1 = rows;
+          else if (cleanName === 'sheet2') appData.sheet2 = rows;
+          else if (cleanName === 'dealers') appData.dealers = rows;
+          else if (cleanName === 'sheet3') appData.sheet3 = rows;
+        });
 
         buildModelIndex();
 
         statusPill.textContent = 'Ready';
         statusPill.classList.add('ready');
         modelSearch.disabled = false;
-        sheetInfo.textContent =
-          `Sheet1: ${appData.sheet1.length} | Sheet2: ${appData.sheet2.length} | Dealers: ${appData.dealers.length} | Sheet3: ${appData.sheet3.length}`;
       } catch (err) {
         console.error(err);
-        statusPill.textContent = 'Load Error';
+        statusPill.textContent = 'Error';
         statusPill.classList.add('error');
-        sheetInfo.textContent = 'Please upload master_data.xlsx in the same folder.';
       }
     }
 
     function buildModelIndex() {
       const map = new Map();
 
-      const addRows = (rows, sourceSheet) => {
+      const addRows = (rows) => {
         for (let i = 0; i < rows.length; i++) {
           const r = rows[i];
           const model = String(r['MODEL'] || '').trim();
@@ -452,10 +432,9 @@
           const category = String(r['CATEGORY'] || '').trim();
           const mrp = r['MRP'] !== '' && r['MRP'] !== undefined ? Number(r['MRP']) : '';
 
-          const key = `${sourceSheet}||${brand}||${model}`;
+          const key = `${brand}||${model}||${mrp}`;
           if (!map.has(key)) {
             map.set(key, {
-              sourceSheet,
               category,
               brand,
               model,
@@ -479,8 +458,8 @@
         }
       };
 
-      addRows(appData.sheet1, 'Sheet1');
-      addRows(appData.sheet3, 'Sheet3');
+      addRows(appData.sheet1);
+      addRows(appData.sheet3);
 
       modelIndex = Array.from(map.values());
     }
@@ -523,7 +502,7 @@
           div.innerHTML = `
             <div class="result-model">${escapeHtml(item.brand)} ${escapeHtml(item.model)}</div>
             <div class="result-meta">
-              <span>${escapeHtml(item.category)} (${item.sourceSheet})</span>
+              <span>${escapeHtml(item.category)}</span>
               <span>MRP: ${mrpText}</span>
             </div>
           `;
@@ -544,7 +523,7 @@
 
       selectedTitle.textContent = `${item.brand} - ${item.model}`;
       const mrpText = item.mrp ? `₹${Number(item.mrp).toLocaleString('en-IN')}` : '-';
-      selectedSub.textContent = `${item.category} • MRP: ${mrpText} • ${item.sourceSheet}`;
+      selectedSub.textContent = `${item.category} • MRP: ${mrpText}`;
 
       schemeBody.innerHTML = '';
       item.schemes.forEach(s => {
@@ -571,7 +550,6 @@
         .replace(/"/g, '&quot;');
     }
 
-    // Search Input Listeners
     let searchTimer = null;
     modelSearch.addEventListener('input', () => {
       const val = modelSearch.value;
@@ -589,8 +567,7 @@
       modelSearch.focus();
     });
 
-    // Load Excel on startup
-    loadExcelData();
+    loadData();
   </script>
 </body>
 </html>
