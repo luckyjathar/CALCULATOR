@@ -16,6 +16,8 @@
       --border: #e2e8f0;
       --success: #15803d;
       --success-bg: #dcfce7;
+      --warn: #b45309;
+      --warn-bg: #fef3c7;
       --danger: #b91c1c;
       --danger-bg: #fee2e2;
       --radius: 14px;
@@ -68,6 +70,11 @@
     .status-pill.ready {
       background: var(--success-bg);
       color: var(--success);
+    }
+
+    .status-pill.updating {
+      background: var(--warn-bg);
+      color: var(--warn);
     }
 
     .status-pill.error {
@@ -363,12 +370,17 @@
   </main>
 
   <script>
-    const appData = {
+    const DATA_URL = './master_data.xlsx';
+    const DB_NAME = 'EMICalculatorCacheDB';
+    const DB_VERSION = 1;
+    const STORE_NAME = 'appCache';
+
+    let appData = {
       sheet1: [],
       sheet2: [],
       dealers: [],
       sheet3: [],
-      allSheets: {}
+      extra: {}
     };
 
     let modelIndex = [];
@@ -383,43 +395,146 @@
     const selectedSub = document.getElementById('selectedSub');
     const schemeBody = document.getElementById('schemeBody');
 
-    async function loadData() {
+    function setStatus(text, type = '') {
+      statusPill.textContent = text;
+      statusPill.className = 'status-pill' + (type ? ` ${type}` : '');
+    }
+
+    // IndexedDB helpers
+    function openDB() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open(DB_NAME, DB_VERSION);
+        req.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains(STORE_NAME)) {
+            db.createObjectStore(STORE_NAME);
+          }
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function dbGet(key) {
+      const db = await openDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, 'readonly');
+        const req = tx.objectStore(STORE_NAME).get(key);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function dbSet(key, value) {
+      const db = await openDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        tx.objectStore(STORE_NAME).put(value, key);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    function getVersionKey(headers) {
+      const etag = headers.get('etag') || '';
+      const lastMod = headers.get('last-modified') || '';
+      if (etag || lastMod) return `${etag}|${lastMod}`;
+      return headers.get('content-length') || '';
+    }
+
+    async function fetchAndParseFreshData() {
+      const response = await fetch(DATA_URL, { cache: 'no-cache' });
+      if (!response.ok) {
+        throw new Error('Failed to load data');
+      }
+
+      const remoteVersion = getVersionKey(response.headers);
+      const buffer = await response.arrayBuffer();
+      await new Promise(resolve => setTimeout(resolve, 30));
+
+      const workbook = XLSX.read(buffer, { type: 'array' });
+      const parsed = {
+        sheet1: [],
+        sheet2: [],
+        dealers: [],
+        sheet3: [],
+        extra: {}
+      };
+
+      workbook.SheetNames.forEach(name => {
+        const rows = XLSX.utils.sheet_to_json(workbook.Sheets[name], { defval: '' });
+        const clean = name.trim().toLowerCase();
+        if (clean === 'sheet1') parsed.sheet1 = rows;
+        else if (clean === 'sheet2') parsed.sheet2 = rows;
+        else if (clean === 'dealers') parsed.dealers = rows;
+        else if (clean === 'sheet3') parsed.sheet3 = rows;
+        else parsed.extra[name.trim()] = rows;
+      });
+
+      const index = buildModelIndex(parsed);
+
+      appData = parsed;
+      modelIndex = index;
+
       try {
-        statusPill.textContent = 'Loading...';
-        const response = await fetch('./master_data.xlsx');
-        if (!response.ok) {
-          throw new Error('Failed to load data');
-        }
-
-        const buffer = await response.arrayBuffer();
-        await new Promise(resolve => setTimeout(resolve, 30));
-
-        const workbook = XLSX.read(buffer, { type: 'array' });
-
-        workbook.SheetNames.forEach(name => {
-          const rows = XLSX.utils.sheet_to_json(workbook.Sheets[name], { defval: '' });
-          const cleanName = name.trim().toLowerCase();
-          appData.allSheets[cleanName] = rows;
-
-          if (cleanName === 'sheet1') appData.sheet1 = rows;
-          else if (cleanName === 'sheet2') appData.sheet2 = rows;
-          else if (cleanName === 'dealers') appData.dealers = rows;
-          else if (cleanName === 'sheet3') appData.sheet3 = rows;
-        });
-
-        buildModelIndex();
-
-        statusPill.textContent = 'Ready';
-        statusPill.classList.add('ready');
-        modelSearch.disabled = false;
-      } catch (err) {
-        console.error(err);
-        statusPill.textContent = 'Error';
-        statusPill.classList.add('error');
+        await dbSet('payload', { appData: parsed, modelIndex: index });
+        await dbSet('meta', { version: remoteVersion });
+      } catch (cacheErr) {
+        console.warn('Cache save skipped:', cacheErr);
       }
     }
 
-    function buildModelIndex() {
+    async function initData() {
+      let hasCache = false;
+      let cachedVersion = '';
+
+      // 1. Load instantly from IndexedDB cache if available
+      try {
+        const [meta, payload] = await Promise.all([dbGet('meta'), dbGet('payload')]);
+        if (payload && payload.appData && Array.isArray(payload.modelIndex)) {
+          appData = payload.appData;
+          modelIndex = payload.modelIndex;
+          cachedVersion = (meta && meta.version) ? meta.version : '';
+          hasCache = true;
+
+          modelSearch.disabled = false;
+          setStatus('Ready', 'ready');
+        }
+      } catch (err) {
+        console.warn('Cache read failed:', err);
+      }
+
+      // 2. If cache exists, check lightweight HEAD request to detect if file changed
+      if (hasCache) {
+        try {
+          const headRes = await fetch(DATA_URL, { method: 'HEAD', cache: 'no-cache' });
+          if (headRes.ok) {
+            const remoteVersion = getVersionKey(headRes.headers);
+            if (remoteVersion && remoteVersion !== cachedVersion) {
+              setStatus('Updating...', 'updating');
+              await fetchAndParseFreshData();
+              setStatus('Ready', 'ready');
+            }
+          }
+        } catch (netErr) {
+          // Offline or network issue: continue using cached data smoothly
+        }
+        return;
+      }
+
+      // 3. First time load (no cache yet)
+      try {
+        setStatus('Loading...');
+        await fetchAndParseFreshData();
+        modelSearch.disabled = false;
+        setStatus('Ready', 'ready');
+      } catch (err) {
+        console.error(err);
+        setStatus('Error', 'error');
+      }
+    }
+
+    function buildModelIndex(data) {
       const map = new Map();
 
       const addRows = (rows) => {
@@ -458,10 +573,10 @@
         }
       };
 
-      addRows(appData.sheet1);
-      addRows(appData.sheet3);
+      addRows(data.sheet1);
+      addRows(data.sheet3);
 
-      modelIndex = Array.from(map.values());
+      return Array.from(map.values());
     }
 
     function renderSearchResults(query) {
@@ -567,7 +682,7 @@
       modelSearch.focus();
     });
 
-    loadData();
+    initData();
   </script>
 </body>
 </html>
