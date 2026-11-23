@@ -147,32 +147,6 @@
     .mode-pane { display: none; }
     .mode-pane.active { display: block; }
 
-    /* Active Customer Banner */
-    .active-banner {
-      display: none;
-      align-items: center;
-      justify-content: space-between;
-      background: var(--primary-light);
-      border: 1px solid #bfdbfe;
-      color: var(--primary-dark);
-      padding: 8px 12px;
-      border-radius: 10px;
-      font-size: 13px;
-      font-weight: 700;
-      margin-bottom: 10px;
-    }
-    .active-banner.show { display: flex; }
-    .active-banner button {
-      border: none;
-      background: #dbeafe;
-      color: var(--primary-dark);
-      font-weight: 700;
-      font-size: 12px;
-      padding: 4px 8px;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-
     /* Form Grids */
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
@@ -304,57 +278,6 @@
       gap: 8px;
     }
 
-    /* Quick Action Buttons under Search */
-    .quick-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      margin-top: 10px;
-    }
-
-    .nt-btn {
-      width: 100%;
-      height: 40px;
-      border: 1.5px dashed var(--primary);
-      border-radius: 10px;
-      background: var(--primary-light);
-      color: var(--primary);
-      font-size: 12px;
-      font-weight: 700;
-      cursor: pointer;
-    }
-    .nt-btn.manual-btn {
-      border-color: var(--success);
-      background: var(--success-bg);
-      color: var(--success);
-    }
-
-    .nt-panel {
-      display: none;
-      margin-top: 10px;
-      padding-top: 10px;
-      border-top: 1px solid var(--border);
-    }
-    .nt-panel.show { display: block; }
-
-    .nt-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-    }
-    .nt-cat-btn {
-      padding: 10px 8px;
-      border: 1px solid #cbd5e1;
-      border-radius: 9px;
-      background: #f8fafc;
-      color: var(--text);
-      font-size: 12px;
-      font-weight: 700;
-      text-align: center;
-      cursor: pointer;
-    }
-    .nt-cat-btn:active { background: var(--primary); color: #ffffff; }
-
     /* Manual Calculator Result Panel */
     .mc-result {
       margin-top: 12px;
@@ -415,8 +338,56 @@
     .mc-mini-table td.k { color: var(--muted); font-weight: 700; background: #f8fafc; }
     .mc-mini-table td.v { text-align: right; font-weight: 800; color: var(--text); }
 
-    /* Selected Model Pricing Card */
-    .hidden { display: none !important; }
+    /* Multi-Model Action Bar */
+    .multi-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      background: var(--primary-light);
+      border: 1px solid #bfdbfe;
+      border-radius: 12px;
+      padding: 10px 12px;
+    }
+    .multi-bar-info {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--primary-dark);
+    }
+    .multi-bar-btns {
+      display: flex;
+      gap: 6px;
+    }
+
+    /* Product Panel (Multiple Models) */
+    .product-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .product-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .product-header-left {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      min-width: 0;
+      flex: 1;
+    }
+    .toggle-arrow {
+      font-size: 13px;
+      color: var(--primary);
+      font-weight: 900;
+      margin-top: 2px;
+      flex-shrink: 0;
+    }
     .model-title {
       font-size: 15px;
       font-weight: 800;
@@ -428,15 +399,24 @@
       font-weight: 600;
       color: var(--muted);
       margin-top: 2px;
-      margin-bottom: 12px;
+    }
+    .product-body {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+    .product-card.collapsed .product-body {
+      display: none;
     }
 
-    /* Toolbar & Buttons */
+    /* Utility & Buttons */
+    .hidden { display: none !important; }
+
     .toolbar {
       display: flex;
       flex-wrap: wrap;
       gap: 6px;
-      margin-bottom: 10px;
+      margin: 12px 0 10px;
       align-items: center;
     }
     .tool-select {
@@ -454,7 +434,7 @@
       background-position: right 7px center;
     }
     .btn-sm {
-      height: 36px;
+      height: 34px;
       padding: 0 10px;
       border-radius: 8px;
       border: 1px solid var(--border);
@@ -463,6 +443,7 @@
       font-size: 12px;
       font-weight: 700;
       cursor: pointer;
+      white-space: nowrap;
     }
     .btn-sm.active {
       background: var(--primary);
@@ -474,15 +455,10 @@
       border-color: var(--success);
       color: #ffffff;
     }
-    .btn-sm.warn {
-      background: var(--warn-bg);
-      border-color: #fcd34d;
-      color: #92400e;
-    }
-    .btn-sm.warn.active {
-      background: var(--warn);
-      border-color: var(--warn);
-      color: #ffffff;
+    .btn-sm.danger-soft {
+      background: var(--danger-bg);
+      border-color: #fecaca;
+      color: var(--danger);
     }
     .btn-primary {
       background: var(--primary);
@@ -619,6 +595,7 @@
     .schemes-table tbody tr.row-breach td:first-child { background: #fef2f2; }
     .schemes-table tbody tr.row-breach td:first-child { box-shadow: inset 4px 0 0 var(--danger); }
 
+    /* Hidden row stays right in place */
     .schemes-table tbody tr.row-hidden,
     .schemes-table tbody tr.row-hidden td:first-child {
       background: #f1f5f9;
@@ -668,6 +645,7 @@
     .tag-hidden { background: #64748b; color: #fff; }
     .tag-breach { background: var(--danger); color: #fff; }
     .tag-exp { background: #e2e8f0; color: #475569; }
+    .tag-info { background: #dbeafe; color: #1e40af; }
 
     .cell-dp { color: var(--success); font-weight: 900; font-size: 14px; }
     .cell-emi { color: var(--primary); font-weight: 900; font-size: 14px; }
@@ -755,19 +733,6 @@
       gap: 10px;
     }
 
-    .warn-box {
-      display: none;
-      padding: 9px 11px;
-      border-radius: 9px;
-      font-size: 13px;
-      font-weight: 700;
-      margin-top: 8px;
-      background: var(--danger-bg);
-      color: var(--danger);
-      border: 1px solid #fecaca;
-    }
-    .warn-box.show { display: block; }
-
     .q-item, .dealer-item {
       border: 1px solid var(--border);
       border-radius: 12px;
@@ -791,25 +756,43 @@
       align-items: center;
       gap: 8px;
     }
-    .q-name { font-size: 15px; font-weight: 800; color: var(--text); }
+    .q-name { font-size: 14px; font-weight: 800; color: var(--primary-dark); }
     .q-meta { font-size: 12px; font-weight: 600; color: var(--muted); }
+    .q-models-box {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 10px;
+    }
+    .q-model-line {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .q-model-line span:last-child {
+      color: var(--muted);
+      font-weight: 600;
+      flex-shrink: 0;
+    }
     .q-actions { display: flex; gap: 6px; }
     .q-actions button { flex: 1; height: 34px; font-size: 12px; font-weight: 700; border-radius: 8px; border: none; cursor: pointer; }
 
-    /* Date Result Box */
-    .date-result {
-      margin-top: 12px;
-      background: var(--primary-light);
-      border: 1px solid #bfdbfe;
-      border-radius: 10px;
-      padding: 12px;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
+    /* App Footer */
+    .app-footer {
+      text-align: center;
+      padding: 12px 10px 6px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      border-top: 1px dashed #cbd5e1;
+      margin-top: 6px;
     }
-    .date-box-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; }
-    .date-box-val { font-size: 15px; font-weight: 800; color: var(--primary-dark); margin-top: 3px; }
-    .rule-note { font-size: 12px; color: var(--muted); margin-top: 8px; line-height: 1.45; }
 
     /* Bottom Navigation Bar */
     .bottom-nav {
@@ -916,11 +899,7 @@
       <section class="card">
         <div class="card-header-row">
           <div class="section-label">Customer Eligibility</div>
-        </div>
-
-        <div id="activeCustBanner" class="active-banner">
-          <span id="activeCustName">Active Customer</span>
-          <button type="button" id="clearActiveCustBtn">Clear</button>
+          <button type="button" id="newSessionBtn" class="btn-sm active">+ New</button>
         </div>
 
         <div class="grid-2">
@@ -958,7 +937,7 @@
           <button type="button" id="btnModeManual" class="mode-tab">Manual Calculator</button>
         </div>
 
-        <!-- Pane A: Model Search -->
+        <!-- Pane A: Model Search (Clean, no blue Non-Tieup box) -->
         <div id="paneModelSearch" class="mode-pane active">
           <div class="search-wrap">
             <input
@@ -971,26 +950,16 @@
             />
             <button type="button" id="clearSearch" class="clear-btn" aria-label="Clear">×</button>
           </div>
-
           <div id="resultsList" class="results-list"></div>
-
-          <div class="quick-row">
-            <button type="button" id="nonTieupToggleBtn" class="nt-btn" disabled>
-              Non-Tieup Schemes
-            </button>
-            <button type="button" id="newManualModelBtn" class="nt-btn manual-btn">
-              + Manual Model
-            </button>
-          </div>
-
-          <div id="nonTieupPanel" class="nt-panel">
-            <div id="nonTieupGrid" class="nt-grid"></div>
-          </div>
         </div>
 
         <!-- Pane B: Manual Calculator -->
         <div id="paneManualCalc" class="mode-pane">
           <div class="grid-2" style="margin-bottom: 10px;">
+            <div class="field full">
+              <label for="mcLabel">Model / Scheme Label (Optional)</label>
+              <input type="text" id="mcLabel" placeholder="e.g. MANUAL SCHEME" />
+            </div>
             <div class="field">
               <label for="mcCategory">Category</label>
               <select id="mcCategory">
@@ -1137,175 +1106,43 @@
               </tbody>
             </table>
 
-            <button type="button" id="mcCopyBtn" class="btn-primary" style="width:100%;">Copy Result</button>
+            <div class="grid-2">
+              <button type="button" id="mcCopyBtn" class="btn-primary">Copy Result</button>
+              <button type="button" id="mcAddToListBtn" class="btn-success">+ Add to List</button>
+            </div>
           </div>
         </div>
       </section>
 
-      <!-- 3. Product Pricing, Insurance & Charges -->
-      <section id="pricingCard" class="card hidden">
-        <div class="card-header-row">
-          <div class="section-label">Pricing &amp; Charges</div>
-          <button type="button" id="clearModelBtn" class="btn-sm">Reset</button>
+      <!-- Multi-Model Bar (Visible when 1+ models/schemes are active) -->
+      <div id="multiActionBar" class="multi-bar hidden">
+        <div id="multiBarInfo" class="multi-bar-info">0 Models Selected</div>
+        <div class="multi-bar-btns">
+          <button type="button" id="allQuoteBtn" class="btn-sm active">All Quote</button>
+          <button type="button" id="clearAllModelsBtn" class="btn-sm danger-soft">Clear All</button>
         </div>
+      </div>
 
-        <div id="selectedTitle" class="model-title"></div>
-        <div id="selectedSub" class="model-sub"></div>
-
-        <div class="grid-3" style="margin-bottom: 10px;">
-          <div class="field">
-            <label for="inpMrp">MRP (₹)</label>
-            <input type="number" id="inpMrp" inputmode="numeric" placeholder="0" />
-          </div>
-          <div class="field">
-            <label for="inpInv">Invoice (₹)</label>
-            <input type="number" id="inpInv" inputmode="numeric" placeholder="0" />
-          </div>
-          <div class="field">
-            <label for="inpVar">VAR (₹)</label>
-            <input type="number" id="inpVar" readonly value="0" />
-          </div>
-        </div>
-
-        <div class="grid-3" style="margin-bottom: 10px;">
-          <div class="field">
-            <label for="inpGtl">GTL (₹)</label>
-            <select id="inpGtl">
-              <option value="0">0</option>
-              <option value="699">699</option>
-              <option value="1099">1099</option>
-              <option value="1199">1199</option>
-              <option value="1499">1499</option>
-              <option value="1799">1799</option>
-              <option value="2398">2398</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="inpRfc">RFC (₹)</label>
-            <select id="inpRfc">
-              <option value="0" selected>0</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="inpExw">EXW (₹)</label>
-            <input type="number" id="inpExw" inputmode="numeric" placeholder="0" />
-          </div>
-        </div>
-
-        <div class="grid-3">
-          <div class="field">
-            <label for="inpTargetDp">Target DP (₹)</label>
-            <input type="number" id="inpTargetDp" inputmode="numeric" placeholder="0" />
-          </div>
-          <div class="field">
-            <label for="inpMargin">Margin (₹)</label>
-            <input type="number" id="inpMargin" inputmode="numeric" placeholder="0" />
-          </div>
-          <div class="field">
-            <label for="inpDealer">Dealer (₹)</label>
-            <input type="number" id="inpDealer" inputmode="numeric" placeholder="0" />
-          </div>
-        </div>
-      </section>
-
-      <!-- 4. Calculated Schemes Table -->
-      <section id="schemesCard" class="card hidden">
-        <div class="card-header-row">
-          <div class="section-label">Calculated Schemes</div>
-          <span id="eligibleSummary" style="font-size:12px; font-weight:700; color:var(--primary);"></span>
-        </div>
-
-        <div class="toolbar">
-          <select id="sortSelect" class="tool-select">
-            <option value="dp">Sort: Lowest DP</option>
-            <option value="emi">Sort: Lowest EMI</option>
-            <option value="currentTenure">Sort: Tenure</option>
-            <option value="daily">Sort: Daily EMI</option>
-          </select>
-          <button type="button" id="addManualSchemeBtn" class="btn-sm success">+ Manual</button>
-          <button type="button" id="toggleDetailsBtn" class="btn-sm">Details</button>
-          <button type="button" id="toggleAllBtn" class="btn-sm">Show All</button>
-          <button type="button" id="toggleHiddenBtn" class="btn-sm warn hidden">Hidden (0)</button>
-          <button type="button" id="quoteImgBtn" class="btn-sm active">Quote Image</button>
-        </div>
-
-        <div class="table-wrap">
-          <table id="schemesTable" class="schemes-table">
-            <thead id="schemesTableHead"></thead>
-            <tbody id="schemesTableBody"></tbody>
-          </table>
-        </div>
-      </section>
+      <!-- 3. Multiple Active Models & Calculated Schemes Stack -->
+      <div id="productsStack" class="product-stack"></div>
     </div>
 
-    <!-- ==================== VIEW 2: CUSTOMER QUEUE ==================== -->
+    <!-- ==================== VIEW 2: QUEUE (SAVED ELIGIBILITY SESSIONS) ==================== -->
     <div id="viewQueue" class="view-section">
       <section class="card">
         <div class="card-header-row">
-          <div class="section-label">Add Customer to Queue</div>
-          <button type="button" id="openBinBtn" class="btn-sm">Recycle Bin (<span id="binCount">0</span>)</button>
-        </div>
-
-        <div class="grid-2">
-          <div class="field">
-            <label for="qName">Customer Name</label>
-            <input type="text" id="qName" placeholder="Full name" />
-          </div>
-          <div class="field">
-            <label for="qMobile">Mobile (10 digits)</label>
-            <input type="tel" id="qMobile" inputmode="numeric" maxlength="10" placeholder="10-digit number" />
-          </div>
-        </div>
-
-        <div id="qDupWarn" class="warn-box"></div>
-
-        <button type="button" id="addQueueBtn" class="btn-success" style="width:100%; margin-top:10px;">
-          Save with Current Eligibility
-        </button>
-      </section>
-
-      <section class="card">
-        <div class="card-header-row">
-          <div class="section-label">Saved Queue (<span id="qCount">0</span>)</div>
+          <div class="section-label">Saved Eligibility History (<span id="qCount">0</span>)</div>
+          <button type="button" id="clearQueueAllBtn" class="btn-sm danger-soft">Clear All</button>
         </div>
         <div class="search-wrap" style="margin-bottom:10px;">
-          <input type="text" id="qSearch" class="search-input" placeholder="Search name, mobile, or limit..." />
+          <input type="text" id="qSearch" class="search-input" placeholder="Search by limit, type, LTV, or model..." />
         </div>
         <div id="qList" class="list-stack"></div>
       </section>
     </div>
 
-    <!-- ==================== VIEW 3: TOOLS (EMI DATES & DEALERS) ==================== -->
+    <!-- ==================== VIEW 3: TOOLS (DEALER SEARCH ONLY) ==================== -->
     <div id="viewTools" class="view-section">
-      <section class="card">
-        <div class="card-header-row">
-          <div class="section-label">First &amp; Last EMI Date</div>
-        </div>
-        <div class="grid-2">
-          <div class="field">
-            <label for="emiLoanDate">Loan Date</label>
-            <input type="date" id="emiLoanDate" />
-          </div>
-          <div class="field">
-            <label for="emiNetTenure">Net Tenure (Months)</label>
-            <input type="number" id="emiNetTenure" inputmode="numeric" placeholder="e.g. 8" value="8" />
-          </div>
-        </div>
-        <div class="date-result">
-          <div>
-            <div class="date-box-label">First EMI Date</div>
-            <div id="emiStartDateOut" class="date-box-val">-</div>
-          </div>
-          <div>
-            <div class="date-box-label">Last EMI Date</div>
-            <div id="emiEndDateOut" class="date-box-val">-</div>
-          </div>
-        </div>
-        <p class="rule-note">
-          EMI is debited on the 2nd of every month. Loans up to the 23rd start next month; loans on or after the 24th start after two months.
-        </p>
-      </section>
-
       <section class="card">
         <div class="card-header-row">
           <div class="section-label">Dealer Search</div>
@@ -1319,6 +1156,11 @@
         </div>
       </section>
     </div>
+
+    <!-- Classic App Footer -->
+    <footer class="app-footer">
+      Persistent Portal &bull; EMI Calculator
+    </footer>
   </main>
 
   <!-- Bottom Mobile Navigation -->
@@ -1337,26 +1179,12 @@
     </button>
   </nav>
 
-  <!-- Manual Scheme Modal -->
+  <!-- Manual Scheme Modal (Add extra scheme to any active model) -->
   <div id="manualModal" class="modal-backdrop">
     <div class="modal-box">
       <div class="card-header-row" style="margin-bottom:0;">
         <div id="manualModalTitle" class="modal-title">Add Manual Scheme</div>
         <button type="button" id="closeManualModalBtn" class="btn-sm">Close</button>
-      </div>
-
-      <div id="manualModelFields" class="grid-2 hidden">
-        <div class="field full">
-          <label for="manModelName">Model Name</label>
-          <input type="text" id="manModelName" placeholder="e.g. CUSTOM MODEL" />
-        </div>
-        <div class="field full">
-          <label for="manCategory">Category</label>
-          <select id="manCategory">
-            <option value="PHONE(WEB-MOBILE)">PHONE / TABLET / SMART WATCH</option>
-            <option value="OTHER">OTHER APPLIANCE</option>
-          </select>
-        </div>
       </div>
 
       <div class="grid-2">
@@ -1393,18 +1221,6 @@
     </div>
   </div>
 
-  <!-- Recycle Bin Modal -->
-  <div id="binModal" class="modal-backdrop">
-    <div class="modal-box">
-      <div class="card-header-row" style="margin-bottom:0;">
-        <div class="modal-title">Recycle Bin</div>
-        <button type="button" id="closeBinBtn" class="btn-sm">Close</button>
-      </div>
-      <div id="binList" class="list-stack"></div>
-      <button type="button" id="emptyBinBtn" class="btn-danger" style="width:100%; height:40px;">Empty Recycle Bin</button>
-    </div>
-  </div>
-
   <!-- Quotation Image Modal -->
   <div id="quoteModal" class="modal-backdrop">
     <div class="modal-box">
@@ -1428,6 +1244,7 @@
     const DB_VERSION = 2;
     const STORE_NAME = 'appCache';
     const CACHE_SCHEMA = 2;
+    const SESSIONS_KEY = 'calc_eligibility_sessions_v2';
 
     const CUSTOMER_TYPE_CHARGES = {
       'NEW': 850,
@@ -1443,22 +1260,19 @@
     };
 
     let calcMode = 'search'; // 'search' | 'manual'
-    let selectedItem = null;
-    let manualLoans = {};
-    let showDetails = false;
-    let showAllSchemes = false;
-    let showHiddenSchemes = false;
-    let manualModalMode = 'SCHEME';
-    let sortState = { key: 'dp', dir: 'asc' };
-    let currentCalculated = [];
+    let activeProducts = []; // Multiple active models & schemes
+    let currentSessionId = Date.now();
+    let savedSessions = [];
+    try {
+      savedSessions = JSON.parse(localStorage.getItem(SESSIONS_KEY) || '[]');
+      if (!Array.isArray(savedSessions)) savedSessions = [];
+    } catch (e) {
+      savedSessions = [];
+    }
+
+    let manualModalTargetPIdx = -1;
     let lastQuoteCanvas = null;
     let lastManualResult = null;
-
-    // Customer Queue State
-    let customerQueue = JSON.parse(localStorage.getItem('calc_queue_v1') || '[]');
-    let recycleBin = JSON.parse(localStorage.getItem('calc_bin_v1') || '[]');
-    let activeQueueId = null;
-    let selectedQueueId = null;
     let showingFavDealers = false;
 
     // DOM References
@@ -1467,9 +1281,7 @@
     const approvedLimitEl = document.getElementById('approvedLimit');
     const ltvPercentEl = document.getElementById('ltvPercent');
     const emiCappingEl = document.getElementById('emiCapping');
-    const activeCustBanner = document.getElementById('activeCustBanner');
-    const activeCustName = document.getElementById('activeCustName');
-    const clearActiveCustBtn = document.getElementById('clearActiveCustBtn');
+    const newSessionBtn = document.getElementById('newSessionBtn');
 
     // Mode Tabs
     const btnModeSearch = document.getElementById('btnModeSearch');
@@ -1481,12 +1293,9 @@
     const modelSearch = document.getElementById('modelSearch');
     const clearSearch = document.getElementById('clearSearch');
     const resultsList = document.getElementById('resultsList');
-    const nonTieupToggleBtn = document.getElementById('nonTieupToggleBtn');
-    const newManualModelBtn = document.getElementById('newManualModelBtn');
-    const nonTieupPanel = document.getElementById('nonTieupPanel');
-    const nonTieupGrid = document.getElementById('nonTieupGrid');
 
     // Manual Calculator DOM
+    const mcLabel = document.getElementById('mcLabel');
     const mcCategory = document.getElementById('mcCategory');
     const mcInvoice = document.getElementById('mcInvoice');
     const mcLoan = document.getElementById('mcLoan');
@@ -1518,46 +1327,29 @@
     const mcOutExtra = document.getElementById('mcOutExtra');
     const mcOutNbfc = document.getElementById('mcOutNbfc');
     const mcCopyBtn = document.getElementById('mcCopyBtn');
+    const mcAddToListBtn = document.getElementById('mcAddToListBtn');
 
-    // Pricing & Schemes DOM
-    const pricingCard = document.getElementById('pricingCard');
-    const selectedTitle = document.getElementById('selectedTitle');
-    const selectedSub = document.getElementById('selectedSub');
-    const clearModelBtn = document.getElementById('clearModelBtn');
-    const inpMrp = document.getElementById('inpMrp');
-    const inpInv = document.getElementById('inpInv');
-    const inpVar = document.getElementById('inpVar');
-    const inpGtl = document.getElementById('inpGtl');
-    const inpRfc = document.getElementById('inpRfc');
-    const inpExw = document.getElementById('inpExw');
-    const inpTargetDp = document.getElementById('inpTargetDp');
-    const inpMargin = document.getElementById('inpMargin');
-    const inpDealer = document.getElementById('inpDealer');
-
-    const schemesCard = document.getElementById('schemesCard');
-    const eligibleSummary = document.getElementById('eligibleSummary');
-    const sortSelect = document.getElementById('sortSelect');
-    const addManualSchemeBtn = document.getElementById('addManualSchemeBtn');
-    const toggleDetailsBtn = document.getElementById('toggleDetailsBtn');
-    const toggleAllBtn = document.getElementById('toggleAllBtn');
-    const toggleHiddenBtn = document.getElementById('toggleHiddenBtn');
-    const quoteImgBtn = document.getElementById('quoteImgBtn');
-    const schemesTable = document.getElementById('schemesTable');
-    const schemesTableHead = document.getElementById('schemesTableHead');
-    const schemesTableBody = document.getElementById('schemesTableBody');
+    // Multi-Model Stack DOM
+    const multiActionBar = document.getElementById('multiActionBar');
+    const multiBarInfo = document.getElementById('multiBarInfo');
+    const allQuoteBtn = document.getElementById('allQuoteBtn');
+    const clearAllModelsBtn = document.getElementById('clearAllModelsBtn');
+    const productsStack = document.getElementById('productsStack');
 
     // Manual Scheme Modal DOM
     const manualModal = document.getElementById('manualModal');
-    const manualModalTitle = document.getElementById('manualModalTitle');
-    const manualModelFields = document.getElementById('manualModelFields');
-    const manModelName = document.getElementById('manModelName');
-    const manCategory = document.getElementById('manCategory');
     const manTenure = document.getElementById('manTenure');
     const manAdv = document.getElementById('manAdv');
     const manDbd = document.getElementById('manDbd');
     const manPf = document.getElementById('manPf');
     const manRoi = document.getElementById('manRoi');
     const manFixed = document.getElementById('manFixed');
+
+    // Queue DOM
+    const qCount = document.getElementById('qCount');
+    const qSearch = document.getElementById('qSearch');
+    const qList = document.getElementById('qList');
+    const clearQueueAllBtn = document.getElementById('clearQueueAllBtn');
 
     const toastEl = document.getElementById('toastEl');
     let toastTimer = null;
@@ -1589,17 +1381,7 @@
       btnModeManual.classList.toggle('active', mode === 'manual');
       paneModelSearch.classList.toggle('active', mode === 'search');
       paneManualCalc.classList.toggle('active', mode === 'manual');
-
-      if (mode === 'manual') {
-        pricingCard.classList.add('hidden');
-        schemesCard.classList.add('hidden');
-        calcManualCalculator();
-      } else {
-        if (selectedItem) {
-          pricingCard.classList.remove('hidden');
-          schemesCard.classList.remove('hidden');
-        }
-      }
+      if (mode === 'manual') calcManualCalculator();
     }
 
     btnModeSearch.addEventListener('click', () => setCalcMode('search'));
@@ -1684,7 +1466,7 @@
       return null;
     }
 
-    /* ==================== MANUAL CALCULATOR LOGIC ==================== */
+    /* ==================== MANUAL CALCULATOR (FIXED TARGET DP) ==================== */
     function mcSyncCategoryAndSlabs(trigger) {
       const isPhone = isMobileDeviceCat(mcCategory.value);
       const inv = parseFloat(mcInvoice.value) || 0;
@@ -1776,31 +1558,42 @@
       let emi = 0;
       let dpExact = 0;
       let minEmiApplied = false;
+      let targetBelowMin = false;
 
       if (isFixed) {
         const maxRemainingEmis = Math.floor(currentLimit / fixedEmi);
         const maxTotalTenure = maxRemainingEmis + advEmi;
         nbfcMaxL = maxTotalTenure * fixedEmi;
 
-        if (hasManualLoan) {
+        if (hasManualLoan && targetDp <= 0) {
           currentTenure = Math.floor(manualLoanVal / fixedEmi) || 1;
           loan = currentTenure * fixedEmi;
         } else {
           currentTenure = Math.floor(effectivePrice / fixedEmi);
           if (currentTenure > maxTotalTenure) currentTenure = maxTotalTenure;
           if (currentTenure < 1) currentTenure = 1;
-          loan = currentTenure * fixedEmi;
-          if (inv > 0 && loan > inv) loan = Math.floor(inv / fixedEmi) * fixedEmi;
+          const maxPossibleLoan = (inv > 0 && currentTenure * fixedEmi > inv)
+            ? Math.floor(inv / fixedEmi) * fixedEmi
+            : currentTenure * fixedEmi;
+          loan = maxPossibleLoan;
 
           if (targetDp > 0 && inv > 0) {
             const numerator = targetDp - inv - (fixedEmi * advEmi) - pf - totalFees;
             const denominator = dbdRate + roiRateDP - 1;
-            const solvedLoan = numerator / denominator;
-            let solvedTenure = Math.floor(solvedLoan / fixedEmi);
-            if (solvedTenure > maxTotalTenure) solvedTenure = maxTotalTenure;
-            loan = Math.max(0, solvedTenure * fixedEmi);
-            if (loan > inv) loan = Math.floor(inv / fixedEmi) * fixedEmi;
-            currentTenure = Math.floor(loan / fixedEmi) || 1;
+            if (denominator < 0) {
+              const solvedLoan = numerator / denominator;
+              if (solvedLoan > maxPossibleLoan) {
+                targetBelowMin = true;
+                loan = maxPossibleLoan;
+              } else {
+                let solvedTenure = Math.round(solvedLoan / fixedEmi);
+                if (solvedTenure > maxTotalTenure) solvedTenure = maxTotalTenure;
+                if (solvedTenure < 1) solvedTenure = 1;
+                loan = Math.max(0, solvedTenure * fixedEmi);
+                if (loan > inv) loan = Math.floor(inv / fixedEmi) * fixedEmi;
+              }
+              currentTenure = Math.floor(loan / fixedEmi) || 1;
+            }
           }
         }
 
@@ -1811,17 +1604,31 @@
         dpExact = effectivePrice - loan + (fixedEmi * advEmi) + (loan * dbdRate) + pf + totalFees + roiInDp;
       } else {
         nbfcMaxL = (currentLimit * tenure) / (tenure - advEmi || 1);
+        const maxPossibleLoan = Math.min(effectivePrice, nbfcMaxL);
 
-        if (hasManualLoan) {
+        if (hasManualLoan && targetDp <= 0) {
           loan = manualLoanVal;
         } else {
-          loan = Math.min(effectivePrice, nbfcMaxL);
+          loan = maxPossibleLoan;
           if (targetDp > 0 && inv > 0) {
             const advRate = advEmi / tenure;
             const numerator = targetDp - inv - pf - totalFees;
             const denominator = advRate + dbdRate + roiRateDP - 1;
-            const solvedLoan = numerator / denominator;
-            loan = Math.min(loan, Math.max(0, Math.floor(solvedLoan)));
+            if (denominator < 0) {
+              let solvedLoan = numerator / denominator;
+              // Handle min ₹900 base EMI branch accurately
+              if (solvedLoan > 0 && (solvedLoan / tenure) < 900) {
+                const numMin = targetDp - inv - (900 * advEmi) - pf - totalFees;
+                const denMin = dbdRate + roiRateDP - 1;
+                if (denMin < 0) solvedLoan = numMin / denMin;
+              }
+              if (solvedLoan > maxPossibleLoan) {
+                targetBelowMin = true;
+                loan = maxPossibleLoan;
+              } else {
+                loan = Math.max(0, Math.ceil(solvedLoan));
+              }
+            }
           }
         }
 
@@ -1866,6 +1673,7 @@
       const tagsHtml = [
         isFixed ? `<span class="tag tag-fixed">Fixed ₹${fixedEmi}</span>` : '',
         minEmiApplied ? `<span class="tag tag-manual">Min ₹900 Base EMI</span>` : '',
+        targetBelowMin ? `<span class="tag tag-info">Min Possible DP ₹${Math.round(dpRounded).toLocaleString('en-IN')}</span>` : '',
         isLtvBreach ? `<span class="tag tag-breach">LTV Breach (${Math.round(curLTV)}%)</span>` : '',
         isInv50Breach ? `<span class="tag tag-breach">Loan &lt; 50% Invoice</span>` : ''
       ].filter(Boolean).join('');
@@ -1886,8 +1694,23 @@
       mcOutNbfc.textContent = limitInput > 0 ? ('₹' + Math.floor(nbfcMaxL).toLocaleString('en-IN')) : 'No Limit';
 
       lastManualResult = {
+        label: (mcLabel.value.trim() || 'MANUAL SCHEME').toUpperCase(),
+        category: mcCategory.value,
         inv,
         loan,
+        tenure,
+        advEmi,
+        dbd,
+        pf,
+        roi,
+        fixedEmi,
+        targetDp,
+        gtl,
+        rfc,
+        exw,
+        margin,
+        dealer,
+        hasManualLoan,
         dp: dpRounded,
         emi,
         inst,
@@ -1909,7 +1732,13 @@
     });
 
     mcLoan.addEventListener('input', () => {
+      if (mcLoan.value.trim() !== '') mcTargetDp.value = '';
       mcSyncCategoryAndSlabs('LOAN');
+      calcManualCalculator();
+    });
+
+    mcTargetDp.addEventListener('input', () => {
+      if (mcTargetDp.value.trim() !== '') mcLoan.value = '';
       calcManualCalculator();
     });
 
@@ -1930,14 +1759,14 @@
       }
     });
 
-    [mcTenure, mcAdv, mcDbd, mcPf, mcRoi, mcFixed, mcTargetDp, mcExw, mcMargin, mcDealer].forEach(el => {
+    [mcLabel, mcTenure, mcAdv, mcDbd, mcPf, mcRoi, mcFixed, mcExw, mcMargin, mcDealer].forEach(el => {
       el.addEventListener('input', calcManualCalculator);
     });
     mcGtl.addEventListener('change', calcManualCalculator);
     mcRfc.addEventListener('change', calcManualCalculator);
 
     mcResetBtn.addEventListener('click', () => {
-      [mcInvoice, mcLoan, mcTenure, mcAdv, mcDbd, mcPf, mcRoi, mcFixed, mcTargetDp, mcExw, mcMargin, mcDealer].forEach(el => {
+      [mcLabel, mcInvoice, mcLoan, mcTenure, mcAdv, mcDbd, mcPf, mcRoi, mcFixed, mcTargetDp, mcExw, mcMargin, mcDealer].forEach(el => {
         el.value = '';
       });
       mcCategory.value = 'PHONE(WEB-MOBILE)';
@@ -1950,7 +1779,7 @@
     mcCopyBtn.addEventListener('click', () => {
       if (!lastManualResult) return;
       const r = lastManualResult;
-      let text = `*Manual Calculation*\n`;
+      let text = `*${r.label}*\n`;
       if (r.inv > 0) text += `Invoice Amount: ₹${Math.round(r.inv).toLocaleString('en-IN')}\n`;
       text += `Scheme: ${r.ta}\n`;
       text += `Loan: ₹${Math.floor(r.loan).toLocaleString('en-IN')}\n`;
@@ -1963,6 +1792,73 @@
         setTimeout(() => { mcCopyBtn.textContent = 'Copy Result'; }, 1500);
         showToast('Result copied', 'success');
       });
+    });
+
+    // Add Manual Calculation directly to multi-model list
+    mcAddToListBtn.addEventListener('click', () => {
+      if (!lastManualResult) return;
+      const r = lastManualResult;
+      const newScheme = {
+        tenure: r.tenure,
+        advEmi: r.advEmi,
+        dbd: r.dbd,
+        pf: r.pf,
+        roi: r.roi,
+        fixedEmi: r.fixedEmi,
+        minLoan: 0,
+        maxLoan: 9999999,
+        expiryDateStr: '',
+        isManual: true,
+        hidden: false
+      };
+
+      // If same label & invoice manual model exists, append scheme to it; else create new panel
+      const existing = activeProducts.find(p =>
+        p.brand === 'MANUAL' && p.model === r.label && Number(p.inputs.inv || 0) === Number(r.inv || 0)
+      );
+
+      if (existing) {
+        const newIdx = existing.schemes.length;
+        existing.schemes.push(newScheme);
+        if (r.hasManualLoan) existing.manualLoans[newIdx] = r.loan;
+        existing.collapsed = false;
+        showToast('Scheme added to ' + existing.model, 'success');
+      } else {
+        activeProducts.forEach(p => { p.collapsed = true; });
+        const manualLoansObj = {};
+        if (r.hasManualLoan) manualLoansObj[0] = r.loan;
+        activeProducts.push({
+          uid: Date.now() + Math.random(),
+          brand: 'MANUAL',
+          model: r.label,
+          category: r.category,
+          isNonTieup: false,
+          schemes: [newScheme],
+          inputs: {
+            mrp: r.inv || '',
+            inv: r.inv || '',
+            gtl: r.gtl || 0,
+            rfc: r.rfc || 0,
+            exw: r.exw || '',
+            targetDp: r.targetDp || '',
+            margin: r.margin || '',
+            dealer: r.dealer || ''
+          },
+          manualLoans: manualLoansObj,
+          sortState: { key: 'dp', dir: 'asc' },
+          showDetails: false,
+          showAll: false,
+          collapsed: false,
+          calculated: []
+        });
+        showToast('Added to Models List', 'success');
+      }
+
+      recalcAllProducts(true);
+      autoSaveSession();
+      setTimeout(() => {
+        productsStack.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 80);
     });
 
     /* ==================== DATE PARSING & EXPIRY ==================== */
@@ -2179,12 +2075,14 @@
           if (!parsed) continue;
           const cat = parsed.category || 'OTHER';
           if (!nonTieupMap.has(cat)) {
+            const dispModel = cat === 'PHONE(WEB-MOBILE)' ? 'PHONE / TABLET / SMART WATCH' : cat;
             nonTieupMap.set(cat, {
               category: cat,
               brand: 'NON TIEUP',
-              model: cat === 'PHONE(WEB-MOBILE)' ? 'PHONE / TABLET / SMART WATCH' : cat,
+              model: dispModel,
               mrp: 0,
               isNonTieup: true,
+              searchKey: `non tieup ${dispModel} ${cat}`.toLowerCase(),
               schemes: [],
               _seen: new Set()
             });
@@ -2254,9 +2152,7 @@
 
     function onDataReady() {
       modelSearch.disabled = false;
-      nonTieupToggleBtn.disabled = false;
-      renderNonTieupCategories();
-      if (selectedItem) recalcSchemes();
+      if (activeProducts.length > 0) recalcAllProducts(true);
     }
 
     async function initData() {
@@ -2304,117 +2200,7 @@
       }
     }
 
-    /* ==================== MODEL SEARCH, NON-TIEUP & MANUAL MODAL ==================== */
-    function renderNonTieupCategories() {
-      if (!appData.nonTieup.length) {
-        nonTieupGrid.innerHTML = '<div class="empty-msg" style="grid-column:1/-1;">No categories available</div>';
-        return;
-      }
-      nonTieupGrid.innerHTML = appData.nonTieup.map((item, idx) => `
-        <button type="button" class="nt-cat-btn" data-nt-idx="${idx}">
-          ${escapeHtml(item.model)}
-        </button>
-      `).join('');
-    }
-
-    nonTieupToggleBtn.addEventListener('click', () => {
-      nonTieupPanel.classList.toggle('show');
-    });
-
-    nonTieupGrid.addEventListener('click', (e) => {
-      const btn = e.target.closest('.nt-cat-btn');
-      if (!btn) return;
-      const item = appData.nonTieup[parseInt(btn.dataset.ntIdx, 10)];
-      if (item) {
-        nonTieupPanel.classList.remove('show');
-        selectItem(item);
-      }
-    });
-
-    function openManualModal(mode) {
-      manualModalMode = mode;
-      manModelName.value = '';
-      manTenure.value = '';
-      manAdv.value = '';
-      manDbd.value = '';
-      manPf.value = '';
-      manRoi.value = '';
-      manFixed.value = '';
-
-      if (mode === 'NEW_MODEL') {
-        manualModalTitle.textContent = 'New Manual Model & Scheme';
-        manualModelFields.classList.remove('hidden');
-      } else {
-        manualModalTitle.textContent = 'Add Manual Scheme';
-        manualModelFields.classList.add('hidden');
-      }
-
-      manualModal.classList.add('show');
-      setTimeout(() => {
-        (mode === 'NEW_MODEL' ? manModelName : manTenure).focus();
-      }, 60);
-    }
-
-    function closeManualModal() {
-      manualModal.classList.remove('show');
-    }
-
-    newManualModelBtn.addEventListener('click', () => openManualModal('NEW_MODEL'));
-    addManualSchemeBtn.addEventListener('click', () => {
-      if (!selectedItem) return;
-      openManualModal('SCHEME');
-    });
-    document.getElementById('closeManualModalBtn').addEventListener('click', closeManualModal);
-    document.getElementById('cancelManualBtn').addEventListener('click', closeManualModal);
-
-    document.getElementById('saveManualSchemeBtn').addEventListener('click', () => {
-      const tenure = parseInt(manTenure.value, 10) || 0;
-      const advEmi = parseInt(manAdv.value, 10) || 0;
-      const dbd = parseFloat(manDbd.value) || 0;
-      const pf = parseInt(manPf.value, 10) || 0;
-      const roi = parseFloat(manRoi.value) || 0;
-      const fixedEmi = parseFloat(manFixed.value) || 0;
-
-      if (tenure <= 0 && fixedEmi <= 0) {
-        showToast('Enter Total Tenure or Fixed EMI', 'error');
-        return;
-      }
-
-      const newScheme = {
-        tenure,
-        advEmi,
-        dbd,
-        pf,
-        roi,
-        fixedEmi,
-        minLoan: 0,
-        maxLoan: 9999999,
-        expiryDateStr: '',
-        isManual: true,
-        hidden: false
-      };
-
-      if (manualModalMode === 'NEW_MODEL') {
-        const name = (manModelName.value.trim() || 'MANUAL MODEL').toUpperCase();
-        const cat = manCategory.value || 'OTHER';
-        selectItem({
-          brand: 'MANUAL',
-          model: name,
-          category: cat,
-          mrp: 0,
-          isNonTieup: false,
-          schemes: [newScheme]
-        });
-        closeManualModal();
-        showToast('Manual model & scheme added', 'success');
-      } else {
-        selectedItem.schemes.push(newScheme);
-        recalcSchemes();
-        closeManualModal();
-        showToast('Manual scheme added', 'success');
-      }
-    });
-
+    /* ==================== MODEL SEARCH (UNIFIED WITH NON-TIEUP) ==================== */
     function renderSearchResults(query) {
       const q = query.trim().toLowerCase();
       if (!q) {
@@ -2425,17 +2211,24 @@
 
       const tokens = q.split(/\s+/).filter(Boolean);
       const matches = [];
-      for (let i = 0; i < appData.models.length; i++) {
-        const item = appData.models[i];
-        let ok = true;
-        for (let t = 0; t < tokens.length; t++) {
-          if (!item.searchKey.includes(tokens[t])) { ok = false; break; }
+
+      const scanList = (list) => {
+        for (let i = 0; i < list.length; i++) {
+          const item = list[i];
+          const key = item.searchKey || `${item.brand} ${item.model} ${item.category}`.toLowerCase();
+          let ok = true;
+          for (let t = 0; t < tokens.length; t++) {
+            if (!key.includes(tokens[t])) { ok = false; break; }
+          }
+          if (ok) {
+            matches.push(item);
+            if (matches.length >= 30) return;
+          }
         }
-        if (ok) {
-          matches.push(item);
-          if (matches.length >= 30) break;
-        }
-      }
+      };
+
+      scanList(appData.models);
+      if (matches.length < 30) scanList(appData.nonTieup);
 
       resultsList.innerHTML = '';
       if (!matches.length) {
@@ -2446,14 +2239,15 @@
           const div = document.createElement('div');
           div.className = 'result-item';
           const mrpTxt = item.mrp > 0 ? `₹${Math.round(item.mrp).toLocaleString('en-IN')}` : '-';
+          const titleTxt = item.isNonTieup ? `NON TIEUP - ${item.model}` : `${item.brand} ${item.model}`;
           div.innerHTML = `
-            <div class="result-model">${escapeHtml(item.brand)} ${escapeHtml(item.model)}</div>
+            <div class="result-model">${escapeHtml(titleTxt)}</div>
             <div class="result-meta">
               <span>${escapeHtml(item.category)}</span>
               <span>MRP: ${mrpTxt}</span>
             </div>
           `;
-          div.addEventListener('click', () => selectItem(item));
+          div.addEventListener('click', () => addProductToActiveList(item));
           frag.appendChild(div);
         });
         resultsList.appendChild(frag);
@@ -2461,118 +2255,59 @@
       resultsList.classList.add('show');
     }
 
-    function applyCategoryInsuranceLocks(category) {
-      const isPhone = isMobileDeviceCat(category);
-      if (isPhone) {
-        inpRfc.disabled = false;
-        inpExw.disabled = true;
-        inpExw.value = '';
-      } else {
-        inpRfc.disabled = true;
-        inpRfc.value = '0';
-        inpExw.disabled = false;
-      }
-    }
+    function addProductToActiveList(item) {
+      // Collapse previous models cleanly so newly added model is immediately visible
+      activeProducts.forEach(p => { p.collapsed = true; });
 
-    function syncInsuranceSlabs(mrpVal, baseVal, mode) {
-      if (!selectedItem) return;
-      const isPhone = isMobileDeviceCat(selectedItem.category);
-      const gtl = getGtlSlabValue(baseVal);
-      const rfcSlab = getRfcSlabValue(mrpVal);
-      const wasRfcSelected = (mode !== 'SELECT') && isPhone && (parseFloat(inpRfc.value) > 0);
+      const baseMrp = item.mrp > 0 ? item.mrp : '';
+      const mrpNum = parseFloat(baseMrp) || 0;
 
-      if (mode === 'MRP' || mode === 'INV' || mode === 'SELECT' || mode === 'LOAN') {
-        inpGtl.value = String(gtl);
-      }
-
-      inpRfc.innerHTML = '<option value="0">0</option>';
-      if (isPhone && rfcSlab > 0) {
-        const opt = document.createElement('option');
-        opt.value = String(rfcSlab);
-        opt.textContent = String(rfcSlab);
-        inpRfc.appendChild(opt);
-      }
-
-      if (mode === 'SELECT' || !isPhone) {
-        inpRfc.value = '0';
-      } else {
-        inpRfc.value = (wasRfcSelected && rfcSlab > 0) ? String(rfcSlab) : '0';
-      }
-    }
-
-    function updateVarField() {
-      const m = parseFloat(inpMrp.value) || 0;
-      const i = parseFloat(inpInv.value) || 0;
-      const v = (i > m && m > 0) ? (i - m) : 0;
-      inpVar.value = v;
-      inpVar.classList.toggle('var-alert', v > 0);
-    }
-
-    function selectItem(item) {
-      selectedItem = {
-        ...item,
+      const product = {
+        uid: Date.now() + Math.random(),
+        brand: item.brand || '',
+        model: item.model || '',
+        category: item.category || 'OTHER',
+        isNonTieup: Boolean(item.isNonTieup),
         schemes: (item.schemes || []).map(s => ({
           ...s,
           hidden: Boolean(s.hidden),
           isManual: Boolean(s.isManual)
-        }))
+        })),
+        inputs: {
+          mrp: baseMrp,
+          inv: baseMrp,
+          gtl: getGtlSlabValue(mrpNum),
+          rfc: 0, // Default RFC is always 0
+          exw: '',
+          targetDp: '',
+          margin: '',
+          dealer: ''
+        },
+        manualLoans: {},
+        sortState: { key: 'dp', dir: 'asc' },
+        showDetails: false,
+        showAll: false,
+        collapsed: false,
+        calculated: []
       };
-      manualLoans = {};
-      showHiddenSchemes = false;
-      toggleHiddenBtn.classList.remove('active');
 
-      modelSearch.value = item.isNonTieup
-        ? `NON TIEUP - ${item.model}`
-        : (item.brand === 'MANUAL' ? item.model : `${item.brand} ${item.model}`);
-      clearSearch.classList.add('show');
-      resultsList.classList.remove('show');
+      activeProducts.push(product);
 
-      selectedTitle.textContent = item.isNonTieup
-        ? `NON TIEUP - ${item.model}`
-        : (item.brand === 'MANUAL' ? item.model : `${item.brand} - ${item.model}`);
-      selectedSub.textContent = item.category;
-
-      const baseMrp = item.mrp > 0 ? item.mrp : '';
-      inpMrp.value = baseMrp;
-      inpInv.value = baseMrp;
-      inpTargetDp.value = '';
-      inpMargin.value = '';
-      inpDealer.value = '';
-      inpExw.value = '';
-
-      updateVarField();
-      applyCategoryInsuranceLocks(item.category);
-      syncInsuranceSlabs(parseFloat(baseMrp) || 0, parseFloat(baseMrp) || 0, 'SELECT');
-
-      if (calcMode === 'search') {
-        pricingCard.classList.remove('hidden');
-        schemesCard.classList.remove('hidden');
-      }
-      recalcSchemes();
-
-      if (calcMode === 'search') {
-        setTimeout(() => {
-          pricingCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 80);
-      }
-    }
-
-    function resetSelectedModel() {
-      selectedItem = null;
-      manualLoans = {};
-      currentCalculated = [];
-      showHiddenSchemes = false;
       modelSearch.value = '';
       clearSearch.classList.remove('show');
       resultsList.classList.remove('show');
-      pricingCard.classList.add('hidden');
-      schemesCard.classList.add('hidden');
+
+      recalcAllProducts(true);
+      autoSaveSession();
+
+      setTimeout(() => {
+        const lastCard = productsStack.lastElementChild;
+        if (lastCard) lastCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 80);
     }
 
-    /* ==================== CORE CALCULATION ENGINE ==================== */
-    function recalcSchemes() {
-      if (!selectedItem) return;
-
+    /* ==================== MULTI-MODEL CALCULATION ENGINE ==================== */
+    function computeProductSchemes(prod) {
       const custType = customerTypeEl.value;
       const fee = CUSTOMER_TYPE_CHARGES[custType] || 850;
       const limitInput = parseFloat(approvedLimitEl.value) || 0;
@@ -2580,26 +2315,27 @@
       const ltvLimit = parseFloat(ltvPercentEl.value) || 100;
       const emiCap = parseFloat(emiCappingEl.value) || 0;
 
-      const inputMrp = parseFloat(inpMrp.value) || 0;
-      const inputInv = parseFloat(inpInv.value) || 0;
+      const inp = prod.inputs;
+      const inputMrp = parseFloat(inp.mrp) || 0;
+      const inputInv = parseFloat(inp.inv) || 0;
       const effectivePrice = inputInv > 0 ? inputInv : (inputMrp > 0 ? inputMrp : 0);
       const loanCapPrice = (inputMrp > 0 && inputInv > 0) ? Math.min(inputMrp, inputInv) : effectivePrice;
       const minAllowedLoanByInvoice = effectivePrice > 0 ? effectivePrice * 0.50 : 0;
 
-      const isPhone = isMobileDeviceCat(selectedItem.category);
-      const gtl = parseFloat(inpGtl.value) || 0;
-      const rfc = isPhone ? (parseFloat(inpRfc.value) || 0) : 0;
-      const exw = isPhone ? 0 : (parseFloat(inpExw.value) || 0);
+      const isPhone = isMobileDeviceCat(prod.category);
+      const gtl = parseFloat(inp.gtl) || 0;
+      const rfc = isPhone ? (parseFloat(inp.rfc) || 0) : 0;
+      const exw = isPhone ? 0 : (parseFloat(inp.exw) || 0);
       const insTotal = gtl + rfc + exw;
 
-      const targetDp = parseFloat(inpTargetDp.value) || 0;
-      const margin = parseFloat(inpMargin.value) || 0;
-      const dealer = parseFloat(inpDealer.value) || 0;
+      const targetDp = parseFloat(inp.targetDp) || 0;
+      const margin = parseFloat(inp.margin) || 0;
+      const dealer = parseFloat(inp.dealer) || 0;
       const totalFees = fee + margin + dealer;
 
       const results = [];
 
-      selectedItem.schemes.forEach((s, dIdx) => {
+      prod.schemes.forEach((s, dIdx) => {
         if (isExpiryStrExpired(s.expiryDateStr)) return;
 
         const isFixed = s.fixedEmi > 0;
@@ -2608,9 +2344,9 @@
         const roiRateDP = roiRate * s.advEmi;
 
         let dynamicPf = s.pf;
-        if (selectedItem.isNonTieup && !s.isManual) {
+        if (prod.isNonTieup && !s.isManual) {
           const checkAmt = effectivePrice > 0 ? effectivePrice : (currentLimit < 9999999 ? currentLimit : 0);
-          const slabPf = getNonTieupPfValue(selectedItem.category, checkAmt);
+          const slabPf = getNonTieupPfValue(prod.category, checkAmt);
           if (slabPf !== null) dynamicPf = slabPf;
         }
 
@@ -2637,12 +2373,15 @@
             if (targetDp > 0) {
               const numerator = targetDp - effectivePrice - (s.fixedEmi * s.advEmi) - dynamicPf - totalFees;
               const denominator = dbdRate + roiRateDP - 1;
-              const solvedLoan = numerator / denominator;
-              let solvedTenure = Math.floor(solvedLoan / s.fixedEmi);
-              if (solvedTenure > maxTotalTenure) solvedTenure = maxTotalTenure;
-              loan = Math.max(0, solvedTenure * s.fixedEmi);
-              if (loan > loanCapPrice) loan = loanCapPrice;
-              currentTenure = Math.floor(loan / s.fixedEmi) || 1;
+              if (denominator < 0) {
+                const solvedLoan = numerator / denominator;
+                let solvedTenure = Math.round(solvedLoan / s.fixedEmi);
+                if (solvedTenure > maxTotalTenure) solvedTenure = maxTotalTenure;
+                if (solvedTenure < 1) solvedTenure = 1;
+                loan = Math.max(0, solvedTenure * s.fixedEmi);
+                if (loan > loanCapPrice) loan = loanCapPrice;
+                currentTenure = Math.floor(loan / s.fixedEmi) || 1;
+              }
             }
           } else {
             currentTenure = s.tenure || 1;
@@ -2653,7 +2392,7 @@
           nbfcMaxL = (currentLimit * s.tenure) / (s.tenure - s.advEmi || 1);
           const checkPrice = effectivePrice > 0 ? loanCapPrice : 50000;
           let absoluteMax = Math.min(checkPrice, nbfcMaxL);
-          if (selectedItem.isNonTieup && s.maxLoan < 9999999) {
+          if (prod.isNonTieup && s.maxLoan < 9999999) {
             absoluteMax = Math.min(absoluteMax, s.maxLoan);
           }
           loan = absoluteMax;
@@ -2662,28 +2401,35 @@
             const advRate = s.advEmi / s.tenure;
             const numerator = targetDp - effectivePrice - dynamicPf - totalFees;
             const denominator = advRate + dbdRate + roiRateDP - 1;
-            const solvedLoan = numerator / denominator;
-            loan = Math.min(loan, Math.max(0, Math.floor(solvedLoan)));
+            if (denominator < 0) {
+              let solvedLoan = numerator / denominator;
+              if (solvedLoan > 0 && (solvedLoan / s.tenure) < 900) {
+                const numMin = targetDp - effectivePrice - (900 * s.advEmi) - dynamicPf - totalFees;
+                const denMin = dbdRate + roiRateDP - 1;
+                if (denMin < 0) solvedLoan = numMin / denMin;
+              }
+              loan = Math.min(loan, Math.max(0, Math.ceil(solvedLoan)));
+            }
           }
         }
 
-        const isManuallyOverridden = manualLoans[dIdx] !== undefined;
+        const isManuallyOverridden = prod.manualLoans && prod.manualLoans[dIdx] !== undefined;
         if (isManuallyOverridden) {
-          loan = manualLoans[dIdx];
+          loan = prod.manualLoans[dIdx];
           if (isFixed) {
             let calcTenure = Math.floor(loan / s.fixedEmi) || 1;
             if (effectivePrice > 0 && (calcTenure * s.fixedEmi) < minAllowedLoanByInvoice) {
               calcTenure = Math.ceil(minAllowedLoanByInvoice / s.fixedEmi);
             }
             loan = calcTenure * s.fixedEmi;
-            const maxB = Math.min(nbfcMaxL, selectedItem.isNonTieup ? s.maxLoan : 9999999, loanCapPrice > 0 ? loanCapPrice : 9999999);
+            const maxB = Math.min(nbfcMaxL, prod.isNonTieup ? s.maxLoan : 9999999, loanCapPrice > 0 ? loanCapPrice : 9999999);
             if (loan > maxB) {
               loan = Math.floor(maxB / s.fixedEmi) * s.fixedEmi;
               calcTenure = Math.floor(loan / s.fixedEmi) || 1;
             }
             currentTenure = calcTenure;
           } else {
-            const maxB = Math.min(loanCapPrice > 0 ? loanCapPrice : 9999999, nbfcMaxL, selectedItem.isNonTieup ? s.maxLoan : 9999999);
+            const maxB = Math.min(loanCapPrice > 0 ? loanCapPrice : 9999999, nbfcMaxL, prod.isNonTieup ? s.maxLoan : 9999999);
             if (loan > maxB) loan = maxB;
             if (effectivePrice > 0 && loan < minAllowedLoanByInvoice) loan = minAllowedLoanByInvoice;
           }
@@ -2735,7 +2481,7 @@
 
         const isLtvBreach = (!isFixed && curLTV > ltvLimit);
         const isInv50Breach = (effectivePrice > 0 && loan < minAllowedLoanByInvoice);
-        const isBoundBreach = (selectedItem.isNonTieup && !s.isManual && effectivePrice > 0 && (loan < s.minLoan || loan > s.maxLoan));
+        const isBoundBreach = (prod.isNonTieup && !s.isManual && effectivePrice > 0 && (loan < s.minLoan || loan > s.maxLoan));
 
         results.push({
           ...s,
@@ -2764,6 +2510,7 @@
         });
       });
 
+      // Top 4 Badges on visible eligible schemes only
       const validS = results.filter(d => !d.isBreached && !d.hidden && d.loan > 0);
       if (validS.length > 0) {
         const winDp = [...validS].sort((a, b) => a.dp - b.dp)[0];
@@ -2777,73 +2524,216 @@
         if (winBal && !winBal.badges.includes('BAL')) winBal.badges.push('BAL');
       }
 
-      currentCalculated = results;
-      renderSchemesTable();
+      prod.calculated = results;
     }
 
-    function renderSchemesTable() {
-      const isNT = selectedItem && selectedItem.isNonTieup;
-      const validCount = currentCalculated.filter(d => !d.isBreached && !d.hidden && d.loan > 0).length;
-      const hiddenCount = currentCalculated.filter(d => d.hidden).length;
-      eligibleSummary.textContent = `${validCount} / ${currentCalculated.length} Eligible`;
+    function getProductDisplayTitle(prod) {
+      if (prod.isNonTieup) return `NON TIEUP - ${prod.model}`;
+      if (prod.brand === 'MANUAL' || !prod.brand) return prod.model;
+      return `${prod.brand} - ${prod.model}`;
+    }
 
-      if (hiddenCount > 0) {
-        toggleHiddenBtn.classList.remove('hidden');
-        toggleHiddenBtn.textContent = `Hidden (${hiddenCount})`;
+    function recalcAllProducts(fullRender = false) {
+      activeProducts.forEach(p => computeProductSchemes(p));
+      if (fullRender) {
+        renderProductsStack();
       } else {
-        showHiddenSchemes = false;
-        toggleHiddenBtn.classList.remove('active');
-        toggleHiddenBtn.classList.add('hidden');
+        activeProducts.forEach((_, pIdx) => updateProductTableOnly(pIdx));
+      }
+    }
+
+    function updateMultiActionBar() {
+      if (activeProducts.length === 0) {
+        multiActionBar.classList.add('hidden');
+      } else {
+        multiActionBar.classList.remove('hidden');
+        multiBarInfo.textContent = `${activeProducts.length} ${activeProducts.length === 1 ? 'Model' : 'Models'} Active`;
+      }
+    }
+
+    function renderProductsStack() {
+      updateMultiActionBar();
+      productsStack.innerHTML = '';
+
+      activeProducts.forEach((prod, pIdx) => {
+        const card = document.createElement('section');
+        card.className = 'card product-card' + (prod.collapsed ? ' collapsed' : '');
+        card.dataset.pidx = pIdx;
+
+        const isPhone = isMobileDeviceCat(prod.category);
+        const inp = prod.inputs;
+        const mNum = parseFloat(inp.mrp) || 0;
+        const iNum = parseFloat(inp.inv) || 0;
+        const varVal = (iNum > mNum && mNum > 0) ? (iNum - mNum) : 0;
+        const rfcSlab = getRfcSlabValue(mNum);
+        const rfcVal = isPhone ? (parseFloat(inp.rfc) || 0) : 0;
+        const gtlVal = parseFloat(inp.gtl) || 0;
+
+        const validCount = prod.calculated.filter(d => !d.isBreached && !d.hidden && d.loan > 0).length;
+        const title = getProductDisplayTitle(prod);
+        const invPreview = (iNum || mNum) > 0 ? ` • ₹${Math.round(iNum || mNum).toLocaleString('en-IN')}` : '';
+
+        const gtlOptions = [0, 699, 1099, 1199, 1499, 1799, 2398]
+          .map(v => `<option value="${v}" ${gtlVal === v ? 'selected' : ''}>${v}</option>`).join('');
+
+        let rfcOptions = `<option value="0" ${rfcVal === 0 ? 'selected' : ''}>0</option>`;
+        if (isPhone && rfcSlab > 0) {
+          rfcOptions += `<option value="${rfcSlab}" ${rfcVal === rfcSlab ? 'selected' : ''}>${rfcSlab}</option>`;
+        }
+
+        card.innerHTML = `
+          <div class="product-header" data-action="toggle-collapse" data-pidx="${pIdx}">
+            <div class="product-header-left">
+              <span class="toggle-arrow">${prod.collapsed ? '&#9654;' : '&#9660;'}</span>
+              <div style="min-width:0;">
+                <div class="model-title">${escapeHtml(title)}</div>
+                <div class="model-sub" id="psub_${pIdx}">${escapeHtml(prod.category)}${invPreview} &bull; ${validCount}/${prod.calculated.length} Eligible</div>
+              </div>
+            </div>
+            <button type="button" class="btn-sm danger-soft" data-action="remove-prod" data-pidx="${pIdx}">Remove</button>
+          </div>
+
+          <div class="product-body">
+            <div class="grid-3" style="margin-bottom: 10px;">
+              <div class="field">
+                <label>MRP (₹)</label>
+                <input type="number" inputmode="numeric" placeholder="0" value="${escapeHtml(inp.mrp)}" data-pfield="mrp" data-pidx="${pIdx}" />
+              </div>
+              <div class="field">
+                <label>Invoice (₹)</label>
+                <input type="number" inputmode="numeric" placeholder="0" value="${escapeHtml(inp.inv)}" data-pfield="inv" data-pidx="${pIdx}" />
+              </div>
+              <div class="field">
+                <label>VAR (₹)</label>
+                <input type="number" readonly value="${varVal}" id="pvar_${pIdx}" class="${varVal > 0 ? 'var-alert' : ''}" />
+              </div>
+            </div>
+
+            <div class="grid-3" style="margin-bottom: 10px;">
+              <div class="field">
+                <label>GTL (₹)</label>
+                <select id="pgtl_${pIdx}" data-pfield="gtl" data-pidx="${pIdx}">${gtlOptions}</select>
+              </div>
+              <div class="field">
+                <label>RFC (₹)</label>
+                <select id="prfc_${pIdx}" data-pfield="rfc" data-pidx="${pIdx}" ${isPhone ? '' : 'disabled'}>${rfcOptions}</select>
+              </div>
+              <div class="field">
+                <label>EXW (₹)</label>
+                <input type="number" inputmode="numeric" placeholder="0" value="${isPhone ? '' : escapeHtml(inp.exw)}" data-pfield="exw" data-pidx="${pIdx}" ${isPhone ? 'disabled' : ''} />
+              </div>
+            </div>
+
+            <div class="grid-3">
+              <div class="field">
+                <label>Target DP (₹)</label>
+                <input type="number" inputmode="numeric" placeholder="0" value="${escapeHtml(inp.targetDp)}" data-pfield="targetDp" data-pidx="${pIdx}" />
+              </div>
+              <div class="field">
+                <label>Margin (₹)</label>
+                <input type="number" inputmode="numeric" placeholder="0" value="${escapeHtml(inp.margin)}" data-pfield="margin" data-pidx="${pIdx}" />
+              </div>
+              <div class="field">
+                <label>Dealer (₹)</label>
+                <input type="number" inputmode="numeric" placeholder="0" value="${escapeHtml(inp.dealer)}" data-pfield="dealer" data-pidx="${pIdx}" />
+              </div>
+            </div>
+
+            <div class="toolbar">
+              <select class="tool-select" data-action="sort-select" data-pidx="${pIdx}">
+                <option value="dp" ${prod.sortState.key === 'dp' ? 'selected' : ''}>Sort: Lowest DP</option>
+                <option value="emi" ${prod.sortState.key === 'emi' ? 'selected' : ''}>Sort: Lowest EMI</option>
+                <option value="currentTenure" ${prod.sortState.key === 'currentTenure' ? 'selected' : ''}>Sort: Tenure</option>
+                <option value="daily" ${prod.sortState.key === 'daily' ? 'selected' : ''}>Sort: Daily EMI</option>
+              </select>
+              <button type="button" class="btn-sm success" data-action="add-manual" data-pidx="${pIdx}">+ Manual</button>
+              <button type="button" class="btn-sm ${prod.showDetails ? 'active' : ''}" data-action="toggle-details" data-pidx="${pIdx}">Details</button>
+              <button type="button" class="btn-sm ${prod.showAll ? 'active' : ''}" data-action="toggle-all" data-pidx="${pIdx}">Show All</button>
+              <button type="button" class="btn-sm active" data-action="single-quote" data-pidx="${pIdx}">Quote</button>
+            </div>
+
+            <div class="table-wrap">
+              <table id="ptable_${pIdx}" class="schemes-table ${prod.showDetails ? 'show-details' : ''}">
+                <thead id="pthead_${pIdx}"></thead>
+                <tbody id="ptbody_${pIdx}"></tbody>
+              </table>
+            </div>
+          </div>
+        `;
+
+        productsStack.appendChild(card);
+        updateProductTableOnly(pIdx);
+      });
+    }
+
+    function updateProductTableOnly(pIdx) {
+      const prod = activeProducts[pIdx];
+      if (!prod) return;
+
+      const thead = document.getElementById(`pthead_${pIdx}`);
+      const tbody = document.getElementById(`ptbody_${pIdx}`);
+      const table = document.getElementById(`ptable_${pIdx}`);
+      const subEl = document.getElementById(`psub_${pIdx}`);
+      if (!thead || !tbody) return;
+
+      const isNT = prod.isNonTieup;
+      const validCount = prod.calculated.filter(d => !d.isBreached && !d.hidden && d.loan > 0).length;
+      const mNum = parseFloat(prod.inputs.mrp) || 0;
+      const iNum = parseFloat(prod.inputs.inv) || 0;
+      const invPreview = (iNum || mNum) > 0 ? ` • ₹${Math.round(iNum || mNum).toLocaleString('en-IN')}` : '';
+      if (subEl) {
+        subEl.textContent = `${prod.category}${invPreview} • ${validCount}/${prod.calculated.length} Eligible`;
       }
 
+      const sortState = prod.sortState || { key: 'dp', dir: 'asc' };
       const arrow = (k) => sortState.key === k ? (sortState.dir === 'asc' ? ' ▲' : ' ▼') : '';
 
-      schemesTableHead.innerHTML = `
+      thead.innerHTML = `
         <tr>
-          <th data-sort="currentTenure">T/A${arrow('currentTenure')}</th>
-          <th data-sort="dp">Net DP${arrow('dp')}</th>
-          <th data-sort="emi">EMI${arrow('emi')}</th>
-          <th data-sort="inst">M${arrow('inst')}</th>
-          <th data-sort="daily">Daily${arrow('daily')}</th>
-          <th data-sort="loan">Loan${arrow('loan')}</th>
-          <th class="detail-col" data-sort="curLTV">LTV%${arrow('curLTV')}</th>
-          <th class="detail-col" data-sort="dbd">DBD%${arrow('dbd')}</th>
-          <th class="detail-col" data-sort="pf">PF${arrow('pf')}</th>
-          <th class="detail-col" data-sort="roi">ROI%${arrow('roi')}</th>
-          <th class="detail-col" data-sort="fixedEmi">Fixed${arrow('fixedEmi')}</th>
-          <th class="detail-col" data-sort="netDisb">Net Disb${arrow('netDisb')}</th>
-          <th class="detail-col" data-sort="extra">Extra${arrow('extra')}</th>
+          <th data-sort="currentTenure" data-pidx="${pIdx}">T/A${arrow('currentTenure')}</th>
+          <th data-sort="dp" data-pidx="${pIdx}">Net DP${arrow('dp')}</th>
+          <th data-sort="emi" data-pidx="${pIdx}">EMI${arrow('emi')}</th>
+          <th data-sort="inst" data-pidx="${pIdx}">M${arrow('inst')}</th>
+          <th data-sort="daily" data-pidx="${pIdx}">Daily${arrow('daily')}</th>
+          <th data-sort="loan" data-pidx="${pIdx}">Loan${arrow('loan')}</th>
+          <th class="detail-col" data-sort="curLTV" data-pidx="${pIdx}">LTV%${arrow('curLTV')}</th>
+          <th class="detail-col" data-sort="dbd" data-pidx="${pIdx}">DBD%${arrow('dbd')}</th>
+          <th class="detail-col" data-sort="pf" data-pidx="${pIdx}">PF${arrow('pf')}</th>
+          <th class="detail-col" data-sort="roi" data-pidx="${pIdx}">ROI%${arrow('roi')}</th>
+          <th class="detail-col" data-sort="fixedEmi" data-pidx="${pIdx}">Fixed${arrow('fixedEmi')}</th>
+          <th class="detail-col" data-sort="netDisb" data-pidx="${pIdx}">Net Disb${arrow('netDisb')}</th>
+          <th class="detail-col" data-sort="extra" data-pidx="${pIdx}">Extra${arrow('extra')}</th>
           ${isNT
-            ? `<th class="detail-col" data-sort="minLoan">Min${arrow('minLoan')}</th>
-               <th class="detail-col" data-sort="maxLoan">Max${arrow('maxLoan')}</th>`
-            : `<th class="detail-col" data-sort="nbfcMaxL">NBFC Lmt${arrow('nbfcMaxL')}</th>`
+            ? `<th class="detail-col" data-sort="minLoan" data-pidx="${pIdx}">Min${arrow('minLoan')}</th>
+               <th class="detail-col" data-sort="maxLoan" data-pidx="${pIdx}">Max${arrow('maxLoan')}</th>`
+            : `<th class="detail-col" data-sort="nbfcMaxL" data-pidx="${pIdx}">NBFC Lmt${arrow('nbfcMaxL')}</th>`
           }
           <th>Act</th>
         </tr>
       `;
 
-      let list = currentCalculated.filter(d => {
-        if (d.hidden) return showHiddenSchemes;
-        if (showAllSchemes) return true;
+      // Hidden rows stay right in place (do NOT filter out hidden rows and do NOT push them to bottom)
+      let list = prod.calculated.filter(d => {
+        if (prod.showAll) return true;
         return !d.isBreached && d.loan > 0;
       });
 
       list.sort((a, b) => {
-        if (a.hidden !== b.hidden) return a.hidden ? 1 : -1;
         if (a.isBreached !== b.isBreached) return a.isBreached ? 1 : -1;
         const va = a[sortState.key] ?? 0;
         const vb = b[sortState.key] ?? 0;
-        return sortState.dir === 'asc' ? (va - vb) : (vb - va);
+        if (va !== vb) return sortState.dir === 'asc' ? (va - vb) : (vb - va);
+        return a.dIdx - b.dIdx;
       });
 
-      schemesTable.classList.toggle('show-details', showDetails);
+      if (table) table.classList.toggle('show-details', prod.showDetails);
 
       const totalCols = isNT ? 16 : 15;
       if (list.length === 0) {
-        schemesTableBody.innerHTML = `
+        tbody.innerHTML = `
           <tr>
             <td colspan="${totalCols}" class="empty-msg">
-              No visible eligible schemes. Tap "+ Manual", "Show All", or "Hidden" to view more.
+              No eligible schemes. Tap "+ Manual" or "Show All" to inspect.
             </td>
           </tr>
         `;
@@ -2857,7 +2747,7 @@
         BAL: { text: 'Best Value', cls: 'tag-bal', rowCls: 'row-bal' }
       };
 
-      schemesTableBody.innerHTML = list.map(d => {
+      tbody.innerHTML = list.map(d => {
         let rowCls = '';
         if (d.hidden) rowCls = 'row-hidden';
         else if (d.isBreached) rowCls = 'row-breach';
@@ -2876,8 +2766,8 @@
 
         const stepSize = d.isFixed ? d.fixedEmi : 1000;
         const visibilityBtn = d.hidden
-          ? `<button type="button" class="show-btn" data-toggle-hide="${d.dIdx}">Show</button>`
-          : `<button type="button" class="hide-btn" data-toggle-hide="${d.dIdx}">Hide</button>`;
+          ? `<button type="button" class="show-btn" data-action="toggle-hide" data-pidx="${pIdx}" data-didx="${d.dIdx}">Show</button>`
+          : `<button type="button" class="hide-btn" data-action="toggle-hide" data-pidx="${pIdx}" data-didx="${d.dIdx}">Hide</button>`;
 
         return `
           <tr class="${rowCls}">
@@ -2891,9 +2781,9 @@
             <td class="cell-daily">₹${Math.round(d.daily).toLocaleString('en-IN')}</td>
             <td>
               <div class="stepper">
-                <button type="button" class="step-btn" data-step="${-stepSize}" data-didx="${d.dIdx}">−</button>
-                <input type="number" class="step-inp" data-loan-inp="${d.dIdx}" value="${Math.floor(d.loan)}" inputmode="numeric" />
-                <button type="button" class="step-btn" data-step="${stepSize}" data-didx="${d.dIdx}">+</button>
+                <button type="button" class="step-btn" data-action="step-loan" data-step="${-stepSize}" data-pidx="${pIdx}" data-didx="${d.dIdx}">−</button>
+                <input type="number" class="step-inp" data-loan-inp="${pIdx}_${d.dIdx}" data-pidx="${pIdx}" data-didx="${d.dIdx}" value="${Math.floor(d.loan)}" inputmode="numeric" />
+                <button type="button" class="step-btn" data-action="step-loan" data-step="${stepSize}" data-pidx="${pIdx}" data-didx="${d.dIdx}">+</button>
               </div>
             </td>
             <td class="detail-col">${Math.round(d.curLTV)}%</td>
@@ -2916,7 +2806,7 @@
             }
             <td>
               <div class="act-group">
-                <button type="button" class="copy-btn" data-copy-idx="${d.dIdx}">Copy</button>
+                <button type="button" class="copy-btn" data-action="copy-scheme" data-pidx="${pIdx}" data-didx="${d.dIdx}">Copy</button>
                 ${visibilityBtn}
               </div>
             </td>
@@ -2925,26 +2815,51 @@
       }).join('');
     }
 
-    /* ==================== TABLE SORT, STEPPER, HIDE & COPY ==================== */
-    schemesTableHead.addEventListener('click', (e) => {
-      const th = e.target.closest('th[data-sort]');
-      if (!th) return;
-      const key = th.dataset.sort;
-      if (sortState.key === key) {
-        sortState.dir = sortState.dir === 'asc' ? 'desc' : 'asc';
-      } else {
-        sortState.key = key;
-        sortState.dir = key === 'currentTenure' ? 'desc' : 'asc';
-      }
-      if (['dp', 'emi', 'currentTenure', 'daily'].includes(key)) {
-        sortSelect.value = key;
-      }
-      renderSchemesTable();
-    });
+    /* ==================== DELEGATED EVENTS FOR MULTI-MODEL STACK ==================== */
+    function syncProductInsuranceUI(pIdx, mode) {
+      const prod = activeProducts[pIdx];
+      if (!prod) return;
+      const isPhone = isMobileDeviceCat(prod.category);
+      const m = parseFloat(prod.inputs.mrp) || 0;
+      const i = parseFloat(prod.inputs.inv) || 0;
+      const base = mode === 'MRP' ? (i > 0 ? i : m) : (i > 0 ? i : m);
 
-    function handleManualLoanChange(dIdx, rawVal) {
-      const inputMrp = parseFloat(inpMrp.value) || 0;
-      const inputInv = parseFloat(inpInv.value) || 0;
+      const varEl = document.getElementById(`pvar_${pIdx}`);
+      const v = (i > m && m > 0) ? (i - m) : 0;
+      if (varEl) {
+        varEl.value = v;
+        varEl.classList.toggle('var-alert', v > 0);
+      }
+
+      if (mode === 'INV' || (mode === 'MRP' && i === 0)) {
+        const gtl = getGtlSlabValue(base);
+        prod.inputs.gtl = gtl;
+        const gtlEl = document.getElementById(`pgtl_${pIdx}`);
+        if (gtlEl) gtlEl.value = String(gtl);
+      }
+
+      const rfcSlab = getRfcSlabValue(m);
+      const rfcEl = document.getElementById(`prfc_${pIdx}`);
+      if (rfcEl) {
+        const wasSel = isPhone && parseFloat(prod.inputs.rfc) > 0;
+        rfcEl.innerHTML = '<option value="0">0</option>';
+        if (isPhone && rfcSlab > 0) {
+          const opt = document.createElement('option');
+          opt.value = String(rfcSlab);
+          opt.textContent = String(rfcSlab);
+          rfcEl.appendChild(opt);
+        }
+        const nextRfc = (wasSel && rfcSlab > 0) ? rfcSlab : 0;
+        prod.inputs.rfc = nextRfc;
+        rfcEl.value = String(nextRfc);
+      }
+    }
+
+    function handleProductLoanEdit(pIdx, dIdx, rawVal) {
+      const prod = activeProducts[pIdx];
+      if (!prod) return;
+      const inputMrp = parseFloat(prod.inputs.mrp) || 0;
+      const inputInv = parseFloat(prod.inputs.inv) || 0;
       const effectivePrice = inputInv > 0 ? inputInv : (inputMrp > 0 ? inputMrp : 0);
       const minLoan50 = effectivePrice > 0 ? effectivePrice * 0.50 : 0;
 
@@ -2958,41 +2873,166 @@
         showToast('Loan cannot exceed invoice amount', 'error');
       }
 
-      manualLoans[dIdx] = loan;
-      syncInsuranceSlabs(inputMrp, loan, 'LOAN');
-      recalcSchemes();
+      prod.manualLoans[dIdx] = loan;
+      const gtl = getGtlSlabValue(loan);
+      prod.inputs.gtl = gtl;
+      const gtlEl = document.getElementById(`pgtl_${pIdx}`);
+      if (gtlEl) gtlEl.value = String(gtl);
+
+      computeProductSchemes(prod);
+      updateProductTableOnly(pIdx);
+      autoSaveSession();
     }
 
-    schemesTableBody.addEventListener('click', (e) => {
-      const stepBtn = e.target.closest('.step-btn');
-      if (stepBtn) {
-        const dIdx = parseInt(stepBtn.dataset.didx, 10);
-        const delta = parseFloat(stepBtn.dataset.step) || 0;
-        const inp = schemesTableBody.querySelector(`input[data-loan-inp="${dIdx}"]`);
-        const cur = parseFloat(inp ? inp.value : 0) || 0;
-        handleManualLoanChange(dIdx, Math.max(0, cur + delta));
+    productsStack.addEventListener('input', (e) => {
+      const fieldEl = e.target.closest('[data-pfield]');
+      if (!fieldEl) return;
+      const pIdx = parseInt(fieldEl.dataset.pidx, 10);
+      const field = fieldEl.dataset.pfield;
+      const prod = activeProducts[pIdx];
+      if (!prod) return;
+
+      prod.inputs[field] = fieldEl.value;
+
+      if (field === 'mrp' || field === 'inv') {
+        prod.manualLoans = {};
+        syncProductInsuranceUI(pIdx, field === 'mrp' ? 'MRP' : 'INV');
+      } else if (field === 'targetDp') {
+        prod.manualLoans = {};
+      }
+
+      computeProductSchemes(prod);
+      updateProductTableOnly(pIdx);
+      autoSaveSession();
+    });
+
+    productsStack.addEventListener('change', (e) => {
+      const loanInp = e.target.closest('input[data-loan-inp]');
+      if (loanInp) {
+        const pIdx = parseInt(loanInp.dataset.pidx, 10);
+        const dIdx = parseInt(loanInp.dataset.didx, 10);
+        handleProductLoanEdit(pIdx, dIdx, loanInp.value);
         return;
       }
 
-      const hideBtn = e.target.closest('button[data-toggle-hide]');
-      if (hideBtn) {
-        const dIdx = parseInt(hideBtn.dataset.toggleHide, 10);
-        if (selectedItem && selectedItem.schemes[dIdx]) {
-          selectedItem.schemes[dIdx].hidden = !selectedItem.schemes[dIdx].hidden;
-          const isNowHidden = selectedItem.schemes[dIdx].hidden;
-          recalcSchemes();
-          showToast(isNowHidden ? 'Scheme hidden' : 'Scheme restored', isNowHidden ? '' : 'success');
+      const sortSel = e.target.closest('select[data-action="sort-select"]');
+      if (sortSel) {
+        const pIdx = parseInt(sortSel.dataset.pidx, 10);
+        const prod = activeProducts[pIdx];
+        if (!prod) return;
+        prod.sortState = {
+          key: sortSel.value,
+          dir: sortSel.value === 'currentTenure' ? 'desc' : 'asc'
+        };
+        updateProductTableOnly(pIdx);
+        return;
+      }
+
+      const fieldSel = e.target.closest('select[data-pfield]');
+      if (fieldSel) {
+        const pIdx = parseInt(fieldSel.dataset.pidx, 10);
+        const field = fieldSel.dataset.pfield;
+        const prod = activeProducts[pIdx];
+        if (!prod) return;
+        prod.inputs[field] = fieldSel.value;
+        computeProductSchemes(prod);
+        updateProductTableOnly(pIdx);
+        autoSaveSession();
+      }
+    });
+
+    productsStack.addEventListener('click', (e) => {
+      // Remove Product
+      const remBtn = e.target.closest('button[data-action="remove-prod"]');
+      if (remBtn) {
+        e.stopPropagation();
+        const pIdx = parseInt(remBtn.dataset.pidx, 10);
+        activeProducts.splice(pIdx, 1);
+        renderProductsStack();
+        autoSaveSession();
+        return;
+      }
+
+      // Collapse / Expand Product Card
+      const header = e.target.closest('[data-action="toggle-collapse"]');
+      if (header && !e.target.closest('button')) {
+        const pIdx = parseInt(header.dataset.pidx, 10);
+        const prod = activeProducts[pIdx];
+        if (!prod) return;
+        prod.collapsed = !prod.collapsed;
+        const card = header.closest('.product-card');
+        if (card) {
+          card.classList.toggle('collapsed', prod.collapsed);
+          const arrow = card.querySelector('.toggle-arrow');
+          if (arrow) arrow.innerHTML = prod.collapsed ? '&#9654;' : '&#9660;';
         }
         return;
       }
 
-      const copyBtn = e.target.closest('.copy-btn');
-      if (copyBtn) {
-        const dIdx = parseInt(copyBtn.dataset.copyIdx, 10);
-        const d = currentCalculated.find(x => x.dIdx === dIdx);
+      // Table Header Sort
+      const th = e.target.closest('th[data-sort]');
+      if (th) {
+        const pIdx = parseInt(th.dataset.pidx, 10);
+        const key = th.dataset.sort;
+        const prod = activeProducts[pIdx];
+        if (!prod) return;
+        if (prod.sortState.key === key) {
+          prod.sortState.dir = prod.sortState.dir === 'asc' ? 'desc' : 'asc';
+        } else {
+          prod.sortState.key = key;
+          prod.sortState.dir = key === 'currentTenure' ? 'desc' : 'asc';
+        }
+        const card = th.closest('.product-card');
+        const sel = card ? card.querySelector('select[data-action="sort-select"]') : null;
+        if (sel && ['dp', 'emi', 'currentTenure', 'daily'].includes(key)) sel.value = key;
+        updateProductTableOnly(pIdx);
+        return;
+      }
+
+      // Toolbar Buttons
+      const btn = e.target.closest('button[data-action]');
+      if (!btn) return;
+      const action = btn.dataset.action;
+      const pIdx = parseInt(btn.dataset.pidx, 10);
+      const prod = activeProducts[pIdx];
+      if (!prod) return;
+
+      if (action === 'add-manual') {
+        openManualSchemeModal(pIdx);
+      } else if (action === 'toggle-details') {
+        prod.showDetails = !prod.showDetails;
+        btn.classList.toggle('active', prod.showDetails);
+        const table = document.getElementById(`ptable_${pIdx}`);
+        if (table) table.classList.toggle('show-details', prod.showDetails);
+      } else if (action === 'toggle-all') {
+        prod.showAll = !prod.showAll;
+        btn.classList.toggle('active', prod.showAll);
+        updateProductTableOnly(pIdx);
+      } else if (action === 'single-quote') {
+        generateQuoteImage([pIdx]);
+      } else if (action === 'step-loan') {
+        const dIdx = parseInt(btn.dataset.didx, 10);
+        const delta = parseFloat(btn.dataset.step) || 0;
+        const inp = productsStack.querySelector(`input[data-loan-inp="${pIdx}_${dIdx}"]`);
+        const cur = parseFloat(inp ? inp.value : 0) || 0;
+        handleProductLoanEdit(pIdx, dIdx, Math.max(0, cur + delta));
+      } else if (action === 'toggle-hide') {
+        // Hide / Show right in place!
+        const dIdx = parseInt(btn.dataset.didx, 10);
+        if (prod.schemes[dIdx]) {
+          prod.schemes[dIdx].hidden = !prod.schemes[dIdx].hidden;
+          const isNowHidden = prod.schemes[dIdx].hidden;
+          computeProductSchemes(prod);
+          updateProductTableOnly(pIdx);
+          autoSaveSession();
+          showToast(isNowHidden ? 'Scheme hidden in place' : 'Scheme shown', isNowHidden ? '' : 'success');
+        }
+      } else if (action === 'copy-scheme') {
+        const dIdx = parseInt(btn.dataset.didx, 10);
+        const d = prod.calculated.find(x => x.dIdx === dIdx);
         if (!d) return;
-        const invAmt = (parseFloat(inpInv.value) || 0) || (parseFloat(inpMrp.value) || 0);
-        let text = `*${selectedTitle.textContent}*\n`;
+        const invAmt = (parseFloat(prod.inputs.inv) || 0) || (parseFloat(prod.inputs.mrp) || 0);
+        let text = `*${getProductDisplayTitle(prod)}*\n`;
         if (invAmt > 0) text += `Invoice Amount: ₹${Math.round(invAmt).toLocaleString('en-IN')}\n`;
         text += `Scheme: ${d.currentTenure}/${d.advEmi}\n`;
         text += `Loan: ₹${Math.floor(d.loan).toLocaleString('en-IN')}\n`;
@@ -3001,59 +3041,81 @@
         text += `Daily EMI: ₹${Math.round(d.daily).toLocaleString('en-IN')}`;
 
         copyText(text, () => {
-          copyBtn.textContent = 'Done';
-          setTimeout(() => { copyBtn.textContent = 'Copy'; }, 1500);
+          btn.textContent = 'Done';
+          setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
           showToast('Scheme copied', 'success');
         });
       }
     });
 
-    schemesTableBody.addEventListener('change', (e) => {
-      const inp = e.target.closest('.step-inp');
-      if (!inp) return;
-      const dIdx = parseInt(inp.dataset.loanInp, 10);
-      handleManualLoanChange(dIdx, inp.value);
-    });
-
-    function copyText(text, onSuccess) {
-      if (navigator.clipboard && window.isSecureContext) {
-        navigator.clipboard.writeText(text).then(onSuccess).catch(() => fallbackCopy(text, onSuccess));
-      } else {
-        fallbackCopy(text, onSuccess);
-      }
+    /* ==================== MANUAL SCHEME MODAL (PER MODEL) ==================== */
+    function openManualSchemeModal(pIdx) {
+      manualModalTargetPIdx = pIdx;
+      manTenure.value = '';
+      manAdv.value = '';
+      manDbd.value = '';
+      manPf.value = '';
+      manRoi.value = '';
+      manFixed.value = '';
+      manualModal.classList.add('show');
+      setTimeout(() => manTenure.focus(), 60);
     }
 
-    function fallbackCopy(text, onSuccess) {
-      const ta = document.createElement('textarea');
-      ta.value = text;
-      ta.style.position = 'fixed';
-      ta.style.left = '-9999px';
-      document.body.appendChild(ta);
-      ta.select();
-      try {
-        document.execCommand('copy');
-        if (onSuccess) onSuccess();
-      } catch (e) {
-        showToast('Copy failed', 'error');
-      }
-      document.body.removeChild(ta);
+    function closeManualModal() {
+      manualModal.classList.remove('show');
+      manualModalTargetPIdx = -1;
     }
 
-    /* ==================== QUOTATION IMAGE GENERATOR ==================== */
-    function generateQuoteImage() {
-      const validS = currentCalculated.filter(d => !d.isBreached && !d.hidden && d.loan > 0);
-      if (validS.length === 0) {
-        showToast('No visible eligible schemes to export', 'error');
+    document.getElementById('closeManualModalBtn').addEventListener('click', closeManualModal);
+    document.getElementById('cancelManualBtn').addEventListener('click', closeManualModal);
+
+    document.getElementById('saveManualSchemeBtn').addEventListener('click', () => {
+      const prod = activeProducts[manualModalTargetPIdx];
+      if (!prod) return;
+
+      const tenure = parseInt(manTenure.value, 10) || 0;
+      const advEmi = parseInt(manAdv.value, 10) || 0;
+      const dbd = parseFloat(manDbd.value) || 0;
+      const pf = parseInt(manPf.value, 10) || 0;
+      const roi = parseFloat(manRoi.value) || 0;
+      const fixedEmi = parseFloat(manFixed.value) || 0;
+
+      if (tenure <= 0 && fixedEmi <= 0) {
+        showToast('Enter Total Tenure or Fixed EMI', 'error');
         return;
       }
 
-      const activeCust = customerQueue.find(c => c.id === activeQueueId);
-      const headerName = activeCust ? activeCust.name.toUpperCase() : 'CUSTOMER QUOTATION';
+      prod.schemes.push({
+        tenure,
+        advEmi,
+        dbd,
+        pf,
+        roi,
+        fixedEmi,
+        minLoan: 0,
+        maxLoan: 9999999,
+        expiryDateStr: '',
+        isManual: true,
+        hidden: false
+      });
+
+      computeProductSchemes(prod);
+      updateProductTableOnly(manualModalTargetPIdx);
+      autoSaveSession();
+      closeManualModal();
+      showToast('Manual scheme added', 'success');
+    });
+
+    /* ==================== MULTI-MODEL QUOTATION IMAGE GENERATOR ==================== */
+    function generateQuoteImage(indices) {
+      const targetIndices = Array.isArray(indices) && indices.length > 0
+        ? indices
+        : activeProducts.map((_, i) => i);
+
       const limitVal = parseFloat(approvedLimitEl.value) || 0;
       const ltvVal = parseFloat(ltvPercentEl.value) || 100;
       const capVal = parseFloat(emiCappingEl.value) || 0;
       const custType = customerTypeEl.value;
-      const invAmt = (parseFloat(inpInv.value) || 0) || (parseFloat(inpMrp.value) || 0);
 
       const badgeMeta = {
         DP: { text: 'LOWEST DP', bg: '#059669', rowBg: '#ecfdf5', accent: '#059669' },
@@ -3062,49 +3124,87 @@
         BAL: { text: 'BEST VALUE', bg: '#7c3aed', rowBg: '#f5f3ff', accent: '#7c3aed' }
       };
 
-      const badged = validS.filter(d => d.badges.length > 0).sort((a, b) => a.dp - b.dp);
-      const topIds = new Set(badged.map(d => d.dIdx));
-      const others = validS.filter(d => !topIds.has(d.dIdx)).sort((a, b) => a.dp - b.dp);
+      let blocksHtml = '';
+      let hasAnyValid = false;
 
-      const topRows = badged.map(d => {
-        const primary = badgeMeta[d.badges[0]];
-        const bHtml = d.badges.map(b =>
-          `<div style="background:${badgeMeta[b].bg}; color:#fff; font-size:10px; font-weight:800; padding:2px 6px; border-radius:4px; display:inline-block; margin-top:4px;">${badgeMeta[b].text}</div>`
-        ).join(' ');
-        return `
-          <tr style="background:${primary.rowBg}; border-bottom:2px solid #cbd5e1; border-left:6px solid ${primary.accent};">
-            <td style="padding:12px 6px; font-weight:800; color:#0f172a;">
-              <div style="font-size:17px;">${d.currentTenure}/${d.advEmi}</div>
-              ${bHtml}
-            </td>
-            <td style="padding:12px 6px; color:#059669; font-size:17px; font-weight:900;">₹${Math.round(d.dp).toLocaleString('en-IN')}</td>
-            <td style="padding:12px 6px; color:#2563eb; font-size:17px; font-weight:900;">₹${Math.round(d.emi).toLocaleString('en-IN')}</td>
-            <td style="padding:12px 6px; font-size:16px; font-weight:800; color:#0f172a;">${d.inst}</td>
-            <td style="padding:12px 6px; color:#ea580c; font-size:16px; font-weight:900;">₹${Math.round(d.daily).toLocaleString('en-IN')}</td>
+      targetIndices.forEach(pIdx => {
+        const prod = activeProducts[pIdx];
+        if (!prod) return;
+        const validS = prod.calculated.filter(d => !d.isBreached && !d.hidden && d.loan > 0);
+        if (validS.length === 0) return;
+        hasAnyValid = true;
+
+        const invAmt = (parseFloat(prod.inputs.inv) || 0) || (parseFloat(prod.inputs.mrp) || 0);
+        const badged = validS.filter(d => d.badges.length > 0).sort((a, b) => a.dp - b.dp);
+        const topIds = new Set(badged.map(d => d.dIdx));
+        const others = validS.filter(d => !topIds.has(d.dIdx)).sort((a, b) => a.dp - b.dp);
+
+        const topRows = badged.map(d => {
+          const primary = badgeMeta[d.badges[0]];
+          const bHtml = d.badges.map(b =>
+            `<div style="background:${badgeMeta[b].bg}; color:#fff; font-size:10px; font-weight:800; padding:2px 6px; border-radius:4px; display:inline-block; margin-top:4px;">${badgeMeta[b].text}</div>`
+          ).join(' ');
+          return `
+            <tr style="background:${primary.rowBg}; border-bottom:2px solid #cbd5e1; border-left:6px solid ${primary.accent};">
+              <td style="padding:12px 6px; font-weight:800; color:#0f172a;">
+                <div style="font-size:17px;">${d.currentTenure}/${d.advEmi}</div>
+                ${bHtml}
+              </td>
+              <td style="padding:12px 6px; color:#059669; font-size:17px; font-weight:900;">₹${Math.round(d.dp).toLocaleString('en-IN')}</td>
+              <td style="padding:12px 6px; color:#2563eb; font-size:17px; font-weight:900;">₹${Math.round(d.emi).toLocaleString('en-IN')}</td>
+              <td style="padding:12px 6px; font-size:16px; font-weight:800; color:#0f172a;">${d.inst}</td>
+              <td style="padding:12px 6px; color:#ea580c; font-size:16px; font-weight:900;">₹${Math.round(d.daily).toLocaleString('en-IN')}</td>
+            </tr>
+          `;
+        }).join('');
+
+        const otherRows = others.length ? `
+          <tr style="background:#f1f5f9;">
+            <td colspan="5" style="padding:8px; font-size:12px; font-weight:800; color:#475569;">OTHER ELIGIBLE SCHEMES</td>
           </tr>
+          ${others.map((d, i) => `
+            <tr style="background:${i % 2 === 0 ? '#ffffff' : '#f8fafc'}; border-bottom:1px solid #e2e8f0;">
+              <td style="padding:9px 6px; font-size:15px; font-weight:800; color:#334155;">${d.currentTenure}/${d.advEmi}</td>
+              <td style="padding:9px 6px; color:#059669; font-size:15px; font-weight:800;">₹${Math.round(d.dp).toLocaleString('en-IN')}</td>
+              <td style="padding:9px 6px; color:#2563eb; font-size:15px; font-weight:800;">₹${Math.round(d.emi).toLocaleString('en-IN')}</td>
+              <td style="padding:9px 6px; font-size:15px; font-weight:700; color:#475569;">${d.inst}</td>
+              <td style="padding:9px 6px; color:#ea580c; font-size:15px; font-weight:800;">₹${Math.round(d.daily).toLocaleString('en-IN')}</td>
+            </tr>
+          `).join('')}
+        ` : '';
+
+        blocksHtml += `
+          <div style="border:1px solid #cbd5e1; border-radius:12px; overflow:hidden; margin-bottom:14px;">
+            <div style="padding:12px 14px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; background:#f8fafc;">
+              <div style="font-size:16px; font-weight:900; color:#1e3a8a;">${escapeHtml(getProductDisplayTitle(prod))}</div>
+              ${invAmt > 0 ? `<div style="background:#1d4ed8; color:#fff; padding:5px 10px; border-radius:6px; font-size:14px; font-weight:800;">INV: ₹${Math.round(invAmt).toLocaleString('en-IN')}</div>` : ''}
+            </div>
+            <table style="width:100%; border-collapse:collapse; text-align:center;">
+              <thead>
+                <tr style="background:#ffffff; color:#475569; font-size:12px; font-weight:800; border-bottom:2px solid #e2e8f0;">
+                  <th style="padding:10px 6px;">SCHEME</th>
+                  <th style="padding:10px 6px;">NET DP</th>
+                  <th style="padding:10px 6px;">EMI</th>
+                  <th style="padding:10px 6px;">M</th>
+                  <th style="padding:10px 6px;">DAILY</th>
+                </tr>
+              </thead>
+              <tbody>${topRows}${otherRows}</tbody>
+            </table>
+          </div>
         `;
-      }).join('');
+      });
 
-      const otherRows = others.length ? `
-        <tr style="background:#f1f5f9;">
-          <td colspan="5" style="padding:8px; font-size:12px; font-weight:800; color:#475569;">OTHER ELIGIBLE SCHEMES</td>
-        </tr>
-        ${others.map((d, i) => `
-          <tr style="background:${i % 2 === 0 ? '#ffffff' : '#f8fafc'}; border-bottom:1px solid #e2e8f0;">
-            <td style="padding:9px 6px; font-size:15px; font-weight:800; color:#334155;">${d.currentTenure}/${d.advEmi}</td>
-            <td style="padding:9px 6px; color:#059669; font-size:15px; font-weight:800;">₹${Math.round(d.dp).toLocaleString('en-IN')}</td>
-            <td style="padding:9px 6px; color:#2563eb; font-size:15px; font-weight:800;">₹${Math.round(d.emi).toLocaleString('en-IN')}</td>
-            <td style="padding:9px 6px; font-size:15px; font-weight:700; color:#475569;">${d.inst}</td>
-            <td style="padding:9px 6px; color:#ea580c; font-size:15px; font-weight:800;">₹${Math.round(d.daily).toLocaleString('en-IN')}</td>
-          </tr>
-        `).join('')}
-      ` : '';
+      if (!hasAnyValid) {
+        showToast('No visible eligible schemes to export', 'error');
+        return;
+      }
 
       const box = document.createElement('div');
       box.style.cssText = 'width:540px; padding:22px; background:#ffffff; position:fixed; top:-9999px; left:-9999px; font-family:-apple-system,Segoe UI,Roboto,sans-serif;';
       box.innerHTML = `
         <div style="background:linear-gradient(135deg,#1d4ed8,#1e3a8a); color:#fff; border-radius:12px; padding:20px; text-align:center; margin-bottom:16px;">
-          <div style="font-size:22px; font-weight:900; letter-spacing:0.5px;">${escapeHtml(headerName)}</div>
+          <div style="font-size:22px; font-weight:900; letter-spacing:0.5px;">CUSTOMER QUOTATION</div>
           <div style="margin-top:10px; display:flex; justify-content:center; flex-wrap:wrap; gap:14px; font-size:14px; font-weight:800; background:rgba(255,255,255,0.12); padding:10px; border-radius:8px;">
             ${limitVal > 0 ? `<span style="color:#6ee7b7;">LIMIT: ₹${Math.round(limitVal).toLocaleString('en-IN')}</span>` : ''}
             <span style="color:#fde68a;">LTV: ${ltvVal}%</span>
@@ -3112,24 +3212,9 @@
             ${capVal > 0 ? `<span style="color:#fca5a5;">CAP: ₹${Math.round(capVal).toLocaleString('en-IN')}</span>` : ''}
           </div>
         </div>
-
-        <div style="border:1px solid #cbd5e1; border-radius:12px; overflow:hidden;">
-          <div style="padding:12px 14px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; background:#f8fafc;">
-            <div style="font-size:16px; font-weight:900; color:#1e3a8a;">${escapeHtml(selectedTitle.textContent)}</div>
-            ${invAmt > 0 ? `<div style="background:#1d4ed8; color:#fff; padding:5px 10px; border-radius:6px; font-size:14px; font-weight:800;">INV: ₹${Math.round(invAmt).toLocaleString('en-IN')}</div>` : ''}
-          </div>
-          <table style="width:100%; border-collapse:collapse; text-align:center;">
-            <thead>
-              <tr style="background:#ffffff; color:#475569; font-size:12px; font-weight:800; border-bottom:2px solid #e2e8f0;">
-                <th style="padding:10px 6px;">SCHEME</th>
-                <th style="padding:10px 6px;">NET DP</th>
-                <th style="padding:10px 6px;">EMI</th>
-                <th style="padding:10px 6px;">M</th>
-                <th style="padding:10px 6px;">DAILY</th>
-              </tr>
-            </thead>
-            <tbody>${topRows}${otherRows}</tbody>
-          </table>
+        ${blocksHtml}
+        <div style="text-align:center; margin-top:12px; color:#94a3b8; font-size:13px; font-weight:700; border-top:1px dashed #cbd5e1; padding-top:12px;">
+          Generated securely via Persistent Portal
         </div>
       `;
 
@@ -3144,6 +3229,14 @@
         showToast('Could not generate image', 'error');
       });
     }
+
+    allQuoteBtn.addEventListener('click', () => generateQuoteImage());
+    clearAllModelsBtn.addEventListener('click', () => {
+      activeProducts = [];
+      renderProductsStack();
+      currentSessionId = Date.now();
+      showToast('Models cleared');
+    });
 
     document.getElementById('copyQuoteImgBtn').addEventListener('click', () => {
       if (!lastQuoteCanvas) return;
@@ -3171,129 +3264,121 @@
       document.getElementById('quoteModal').classList.remove('show');
     });
 
-    /* ==================== CUSTOMER QUEUE & MASKING ==================== */
-    const qName = document.getElementById('qName');
-    const qMobile = document.getElementById('qMobile');
-    const qDupWarn = document.getElementById('qDupWarn');
-    const addQueueBtn = document.getElementById('addQueueBtn');
-    const qSearch = document.getElementById('qSearch');
-    const qCount = document.getElementById('qCount');
-    const qList = document.getElementById('qList');
-    const binCount = document.getElementById('binCount');
-    const binModal = document.getElementById('binModal');
-    const binList = document.getElementById('binList');
-
-    function maskName(str) {
-      if (!str || str === '-') return str;
-      return str.split(' ').map(w => w.length <= 2 ? w : w[0] + '*'.repeat(w.length - 2) + w[w.length - 1]).join(' ');
-    }
-
-    function saveQueueStorage() {
-      localStorage.setItem('calc_queue_v1', JSON.stringify(customerQueue));
-      localStorage.setItem('calc_bin_v1', JSON.stringify(recycleBin));
-    }
-
-    function checkDuplicateMobile() {
-      const clean = qMobile.value.replace(/\D/g, '').slice(0, 10);
-      qMobile.value = clean;
-      if (clean.length === 10) {
-        const inActive = customerQueue.find(c => c.mobile === clean);
-        if (inActive) {
-          qDupWarn.textContent = `Duplicate: This number already exists in Queue (${inActive.name}).`;
-          qDupWarn.classList.add('show');
-          addQueueBtn.disabled = true;
-          addQueueBtn.style.opacity = '0.5';
-          return true;
-        }
-        const inBin = recycleBin.find(c => c.mobile === clean);
-        if (inBin) {
-          qDupWarn.textContent = `Duplicate: This number is in Recycle Bin (${inBin.name}). Restore it from Recycle Bin.`;
-          qDupWarn.classList.add('show');
-          addQueueBtn.disabled = true;
-          addQueueBtn.style.opacity = '0.5';
-          return true;
-        }
+    /* ==================== QUEUE: AUTO-SAVED ELIGIBILITY SESSIONS ==================== */
+    function persistSessions() {
+      try {
+        localStorage.setItem(SESSIONS_KEY, JSON.stringify(savedSessions.slice(0, 60)));
+      } catch (e) {
+        console.warn('Storage full');
       }
-      qDupWarn.classList.remove('show');
-      addQueueBtn.disabled = false;
-      addQueueBtn.style.opacity = '1';
-      return false;
     }
 
-    qMobile.addEventListener('input', checkDuplicateMobile);
+    function autoSaveSession() {
+      if (activeProducts.length === 0) return;
 
-    addQueueBtn.addEventListener('click', () => {
-      if (checkDuplicateMobile()) return;
-      const limit = parseFloat(approvedLimitEl.value) || 0;
-      if (limit <= 0) {
-        showToast('Enter Approved Limit in Calculator first', 'error');
-        return;
-      }
-      const name = qName.value.trim() || `Customer ${customerQueue.length + 1}`;
-      const mobile = qMobile.value.trim();
       const now = new Date();
       const ts = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) + ' ' +
         now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
-      customerQueue.unshift({
-        id: Date.now(),
-        name,
-        mobile,
-        type: customerTypeEl.value,
-        limit,
-        ltv: parseFloat(ltvPercentEl.value) || 100,
-        cap: parseFloat(emiCappingEl.value) || '',
-        timestamp: ts
-      });
+      const compactProducts = activeProducts.map(p => ({
+        uid: p.uid,
+        brand: p.brand,
+        model: p.model,
+        category: p.category,
+        isNonTieup: p.isNonTieup,
+        schemes: p.schemes,
+        inputs: p.inputs,
+        manualLoans: p.manualLoans,
+        sortState: p.sortState,
+        showDetails: p.showDetails,
+        showAll: p.showAll,
+        collapsed: p.collapsed
+      }));
 
-      saveQueueStorage();
-      qName.value = '';
-      qMobile.value = '';
-      checkDuplicateMobile();
-      renderQueue();
-      showToast('Customer added to queue', 'success');
+      const snapshot = {
+        id: currentSessionId,
+        eligibility: {
+          type: customerTypeEl.value,
+          limit: approvedLimitEl.value,
+          ltv: ltvPercentEl.value,
+          cap: emiCappingEl.value
+        },
+        products: compactProducts,
+        timestamp: ts
+      };
+
+      const existingIdx = savedSessions.findIndex(s => s.id === currentSessionId);
+      if (existingIdx !== -1) {
+        savedSessions.splice(existingIdx, 1);
+      }
+      savedSessions.unshift(snapshot);
+      persistSessions();
+      renderQueueSessions();
+    }
+
+    newSessionBtn.addEventListener('click', () => {
+      currentSessionId = Date.now();
+      customerTypeEl.value = 'NEW';
+      approvedLimitEl.value = '';
+      ltvPercentEl.value = '';
+      emiCappingEl.value = '';
+      activeProducts = [];
+      renderProductsStack();
+      calcManualCalculator();
+      showToast('Started new customer eligibility', 'success');
     });
 
-    function renderQueue() {
-      qCount.textContent = customerQueue.length;
-      binCount.textContent = recycleBin.length;
+    function renderQueueSessions() {
+      qCount.textContent = savedSessions.length;
       const q = qSearch.value.toLowerCase().trim();
-      const isSearching = q.length > 0;
 
-      const filtered = customerQueue.filter(c => {
-        if (!isSearching) return true;
+      const filtered = savedSessions.filter(s => {
+        if (!q) return true;
+        const elig = s.eligibility || {};
+        const modelNames = (s.products || []).map(p => `${p.brand} ${p.model}`).join(' ').toLowerCase();
         return (
-          c.name.toLowerCase().includes(q) ||
-          (c.mobile && c.mobile.includes(q)) ||
-          String(c.limit).includes(q) ||
-          c.type.toLowerCase().includes(q)
+          String(elig.limit || '').toLowerCase().includes(q) ||
+          String(elig.type || '').toLowerCase().includes(q) ||
+          String(elig.ltv || '').toLowerCase().includes(q) ||
+          String(elig.cap || '').toLowerCase().includes(q) ||
+          modelNames.includes(q)
         );
       });
 
       if (!filtered.length) {
-        qList.innerHTML = '<div class="empty-msg">No customers in queue.</div>';
+        qList.innerHTML = '<div class="empty-msg">No saved eligibility sessions yet. Search models in Calculator and they will save here automatically.</div>';
         return;
       }
 
-      qList.innerHTML = filtered.map(c => {
-        const isActive = c.id === activeQueueId;
-        const isSel = c.id === selectedQueueId;
-        const displayName = (isSearching || isSel || isActive) ? c.name : maskName(c.name);
+      qList.innerHTML = filtered.map(s => {
+        const e = s.eligibility || {};
+        const isCurrent = s.id === currentSessionId && activeProducts.length > 0;
+        const limitTxt = e.limit ? `₹${Math.round(parseFloat(e.limit)).toLocaleString('en-IN')}` : 'No Limit';
+        const ltvTxt = e.ltv ? `${e.ltv}%` : '100%';
+        const capTxt = e.cap ? ` • Cap: ₹${Math.round(parseFloat(e.cap)).toLocaleString('en-IN')}` : '';
+
+        const modelsHtml = (s.products || []).map(p => {
+          const invVal = (parseFloat(p.inputs?.inv) || 0) || (parseFloat(p.inputs?.mrp) || 0);
+          const invStr = invVal > 0 ? `₹${Math.round(invVal).toLocaleString('en-IN')} • ` : '';
+          return `
+            <div class="q-model-line">
+              <span>${escapeHtml(getProductDisplayTitle(p))}</span>
+              <span>${invStr}${(p.schemes || []).length} schemes</span>
+            </div>
+          `;
+        }).join('');
+
         return `
-          <div class="q-item ${isActive ? 'active-q' : ''}" data-qid="${c.id}">
+          <div class="q-item ${isCurrent ? 'active-q' : ''}">
             <div class="q-top">
-              <div class="q-name">${escapeHtml(displayName)}</div>
-              <div class="q-meta">${escapeHtml(c.timestamp)}</div>
+              <div class="q-name">${escapeHtml(e.type || 'NEW')} &bull; Limit: ${limitTxt}</div>
+              <div class="q-meta">${escapeHtml(s.timestamp || '')}</div>
             </div>
-            <div class="q-meta">
-              ${c.mobile ? `Mobile: ${escapeHtml(c.mobile)} • ` : ''}
-              Limit: ₹${Math.round(c.limit).toLocaleString('en-IN')} • LTV: ${c.ltv}% • ${escapeHtml(c.type)}
-              ${c.cap ? ` • Cap: ₹${c.cap}` : ''}
-            </div>
+            <div class="q-meta">LTV: ${ltvTxt}${capTxt}</div>
+            <div class="q-models-box">${modelsHtml}</div>
             <div class="q-actions">
-              <button type="button" style="background:var(--primary); color:#fff;" data-qact="load" data-qid="${c.id}">Load</button>
-              <button type="button" style="background:#e2e8f0; color:var(--text);" data-qact="copy" data-qid="${c.id}">Copy</button>
-              <button type="button" style="background:var(--danger-bg); color:var(--danger);" data-qact="del" data-qid="${c.id}">Delete</button>
+              <button type="button" style="background:var(--primary); color:#fff;" data-sact="load" data-sid="${s.id}">Load</button>
+              <button type="button" style="background:var(--danger-bg); color:var(--danger);" data-sact="del" data-sid="${s.id}">Delete</button>
             </div>
           </div>
         `;
@@ -3301,133 +3386,54 @@
     }
 
     qList.addEventListener('click', (e) => {
-      const btn = e.target.closest('button[data-qact]');
-      if (btn) {
-        const id = Number(btn.dataset.qid);
-        const idx = customerQueue.findIndex(c => c.id === id);
-        if (idx === -1) return;
-        const c = customerQueue[idx];
-        const act = btn.dataset.qact;
-
-        if (act === 'load') {
-          activeQueueId = c.id;
-          customerTypeEl.value = c.type || 'NEW';
-          approvedLimitEl.value = c.limit || '';
-          ltvPercentEl.value = c.ltv || 100;
-          emiCappingEl.value = c.cap || '';
-          activeCustName.textContent = `Customer: ${c.name}`;
-          activeCustBanner.classList.add('show');
-          manualLoans = {};
-          recalcSchemes();
-          calcManualCalculator();
-          switchTab('calc');
-          showToast('Customer eligibility loaded', 'success');
-        } else if (act === 'copy') {
-          const capLine = c.cap ? `\nEMI CAPPING- ${c.cap}` : '';
-          const txt = `CUSTOMER NAME- ${c.name}\nNUMBER- ${c.mobile || ''}\nLIMIT- ${c.limit}\nLTV- ${c.ltv}${capLine}`;
-          copyText(txt, () => showToast('Customer details copied', 'success'));
-        } else if (act === 'del') {
-          recycleBin.unshift(customerQueue.splice(idx, 1)[0]);
-          if (activeQueueId === id) {
-            activeQueueId = null;
-            activeCustBanner.classList.remove('show');
-          }
-          saveQueueStorage();
-          renderQueue();
-          showToast('Moved to Recycle Bin');
-        }
-        return;
-      }
-
-      const item = e.target.closest('.q-item');
-      if (item) {
-        selectedQueueId = Number(item.dataset.qid);
-        renderQueue();
-      }
-    });
-
-    clearActiveCustBtn.addEventListener('click', () => {
-      activeQueueId = null;
-      activeCustBanner.classList.remove('show');
-      renderQueue();
-    });
-
-    qSearch.addEventListener('input', renderQueue);
-
-    function renderBin() {
-      if (!recycleBin.length) {
-        binList.innerHTML = '<div class="empty-msg">Recycle Bin is empty.</div>';
-        return;
-      }
-      binList.innerHTML = recycleBin.map((c, i) => `
-        <div class="q-item">
-          <div class="q-top">
-            <div class="q-name">${escapeHtml(c.name)}</div>
-            <button type="button" class="btn-sm active" data-restore="${i}">Restore</button>
-          </div>
-          <div class="q-meta">${c.mobile || 'No Mobile'} • Limit: ₹${Math.round(c.limit).toLocaleString('en-IN')}</div>
-        </div>
-      `).join('');
-    }
-
-    document.getElementById('openBinBtn').addEventListener('click', () => {
-      renderBin();
-      binModal.classList.add('show');
-    });
-    document.getElementById('closeBinBtn').addEventListener('click', () => binModal.classList.remove('show'));
-
-    binList.addEventListener('click', (e) => {
-      const btn = e.target.closest('button[data-restore]');
+      const btn = e.target.closest('button[data-sact]');
       if (!btn) return;
-      const idx = parseInt(btn.dataset.restore, 10);
-      const item = recycleBin.splice(idx, 1)[0];
-      if (item) customerQueue.unshift(item);
-      saveQueueStorage();
-      renderBin();
-      renderQueue();
-      showToast('Customer restored', 'success');
-    });
+      const id = Number(btn.dataset.sid);
+      const idx = savedSessions.findIndex(s => s.id === id);
+      if (idx === -1) return;
 
-    document.getElementById('emptyBinBtn').addEventListener('click', () => {
-      if (!recycleBin.length) return;
-      recycleBin = [];
-      saveQueueStorage();
-      renderBin();
-      renderQueue();
-      showToast('Recycle Bin emptied');
-    });
+      if (btn.dataset.sact === 'load') {
+        const s = savedSessions[idx];
+        currentSessionId = s.id;
+        customerTypeEl.value = s.eligibility?.type || 'NEW';
+        approvedLimitEl.value = s.eligibility?.limit || '';
+        ltvPercentEl.value = s.eligibility?.ltv || '';
+        emiCappingEl.value = s.eligibility?.cap || '';
 
-    /* ==================== TOOLS: EMI DATES & DEALERS ==================== */
-    const emiLoanDate = document.getElementById('emiLoanDate');
-    const emiNetTenure = document.getElementById('emiNetTenure');
-    const emiStartDateOut = document.getElementById('emiStartDateOut');
-    const emiEndDateOut = document.getElementById('emiEndDateOut');
+        activeProducts = (s.products || []).map((p, i) => ({
+          ...p,
+          schemes: (p.schemes || []).map(sc => ({ ...sc })),
+          inputs: { ...p.inputs },
+          manualLoans: { ...(p.manualLoans || {}) },
+          sortState: { ...(p.sortState || { key: 'dp', dir: 'asc' }) },
+          collapsed: i < (s.products.length - 1),
+          calculated: []
+        }));
 
-    function calcEmiDates() {
-      const val = emiLoanDate.value;
-      const tenure = parseInt(emiNetTenure.value, 10) || 0;
-      if (!val || tenure <= 0) {
-        emiStartDateOut.textContent = '-';
-        emiEndDateOut.textContent = '-';
-        return;
+        recalcAllProducts(true);
+        calcManualCalculator();
+        setCalcMode('search');
+        switchTab('calc');
+        showToast('Eligibility & models loaded', 'success');
+      } else if (btn.dataset.sact === 'del') {
+        savedSessions.splice(idx, 1);
+        persistSessions();
+        renderQueueSessions();
+        showToast('Saved session deleted');
       }
-      const [y, m, d] = val.split('-').map(Number);
-      const monthIdx = m - 1;
-      const startMonth = d >= 24 ? monthIdx + 2 : monthIdx + 1;
-      const startObj = new Date(y, startMonth, 2);
-      const endObj = new Date(y, startMonth + tenure - 1, 2);
-      const fmt = (dt) => dt.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-      emiStartDateOut.textContent = fmt(startObj);
-      emiEndDateOut.textContent = fmt(endObj);
-    }
+    });
 
-    const todayIso = new Date().toISOString().split('T')[0];
-    emiLoanDate.value = todayIso;
-    calcEmiDates();
-    emiLoanDate.addEventListener('change', calcEmiDates);
-    emiNetTenure.addEventListener('input', calcEmiDates);
+    clearQueueAllBtn.addEventListener('click', () => {
+      if (!savedSessions.length) return;
+      savedSessions = [];
+      persistSessions();
+      renderQueueSessions();
+      showToast('All saved sessions cleared');
+    });
 
-    // Dealer Search
+    qSearch.addEventListener('input', renderQueueSessions);
+
+    /* ==================== TOOLS: DEALER SEARCH ==================== */
     const dealerSearch = document.getElementById('dealerSearch');
     const dealerFavBtn = document.getElementById('dealerFavBtn');
     const dealerResults = document.getElementById('dealerResults');
@@ -3525,67 +3531,47 @@
       }
     });
 
-    /* ==================== EVENT LISTENERS ==================== */
-    function onEligibilityOrPriceChange(trigger) {
-      if (trigger === 'MRP' || trigger === 'INV') {
-        updateVarField();
-        const m = parseFloat(inpMrp.value) || 0;
-        const i = parseFloat(inpInv.value) || 0;
-        if (trigger === 'MRP') {
-          syncInsuranceSlabs(m, i > 0 ? i : m, i === 0 ? 'MRP' : 'MRP_OPT_ONLY');
-        }
-        if (trigger === 'INV') {
-          syncInsuranceSlabs(m, i > 0 ? i : m, 'INV');
-        }
-        manualLoans = {};
+    /* ==================== SHARED HELPERS & LISTENERS ==================== */
+    function copyText(text, onSuccess) {
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(onSuccess).catch(() => fallbackCopy(text, onSuccess));
+      } else {
+        fallbackCopy(text, onSuccess);
       }
-      if (trigger === 'RESET_MANUAL') {
-        manualLoans = {};
-      }
-      recalcSchemes();
-      calcManualCalculator();
     }
 
-    customerTypeEl.addEventListener('change', () => onEligibilityOrPriceChange('NONE'));
-    approvedLimitEl.addEventListener('input', () => onEligibilityOrPriceChange('RESET_MANUAL'));
-    ltvPercentEl.addEventListener('input', () => onEligibilityOrPriceChange('NONE'));
-    emiCappingEl.addEventListener('input', () => onEligibilityOrPriceChange('RESET_MANUAL'));
+    function fallbackCopy(text, onSuccess) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand('copy');
+        if (onSuccess) onSuccess();
+      } catch (e) {
+        showToast('Copy failed', 'error');
+      }
+      document.body.removeChild(ta);
+    }
 
-    inpMrp.addEventListener('input', () => onEligibilityOrPriceChange('MRP'));
-    inpInv.addEventListener('input', () => onEligibilityOrPriceChange('INV'));
-    inpTargetDp.addEventListener('input', () => onEligibilityOrPriceChange('RESET_MANUAL'));
-    inpGtl.addEventListener('change', () => onEligibilityOrPriceChange('NONE'));
-    inpRfc.addEventListener('change', () => onEligibilityOrPriceChange('NONE'));
-    inpExw.addEventListener('input', () => onEligibilityOrPriceChange('NONE'));
-    inpMargin.addEventListener('input', () => onEligibilityOrPriceChange('NONE'));
-    inpDealer.addEventListener('input', () => onEligibilityOrPriceChange('NONE'));
+    function onEligibilityChange(resetManualLoans) {
+      if (activeProducts.length === 0) {
+        currentSessionId = Date.now();
+      }
+      if (resetManualLoans) {
+        activeProducts.forEach(p => { p.manualLoans = {}; });
+      }
+      recalcAllProducts(false);
+      calcManualCalculator();
+      autoSaveSession();
+    }
 
-    sortSelect.addEventListener('change', () => {
-      sortState.key = sortSelect.value;
-      sortState.dir = sortSelect.value === 'currentTenure' ? 'desc' : 'asc';
-      renderSchemesTable();
-    });
-
-    toggleDetailsBtn.addEventListener('click', () => {
-      showDetails = !showDetails;
-      toggleDetailsBtn.classList.toggle('active', showDetails);
-      schemesTable.classList.toggle('show-details', showDetails);
-    });
-
-    toggleAllBtn.addEventListener('click', () => {
-      showAllSchemes = !showAllSchemes;
-      toggleAllBtn.classList.toggle('active', showAllSchemes);
-      renderSchemesTable();
-    });
-
-    toggleHiddenBtn.addEventListener('click', () => {
-      showHiddenSchemes = !showHiddenSchemes;
-      toggleHiddenBtn.classList.toggle('active', showHiddenSchemes);
-      renderSchemesTable();
-    });
-
-    quoteImgBtn.addEventListener('click', generateQuoteImage);
-    clearModelBtn.addEventListener('click', resetSelectedModel);
+    customerTypeEl.addEventListener('change', () => onEligibilityChange(false));
+    approvedLimitEl.addEventListener('input', () => onEligibilityChange(true));
+    ltvPercentEl.addEventListener('input', () => onEligibilityChange(false));
+    emiCappingEl.addEventListener('input', () => onEligibilityChange(true));
 
     let searchTimer = null;
     modelSearch.addEventListener('input', () => {
@@ -3596,7 +3582,9 @@
     });
 
     clearSearch.addEventListener('click', () => {
-      resetSelectedModel();
+      modelSearch.value = '';
+      clearSearch.classList.remove('show');
+      resultsList.classList.remove('show');
       modelSearch.focus();
     });
 
@@ -3608,7 +3596,7 @@
       document.getElementById('tabCalc').classList.toggle('active', tab === 'calc');
       document.getElementById('tabQueue').classList.toggle('active', tab === 'queue');
       document.getElementById('tabTools').classList.toggle('active', tab === 'tools');
-      if (tab === 'queue') renderQueue();
+      if (tab === 'queue') renderQueueSessions();
       window.scrollTo({ top: 0, behavior: 'instant' });
     }
 
@@ -3617,7 +3605,7 @@
     document.getElementById('tabTools').addEventListener('click', () => switchTab('tools'));
 
     mcSyncCategoryAndSlabs('RESET');
-    renderQueue();
+    renderQueueSessions();
     initData();
   </script>
 </body>
