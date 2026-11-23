@@ -114,6 +114,39 @@
       letter-spacing: 0.5px;
     }
 
+    /* Split Mode Tabs inside Search/Manual Card */
+    .mode-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      background: #f1f5f9;
+      padding: 4px;
+      border-radius: 11px;
+      border: 1px solid var(--border);
+      margin-bottom: 12px;
+    }
+
+    .mode-tab {
+      height: 40px;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+    }
+
+    .mode-tab.active {
+      background: var(--primary);
+      color: #ffffff;
+      box-shadow: 0 2px 6px rgba(29, 78, 216, 0.24);
+    }
+
+    .mode-pane { display: none; }
+    .mode-pane.active { display: block; }
+
     /* Active Customer Banner */
     .active-banner {
       display: none;
@@ -321,6 +354,66 @@
       cursor: pointer;
     }
     .nt-cat-btn:active { background: var(--primary); color: #ffffff; }
+
+    /* Manual Calculator Result Panel */
+    .mc-result {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1.5px dashed #cbd5e1;
+      display: none;
+    }
+    .mc-result.show { display: block; }
+
+    .mc-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-bottom: 8px;
+    }
+
+    .mc-summary {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      background: #f8fafc;
+      border: 1.5px solid #bfdbfe;
+      border-radius: 10px;
+      padding: 10px 4px;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    .mc-sum-label {
+      font-size: 10px;
+      font-weight: 800;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+    .mc-sum-val {
+      font-size: 15px;
+      font-weight: 900;
+      color: var(--text);
+    }
+    .mc-sum-val.dp { color: var(--success); }
+    .mc-sum-val.emi { color: var(--primary); }
+    .mc-sum-val.daily { color: var(--orange); }
+
+    .mc-mini-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      margin-bottom: 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .mc-mini-table td {
+      padding: 7px 9px;
+      border-bottom: 1px solid var(--border);
+    }
+    .mc-mini-table tr:last-child td { border-bottom: none; }
+    .mc-mini-table td.k { color: var(--muted); font-weight: 700; background: #f8fafc; }
+    .mc-mini-table td.v { text-align: right; font-weight: 800; color: var(--text); }
 
     /* Selected Model Pricing Card */
     .hidden { display: none !important; }
@@ -858,37 +951,194 @@
         </div>
       </section>
 
-      <!-- 2. Model Search & Non-Tieup / Manual Model -->
+      <!-- 2. Divided Box: Model Search | Manual Calculator -->
       <section class="card">
-        <div class="card-header-row">
-          <div class="section-label">Model Search</div>
+        <div class="mode-tabs">
+          <button type="button" id="btnModeSearch" class="mode-tab active">Model Search</button>
+          <button type="button" id="btnModeManual" class="mode-tab">Manual Calculator</button>
         </div>
 
-        <div class="search-wrap">
-          <input
-            type="text"
-            id="modelSearch"
-            class="search-input"
-            placeholder="Search model, brand, or category..."
-            autocomplete="off"
-            disabled
-          />
-          <button type="button" id="clearSearch" class="clear-btn" aria-label="Clear">×</button>
+        <!-- Pane A: Model Search -->
+        <div id="paneModelSearch" class="mode-pane active">
+          <div class="search-wrap">
+            <input
+              type="text"
+              id="modelSearch"
+              class="search-input"
+              placeholder="Search model, brand, or category..."
+              autocomplete="off"
+              disabled
+            />
+            <button type="button" id="clearSearch" class="clear-btn" aria-label="Clear">×</button>
+          </div>
+
+          <div id="resultsList" class="results-list"></div>
+
+          <div class="quick-row">
+            <button type="button" id="nonTieupToggleBtn" class="nt-btn" disabled>
+              Non-Tieup Schemes
+            </button>
+            <button type="button" id="newManualModelBtn" class="nt-btn manual-btn">
+              + Manual Model
+            </button>
+          </div>
+
+          <div id="nonTieupPanel" class="nt-panel">
+            <div id="nonTieupGrid" class="nt-grid"></div>
+          </div>
         </div>
 
-        <div id="resultsList" class="results-list"></div>
+        <!-- Pane B: Manual Calculator -->
+        <div id="paneManualCalc" class="mode-pane">
+          <div class="grid-2" style="margin-bottom: 10px;">
+            <div class="field">
+              <label for="mcCategory">Category</label>
+              <select id="mcCategory">
+                <option value="PHONE(WEB-MOBILE)">PHONE / WATCH</option>
+                <option value="OTHER">OTHER</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="mcInvoice">Invoice (₹)</label>
+              <input type="number" id="mcInvoice" inputmode="numeric" placeholder="e.g. 25000" />
+            </div>
+          </div>
 
-        <div class="quick-row">
-          <button type="button" id="nonTieupToggleBtn" class="nt-btn" disabled>
-            Non-Tieup Schemes
-          </button>
-          <button type="button" id="newManualModelBtn" class="nt-btn manual-btn">
-            + Manual Model
-          </button>
-        </div>
+          <div class="grid-3" style="margin-bottom: 10px;">
+            <div class="field">
+              <label for="mcLoan">Loan (₹)</label>
+              <input type="number" id="mcLoan" inputmode="numeric" placeholder="Auto" />
+            </div>
+            <div class="field">
+              <label for="mcTenure">Total Tenure</label>
+              <input type="number" id="mcTenure" inputmode="numeric" placeholder="e.g. 12" />
+            </div>
+            <div class="field">
+              <label for="mcAdv">Adv EMI</label>
+              <input type="number" id="mcAdv" inputmode="numeric" placeholder="e.g. 4" />
+            </div>
+          </div>
 
-        <div id="nonTieupPanel" class="nt-panel">
-          <div id="nonTieupGrid" class="nt-grid"></div>
+          <div class="grid-3" style="margin-bottom: 10px;">
+            <div class="field">
+              <label for="mcDbd">DBD (%)</label>
+              <input type="number" id="mcDbd" inputmode="decimal" placeholder="0" />
+            </div>
+            <div class="field">
+              <label for="mcPf">PF (₹)</label>
+              <input type="number" id="mcPf" inputmode="numeric" placeholder="0" />
+            </div>
+            <div class="field">
+              <label for="mcRoi">ROI (%)</label>
+              <input type="number" id="mcRoi" inputmode="decimal" placeholder="0" />
+            </div>
+          </div>
+
+          <div class="grid-3" style="margin-bottom: 10px;">
+            <div class="field">
+              <label for="mcFixed">Fixed EMI (₹)</label>
+              <input type="number" id="mcFixed" inputmode="numeric" placeholder="0" />
+            </div>
+            <div class="field">
+              <label for="mcTargetDp">Target DP (₹)</label>
+              <input type="number" id="mcTargetDp" inputmode="numeric" placeholder="0" />
+            </div>
+            <div class="field">
+              <label for="mcGtl">GTL (₹)</label>
+              <select id="mcGtl">
+                <option value="0">0</option>
+                <option value="699">699</option>
+                <option value="1099">1099</option>
+                <option value="1199">1199</option>
+                <option value="1499">1499</option>
+                <option value="1799">1799</option>
+                <option value="2398">2398</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid-3" style="margin-bottom: 10px;">
+            <div class="field">
+              <label for="mcRfc">RFC (₹)</label>
+              <select id="mcRfc">
+                <option value="0" selected>0</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="mcExw">EXW (₹)</label>
+              <input type="number" id="mcExw" inputmode="numeric" placeholder="0" disabled />
+            </div>
+            <div class="field">
+              <label for="mcMargin">Margin (₹)</label>
+              <input type="number" id="mcMargin" inputmode="numeric" placeholder="0" />
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="field">
+              <label for="mcDealer">Dealer (₹)</label>
+              <input type="number" id="mcDealer" inputmode="numeric" placeholder="0" />
+            </div>
+            <div class="field" style="justify-content: flex-end;">
+              <label>&nbsp;</label>
+              <button type="button" id="mcResetBtn" class="btn-secondary" style="width:100%;">Reset</button>
+            </div>
+          </div>
+
+          <!-- Live Manual Calculation Output -->
+          <div id="mcResultBox" class="mc-result">
+            <div id="mcTags" class="mc-tags"></div>
+
+            <div class="mc-summary">
+              <div>
+                <div class="mc-sum-label">Net DP</div>
+                <div id="mcOutDp" class="mc-sum-val dp">₹0</div>
+              </div>
+              <div>
+                <div class="mc-sum-label">EMI</div>
+                <div id="mcOutEmi" class="mc-sum-val emi">₹0</div>
+              </div>
+              <div>
+                <div class="mc-sum-label">Months</div>
+                <div id="mcOutInst" class="mc-sum-val">0</div>
+              </div>
+              <div>
+                <div class="mc-sum-label">Daily</div>
+                <div id="mcOutDaily" class="mc-sum-val daily">₹0</div>
+              </div>
+            </div>
+
+            <table class="mc-mini-table">
+              <tbody>
+                <tr>
+                  <td class="k">Scheme (T/A)</td>
+                  <td id="mcOutTa" class="v">-</td>
+                  <td class="k">Loan</td>
+                  <td id="mcOutLoan" class="v">₹0</td>
+                </tr>
+                <tr>
+                  <td class="k">Scheme LTV</td>
+                  <td id="mcOutLtv" class="v">0%</td>
+                  <td class="k">DBD (+GST)</td>
+                  <td id="mcOutDbd" class="v cell-danger">₹0</td>
+                </tr>
+                <tr>
+                  <td class="k">ROI Amount</td>
+                  <td id="mcOutRoi" class="v cell-danger">₹0</td>
+                  <td class="k">Net Disbursal</td>
+                  <td id="mcOutDisb" class="v cell-primary">₹0</td>
+                </tr>
+                <tr>
+                  <td class="k">Extra Cost</td>
+                  <td id="mcOutExtra" class="v cell-danger">₹0</td>
+                  <td class="k">NBFC Max</td>
+                  <td id="mcOutNbfc" class="v">-</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <button type="button" id="mcCopyBtn" class="btn-primary" style="width:100%;">Copy Result</button>
+          </div>
         </div>
       </section>
 
@@ -1192,6 +1442,7 @@
       dealers: []
     };
 
+    let calcMode = 'search'; // 'search' | 'manual'
     let selectedItem = null;
     let manualLoans = {};
     let showDetails = false;
@@ -1201,6 +1452,7 @@
     let sortState = { key: 'dp', dir: 'asc' };
     let currentCalculated = [];
     let lastQuoteCanvas = null;
+    let lastManualResult = null;
 
     // Customer Queue State
     let customerQueue = JSON.parse(localStorage.getItem('calc_queue_v1') || '[]');
@@ -1219,6 +1471,13 @@
     const activeCustName = document.getElementById('activeCustName');
     const clearActiveCustBtn = document.getElementById('clearActiveCustBtn');
 
+    // Mode Tabs
+    const btnModeSearch = document.getElementById('btnModeSearch');
+    const btnModeManual = document.getElementById('btnModeManual');
+    const paneModelSearch = document.getElementById('paneModelSearch');
+    const paneManualCalc = document.getElementById('paneManualCalc');
+
+    // Model Search DOM
     const modelSearch = document.getElementById('modelSearch');
     const clearSearch = document.getElementById('clearSearch');
     const resultsList = document.getElementById('resultsList');
@@ -1227,6 +1486,40 @@
     const nonTieupPanel = document.getElementById('nonTieupPanel');
     const nonTieupGrid = document.getElementById('nonTieupGrid');
 
+    // Manual Calculator DOM
+    const mcCategory = document.getElementById('mcCategory');
+    const mcInvoice = document.getElementById('mcInvoice');
+    const mcLoan = document.getElementById('mcLoan');
+    const mcTenure = document.getElementById('mcTenure');
+    const mcAdv = document.getElementById('mcAdv');
+    const mcDbd = document.getElementById('mcDbd');
+    const mcPf = document.getElementById('mcPf');
+    const mcRoi = document.getElementById('mcRoi');
+    const mcFixed = document.getElementById('mcFixed');
+    const mcTargetDp = document.getElementById('mcTargetDp');
+    const mcGtl = document.getElementById('mcGtl');
+    const mcRfc = document.getElementById('mcRfc');
+    const mcExw = document.getElementById('mcExw');
+    const mcMargin = document.getElementById('mcMargin');
+    const mcDealer = document.getElementById('mcDealer');
+    const mcResetBtn = document.getElementById('mcResetBtn');
+    const mcResultBox = document.getElementById('mcResultBox');
+    const mcTags = document.getElementById('mcTags');
+    const mcOutDp = document.getElementById('mcOutDp');
+    const mcOutEmi = document.getElementById('mcOutEmi');
+    const mcOutInst = document.getElementById('mcOutInst');
+    const mcOutDaily = document.getElementById('mcOutDaily');
+    const mcOutTa = document.getElementById('mcOutTa');
+    const mcOutLoan = document.getElementById('mcOutLoan');
+    const mcOutLtv = document.getElementById('mcOutLtv');
+    const mcOutDbd = document.getElementById('mcOutDbd');
+    const mcOutRoi = document.getElementById('mcOutRoi');
+    const mcOutDisb = document.getElementById('mcOutDisb');
+    const mcOutExtra = document.getElementById('mcOutExtra');
+    const mcOutNbfc = document.getElementById('mcOutNbfc');
+    const mcCopyBtn = document.getElementById('mcCopyBtn');
+
+    // Pricing & Schemes DOM
     const pricingCard = document.getElementById('pricingCard');
     const selectedTitle = document.getElementById('selectedTitle');
     const selectedSub = document.getElementById('selectedSub');
@@ -1253,7 +1546,7 @@
     const schemesTableHead = document.getElementById('schemesTableHead');
     const schemesTableBody = document.getElementById('schemesTableBody');
 
-    // Manual Modal DOM
+    // Manual Scheme Modal DOM
     const manualModal = document.getElementById('manualModal');
     const manualModalTitle = document.getElementById('manualModalTitle');
     const manualModelFields = document.getElementById('manualModelFields');
@@ -1288,6 +1581,29 @@
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;');
     }
+
+    /* ==================== MODE SWITCH (SEARCH / MANUAL CALCULATOR) ==================== */
+    function setCalcMode(mode) {
+      calcMode = mode;
+      btnModeSearch.classList.toggle('active', mode === 'search');
+      btnModeManual.classList.toggle('active', mode === 'manual');
+      paneModelSearch.classList.toggle('active', mode === 'search');
+      paneManualCalc.classList.toggle('active', mode === 'manual');
+
+      if (mode === 'manual') {
+        pricingCard.classList.add('hidden');
+        schemesCard.classList.add('hidden');
+        calcManualCalculator();
+      } else {
+        if (selectedItem) {
+          pricingCard.classList.remove('hidden');
+          schemesCard.classList.remove('hidden');
+        }
+      }
+    }
+
+    btnModeSearch.addEventListener('click', () => setCalcMode('search'));
+    btnModeManual.addEventListener('click', () => setCalcMode('manual'));
 
     /* ==================== CATEGORY & SLAB RULES ==================== */
     function isMobileDeviceCat(cat) {
@@ -1367,6 +1683,287 @@
       }
       return null;
     }
+
+    /* ==================== MANUAL CALCULATOR LOGIC ==================== */
+    function mcSyncCategoryAndSlabs(trigger) {
+      const isPhone = isMobileDeviceCat(mcCategory.value);
+      const inv = parseFloat(mcInvoice.value) || 0;
+      const loanInp = parseFloat(mcLoan.value) || 0;
+      const wasRfcSelected = (trigger !== 'RESET') && isPhone && (parseFloat(mcRfc.value) > 0);
+
+      if (isPhone) {
+        mcRfc.disabled = false;
+        mcExw.disabled = true;
+        mcExw.value = '';
+      } else {
+        mcRfc.disabled = true;
+        mcRfc.value = '0';
+        mcExw.disabled = false;
+      }
+
+      if (trigger === 'INV') {
+        mcGtl.value = String(getGtlSlabValue(inv));
+      } else if (trigger === 'LOAN' && loanInp > 0) {
+        mcGtl.value = String(getGtlSlabValue(loanInp));
+      }
+
+      const rfcSlab = getRfcSlabValue(inv);
+      mcRfc.innerHTML = '<option value="0">0</option>';
+      if (isPhone && rfcSlab > 0) {
+        const opt = document.createElement('option');
+        opt.value = String(rfcSlab);
+        opt.textContent = String(rfcSlab);
+        mcRfc.appendChild(opt);
+      }
+
+      if (trigger === 'RESET' || !isPhone) {
+        mcRfc.value = '0';
+      } else {
+        mcRfc.value = (wasRfcSelected && rfcSlab > 0) ? String(rfcSlab) : '0';
+      }
+    }
+
+    function calcManualCalculator() {
+      const inv = parseFloat(mcInvoice.value) || 0;
+      const loanRaw = mcLoan.value.trim();
+      const hasManualLoan = loanRaw !== '' && parseFloat(loanRaw) > 0;
+      const manualLoanVal = hasManualLoan ? parseFloat(loanRaw) : 0;
+
+      const tenure = parseInt(mcTenure.value, 10) || 0;
+      const advEmi = parseInt(mcAdv.value, 10) || 0;
+      const dbd = parseFloat(mcDbd.value) || 0;
+      const pf = parseFloat(mcPf.value) || 0;
+      const roi = parseFloat(mcRoi.value) || 0;
+      const fixedEmi = parseFloat(mcFixed.value) || 0;
+      const targetDp = parseFloat(mcTargetDp.value) || 0;
+
+      const isPhone = isMobileDeviceCat(mcCategory.value);
+      const gtl = parseFloat(mcGtl.value) || 0;
+      const rfc = isPhone ? (parseFloat(mcRfc.value) || 0) : 0;
+      const exw = isPhone ? 0 : (parseFloat(mcExw.value) || 0);
+      const insTotal = gtl + rfc + exw;
+
+      const margin = parseFloat(mcMargin.value) || 0;
+      const dealer = parseFloat(mcDealer.value) || 0;
+
+      if ((inv <= 0 && !hasManualLoan) || (tenure <= 0 && fixedEmi <= 0)) {
+        mcResultBox.classList.remove('show');
+        lastManualResult = null;
+        return;
+      }
+
+      const custType = customerTypeEl.value;
+      const fee = CUSTOMER_TYPE_CHARGES[custType] || 850;
+      const totalFees = fee + margin + dealer;
+
+      const limitInput = parseFloat(approvedLimitEl.value) || 0;
+      const currentLimit = limitInput > 0 ? limitInput : 9999999;
+      const ltvLimit = parseFloat(ltvPercentEl.value) || 100;
+      const emiCap = parseFloat(emiCappingEl.value) || 0;
+
+      const effectivePrice = inv > 0 ? inv : manualLoanVal;
+      const minAllowedLoan50 = inv > 0 ? inv * 0.50 : 0;
+
+      const isFixed = fixedEmi > 0;
+      const dbdRate = (dbd * 1.18) / 100;
+      const roiRate = roi / 1200;
+      const roiRateDP = roiRate * advEmi;
+
+      let loan = 0;
+      let nbfcMaxL = 0;
+      let currentTenure = tenure;
+      let inst = 1;
+      let emi = 0;
+      let dpExact = 0;
+      let minEmiApplied = false;
+
+      if (isFixed) {
+        const maxRemainingEmis = Math.floor(currentLimit / fixedEmi);
+        const maxTotalTenure = maxRemainingEmis + advEmi;
+        nbfcMaxL = maxTotalTenure * fixedEmi;
+
+        if (hasManualLoan) {
+          currentTenure = Math.floor(manualLoanVal / fixedEmi) || 1;
+          loan = currentTenure * fixedEmi;
+        } else {
+          currentTenure = Math.floor(effectivePrice / fixedEmi);
+          if (currentTenure > maxTotalTenure) currentTenure = maxTotalTenure;
+          if (currentTenure < 1) currentTenure = 1;
+          loan = currentTenure * fixedEmi;
+          if (inv > 0 && loan > inv) loan = Math.floor(inv / fixedEmi) * fixedEmi;
+
+          if (targetDp > 0 && inv > 0) {
+            const numerator = targetDp - inv - (fixedEmi * advEmi) - pf - totalFees;
+            const denominator = dbdRate + roiRateDP - 1;
+            const solvedLoan = numerator / denominator;
+            let solvedTenure = Math.floor(solvedLoan / fixedEmi);
+            if (solvedTenure > maxTotalTenure) solvedTenure = maxTotalTenure;
+            loan = Math.max(0, solvedTenure * fixedEmi);
+            if (loan > inv) loan = Math.floor(inv / fixedEmi) * fixedEmi;
+            currentTenure = Math.floor(loan / fixedEmi) || 1;
+          }
+        }
+
+        inst = Math.max(1, currentTenure - advEmi);
+        const roiInEmi = loan * roiRate;
+        emi = fixedEmi + (insTotal / inst) + roiInEmi;
+        const roiInDp = loan * roiRateDP;
+        dpExact = effectivePrice - loan + (fixedEmi * advEmi) + (loan * dbdRate) + pf + totalFees + roiInDp;
+      } else {
+        nbfcMaxL = (currentLimit * tenure) / (tenure - advEmi || 1);
+
+        if (hasManualLoan) {
+          loan = manualLoanVal;
+        } else {
+          loan = Math.min(effectivePrice, nbfcMaxL);
+          if (targetDp > 0 && inv > 0) {
+            const advRate = advEmi / tenure;
+            const numerator = targetDp - inv - pf - totalFees;
+            const denominator = advRate + dbdRate + roiRateDP - 1;
+            const solvedLoan = numerator / denominator;
+            loan = Math.min(loan, Math.max(0, Math.floor(solvedLoan)));
+          }
+        }
+
+        if (inv > 0 && loan > inv) loan = inv;
+
+        inst = Math.max(1, tenure - advEmi);
+        let baseEmi = loan / tenure;
+        if (baseEmi > 0 && baseEmi < 900) { baseEmi = 900; minEmiApplied = true; }
+
+        let roiInEmi = loan * roiRate;
+        emi = baseEmi + (insTotal / inst) + roiInEmi;
+
+        if (!hasManualLoan && emiCap > 0 && emi > emiCap) {
+          loan = (emiCap - (insTotal / inst)) / ((1 / tenure) + roiRate);
+          if (loan < 0) loan = 0;
+          if (inv > 0 && loan > inv) loan = inv;
+
+          baseEmi = loan / tenure;
+          minEmiApplied = false;
+          if (baseEmi > 0 && baseEmi < 900) { baseEmi = 900; minEmiApplied = true; }
+
+          roiInEmi = loan * roiRate;
+          emi = baseEmi + (insTotal / inst) + roiInEmi;
+        }
+
+        const roiInDp = loan * roiRateDP;
+        dpExact = effectivePrice - loan + (baseEmi * advEmi) + (loan * dbdRate) + pf + totalFees + roiInDp;
+      }
+
+      const dpRounded = dpExact > 0 ? Math.ceil(dpExact / 10) * 10 : dpExact;
+      const daily = emi / 30;
+      const dbdAmt = loan * dbdRate;
+      const roiAmt = (loan * roiRateDP) + (loan * roiRate * inst);
+      const extra = inv > 0 ? (((emi * inst) + dpRounded) - inv) : 0;
+      const curLTV = currentTenure > 0 ? ((currentTenure - advEmi) / currentTenure) * 100 : 0;
+      const roundupAdj = (dpRounded > dpExact) ? (dpRounded - dpExact) : 0;
+      const netDisb = inv > 0 ? (inv - dpRounded - margin - roundupAdj) : 0;
+
+      const isLtvBreach = (!isFixed && curLTV > ltvLimit);
+      const isInv50Breach = (inv > 0 && loan < minAllowedLoan50);
+
+      const tagsHtml = [
+        isFixed ? `<span class="tag tag-fixed">Fixed ₹${fixedEmi}</span>` : '',
+        minEmiApplied ? `<span class="tag tag-manual">Min ₹900 Base EMI</span>` : '',
+        isLtvBreach ? `<span class="tag tag-breach">LTV Breach (${Math.round(curLTV)}%)</span>` : '',
+        isInv50Breach ? `<span class="tag tag-breach">Loan &lt; 50% Invoice</span>` : ''
+      ].filter(Boolean).join('');
+
+      mcTags.innerHTML = tagsHtml;
+      mcOutDp.textContent = '₹' + Math.round(dpRounded).toLocaleString('en-IN');
+      mcOutEmi.textContent = '₹' + Math.round(emi).toLocaleString('en-IN');
+      mcOutInst.textContent = String(inst);
+      mcOutDaily.textContent = '₹' + Math.round(daily).toLocaleString('en-IN');
+
+      mcOutTa.textContent = `${currentTenure}/${advEmi}`;
+      mcOutLoan.textContent = '₹' + Math.floor(loan).toLocaleString('en-IN');
+      mcOutLtv.textContent = Math.round(curLTV) + '%';
+      mcOutDbd.textContent = '₹' + Math.round(dbdAmt).toLocaleString('en-IN');
+      mcOutRoi.textContent = '₹' + Math.round(roiAmt).toLocaleString('en-IN');
+      mcOutDisb.textContent = '₹' + Math.round(netDisb).toLocaleString('en-IN');
+      mcOutExtra.textContent = '₹' + Math.round(extra).toLocaleString('en-IN');
+      mcOutNbfc.textContent = limitInput > 0 ? ('₹' + Math.floor(nbfcMaxL).toLocaleString('en-IN')) : 'No Limit';
+
+      lastManualResult = {
+        inv,
+        loan,
+        dp: dpRounded,
+        emi,
+        inst,
+        daily,
+        ta: `${currentTenure}/${advEmi}`
+      };
+
+      mcResultBox.classList.add('show');
+    }
+
+    mcCategory.addEventListener('change', () => {
+      mcSyncCategoryAndSlabs('CAT');
+      calcManualCalculator();
+    });
+
+    mcInvoice.addEventListener('input', () => {
+      mcSyncCategoryAndSlabs('INV');
+      calcManualCalculator();
+    });
+
+    mcLoan.addEventListener('input', () => {
+      mcSyncCategoryAndSlabs('LOAN');
+      calcManualCalculator();
+    });
+
+    mcLoan.addEventListener('change', () => {
+      const inv = parseFloat(mcInvoice.value) || 0;
+      const val = parseFloat(mcLoan.value) || 0;
+      if (inv > 0 && val > 0) {
+        const min50 = inv * 0.50;
+        if (val < min50) {
+          mcLoan.value = Math.ceil(min50);
+          showToast('Loan cannot be less than 50% of invoice', 'error');
+        } else if (val > inv) {
+          mcLoan.value = inv;
+          showToast('Loan cannot exceed invoice amount', 'error');
+        }
+        mcSyncCategoryAndSlabs('LOAN');
+        calcManualCalculator();
+      }
+    });
+
+    [mcTenure, mcAdv, mcDbd, mcPf, mcRoi, mcFixed, mcTargetDp, mcExw, mcMargin, mcDealer].forEach(el => {
+      el.addEventListener('input', calcManualCalculator);
+    });
+    mcGtl.addEventListener('change', calcManualCalculator);
+    mcRfc.addEventListener('change', calcManualCalculator);
+
+    mcResetBtn.addEventListener('click', () => {
+      [mcInvoice, mcLoan, mcTenure, mcAdv, mcDbd, mcPf, mcRoi, mcFixed, mcTargetDp, mcExw, mcMargin, mcDealer].forEach(el => {
+        el.value = '';
+      });
+      mcCategory.value = 'PHONE(WEB-MOBILE)';
+      mcGtl.value = '0';
+      mcSyncCategoryAndSlabs('RESET');
+      mcResultBox.classList.remove('show');
+      lastManualResult = null;
+    });
+
+    mcCopyBtn.addEventListener('click', () => {
+      if (!lastManualResult) return;
+      const r = lastManualResult;
+      let text = `*Manual Calculation*\n`;
+      if (r.inv > 0) text += `Invoice Amount: ₹${Math.round(r.inv).toLocaleString('en-IN')}\n`;
+      text += `Scheme: ${r.ta}\n`;
+      text += `Loan: ₹${Math.floor(r.loan).toLocaleString('en-IN')}\n`;
+      text += `Net DP: ₹${Math.round(r.dp).toLocaleString('en-IN')}\n`;
+      text += `EMI: ₹${Math.round(r.emi).toLocaleString('en-IN')} x ${r.inst} Months\n`;
+      text += `Daily EMI: ₹${Math.round(r.daily).toLocaleString('en-IN')}`;
+
+      copyText(text, () => {
+        mcCopyBtn.textContent = 'Copied';
+        setTimeout(() => { mcCopyBtn.textContent = 'Copy Result'; }, 1500);
+        showToast('Result copied', 'success');
+      });
+    });
 
     /* ==================== DATE PARSING & EXPIRY ==================== */
     function parseRawDate(val) {
@@ -1707,7 +2304,7 @@
       }
     }
 
-    /* ==================== MODEL SEARCH, NON-TIEUP & MANUAL ==================== */
+    /* ==================== MODEL SEARCH, NON-TIEUP & MANUAL MODAL ==================== */
     function renderNonTieupCategories() {
       if (!appData.nonTieup.length) {
         nonTieupGrid.innerHTML = '<div class="empty-msg" style="grid-column:1/-1;">No categories available</div>';
@@ -1888,7 +2485,6 @@
         inpGtl.value = String(gtl);
       }
 
-      // Rebuild RFC options cleanly (compatible with all mobile browsers)
       inpRfc.innerHTML = '<option value="0">0</option>';
       if (isPhone && rfcSlab > 0) {
         const opt = document.createElement('option');
@@ -1948,13 +2544,17 @@
       applyCategoryInsuranceLocks(item.category);
       syncInsuranceSlabs(parseFloat(baseMrp) || 0, parseFloat(baseMrp) || 0, 'SELECT');
 
-      pricingCard.classList.remove('hidden');
-      schemesCard.classList.remove('hidden');
+      if (calcMode === 'search') {
+        pricingCard.classList.remove('hidden');
+        schemesCard.classList.remove('hidden');
+      }
       recalcSchemes();
 
-      setTimeout(() => {
-        pricingCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 80);
+      if (calcMode === 'search') {
+        setTimeout(() => {
+          pricingCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 80);
+      }
     }
 
     function resetSelectedModel() {
@@ -2164,7 +2764,6 @@
         });
       });
 
-      // Top 4 Badges on visible eligible schemes only
       const validS = results.filter(d => !d.isBreached && !d.hidden && d.loan > 0);
       if (validS.length > 0) {
         const winDp = [...validS].sort((a, b) => a.dp - b.dp)[0];
@@ -2720,6 +3319,7 @@
           activeCustBanner.classList.add('show');
           manualLoans = {};
           recalcSchemes();
+          calcManualCalculator();
           switchTab('calc');
           showToast('Customer eligibility loaded', 'success');
         } else if (act === 'copy') {
@@ -2943,6 +3543,7 @@
         manualLoans = {};
       }
       recalcSchemes();
+      calcManualCalculator();
     }
 
     customerTypeEl.addEventListener('change', () => onEligibilityOrPriceChange('NONE'));
@@ -3015,6 +3616,7 @@
     document.getElementById('tabQueue').addEventListener('click', () => switchTab('queue'));
     document.getElementById('tabTools').addEventListener('click', () => switchTab('tools'));
 
+    mcSyncCategoryAndSlabs('RESET');
     renderQueue();
     initData();
   </script>
