@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>EMI Calculator by lakshya</title>
+  <title>EMI Calculator</title>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
@@ -93,7 +93,7 @@
     .card {
       background: var(--card);
       border-radius: var(--radius);
-      padding: 14px;
+      padding: 12px;
       box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06);
       border: 1px solid var(--border);
     }
@@ -123,11 +123,11 @@
       padding: 4px;
       border-radius: 11px;
       border: 1px solid var(--border);
-      margin-bottom: 12px;
+      margin-bottom: 10px;
     }
 
     .mode-tab {
-      height: 40px;
+      height: 38px;
       border: none;
       border-radius: 8px;
       background: transparent;
@@ -147,9 +147,9 @@
     .mode-pane { display: none; }
     .mode-pane.active { display: block; }
 
-    /* Form Grids */
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    /* Standard Form Grids */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
 
     .field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
     .field.full { grid-column: 1 / -1; }
@@ -166,7 +166,7 @@
     .field input,
     .field select {
       width: 100%;
-      height: 44px;
+      height: 42px;
       padding: 0 10px;
       font-size: 15px;
       font-weight: 600;
@@ -195,24 +195,135 @@
       background-color: #ffffff;
     }
 
-    .field input[readonly],
-    .field input:disabled,
-    .field select:disabled {
-      background-color: #e2e8f0;
-      color: #64748b;
-      cursor: not-allowed;
+    /* ==================== COMPACT INSIDE-BOX LABELS (IDEA 1 + IDEA 2) ==================== */
+    .compact-row-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin-bottom: 6px;
     }
 
-    .field input.var-alert {
-      color: var(--danger);
+    .compact-row-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+
+    .compact-row-4 {
+      display: grid;
+      grid-template-columns: 1.05fr 1.05fr 0.95fr 0.95fr;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+
+    .in-field {
+      position: relative;
+      background: #f8fafc;
+      border: 1.5px solid var(--border);
+      border-radius: 9px;
+      padding: 4px 7px 3px;
+      height: 44px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-width: 0;
+      cursor: text;
+      transition: border-color 0.15s, background-color 0.15s;
+    }
+
+    .in-field:focus-within {
+      border-color: var(--primary);
+      background: #ffffff;
+    }
+
+    .in-field.span-2 {
+      grid-column: span 2;
+    }
+
+    .in-field.span-full {
+      grid-column: 1 / -1;
+    }
+
+    .in-field-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 3px;
+      line-height: 1;
+      margin-bottom: 2px;
+      min-width: 0;
+    }
+
+    .in-field label {
+      font-size: 9.5px;
       font-weight: 800;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.25px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      pointer-events: none;
+    }
+
+    .var-badge {
+      display: none;
+      font-size: 8.5px;
+      font-weight: 800;
+      color: #ffffff;
+      background: var(--danger);
+      padding: 1.5px 4px;
+      border-radius: 4px;
+      white-space: nowrap;
+      line-height: 1.1;
+      flex-shrink: 0;
+    }
+
+    .var-badge.show {
+      display: inline-block;
+    }
+
+    .in-field input,
+    .in-field select {
+      width: 100%;
+      height: 22px;
+      padding: 0;
+      border: none;
+      background: transparent;
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--text);
+      outline: none;
+      min-width: 0;
+    }
+
+    .compact-row-4 .in-field input,
+    .compact-row-4 .in-field select {
+      font-size: 13px;
+    }
+
+    .in-field input::placeholder {
+      color: #94a3b8;
+      font-weight: 600;
+    }
+
+    .in-field select {
+      appearance: none;
+      -webkit-appearance: none;
+      padding-right: 14px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0 center;
+      background-size: 12px;
+      cursor: pointer;
     }
 
     /* Search Box */
     .search-wrap { position: relative; }
     .search-input {
       width: 100%;
-      height: 46px;
+      height: 44px;
       padding: 0 40px 0 14px;
       font-size: 15px;
       font-weight: 500;
@@ -280,8 +391,8 @@
 
     /* Manual Calculator Result Panel */
     .mc-result {
-      margin-top: 12px;
-      padding-top: 12px;
+      margin-top: 10px;
+      padding-top: 10px;
       border-top: 1.5px dashed #cbd5e1;
       display: none;
     }
@@ -301,7 +412,7 @@
       background: #f8fafc;
       border: 1.5px solid #bfdbfe;
       border-radius: 10px;
-      padding: 10px 4px;
+      padding: 9px 4px;
       text-align: center;
       margin-bottom: 10px;
     }
@@ -347,7 +458,7 @@
       background: var(--primary-light);
       border: 1px solid #bfdbfe;
       border-radius: 12px;
-      padding: 10px 12px;
+      padding: 9px 12px;
     }
     .multi-bar-info {
       font-size: 13px;
@@ -401,8 +512,8 @@
       margin-top: 2px;
     }
     .product-body {
-      margin-top: 12px;
-      padding-top: 12px;
+      margin-top: 10px;
+      padding-top: 10px;
       border-top: 1px solid var(--border);
     }
     .product-card.collapsed .product-body {
@@ -416,12 +527,12 @@
       display: flex;
       flex-wrap: wrap;
       gap: 6px;
-      margin: 12px 0 10px;
+      margin: 8px 0 8px;
       align-items: center;
     }
     .tool-select {
-      height: 36px;
-      padding: 0 26px 0 10px;
+      height: 34px;
+      padding: 0 24px 0 9px;
       font-size: 12px;
       font-weight: 700;
       border: 1px solid var(--border);
@@ -431,11 +542,11 @@
       appearance: none;
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
       background-repeat: no-repeat;
-      background-position: right 7px center;
+      background-position: right 6px center;
     }
     .btn-sm {
       height: 34px;
-      padding: 0 10px;
+      padding: 0 9px;
       border-radius: 8px;
       border: 1px solid var(--border);
       background: #f8fafc;
@@ -464,7 +575,7 @@
       background: var(--primary);
       border: none;
       color: #ffffff;
-      height: 44px;
+      height: 42px;
       border-radius: 10px;
       font-size: 14px;
       font-weight: 700;
@@ -475,7 +586,7 @@
       background: var(--success);
       border: none;
       color: #ffffff;
-      height: 44px;
+      height: 42px;
       border-radius: 10px;
       font-size: 14px;
       font-weight: 700;
@@ -486,7 +597,7 @@
       background: #e2e8f0;
       border: none;
       color: var(--text);
-      height: 44px;
+      height: 42px;
       border-radius: 10px;
       font-size: 14px;
       font-weight: 700;
@@ -895,16 +1006,16 @@
     <!-- ==================== VIEW 1: CALCULATOR ==================== -->
     <div id="viewCalc" class="view-section active">
 
-      <!-- 1. Customer Eligibility -->
+      <!-- 1. Customer Eligibility (Compact Inside-Box Style) -->
       <section class="card">
-        <div class="card-header-row">
+        <div class="card-header-row" style="margin-bottom: 8px;">
           <div class="section-label">Customer Eligibility</div>
-          <button type="button" id="newSessionBtn" class="btn-sm active">+ New</button>
+          <button type="button" id="newSessionBtn" class="btn-sm active" style="height:28px; padding:0 9px; font-size:11px;">+ New</button>
         </div>
 
-        <div class="grid-2">
-          <div class="field full">
-            <label for="customerType">Customer Type</label>
+        <div class="compact-row-2">
+          <div class="in-field">
+            <div class="in-field-top"><label for="customerType">Customer Type</label></div>
             <select id="customerType">
               <option value="NEW">NEW</option>
               <option value="EMI CARD">EMI CARD</option>
@@ -912,19 +1023,19 @@
               <option value="W/O CARD">W/O CARD</option>
             </select>
           </div>
-
-          <div class="field full">
-            <label for="approvedLimit">Approved Limit (₹)</label>
+          <div class="in-field">
+            <div class="in-field-top"><label for="approvedLimit">Approved Limit (₹)</label></div>
             <input type="number" id="approvedLimit" inputmode="numeric" placeholder="e.g. 50000" />
           </div>
+        </div>
 
-          <div class="field">
-            <label for="ltvPercent">LTV (%)</label>
+        <div class="compact-row-2" style="margin-bottom: 0;">
+          <div class="in-field">
+            <div class="in-field-top"><label for="ltvPercent">LTV (%)</label></div>
             <input type="number" id="ltvPercent" inputmode="decimal" placeholder="e.g. 75" />
           </div>
-
-          <div class="field">
-            <label for="emiCapping">EMI Capping (₹)</label>
+          <div class="in-field">
+            <div class="in-field-top"><label for="emiCapping">EMI Capping (₹)</label></div>
             <input type="number" id="emiCapping" inputmode="numeric" placeholder="e.g. 4000" />
           </div>
         </div>
@@ -937,7 +1048,7 @@
           <button type="button" id="btnModeManual" class="mode-tab">Manual Calculator</button>
         </div>
 
-        <!-- Pane A: Model Search (Clean, no blue Non-Tieup box) -->
+        <!-- Pane A: Model Search -->
         <div id="paneModelSearch" class="mode-pane active">
           <div class="search-wrap">
             <input
@@ -953,67 +1064,67 @@
           <div id="resultsList" class="results-list"></div>
         </div>
 
-        <!-- Pane B: Manual Calculator -->
+        <!-- Pane B: Manual Calculator (Compact Inside-Box + Smart RFC/EXW) -->
         <div id="paneManualCalc" class="mode-pane">
-          <div class="grid-2" style="margin-bottom: 10px;">
-            <div class="field full">
-              <label for="mcLabel">Model / Scheme Label (Optional)</label>
-              <input type="text" id="mcLabel" placeholder="e.g. MANUAL SCHEME" />
+          <div class="compact-row-3">
+            <div class="in-field">
+              <div class="in-field-top"><label for="mcLabel">Label</label></div>
+              <input type="text" id="mcLabel" placeholder="MANUAL" />
             </div>
-            <div class="field">
-              <label for="mcCategory">Category</label>
+            <div class="in-field">
+              <div class="in-field-top"><label for="mcCategory">Category</label></div>
               <select id="mcCategory">
-                <option value="PHONE(WEB-MOBILE)">PHONE / WATCH</option>
+                <option value="PHONE(WEB-MOBILE)">PHONE</option>
                 <option value="OTHER">OTHER</option>
               </select>
             </div>
-            <div class="field">
-              <label for="mcInvoice">Invoice (₹)</label>
-              <input type="number" id="mcInvoice" inputmode="numeric" placeholder="e.g. 25000" />
+            <div class="in-field">
+              <div class="in-field-top"><label for="mcInvoice">Invoice (₹)</label></div>
+              <input type="number" id="mcInvoice" inputmode="numeric" placeholder="0" />
             </div>
           </div>
 
-          <div class="grid-3" style="margin-bottom: 10px;">
-            <div class="field">
-              <label for="mcLoan">Loan (₹)</label>
+          <div class="compact-row-4">
+            <div class="in-field">
+              <div class="in-field-top"><label for="mcLoan">Loan</label></div>
               <input type="number" id="mcLoan" inputmode="numeric" placeholder="Auto" />
             </div>
-            <div class="field">
-              <label for="mcTenure">Total Tenure</label>
-              <input type="number" id="mcTenure" inputmode="numeric" placeholder="e.g. 12" />
+            <div class="in-field">
+              <div class="in-field-top"><label for="mcTenure">Tenure</label></div>
+              <input type="number" id="mcTenure" inputmode="numeric" placeholder="12" />
             </div>
-            <div class="field">
-              <label for="mcAdv">Adv EMI</label>
-              <input type="number" id="mcAdv" inputmode="numeric" placeholder="e.g. 4" />
+            <div class="in-field">
+              <div class="in-field-top"><label for="mcAdv">Adv EMI</label></div>
+              <input type="number" id="mcAdv" inputmode="numeric" placeholder="4" />
             </div>
-          </div>
-
-          <div class="grid-3" style="margin-bottom: 10px;">
-            <div class="field">
-              <label for="mcDbd">DBD (%)</label>
-              <input type="number" id="mcDbd" inputmode="decimal" placeholder="0" />
-            </div>
-            <div class="field">
-              <label for="mcPf">PF (₹)</label>
-              <input type="number" id="mcPf" inputmode="numeric" placeholder="0" />
-            </div>
-            <div class="field">
-              <label for="mcRoi">ROI (%)</label>
-              <input type="number" id="mcRoi" inputmode="decimal" placeholder="0" />
-            </div>
-          </div>
-
-          <div class="grid-3" style="margin-bottom: 10px;">
-            <div class="field">
-              <label for="mcFixed">Fixed EMI (₹)</label>
-              <input type="number" id="mcFixed" inputmode="numeric" placeholder="0" />
-            </div>
-            <div class="field">
-              <label for="mcTargetDp">Target DP (₹)</label>
+            <div class="in-field">
+              <div class="in-field-top"><label for="mcTargetDp">Target DP</label></div>
               <input type="number" id="mcTargetDp" inputmode="numeric" placeholder="0" />
             </div>
-            <div class="field">
-              <label for="mcGtl">GTL (₹)</label>
+          </div>
+
+          <div class="compact-row-4">
+            <div class="in-field">
+              <div class="in-field-top"><label for="mcDbd">DBD (%)</label></div>
+              <input type="number" id="mcDbd" inputmode="decimal" placeholder="0" />
+            </div>
+            <div class="in-field">
+              <div class="in-field-top"><label for="mcPf">PF (₹)</label></div>
+              <input type="number" id="mcPf" inputmode="numeric" placeholder="0" />
+            </div>
+            <div class="in-field">
+              <div class="in-field-top"><label for="mcRoi">ROI (%)</label></div>
+              <input type="number" id="mcRoi" inputmode="decimal" placeholder="0" />
+            </div>
+            <div class="in-field">
+              <div class="in-field-top"><label for="mcFixed">Fixed EMI</label></div>
+              <input type="number" id="mcFixed" inputmode="numeric" placeholder="0" />
+            </div>
+          </div>
+
+          <div class="compact-row-4" style="margin-bottom: 8px;">
+            <div class="in-field">
+              <div class="in-field-top"><label for="mcGtl">GTL (₹)</label></div>
               <select id="mcGtl">
                 <option value="0">0</option>
                 <option value="699">699</option>
@@ -1024,35 +1135,27 @@
                 <option value="2398">2398</option>
               </select>
             </div>
-          </div>
-
-          <div class="grid-3" style="margin-bottom: 10px;">
-            <div class="field">
-              <label for="mcRfc">RFC (₹)</label>
+            <div id="mcRfcBox" class="in-field">
+              <div class="in-field-top"><label for="mcRfc">RFC (₹)</label></div>
               <select id="mcRfc">
                 <option value="0" selected>0</option>
               </select>
             </div>
-            <div class="field">
-              <label for="mcExw">EXW (₹)</label>
-              <input type="number" id="mcExw" inputmode="numeric" placeholder="0" disabled />
+            <div id="mcExwBox" class="in-field hidden">
+              <div class="in-field-top"><label for="mcExw">EXW (₹)</label></div>
+              <input type="number" id="mcExw" inputmode="numeric" placeholder="0" />
             </div>
-            <div class="field">
-              <label for="mcMargin">Margin (₹)</label>
+            <div class="in-field">
+              <div class="in-field-top"><label for="mcMargin">Margin</label></div>
               <input type="number" id="mcMargin" inputmode="numeric" placeholder="0" />
+            </div>
+            <div class="in-field">
+              <div class="in-field-top"><label for="mcDealer">Dealer</label></div>
+              <input type="number" id="mcDealer" inputmode="numeric" placeholder="0" />
             </div>
           </div>
 
-          <div class="grid-2">
-            <div class="field">
-              <label for="mcDealer">Dealer (₹)</label>
-              <input type="number" id="mcDealer" inputmode="numeric" placeholder="0" />
-            </div>
-            <div class="field" style="justify-content: flex-end;">
-              <label>&nbsp;</label>
-              <button type="button" id="mcResetBtn" class="btn-secondary" style="width:100%;">Reset</button>
-            </div>
-          </div>
+          <button type="button" id="mcResetBtn" class="btn-secondary" style="width:100%; height:36px; font-size:13px;">Reset Manual</button>
 
           <!-- Live Manual Calculation Output -->
           <div id="mcResultBox" class="mc-result">
@@ -1114,7 +1217,7 @@
         </div>
       </section>
 
-      <!-- Multi-Model Bar (Visible when 1+ models/schemes are active) -->
+      <!-- Multi-Model Bar -->
       <div id="multiActionBar" class="multi-bar hidden">
         <div id="multiBarInfo" class="multi-bar-info">0 Models Selected</div>
         <div class="multi-bar-btns">
@@ -1179,7 +1282,7 @@
     </button>
   </nav>
 
-  <!-- Manual Scheme Modal (Add extra scheme to any active model) -->
+  <!-- Manual Scheme Modal -->
   <div id="manualModal" class="modal-backdrop">
     <div class="modal-box">
       <div class="card-header-row" style="margin-bottom:0;">
@@ -1187,29 +1290,29 @@
         <button type="button" id="closeManualModalBtn" class="btn-sm">Close</button>
       </div>
 
-      <div class="grid-2">
-        <div class="field">
-          <label for="manTenure">Total Tenure</label>
+      <div class="compact-row-2">
+        <div class="in-field">
+          <div class="in-field-top"><label for="manTenure">Total Tenure</label></div>
           <input type="number" id="manTenure" inputmode="numeric" placeholder="e.g. 12" />
         </div>
-        <div class="field">
-          <label for="manAdv">Advance EMI</label>
+        <div class="in-field">
+          <div class="in-field-top"><label for="manAdv">Advance EMI</label></div>
           <input type="number" id="manAdv" inputmode="numeric" placeholder="e.g. 4" />
         </div>
-        <div class="field">
-          <label for="manDbd">DBD (%)</label>
+        <div class="in-field">
+          <div class="in-field-top"><label for="manDbd">DBD (%)</label></div>
           <input type="number" id="manDbd" inputmode="decimal" placeholder="e.g. 1.5" />
         </div>
-        <div class="field">
-          <label for="manPf">PF (₹)</label>
+        <div class="in-field">
+          <div class="in-field-top"><label for="manPf">PF (₹)</label></div>
           <input type="number" id="manPf" inputmode="numeric" placeholder="e.g. 499" />
         </div>
-        <div class="field">
-          <label for="manRoi">ROI (%)</label>
+        <div class="in-field">
+          <div class="in-field-top"><label for="manRoi">ROI (%)</label></div>
           <input type="number" id="manRoi" inputmode="decimal" placeholder="0" />
         </div>
-        <div class="field">
-          <label for="manFixed">Fixed EMI (₹)</label>
+        <div class="in-field">
+          <div class="in-field-top"><label for="manFixed">Fixed EMI (₹)</label></div>
           <input type="number" id="manFixed" inputmode="numeric" placeholder="0" />
         </div>
       </div>
@@ -1259,8 +1362,8 @@
       dealers: []
     };
 
-    let calcMode = 'search'; // 'search' | 'manual'
-    let activeProducts = []; // Multiple active models & schemes
+    let calcMode = 'search';
+    let activeProducts = [];
     let currentSessionId = Date.now();
     let savedSessions = [];
     try {
@@ -1309,6 +1412,8 @@
     const mcGtl = document.getElementById('mcGtl');
     const mcRfc = document.getElementById('mcRfc');
     const mcExw = document.getElementById('mcExw');
+    const mcRfcBox = document.getElementById('mcRfcBox');
+    const mcExwBox = document.getElementById('mcExwBox');
     const mcMargin = document.getElementById('mcMargin');
     const mcDealer = document.getElementById('mcDealer');
     const mcResetBtn = document.getElementById('mcResetBtn');
@@ -1353,6 +1458,15 @@
 
     const toastEl = document.getElementById('toastEl');
     let toastTimer = null;
+
+    // Tap anywhere inside an .in-field box to focus its input/select
+    document.addEventListener('click', (e) => {
+      const box = e.target.closest('.in-field');
+      if (!box) return;
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+      const ctrl = box.querySelector('input, select');
+      if (ctrl && !ctrl.disabled) ctrl.focus();
+    });
 
     function showToast(msg, type = '') {
       toastEl.textContent = msg;
@@ -1466,21 +1580,22 @@
       return null;
     }
 
-    /* ==================== MANUAL CALCULATOR (FIXED TARGET DP) ==================== */
+    /* ==================== MANUAL CALCULATOR ==================== */
     function mcSyncCategoryAndSlabs(trigger) {
       const isPhone = isMobileDeviceCat(mcCategory.value);
       const inv = parseFloat(mcInvoice.value) || 0;
       const loanInp = parseFloat(mcLoan.value) || 0;
       const wasRfcSelected = (trigger !== 'RESET') && isPhone && (parseFloat(mcRfc.value) > 0);
 
+      // Show only RFC for Phone/Watch OR only EXW for Other
       if (isPhone) {
-        mcRfc.disabled = false;
-        mcExw.disabled = true;
+        mcRfcBox.classList.remove('hidden');
+        mcExwBox.classList.add('hidden');
         mcExw.value = '';
       } else {
-        mcRfc.disabled = true;
+        mcRfcBox.classList.add('hidden');
+        mcExwBox.classList.remove('hidden');
         mcRfc.value = '0';
-        mcExw.disabled = false;
       }
 
       if (trigger === 'INV') {
@@ -1616,7 +1731,6 @@
             const denominator = advRate + dbdRate + roiRateDP - 1;
             if (denominator < 0) {
               let solvedLoan = numerator / denominator;
-              // Handle min ₹900 base EMI branch accurately
               if (solvedLoan > 0 && (solvedLoan / tenure) < 900) {
                 const numMin = targetDp - inv - (900 * advEmi) - pf - totalFees;
                 const denMin = dbdRate + roiRateDP - 1;
@@ -1794,7 +1908,6 @@
       });
     });
 
-    // Add Manual Calculation directly to multi-model list
     mcAddToListBtn.addEventListener('click', () => {
       if (!lastManualResult) return;
       const r = lastManualResult;
@@ -1812,7 +1925,6 @@
         hidden: false
       };
 
-      // If same label & invoice manual model exists, append scheme to it; else create new panel
       const existing = activeProducts.find(p =>
         p.brand === 'MANUAL' && p.model === r.label && Number(p.inputs.inv || 0) === Number(r.inv || 0)
       );
@@ -2200,7 +2312,7 @@
       }
     }
 
-    /* ==================== MODEL SEARCH (UNIFIED WITH NON-TIEUP) ==================== */
+    /* ==================== MODEL SEARCH ==================== */
     function renderSearchResults(query) {
       const q = query.trim().toLowerCase();
       if (!q) {
@@ -2256,7 +2368,6 @@
     }
 
     function addProductToActiveList(item) {
-      // Collapse previous models cleanly so newly added model is immediately visible
       activeProducts.forEach(p => { p.collapsed = true; });
 
       const baseMrp = item.mrp > 0 ? item.mrp : '';
@@ -2277,7 +2388,7 @@
           mrp: baseMrp,
           inv: baseMrp,
           gtl: getGtlSlabValue(mrpNum),
-          rfc: 0, // Default RFC is always 0
+          rfc: 0,
           exw: '',
           targetDp: '',
           margin: '',
@@ -2510,7 +2621,6 @@
         });
       });
 
-      // Top 4 Badges on visible eligible schemes only
       const validS = results.filter(d => !d.isBreached && !d.hidden && d.loan > 0);
       if (validS.length > 0) {
         const winDp = [...validS].sort((a, b) => a.dp - b.dp)[0];
@@ -2581,6 +2691,17 @@
           rfcOptions += `<option value="${rfcSlab}" ${rfcVal === rfcSlab ? 'selected' : ''}>${rfcSlab}</option>`;
         }
 
+        // Smart single slot: RFC for mobile/watch, EXW for all other categories
+        const rfcOrExwBox = isPhone
+          ? `<div class="in-field">
+               <div class="in-field-top"><label for="prfc_${pIdx}">RFC (₹)</label></div>
+               <select id="prfc_${pIdx}" data-pfield="rfc" data-pidx="${pIdx}">${rfcOptions}</select>
+             </div>`
+          : `<div class="in-field">
+               <div class="in-field-top"><label for="pexw_${pIdx}">EXW (₹)</label></div>
+               <input type="number" id="pexw_${pIdx}" inputmode="numeric" placeholder="0" value="${escapeHtml(inp.exw)}" data-pfield="exw" data-pidx="${pIdx}" />
+             </div>`;
+
         card.innerHTML = `
           <div class="product-header" data-action="toggle-collapse" data-pidx="${pIdx}">
             <div class="product-header-left">
@@ -2594,48 +2715,39 @@
           </div>
 
           <div class="product-body">
-            <div class="grid-3" style="margin-bottom: 10px;">
-              <div class="field">
-                <label>MRP (₹)</label>
-                <input type="number" inputmode="numeric" placeholder="0" value="${escapeHtml(inp.mrp)}" data-pfield="mrp" data-pidx="${pIdx}" />
+            <!-- Row 1: MRP | Invoice (+ smart VAR badge) | Target DP -->
+            <div class="compact-row-3">
+              <div class="in-field">
+                <div class="in-field-top"><label for="pmrp_${pIdx}">MRP (₹)</label></div>
+                <input type="number" id="pmrp_${pIdx}" inputmode="numeric" placeholder="0" value="${escapeHtml(inp.mrp)}" data-pfield="mrp" data-pidx="${pIdx}" />
               </div>
-              <div class="field">
-                <label>Invoice (₹)</label>
-                <input type="number" inputmode="numeric" placeholder="0" value="${escapeHtml(inp.inv)}" data-pfield="inv" data-pidx="${pIdx}" />
+              <div class="in-field">
+                <div class="in-field-top">
+                  <label for="pinv_${pIdx}">Invoice</label>
+                  <span id="pvarbadge_${pIdx}" class="var-badge ${varVal > 0 ? 'show' : ''}">${varVal > 0 ? '+₹' + Math.round(varVal).toLocaleString('en-IN') : ''}</span>
+                </div>
+                <input type="number" id="pinv_${pIdx}" inputmode="numeric" placeholder="0" value="${escapeHtml(inp.inv)}" data-pfield="inv" data-pidx="${pIdx}" />
               </div>
-              <div class="field">
-                <label>VAR (₹)</label>
-                <input type="number" readonly value="${varVal}" id="pvar_${pIdx}" class="${varVal > 0 ? 'var-alert' : ''}" />
+              <div class="in-field">
+                <div class="in-field-top"><label for="ptdp_${pIdx}">Target DP</label></div>
+                <input type="number" id="ptdp_${pIdx}" inputmode="numeric" placeholder="0" value="${escapeHtml(inp.targetDp)}" data-pfield="targetDp" data-pidx="${pIdx}" />
               </div>
             </div>
 
-            <div class="grid-3" style="margin-bottom: 10px;">
-              <div class="field">
-                <label>GTL (₹)</label>
+            <!-- Row 2: GTL | RFC or EXW | Margin | Dealer -->
+            <div class="compact-row-4" style="margin-bottom: 0;">
+              <div class="in-field">
+                <div class="in-field-top"><label for="pgtl_${pIdx}">GTL (₹)</label></div>
                 <select id="pgtl_${pIdx}" data-pfield="gtl" data-pidx="${pIdx}">${gtlOptions}</select>
               </div>
-              <div class="field">
-                <label>RFC (₹)</label>
-                <select id="prfc_${pIdx}" data-pfield="rfc" data-pidx="${pIdx}" ${isPhone ? '' : 'disabled'}>${rfcOptions}</select>
+              ${rfcOrExwBox}
+              <div class="in-field">
+                <div class="in-field-top"><label for="pmar_${pIdx}">Margin</label></div>
+                <input type="number" id="pmar_${pIdx}" inputmode="numeric" placeholder="0" value="${escapeHtml(inp.margin)}" data-pfield="margin" data-pidx="${pIdx}" />
               </div>
-              <div class="field">
-                <label>EXW (₹)</label>
-                <input type="number" inputmode="numeric" placeholder="0" value="${isPhone ? '' : escapeHtml(inp.exw)}" data-pfield="exw" data-pidx="${pIdx}" ${isPhone ? 'disabled' : ''} />
-              </div>
-            </div>
-
-            <div class="grid-3">
-              <div class="field">
-                <label>Target DP (₹)</label>
-                <input type="number" inputmode="numeric" placeholder="0" value="${escapeHtml(inp.targetDp)}" data-pfield="targetDp" data-pidx="${pIdx}" />
-              </div>
-              <div class="field">
-                <label>Margin (₹)</label>
-                <input type="number" inputmode="numeric" placeholder="0" value="${escapeHtml(inp.margin)}" data-pfield="margin" data-pidx="${pIdx}" />
-              </div>
-              <div class="field">
-                <label>Dealer (₹)</label>
-                <input type="number" inputmode="numeric" placeholder="0" value="${escapeHtml(inp.dealer)}" data-pfield="dealer" data-pidx="${pIdx}" />
+              <div class="in-field">
+                <div class="in-field-top"><label for="pdlr_${pIdx}">Dealer</label></div>
+                <input type="number" id="pdlr_${pIdx}" inputmode="numeric" placeholder="0" value="${escapeHtml(inp.dealer)}" data-pfield="dealer" data-pidx="${pIdx}" />
               </div>
             </div>
 
@@ -2712,7 +2824,6 @@
         </tr>
       `;
 
-      // Hidden rows stay right in place (do NOT filter out hidden rows and do NOT push them to bottom)
       let list = prod.calculated.filter(d => {
         if (prod.showAll) return true;
         return !d.isBreached && d.loan > 0;
@@ -2822,13 +2933,14 @@
       const isPhone = isMobileDeviceCat(prod.category);
       const m = parseFloat(prod.inputs.mrp) || 0;
       const i = parseFloat(prod.inputs.inv) || 0;
-      const base = mode === 'MRP' ? (i > 0 ? i : m) : (i > 0 ? i : m);
+      const base = i > 0 ? i : m;
 
-      const varEl = document.getElementById(`pvar_${pIdx}`);
+      // Update Smart VAR badge inside Invoice box
+      const varBadge = document.getElementById(`pvarbadge_${pIdx}`);
       const v = (i > m && m > 0) ? (i - m) : 0;
-      if (varEl) {
-        varEl.value = v;
-        varEl.classList.toggle('var-alert', v > 0);
+      if (varBadge) {
+        varBadge.textContent = v > 0 ? `+₹${Math.round(v).toLocaleString('en-IN')}` : '';
+        varBadge.classList.toggle('show', v > 0);
       }
 
       if (mode === 'INV' || (mode === 'MRP' && i === 0)) {
@@ -2942,7 +3054,6 @@
     });
 
     productsStack.addEventListener('click', (e) => {
-      // Remove Product
       const remBtn = e.target.closest('button[data-action="remove-prod"]');
       if (remBtn) {
         e.stopPropagation();
@@ -2953,7 +3064,6 @@
         return;
       }
 
-      // Collapse / Expand Product Card
       const header = e.target.closest('[data-action="toggle-collapse"]');
       if (header && !e.target.closest('button')) {
         const pIdx = parseInt(header.dataset.pidx, 10);
@@ -2969,7 +3079,6 @@
         return;
       }
 
-      // Table Header Sort
       const th = e.target.closest('th[data-sort]');
       if (th) {
         const pIdx = parseInt(th.dataset.pidx, 10);
@@ -2989,7 +3098,6 @@
         return;
       }
 
-      // Toolbar Buttons
       const btn = e.target.closest('button[data-action]');
       if (!btn) return;
       const action = btn.dataset.action;
@@ -3017,7 +3125,6 @@
         const cur = parseFloat(inp ? inp.value : 0) || 0;
         handleProductLoanEdit(pIdx, dIdx, Math.max(0, cur + delta));
       } else if (action === 'toggle-hide') {
-        // Hide / Show right in place!
         const dIdx = parseInt(btn.dataset.didx, 10);
         if (prod.schemes[dIdx]) {
           prod.schemes[dIdx].hidden = !prod.schemes[dIdx].hidden;
